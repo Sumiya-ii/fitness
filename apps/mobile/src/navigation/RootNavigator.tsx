@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { useOnboardingStore } from '../stores/onboarding.store';
 import { AuthStack } from './AuthStack';
 import { SetupStack } from './SetupStack';
-import { MainTabs } from './MainTabs';
+import { MainStack } from './MainStack';
 
 function RootContent() {
   const onboardingComplete = useOnboardingStore((s) => s.onboardingComplete);
@@ -13,7 +13,7 @@ function RootContent() {
 
   if (!isAuthenticated) return <AuthStack />;
   if (!profileSetupComplete) return <SetupStack />;
-  return <MainTabs />;
+  return <MainStack />;
 }
 
 export function RootNavigator() {

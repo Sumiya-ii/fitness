@@ -1,0 +1,33 @@
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import type { LogStackParamList } from './types';
+import {
+  LogScreen,
+  TextSearchScreen,
+  QuickAddScreen,
+  BarcodeScanScreen,
+  BarcodeSubmitScreen,
+  VoiceLogScreen,
+  PhotoLogScreen,
+  FavoritesRecentsScreen,
+} from '../screens/logging';
+
+const Stack = createNativeStackNavigator<LogStackParamList>();
+
+export function LogStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="LogHome" component={LogScreen} />
+      <Stack.Screen name="TextSearch" component={TextSearchScreen} />
+      <Stack.Screen name="QuickAdd" component={QuickAddScreen} />
+      <Stack.Screen name="BarcodeScan" component={BarcodeScanScreen} />
+      <Stack.Screen name="BarcodeSubmit" component={BarcodeSubmitScreen} />
+      <Stack.Screen name="VoiceLog" component={VoiceLogScreen} />
+      <Stack.Screen name="PhotoLog" component={PhotoLogScreen} />
+      <Stack.Screen name="FavoritesRecents" component={FavoritesRecentsScreen} />
+    </Stack.Navigator>
+  );
+}

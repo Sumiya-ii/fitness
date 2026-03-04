@@ -61,6 +61,26 @@ export const api = {
   async delete<T>(path: string, headers?: Record<string, string>): Promise<T> {
     return request<T>('DELETE', path, { headers });
   },
+  async upload<T>(path: string, formData: FormData): Promise<T> {
+    const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+    const token = await getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`API error ${res.status}: ${text}`);
+    }
+    const contentType = res.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      return res.json() as Promise<T>;
+    }
+    return res.text() as unknown as T;
+  },
   getToken,
   setToken,
   clearToken,

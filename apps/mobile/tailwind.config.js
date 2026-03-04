@@ -11,6 +11,7 @@ module.exports = {
         danger: '#ef4444',
         warning: '#f59e0b',
         success: '#22c55e',
+        orange: { 500: '#f97316', 600: '#ea580c' },
       },
       fontFamily: {
         sans: ['Inter'],

@@ -72,6 +72,21 @@ export class DashboardService {
         }
       : null;
 
+    const meals = mealLogs.map((log) => ({
+      id: log.id,
+      mealType: log.mealType ?? 'snack',
+      totalCalories: log.totalCalories ?? 0,
+      totalProtein: Number(log.totalProtein ?? 0),
+      totalCarbs: Number(log.totalCarbs ?? 0),
+      totalFat: Number(log.totalFat ?? 0),
+      loggedAt: log.loggedAt.toISOString(),
+      items: log.items.map((item) => ({
+        id: item.id,
+        snapshotFoodName: item.snapshotFoodName,
+        snapshotCalories: item.snapshotCalories,
+      })),
+    }));
+
     return {
       date: dayStart.toISOString().split('T')[0],
       consumed,
@@ -79,6 +94,7 @@ export class DashboardService {
       remaining,
       proteinProgress,
       mealCount: mealLogs.length,
+      meals,
     };
   }
 }

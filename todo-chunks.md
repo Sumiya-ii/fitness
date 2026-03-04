@@ -57,19 +57,19 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-040    | Design system foundation (tokens/components) | Mobile UI/UX      | C-039              | Yes           | Done        | AI    |     |
 | C-041    | Onboarding UX screens                        | Mobile UI/UX      | C-040,C-007,C-008  | No            | Done        | AI    |     |
 | C-042    | Auth UI screens and session UX               | Mobile UI/UX      | C-039,C-006        | No            | Done        | AI    |     |
-| C-043    | Food logging home screen UX                  | Mobile UI/UX      | C-040,C-011,C-013  | No            | Not Started | TBD   |     |
-| C-044    | Text search logging flow UI                  | Mobile UI/UX      | C-043,C-011        | No            | Not Started | TBD   |     |
-| C-045    | Quick add flow UI                            | Mobile UI/UX      | C-043,C-012        | Yes           | Not Started | TBD   |     |
-| C-046    | Barcode scanner UI flow                      | Mobile UI/UX      | C-043,C-014,C-015  | No            | Not Started | TBD   |     |
-| C-047    | Voice logging UI flow                        | Mobile UI/UX      | C-043,C-021        | No            | Not Started | TBD   |     |
-| C-048    | Photo logging UI flow                        | Mobile UI/UX      | C-043,C-023        | No            | Not Started | TBD   |     |
-| C-049    | Meal templates/favorites/recents UI          | Mobile UI/UX      | C-043,C-013,C-026  | No            | Not Started | TBD   |     |
-| C-050    | Dashboard UI + daily summary UX              | Mobile UI/UX      | C-024              | No            | Not Started | TBD   |     |
-| C-051    | Weight log + trend chart UI                  | Mobile UI/UX      | C-025              | Yes           | Not Started | TBD   |     |
-| C-052    | Weekly summary report UI                     | Mobile UI/UX      | C-026              | Yes           | Not Started | TBD   |     |
-| C-053    | Telegram connect/settings UX                 | Mobile UI/UX      | C-017,C-030        | No            | Not Started | TBD   |     |
-| C-054    | Subscription/paywall UI                      | Mobile UI/UX      | C-027              | No            | Not Started | TBD   |     |
-| C-055    | Settings UX (language, units, privacy)       | Mobile UI/UX      | C-007,C-028,C-030  | No            | Not Started | TBD   |     |
+| C-043    | Food logging home screen UX                  | Mobile UI/UX      | C-040,C-011,C-013  | No            | Done        | AI    |     |
+| C-044    | Text search logging flow UI                  | Mobile UI/UX      | C-043,C-011        | No            | Done        | AI    |     |
+| C-045    | Quick add flow UI                            | Mobile UI/UX      | C-043,C-012        | Yes           | Done        | AI    |     |
+| C-046    | Barcode scanner UI flow                      | Mobile UI/UX      | C-043,C-014,C-015  | No            | Done        | AI    |     |
+| C-047    | Voice logging UI flow                        | Mobile UI/UX      | C-043,C-021        | No            | Done        | AI    |     |
+| C-048    | Photo logging UI flow                        | Mobile UI/UX      | C-043,C-023        | No            | Done        | AI    |     |
+| C-049    | Meal templates/favorites/recents UI          | Mobile UI/UX      | C-043,C-013,C-026  | No            | Done        | AI    |     |
+| C-050    | Dashboard UI + daily summary UX              | Mobile UI/UX      | C-024              | No            | Done        | AI    |     |
+| C-051    | Weight log + trend chart UI                  | Mobile UI/UX      | C-025              | Yes           | Done        | AI    |     |
+| C-052    | Weekly summary report UI                     | Mobile UI/UX      | C-026              | Yes           | Done        | AI    |     |
+| C-053    | Telegram connect/settings UX                 | Mobile UI/UX      | C-017,C-030        | No            | Done        | AI    |     |
+| C-054    | Subscription/paywall UI                      | Mobile UI/UX      | C-027              | No            | Done        | AI    |     |
+| C-055    | Settings UX (language, units, privacy)       | Mobile UI/UX      | C-007,C-028,C-030  | No            | Done        | AI    |     |
 | C-056    | Empty/loading/error states pass              | Mobile UX Quality | C-041..C-055       | No            | Not Started | TBD   |     |
 | C-057    | Accessibility pass (a11y + dynamic type)     | Mobile UX Quality | C-041..C-055       | No            | Not Started | TBD   |     |
 | C-058    | Mobile E2E test pack (critical flows)        | Mobile QA         | C-041..C-057       | No            | Not Started | TBD   |     |
@@ -562,6 +562,18 @@ These items cannot be done by the AI and need to be completed by you.
 - [ ] **STT Provider** — Configure `STT_PROVIDER` (e.g., `chimege` or `google`) and `STT_API_KEY` for voice-to-text. The STT service currently returns a placeholder when no provider is configured.
 - [ ] **S3 Storage** — Configure `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` for photo upload storage. Currently photo uploads pass a reference path in the job data; actual S3 upload needs provider-specific implementation.
 - [ ] **Run Prisma migration** — The `TelegramLink` model was updated with a `chatId` field. Run `npm run db:migrate -w @coach/api` after connecting to the database.
+
+### After C-039..C-055 completion
+
+- [ ] **Install Expo CLI** — Run `npm install -g expo-cli` or use `npx expo` commands.
+- [ ] **Start the mobile app** — Run `npx expo start` from `apps/mobile/` and scan the QR code with Expo Go on your phone.
+- [ ] **Update API base URL** — In `apps/mobile/src/api/client.ts`, change `http://localhost:3000/api/v1` to your machine's local IP (e.g., `http://192.168.1.x:3000/api/v1`) for device testing.
+- [ ] **Wire Firebase Auth SDK** — The auth screens use placeholder API calls. Install `@react-native-firebase/auth` or Expo's Firebase SDK and connect to your Firebase project.
+- [ ] **Configure app.json** — Update the Expo config in `apps/mobile/app.json` with your app name, bundle identifier, and splash screen assets.
+- [ ] **Load custom fonts** — The design system references Inter font family. Use `expo-font` to load Inter weights (Regular, Medium, SemiBold, Bold).
+- [ ] **Test barcode scanning** — Barcode scanning requires a physical device (not simulator). Test with expo-camera on a real phone.
+- [ ] **Configure Telegram bot username** — Update the bot username in `TelegramConnectScreen.tsx` from `@CoachBot` to your actual bot username.
+- [ ] **Set up IAP** — Wire `react-native-purchases` or `expo-in-app-purchases` for subscription flows in `SubscriptionScreen.tsx`.
 
 ## Weekly Tracking Snapshot
 

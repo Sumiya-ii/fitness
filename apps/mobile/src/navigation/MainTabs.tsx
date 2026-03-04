@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import type { MainTabParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
-import { LogScreen } from '../screens/LogScreen';
+import { LogStack } from './LogStack';
 import { SearchScreen } from '../screens/SearchScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -31,7 +31,7 @@ export function MainTabs() {
       />
       <Tab.Screen
         name="Log"
-        component={LogScreen}
+        component={LogStack}
         options={{
           tabBarIcon: ({ color, size }) => <Ionicons name="add-circle-outline" size={size} color={color} />,
         }}

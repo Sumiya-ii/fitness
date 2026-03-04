@@ -12,6 +12,8 @@ export interface MacroBarProps {
   target: number;
   color: string;
   unit?: string;
+  /** 'large' for protein emphasis (FR-031) */
+  size?: 'default' | 'large';
   className?: string;
 }
 
@@ -21,6 +23,7 @@ export function MacroBar({
   target,
   color,
   unit = 'g',
+  size = 'default',
   className = '',
 }: MacroBarProps) {
   const progress = target > 0 ? Math.min(current / target, 1) : 0;
@@ -49,7 +52,11 @@ export function MacroBar({
           {unit}
         </Text>
       </View>
-      <View className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+      <View
+        className={`overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700 ${
+          size === 'large' ? 'h-3' : 'h-2'
+        }`}
+      >
         <Animated.View
           style={[
             barStyle,

@@ -1,6 +1,15 @@
 {
   "expo": {
     "name": "mobile",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning",
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ],
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
