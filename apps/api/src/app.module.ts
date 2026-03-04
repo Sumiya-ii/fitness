@@ -17,6 +17,8 @@ import { SubscriptionsModule } from './subscriptions';
 import { PrivacyModule } from './privacy';
 import { AdminModule } from './admin';
 import { NotificationsModule } from './notifications';
+import { AnalyticsModule } from './analytics';
+import { ObservabilityModule } from './observability';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -39,6 +41,8 @@ import { HealthController } from './health/health.controller';
     PrivacyModule,
     AdminModule,
     NotificationsModule,
+    AnalyticsModule,
+    ObservabilityModule,
   ],
   controllers: [HealthController],
   providers: [],

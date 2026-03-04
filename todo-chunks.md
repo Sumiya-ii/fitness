@@ -46,9 +46,9 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-029    | Admin moderation APIs (`FR-060..062`)        | Backend           | C-009,C-015        | No            | Done        | AI    |     |
 | C-030    | Notification preference APIs (`FR-044`)      | Backend           | C-007              | Yes           | Done        | AI    |     |
 | C-031    | Reminder scheduler jobs                      | Backend           | C-005,C-030,C-017  | No            | Not Started | TBD   |     |
-| C-032    | Analytics event pipeline                     | Data              | C-001,C-004        | Yes           | Not Started | TBD   |     |
+| C-032    | Analytics event pipeline                     | Data              | C-001,C-004        | Yes           | Done        | AI    |     |
 | C-033    | API contract and OpenAPI publish             | Platform          | C-007..C-031       | No            | Not Started | TBD   |     |
-| C-034    | Error tracking + observability wiring        | Platform          | C-001,C-003        | Yes           | Not Started | TBD   |     |
+| C-034    | Error tracking + observability wiring        | Platform          | C-001,C-003        | Yes           | Done        | AI    |     |
 | C-035    | Performance test pack (`NFR-001..003`)       | QA                | C-024,C-011,C-013  | No            | Not Started | TBD   |     |
 | C-036    | Reliability test pack (`NFR-010..012`)       | QA                | C-019,C-031        | No            | Not Started | TBD   |     |
 | C-037    | Security/privacy verification pack           | QA                | C-028,C-029        | No            | Not Started | TBD   |     |
@@ -547,6 +547,12 @@ These items cannot be done by the AI and need to be completed by you.
 - [ ] **Privacy legal copy** — Provide the consent text versions (health_data, marketing, analytics) and their exact legal wording for each locale (mn/en). These need legal review.
 - [ ] **Data export/deletion jobs** — The privacy service creates request records but doesn't actually process them. Background jobs for data export (generate JSON/CSV, upload to S3) and account deletion need to be wired into the worker.
 - [ ] **App Store / Google Play setup** — Set up in-app purchase products and subscription tiers in both stores.
+
+### After C-032, C-034 completion
+
+- [ ] **Set up Sentry** — Create a Sentry project and add `SENTRY_DSN` to `.env` for error tracking. All unhandled exceptions will be reported automatically.
+- [ ] **Set up OpenTelemetry** — If using distributed tracing, deploy an OTLP collector (e.g., Jaeger, Grafana Tempo) and set `OTEL_EXPORTER_OTLP_ENDPOINT` in `.env`.
+- [ ] **Set up PostHog (optional)** — For product analytics aggregation, configure `POSTHOG_API_KEY` and `POSTHOG_HOST` in `.env`. The analytics events are currently stored in the DB; PostHog integration would be a future enhancement.
 
 ## Weekly Tracking Snapshot
 
