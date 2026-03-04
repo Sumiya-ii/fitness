@@ -49,10 +49,10 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-032    | Analytics event pipeline                     | Data              | C-001,C-004        | Yes           | Done        | AI    |     |
 | C-033    | API contract and OpenAPI publish             | Platform          | C-007..C-031       | No            | Done        | AI    |     |
 | C-034    | Error tracking + observability wiring        | Platform          | C-001,C-003        | Yes           | Done        | AI    |     |
-| C-035    | Performance test pack (`NFR-001..003`)       | QA                | C-024,C-011,C-013  | No            | Not Started | TBD   |     |
-| C-036    | Reliability test pack (`NFR-010..012`)       | QA                | C-019,C-031        | No            | Not Started | TBD   |     |
-| C-037    | Security/privacy verification pack           | QA                | C-028,C-029        | No            | Not Started | TBD   |     |
-| C-038    | v1 release checklist and go/no-go report     | PM/QA             | C-001..C-037       | No            | Not Started | TBD   |     |
+| C-035    | Performance test pack (`NFR-001..003`)       | QA                | C-024,C-011,C-013  | No            | Done        | AI    |     |
+| C-036    | Reliability test pack (`NFR-010..012`)       | QA                | C-019,C-031        | No            | Done        | AI    |     |
+| C-037    | Security/privacy verification pack           | QA                | C-028,C-029        | No            | Done        | AI    |     |
+| C-038    | v1 release checklist and go/no-go report     | PM/QA             | C-001..C-037       | No            | Done        | AI    |     |
 | C-039    | Mobile app shell + navigation                | Mobile UI         | C-001              | No            | Not Started | TBD   |     |
 | C-040    | Design system foundation (tokens/components) | Mobile UI/UX      | C-039              | Yes           | Not Started | TBD   |     |
 | C-041    | Onboarding UX screens                        | Mobile UI/UX      | C-040,C-007,C-008  | No            | Not Started | TBD   |     |
