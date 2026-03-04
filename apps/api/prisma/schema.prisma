@@ -1,0 +1,483 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Identity & Profile ─────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String?  @unique
+  phone     String?  @unique
+  firebaseUid String @unique @map("firebase_uid")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile              Profile?
+  targets              Target[]
+  mealLogs             MealLog[]
+  weightLogs           WeightLog[]
+  workoutLogs          WorkoutLog[]
+  telegramLink         TelegramLink?
+  notificationPrefs    NotificationPreference?
+  deviceTokens         DeviceToken[]
+  subscription         Subscription?
+  consents             Consent[]
+  privacyRequests      PrivacyRequest[]
+  favorites            Favorite[]
+  aiParseResults       AiParseResult[]
+
+  @@map("users")
+}
+
+model Profile {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @unique @map("user_id") @db.Uuid
+  displayName   String?  @map("display_name")
+  locale        String   @default("mn") @db.VarChar(5)
+  unitSystem    String   @default("metric") @map("unit_system") @db.VarChar(10)
+  gender        String?  @db.VarChar(20)
+  birthDate     DateTime? @map("birth_date") @db.Date
+  heightCm      Decimal? @map("height_cm") @db.Decimal(5, 1)
+  activityLevel String?  @map("activity_level") @db.VarChar(30)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Target {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  goalType        String    @map("goal_type") @db.VarChar(20)
+  calorieTarget   Int       @map("calorie_target")
+  proteinGrams    Int       @map("protein_grams")
+  carbsGrams      Int       @map("carbs_grams")
+  fatGrams        Int       @map("fat_grams")
+  weeklyRateKg    Decimal   @map("weekly_rate_kg") @db.Decimal(4, 2)
+  effectiveFrom   DateTime  @map("effective_from") @db.Date
+  effectiveTo     DateTime? @map("effective_to") @db.Date
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, effectiveFrom(sort: Desc)])
+  @@map("targets")
+}
+
+// ─── Food Database ──────────────────────────────────────────────
+
+model Food {
+  id             String   @id @default(uuid()) @db.Uuid
+  normalizedName String   @map("normalized_name") @db.VarChar(500)
+  locale         String   @default("mn") @db.VarChar(5)
+  status         String   @default("approved") @db.VarChar(20) // approved | pending | rejected
+  sourceType     String   @map("source_type") @db.VarChar(30) // seed | user | admin | import
+  sourceRef      String?  @map("source_ref")
+  confidence     Decimal? @db.Decimal(3, 2)
+  verifiedBy     String?  @map("verified_by") @db.Uuid
+  verifiedAt     DateTime? @map("verified_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  servings       FoodServing[]
+  nutrients      FoodNutrient[]
+  aliases        FoodAlias[]
+  localizations  FoodLocalization[]
+  barcodes       Barcode[]
+  sources        FoodSource[]
+  mealLogItems   MealLogItem[]
+
+  @@index([locale, normalizedName])
+  @@map("foods")
+}
+
+model FoodServing {
+  id          String  @id @default(uuid()) @db.Uuid
+  foodId      String  @map("food_id") @db.Uuid
+  label       String  @db.VarChar(100) // e.g., "1 cup", "100g", "1 tablespoon"
+  labelMn     String? @map("label_mn") @db.VarChar(100)
+  gramsPerUnit Decimal @map("grams_per_unit") @db.Decimal(8, 2)
+  isDefault   Boolean @default(false) @map("is_default")
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@map("food_servings")
+}
+
+model FoodNutrient {
+  id          String  @id @default(uuid()) @db.Uuid
+  foodId      String  @map("food_id") @db.Uuid
+  // All values per 100g
+  caloriesPer100g Decimal @map("calories_per_100g") @db.Decimal(8, 2)
+  proteinPer100g  Decimal @map("protein_per_100g") @db.Decimal(8, 2)
+  carbsPer100g    Decimal @map("carbs_per_100g") @db.Decimal(8, 2)
+  fatPer100g      Decimal @map("fat_per_100g") @db.Decimal(8, 2)
+  fiberPer100g    Decimal? @map("fiber_per_100g") @db.Decimal(8, 2)
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@map("food_nutrients")
+}
+
+model FoodAlias {
+  id     String @id @default(uuid()) @db.Uuid
+  foodId String @map("food_id") @db.Uuid
+  alias  String @db.VarChar(500)
+  locale String @default("mn") @db.VarChar(5)
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@map("food_aliases")
+}
+
+model FoodLocalization {
+  id     String @id @default(uuid()) @db.Uuid
+  foodId String @map("food_id") @db.Uuid
+  locale String @db.VarChar(5)
+  name   String @db.VarChar(500)
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@unique([foodId, locale])
+  @@map("food_localizations")
+}
+
+model FoodSource {
+  id          String @id @default(uuid()) @db.Uuid
+  foodId      String @map("food_id") @db.Uuid
+  sourceType  String @map("source_type") @db.VarChar(30)
+  sourceRef   String? @map("source_ref")
+  importedAt  DateTime @default(now()) @map("imported_at")
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@map("food_sources")
+}
+
+model Barcode {
+  id     String @id @default(uuid()) @db.Uuid
+  code   String @unique @db.VarChar(50)
+  foodId String @map("food_id") @db.Uuid
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@map("barcodes")
+}
+
+// ─── Meal Logging ───────────────────────────────────────────────
+
+model MealLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  mealType  String?  @map("meal_type") @db.VarChar(20) // breakfast | lunch | dinner | snack
+  source    String   @db.VarChar(20) // text | quick_add | barcode | voice | photo | telegram
+  loggedAt  DateTime @map("logged_at")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Aggregate snapshot (denormalized for dashboard performance)
+  totalCalories Int? @map("total_calories")
+  totalProtein  Decimal? @map("total_protein") @db.Decimal(8, 2)
+  totalCarbs    Decimal? @map("total_carbs") @db.Decimal(8, 2)
+  totalFat      Decimal? @map("total_fat") @db.Decimal(8, 2)
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items MealLogItem[]
+
+  @@index([userId, loggedAt(sort: Desc)])
+  @@map("meal_logs")
+}
+
+model MealLogItem {
+  id        String @id @default(uuid()) @db.Uuid
+  mealLogId String @map("meal_log_id") @db.Uuid
+  foodId    String? @map("food_id") @db.Uuid
+  quantity  Decimal @db.Decimal(8, 2)
+  servingLabel String @map("serving_label") @db.VarChar(100)
+  gramsPerUnit Decimal @map("grams_per_unit") @db.Decimal(8, 2)
+
+  // Immutable nutrition snapshot at log time (Section 9.3)
+  snapshotCalories Int    @map("snapshot_calories")
+  snapshotProtein  Decimal @map("snapshot_protein") @db.Decimal(8, 2)
+  snapshotCarbs    Decimal @map("snapshot_carbs") @db.Decimal(8, 2)
+  snapshotFat      Decimal @map("snapshot_fat") @db.Decimal(8, 2)
+  snapshotFoodName String  @map("snapshot_food_name") @db.VarChar(500)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  mealLog MealLog @relation(fields: [mealLogId], references: [id], onDelete: Cascade)
+  food    Food?   @relation(fields: [foodId], references: [id], onDelete: SetNull)
+
+  @@index([mealLogId, createdAt])
+  @@map("meal_log_items")
+}
+
+// ─── Weight & Workout Logging ───────────────────────────────────
+
+model WeightLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  weightKg  Decimal  @map("weight_kg") @db.Decimal(5, 1)
+  loggedAt  DateTime @map("logged_at") @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, loggedAt])
+  @@map("weight_logs")
+}
+
+model WorkoutLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  workoutType  String   @map("workout_type") @db.VarChar(50)
+  durationMin  Int?     @map("duration_min")
+  note         String?
+  loggedAt     DateTime @map("logged_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, loggedAt(sort: Desc)])
+  @@map("workout_logs")
+}
+
+// ─── Telegram ───────────────────────────────────────────────────
+
+model TelegramLink {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @unique @map("user_id") @db.Uuid
+  telegramUserId  String    @unique @map("telegram_user_id")
+  telegramUsername String?  @map("telegram_username")
+  linkCode        String?   @map("link_code") @db.VarChar(20)
+  linkCodeExpiresAt DateTime? @map("link_code_expires_at")
+  linkedAt        DateTime? @map("linked_at")
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("telegram_links")
+}
+
+// ─── Notifications ──────────────────────────────────────────────
+
+model NotificationPreference {
+  id               String  @id @default(uuid()) @db.Uuid
+  userId           String  @unique @map("user_id") @db.Uuid
+  morningReminder  Boolean @default(true) @map("morning_reminder")
+  eveningReminder  Boolean @default(true) @map("evening_reminder")
+  reminderTimezone String  @default("Asia/Ulaanbaatar") @map("reminder_timezone") @db.VarChar(50)
+  quietHoursStart  String? @map("quiet_hours_start") @db.VarChar(5) // HH:mm
+  quietHoursEnd    String? @map("quiet_hours_end") @db.VarChar(5)
+  channels         String[] @default(["push"]) // push | telegram | email
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  platform  String   @db.VarChar(10) // ios | android
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("device_tokens")
+}
+
+// ─── Subscription ───────────────────────────────────────────────
+
+model Subscription {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @map("user_id") @db.Uuid
+  tier            String   @default("free") @db.VarChar(20) // free | pro
+  status          String   @default("active") @db.VarChar(20) // active | canceled | expired | past_due
+  provider        String?  @db.VarChar(20) // apple | google
+  providerSubId   String?  @map("provider_sub_id")
+  currentPeriodStart DateTime? @map("current_period_start")
+  currentPeriodEnd   DateTime? @map("current_period_end")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledger SubscriptionLedger[]
+
+  @@map("subscriptions")
+}
+
+model SubscriptionLedger {
+  id             String   @id @default(uuid()) @db.Uuid
+  subscriptionId String   @map("subscription_id") @db.Uuid
+  event          String   @db.VarChar(50) // started | renewed | canceled | expired | refunded
+  provider       String   @db.VarChar(20)
+  providerEventId String? @map("provider_event_id")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("subscription_ledger")
+}
+
+// ─── Moderation ─────────────────────────────────────────────────
+
+model ModerationQueue {
+  id            String   @id @default(uuid()) @db.Uuid
+  entityType    String   @map("entity_type") @db.VarChar(30) // food | barcode_submission
+  entityId      String   @map("entity_id") @db.Uuid
+  submittedBy   String   @map("submitted_by") @db.Uuid
+  status        String   @default("pending") @db.VarChar(20) // pending | approved | rejected | merged
+  reviewedBy    String?  @map("reviewed_by") @db.Uuid
+  reviewedAt    DateTime? @map("reviewed_at")
+  reviewNote    String?  @map("review_note")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("moderation_queue")
+}
+
+// ─── Consent & Privacy ──────────────────────────────────────────
+
+model Consent {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  consentType   String   @map("consent_type") @db.VarChar(50) // health_data | marketing | analytics
+  version       String   @db.VarChar(20)
+  accepted      Boolean
+  ipAddress     String?  @map("ip_address") @db.VarChar(45)
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("consents")
+}
+
+model PrivacyRequest {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  requestType String   @map("request_type") @db.VarChar(20) // export | deletion
+  status      String   @default("pending") @db.VarChar(20) // pending | processing | completed | failed
+  completedAt DateTime? @map("completed_at")
+  resultUrl   String?   @map("result_url") // signed URL for export
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("privacy_requests")
+}
+
+// ─── Idempotency ────────────────────────────────────────────────
+
+model IdempotencyKey {
+  id              String   @id @default(uuid()) @db.Uuid
+  externalSystem  String   @map("external_system") @db.VarChar(30) // telegram | apple_iap | google_play
+  externalEventId String   @map("external_event_id") @db.VarChar(255)
+  responseStatus  Int?     @map("response_status")
+  responseBody    Json?    @map("response_body")
+  createdAt       DateTime @default(now()) @map("created_at")
+  expiresAt       DateTime @map("expires_at")
+
+  @@unique([externalSystem, externalEventId])
+  @@map("idempotency_keys")
+}
+
+// ─── AI Parse ───────────────────────────────────────────────────
+
+model AiParseResult {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  inputType     String   @map("input_type") @db.VarChar(20) // voice | photo | text
+  inputRef      String?  @map("input_ref") // S3 key or raw text hash
+  rawInput      String?  @map("raw_input")
+  parsedOutput  Json?    @map("parsed_output")
+  confidence    Decimal? @db.Decimal(3, 2)
+  modelVersion  String?  @map("model_version") @db.VarChar(50)
+  userEdits     Json?    @map("user_edits")
+  confirmed     Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_parse_results")
+}
+
+// ─── Outbox & Events ────────────────────────────────────────────
+
+model OutboxEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  eventType   String   @map("event_type") @db.VarChar(100)
+  payload     Json
+  status      String   @default("pending") @db.VarChar(20) // pending | published | failed
+  attempts    Int      @default(0)
+  lastError   String?  @map("last_error")
+  createdAt   DateTime @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([status, createdAt])
+  @@map("outbox_events")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String   @map("actor_id") @db.Uuid
+  actorRole  String   @map("actor_role") @db.VarChar(20)
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.Uuid
+  changes    Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  event     String   @db.VarChar(100)
+  properties Json?
+  sessionId String?  @map("session_id") @db.VarChar(100)
+  platform  String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([event, createdAt])
+  @@index([userId, createdAt])
+  @@map("analytics_events")
+}
+
+// ─── Favorites ──────────────────────────────────────────────────
+
+model Favorite {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  foodId    String?  @map("food_id") @db.Uuid
+  mealLogId String?  @map("meal_log_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, foodId])
+  @@map("favorites")
+}

@@ -1,0 +1,7 @@
+export { AuthModule } from './auth.module';
+export { AuthService } from './auth.service';
+export type { AuthenticatedUser } from './auth.service';
+export { AuthGuard } from './auth.guard';
+export { FirebaseProvider } from './firebase.provider';
+export { Public } from './public.decorator';
+export { CurrentUser } from './current-user.decorator';
