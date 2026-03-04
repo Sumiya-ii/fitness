@@ -70,11 +70,11 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-053    | Telegram connect/settings UX                 | Mobile UI/UX      | C-017,C-030        | No            | Done        | AI    |     |
 | C-054    | Subscription/paywall UI                      | Mobile UI/UX      | C-027              | No            | Done        | AI    |     |
 | C-055    | Settings UX (language, units, privacy)       | Mobile UI/UX      | C-007,C-028,C-030  | No            | Done        | AI    |     |
-| C-056    | Empty/loading/error states pass              | Mobile UX Quality | C-041..C-055       | No            | Not Started | TBD   |     |
-| C-057    | Accessibility pass (a11y + dynamic type)     | Mobile UX Quality | C-041..C-055       | No            | Not Started | TBD   |     |
-| C-058    | Mobile E2E test pack (critical flows)        | Mobile QA         | C-041..C-057       | No            | Not Started | TBD   |     |
-| C-059    | UX telemetry events in mobile client         | Mobile/Data       | C-032,C-041..C-055 | No            | Not Started | TBD   |     |
-| C-060    | UI polish and localization QA (mn/en)        | Mobile UX Quality | C-041..C-059       | No            | Not Started | TBD   |     |
+| C-056    | Empty/loading/error states pass              | Mobile UX Quality | C-041..C-055       | No            | Done        | AI    |     |
+| C-057    | Accessibility pass (a11y + dynamic type)     | Mobile UX Quality | C-041..C-055       | No            | Done        | AI    |     |
+| C-058    | Mobile E2E test pack (critical flows)        | Mobile QA         | C-041..C-057       | No            | Done        | AI    |     |
+| C-059    | UX telemetry events in mobile client         | Mobile/Data       | C-032,C-041..C-055 | No            | Done        | AI    |     |
+| C-060    | UI polish and localization QA (mn/en)        | Mobile UX Quality | C-041..C-059       | No            | Done        | AI    |     |
 
 ## Chunk Details (copy/paste ready)
 
