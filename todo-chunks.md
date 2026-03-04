@@ -23,11 +23,11 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-006    | Auth provider wiring                         | Backend           | C-003,C-004        | No            | Done        | AI    |     |
 | C-007    | User/profile APIs                            | Backend           | C-006              | No            | Done        | AI    |     |
 | C-008    | Goals and target calculation service         | Backend           | C-007              | Yes           | Done        | AI    |     |
-| C-009    | Food core tables and CRUD APIs               | Backend           | C-004              | No            | Not Started | TBD   |     |
-| C-010    | Food search index sync job                   | Backend           | C-009,C-005        | Yes           | Not Started | TBD   |     |
-| C-011    | Text logging API (`FR-020`)                  | Backend           | C-009              | No            | Not Started | TBD   |     |
-| C-012    | Quick add API (`FR-021`)                     | Backend           | C-011              | Yes           | Not Started | TBD   |     |
-| C-013    | Favorites and recents API (`FR-027`)         | Backend           | C-011              | Yes           | Not Started | TBD   |     |
+| C-009    | Food core tables and CRUD APIs               | Backend           | C-004              | No            | Done        | AI    |     |
+| C-010    | Food search index sync job                   | Backend           | C-009,C-005        | Yes           | Done        | AI    |     |
+| C-011    | Text logging API (`FR-020`)                  | Backend           | C-009              | No            | Done        | AI    |     |
+| C-012    | Quick add API (`FR-021`)                     | Backend           | C-011              | Yes           | Done        | AI    |     |
+| C-013    | Favorites and recents API (`FR-027`)         | Backend           | C-011              | Yes           | Done        | AI    |     |
 | C-014    | Barcode lookup API (`FR-022`)                | Backend           | C-009              | Yes           | Not Started | TBD   |     |
 | C-015    | Unknown barcode submission (`FR-023`)        | Backend           | C-014              | Yes           | Not Started | TBD   |     |
 | C-016    | Meal log immutable snapshot rules            | Backend           | C-011              | No            | Not Started | TBD   |     |
