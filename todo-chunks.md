@@ -53,10 +53,10 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-036    | Reliability test pack (`NFR-010..012`)       | QA                | C-019,C-031        | No            | Done        | AI    |     |
 | C-037    | Security/privacy verification pack           | QA                | C-028,C-029        | No            | Done        | AI    |     |
 | C-038    | v1 release checklist and go/no-go report     | PM/QA             | C-001..C-037       | No            | Done        | AI    |     |
-| C-039    | Mobile app shell + navigation                | Mobile UI         | C-001              | No            | Not Started | TBD   |     |
-| C-040    | Design system foundation (tokens/components) | Mobile UI/UX      | C-039              | Yes           | Not Started | TBD   |     |
-| C-041    | Onboarding UX screens                        | Mobile UI/UX      | C-040,C-007,C-008  | No            | Not Started | TBD   |     |
-| C-042    | Auth UI screens and session UX               | Mobile UI/UX      | C-039,C-006        | No            | Not Started | TBD   |     |
+| C-039    | Mobile app shell + navigation                | Mobile UI         | C-001              | No            | Done        | AI    |     |
+| C-040    | Design system foundation (tokens/components) | Mobile UI/UX      | C-039              | Yes           | Done        | AI    |     |
+| C-041    | Onboarding UX screens                        | Mobile UI/UX      | C-040,C-007,C-008  | No            | Done        | AI    |     |
+| C-042    | Auth UI screens and session UX               | Mobile UI/UX      | C-039,C-006        | No            | Done        | AI    |     |
 | C-043    | Food logging home screen UX                  | Mobile UI/UX      | C-040,C-011,C-013  | No            | Not Started | TBD   |     |
 | C-044    | Text search logging flow UI                  | Mobile UI/UX      | C-043,C-011        | No            | Not Started | TBD   |     |
 | C-045    | Quick add flow UI                            | Mobile UI/UX      | C-043,C-012        | Yes           | Not Started | TBD   |     |
