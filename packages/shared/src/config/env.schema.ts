@@ -32,6 +32,8 @@ export const envSchema = z.object({
   TYPESENSE_API_KEY: z.string().optional(),
 
   // STT providers
+  STT_PROVIDER: z.string().optional(),
+  STT_API_KEY: z.string().optional(),
   GOOGLE_STT_CREDENTIALS: z.string().optional(),
   CHIMEGE_API_KEY: z.string().optional(),
 

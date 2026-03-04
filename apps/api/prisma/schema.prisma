@@ -253,16 +253,17 @@ model WorkoutLog {
 // ─── Telegram ───────────────────────────────────────────────────
 
 model TelegramLink {
-  id              String    @id @default(uuid()) @db.Uuid
-  userId          String    @unique @map("user_id") @db.Uuid
-  telegramUserId  String    @unique @map("telegram_user_id")
-  telegramUsername String?  @map("telegram_username")
-  linkCode        String?   @map("link_code") @db.VarChar(20)
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @unique @map("user_id") @db.Uuid
+  telegramUserId   String    @unique @map("telegram_user_id")
+  chatId           String?   @map("chat_id") @db.VarChar(255)
+  telegramUsername String?   @map("telegram_username")
+  linkCode         String?   @map("link_code") @db.VarChar(20)
   linkCodeExpiresAt DateTime? @map("link_code_expires_at")
-  linkedAt        DateTime? @map("linked_at")
-  active          Boolean   @default(true)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  linkedAt         DateTime? @map("linked_at")
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

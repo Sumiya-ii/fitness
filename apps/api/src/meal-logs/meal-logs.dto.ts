@@ -24,6 +24,10 @@ export const quickAddSchema = z.object({
   proteinGrams: z.number().min(0).optional().default(0),
   carbsGrams: z.number().min(0).optional().default(0),
   fatGrams: z.number().min(0).optional().default(0),
+  source: z
+    .enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram'])
+    .optional()
+    .default('quick_add'),
 });
 
 export const mealLogQuerySchema = z.object({

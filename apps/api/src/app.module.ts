@@ -19,6 +19,10 @@ import { AdminModule } from './admin';
 import { NotificationsModule } from './notifications';
 import { AnalyticsModule } from './analytics';
 import { ObservabilityModule } from './observability';
+import { SttModule } from './stt';
+import { VoiceModule } from './voice';
+import { PhotosModule } from './photos';
+import { TelegramModule } from './telegram';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -43,6 +47,10 @@ import { HealthController } from './health/health.controller';
     NotificationsModule,
     AnalyticsModule,
     ObservabilityModule,
+    SttModule,
+    VoiceModule,
+    PhotosModule,
+    TelegramModule,
   ],
   controllers: [HealthController],
   providers: [],

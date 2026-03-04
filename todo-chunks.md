@@ -31,13 +31,13 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-014    | Barcode lookup API (`FR-022`)                | Backend           | C-009              | Yes           | Done        | AI    |     |
 | C-015    | Unknown barcode submission (`FR-023`)        | Backend           | C-014              | Yes           | Done        | AI    |     |
 | C-016    | Meal log immutable snapshot rules            | Backend           | C-011              | No            | Done        | AI    |     |
-| C-017    | Telegram account link flow (`FR-040`)        | Backend           | C-006              | No            | Not Started | TBD   |     |
-| C-018    | Telegram text logging (`FR-041`)             | Backend           | C-017,C-011        | No            | Not Started | TBD   |     |
-| C-019    | Telegram idempotency guard (`FR-045`)        | Backend           | C-018              | No            | Not Started | TBD   |     |
-| C-020    | STT worker abstraction layer                 | AI/Backend        | C-005              | No            | Not Started | TBD   |     |
-| C-021    | In-app voice draft parse API (`FR-024`)      | AI/Backend        | C-020,C-011        | No            | Not Started | TBD   |     |
-| C-022    | Telegram voice note pipeline (`FR-042`)      | AI/Backend        | C-020,C-018        | No            | Not Started | TBD   |     |
-| C-023    | Photo upload + draft parse API (`FR-025`)    | AI/Backend        | C-005,C-011        | No            | Not Started | TBD   |     |
+| C-017    | Telegram account link flow (`FR-040`)        | Backend           | C-006              | No            | Done        | AI    |     |
+| C-018    | Telegram text logging (`FR-041`)             | Backend           | C-017,C-011        | No            | Done        | AI    |     |
+| C-019    | Telegram idempotency guard (`FR-045`)        | Backend           | C-018              | No            | Done        | AI    |     |
+| C-020    | STT worker abstraction layer                 | AI/Backend        | C-005              | No            | Done        | AI    |     |
+| C-021    | In-app voice draft parse API (`FR-024`)      | AI/Backend        | C-020,C-011        | No            | Done        | AI    |     |
+| C-022    | Telegram voice note pipeline (`FR-042`)      | AI/Backend        | C-020,C-018        | No            | Done        | AI    |     |
+| C-023    | Photo upload + draft parse API (`FR-025`)    | AI/Backend        | C-005,C-011        | No            | Done        | AI    |     |
 | C-024    | Daily dashboard API (`FR-030`,`FR-031`)      | Backend           | C-011,C-016        | Yes           | Done        | AI    |     |
 | C-025    | Weight logging + trend API (`FR-032`)        | Backend           | C-007              | Yes           | Done        | AI    |     |
 | C-026    | Weekly summary API (`FR-033`)                | Backend           | C-024,C-025        | No            | Done        | AI    |     |
@@ -553,6 +553,15 @@ These items cannot be done by the AI and need to be completed by you.
 - [ ] **Set up Sentry** — Create a Sentry project and add `SENTRY_DSN` to `.env` for error tracking. All unhandled exceptions will be reported automatically.
 - [ ] **Set up OpenTelemetry** — If using distributed tracing, deploy an OTLP collector (e.g., Jaeger, Grafana Tempo) and set `OTEL_EXPORTER_OTLP_ENDPOINT` in `.env`.
 - [ ] **Set up PostHog (optional)** — For product analytics aggregation, configure `POSTHOG_API_KEY` and `POSTHOG_HOST` in `.env`. The analytics events are currently stored in the DB; PostHog integration would be a future enhancement.
+
+### After C-017..C-023 completion
+
+- [ ] **Create Telegram Bot** — Go to @BotFather on Telegram, create a bot, and set `TELEGRAM_BOT_TOKEN` in `.env`.
+- [ ] **Set Telegram Webhook URL** — After deploying, configure the webhook URL via: `https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://your-domain/api/v1/telegram/webhook`
+- [ ] **Test Telegram linking** — Use the in-app link code flow: call `POST /api/v1/telegram/link-code` to get a 6-digit code, then send it to the bot on Telegram.
+- [ ] **STT Provider** — Configure `STT_PROVIDER` (e.g., `chimege` or `google`) and `STT_API_KEY` for voice-to-text. The STT service currently returns a placeholder when no provider is configured.
+- [ ] **S3 Storage** — Configure `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` for photo upload storage. Currently photo uploads pass a reference path in the job data; actual S3 upload needs provider-specific implementation.
+- [ ] **Run Prisma migration** — The `TelegramLink` model was updated with a `chatId` field. Run `npm run db:migrate -w @coach/api` after connecting to the database.
 
 ## Weekly Tracking Snapshot
 

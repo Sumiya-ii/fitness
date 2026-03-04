@@ -74,7 +74,7 @@ export class MealLogsService {
       data: {
         userId,
         mealType: dto.mealType,
-        source: 'quick_add',
+        source: dto.source ?? 'quick_add',
         loggedAt: dto.loggedAt ? new Date(dto.loggedAt) : new Date(),
         note: dto.note,
         totalCalories: dto.calories,

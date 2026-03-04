@@ -136,6 +136,7 @@ describe('MealLogsService', () => {
         proteinGrams: 30,
         carbsGrams: 50,
         fatGrams: 15,
+        source: 'quick_add',
       });
 
       expect(result.totalCalories).toBe(500);
