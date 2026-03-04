@@ -45,9 +45,9 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-028    | Consent + privacy request APIs               | Backend           | C-006,C-004        | Yes           | Done        | AI    |     |
 | C-029    | Admin moderation APIs (`FR-060..062`)        | Backend           | C-009,C-015        | No            | Done        | AI    |     |
 | C-030    | Notification preference APIs (`FR-044`)      | Backend           | C-007              | Yes           | Done        | AI    |     |
-| C-031    | Reminder scheduler jobs                      | Backend           | C-005,C-030,C-017  | No            | Not Started | TBD   |     |
+| C-031    | Reminder scheduler jobs                      | Backend           | C-005,C-030,C-017  | No            | Done        | AI    |     |
 | C-032    | Analytics event pipeline                     | Data              | C-001,C-004        | Yes           | Done        | AI    |     |
-| C-033    | API contract and OpenAPI publish             | Platform          | C-007..C-031       | No            | Not Started | TBD   |     |
+| C-033    | API contract and OpenAPI publish             | Platform          | C-007..C-031       | No            | Done        | AI    |     |
 | C-034    | Error tracking + observability wiring        | Platform          | C-001,C-003        | Yes           | Done        | AI    |     |
 | C-035    | Performance test pack (`NFR-001..003`)       | QA                | C-024,C-011,C-013  | No            | Not Started | TBD   |     |
 | C-036    | Reliability test pack (`NFR-010..012`)       | QA                | C-019,C-031        | No            | Not Started | TBD   |     |

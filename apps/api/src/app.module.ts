@@ -23,6 +23,7 @@ import { SttModule } from './stt';
 import { VoiceModule } from './voice';
 import { PhotosModule } from './photos';
 import { TelegramModule } from './telegram';
+import { RemindersModule } from './reminders';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -51,6 +52,7 @@ import { HealthController } from './health/health.controller';
     VoiceModule,
     PhotosModule,
     TelegramModule,
+    RemindersModule,
   ],
   controllers: [HealthController],
   providers: [],
