@@ -11,7 +11,12 @@ import { FavoritesModule } from './favorites';
 import { BarcodesModule } from './barcodes';
 import { DashboardModule } from './dashboard';
 import { WeightLogsModule } from './weight-logs';
+import { WeeklySummaryModule } from './weekly-summary';
 import { SearchModule } from './search';
+import { SubscriptionsModule } from './subscriptions';
+import { PrivacyModule } from './privacy';
+import { AdminModule } from './admin';
+import { NotificationsModule } from './notifications';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -28,7 +33,12 @@ import { HealthController } from './health/health.controller';
     BarcodesModule,
     DashboardModule,
     WeightLogsModule,
+    WeeklySummaryModule,
     SearchModule,
+    SubscriptionsModule,
+    PrivacyModule,
+    AdminModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [],

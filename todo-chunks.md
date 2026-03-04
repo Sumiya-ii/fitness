@@ -40,11 +40,11 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-023    | Photo upload + draft parse API (`FR-025`)    | AI/Backend        | C-005,C-011        | No            | Not Started | TBD   |     |
 | C-024    | Daily dashboard API (`FR-030`,`FR-031`)      | Backend           | C-011,C-016        | Yes           | Done        | AI    |     |
 | C-025    | Weight logging + trend API (`FR-032`)        | Backend           | C-007              | Yes           | Done        | AI    |     |
-| C-026    | Weekly summary API (`FR-033`)                | Backend           | C-024,C-025        | No            | Not Started | TBD   |     |
-| C-027    | Subscription entitlements (`FR-050..052`)    | Backend           | C-006              | No            | Not Started | TBD   |     |
-| C-028    | Consent + privacy request APIs               | Backend           | C-006,C-004        | Yes           | Not Started | TBD   |     |
-| C-029    | Admin moderation APIs (`FR-060..062`)        | Backend           | C-009,C-015        | No            | Not Started | TBD   |     |
-| C-030    | Notification preference APIs (`FR-044`)      | Backend           | C-007              | Yes           | Not Started | TBD   |     |
+| C-026    | Weekly summary API (`FR-033`)                | Backend           | C-024,C-025        | No            | Done        | AI    |     |
+| C-027    | Subscription entitlements (`FR-050..052`)    | Backend           | C-006              | No            | Done        | AI    |     |
+| C-028    | Consent + privacy request APIs               | Backend           | C-006,C-004        | Yes           | Done        | AI    |     |
+| C-029    | Admin moderation APIs (`FR-060..062`)        | Backend           | C-009,C-015        | No            | Done        | AI    |     |
+| C-030    | Notification preference APIs (`FR-044`)      | Backend           | C-007              | Yes           | Done        | AI    |     |
 | C-031    | Reminder scheduler jobs                      | Backend           | C-005,C-030,C-017  | No            | Not Started | TBD   |     |
 | C-032    | Analytics event pipeline                     | Data              | C-001,C-004        | Yes           | Not Started | TBD   |     |
 | C-033    | API contract and OpenAPI publish             | Platform          | C-007..C-031       | No            | Not Started | TBD   |     |
@@ -539,6 +539,14 @@ These items cannot be done by the AI and need to be completed by you.
 - [ ] **Test barcode scanning** — Acquire a few local product barcodes and test the `/api/v1/barcodes/:code` lookup flow manually.
 - [ ] **Test the dashboard** — After logging a few test meals, verify `/api/v1/dashboard` returns correct consumed/remaining totals matching your test data.
 - [ ] **Test weight trend** — Log weights for a few days and verify `/api/v1/weight-logs/trend` returns sensible weekly averages.
+
+### After C-026..C-030 completion
+
+- [ ] **Subscription webhook verification** — Before production, implement real Apple/Google receipt verification in the webhook handler. Currently the webhook endpoint is `@Public()` and trusts the payload.
+- [ ] **Admin RBAC** — The admin moderation endpoints currently allow any authenticated user. Add role-based access control (e.g., `admin` role check) before exposing to production.
+- [ ] **Privacy legal copy** — Provide the consent text versions (health_data, marketing, analytics) and their exact legal wording for each locale (mn/en). These need legal review.
+- [ ] **Data export/deletion jobs** — The privacy service creates request records but doesn't actually process them. Background jobs for data export (generate JSON/CSV, upload to S3) and account deletion need to be wired into the worker.
+- [ ] **App Store / Google Play setup** — Set up in-app purchase products and subscription tiers in both stores.
 
 ## Weekly Tracking Snapshot
 
