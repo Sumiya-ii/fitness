@@ -28,9 +28,9 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-011    | Text logging API (`FR-020`)                  | Backend           | C-009              | No            | Done        | AI    |     |
 | C-012    | Quick add API (`FR-021`)                     | Backend           | C-011              | Yes           | Done        | AI    |     |
 | C-013    | Favorites and recents API (`FR-027`)         | Backend           | C-011              | Yes           | Done        | AI    |     |
-| C-014    | Barcode lookup API (`FR-022`)                | Backend           | C-009              | Yes           | Not Started | TBD   |     |
-| C-015    | Unknown barcode submission (`FR-023`)        | Backend           | C-014              | Yes           | Not Started | TBD   |     |
-| C-016    | Meal log immutable snapshot rules            | Backend           | C-011              | No            | Not Started | TBD   |     |
+| C-014    | Barcode lookup API (`FR-022`)                | Backend           | C-009              | Yes           | Done        | AI    |     |
+| C-015    | Unknown barcode submission (`FR-023`)        | Backend           | C-014              | Yes           | Done        | AI    |     |
+| C-016    | Meal log immutable snapshot rules            | Backend           | C-011              | No            | Done        | AI    |     |
 | C-017    | Telegram account link flow (`FR-040`)        | Backend           | C-006              | No            | Not Started | TBD   |     |
 | C-018    | Telegram text logging (`FR-041`)             | Backend           | C-017,C-011        | No            | Not Started | TBD   |     |
 | C-019    | Telegram idempotency guard (`FR-045`)        | Backend           | C-018              | No            | Not Started | TBD   |     |
@@ -38,8 +38,8 @@ Source of truth reference: `/Users/sumiyaganbaatar/Desktop/fitness/requirements.
 | C-021    | In-app voice draft parse API (`FR-024`)      | AI/Backend        | C-020,C-011        | No            | Not Started | TBD   |     |
 | C-022    | Telegram voice note pipeline (`FR-042`)      | AI/Backend        | C-020,C-018        | No            | Not Started | TBD   |     |
 | C-023    | Photo upload + draft parse API (`FR-025`)    | AI/Backend        | C-005,C-011        | No            | Not Started | TBD   |     |
-| C-024    | Daily dashboard API (`FR-030`,`FR-031`)      | Backend           | C-011,C-016        | Yes           | Not Started | TBD   |     |
-| C-025    | Weight logging + trend API (`FR-032`)        | Backend           | C-007              | Yes           | Not Started | TBD   |     |
+| C-024    | Daily dashboard API (`FR-030`,`FR-031`)      | Backend           | C-011,C-016        | Yes           | Done        | AI    |     |
+| C-025    | Weight logging + trend API (`FR-032`)        | Backend           | C-007              | Yes           | Done        | AI    |     |
 | C-026    | Weekly summary API (`FR-033`)                | Backend           | C-024,C-025        | No            | Not Started | TBD   |     |
 | C-027    | Subscription entitlements (`FR-050..052`)    | Backend           | C-006              | No            | Not Started | TBD   |     |
 | C-028    | Consent + privacy request APIs               | Backend           | C-006,C-004        | Yes           | Not Started | TBD   |     |
@@ -530,8 +530,15 @@ These items cannot be done by the AI and need to be completed by you.
 - [ ] **Set up Firebase project** — Create a Firebase project in the Firebase Console. Enable Email/Phone OTP, Google, and Apple sign-in providers. Download the service account key and fill in `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` in `.env`.
 - [ ] **Run the first database migration** — After setting up `.env`, run: `npm run db:migrate -w @coach/api` to create all tables.
 - [ ] **Verify the API starts** — Run `npm run start:dev -w @coach/api` and visit `http://localhost:3000/api/v1/health` to confirm it returns `{ status: "ok" }`.
-- [ ] **Push to GitHub** — Commit the scaffold and push to the `main` branch so CI pipeline (`.github/workflows/ci.yml`) runs on subsequent PRs.
 - [ ] **Review the Prisma schema** — Check `apps/api/prisma/schema.prisma` and confirm all entities match your expectations from the PRD Section 9.
+
+### After C-009..C-025 completion
+
+- [ ] **Set up Typesense** — Install and run Typesense locally (Docker recommended: `docker run -p 8108:8108 typesense/typesense:0.25.2 --data-dir=/data --api-key=your-api-key`). Fill in `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_API_KEY` in `.env`.
+- [ ] **Seed the food database** — After running migrations, prepare initial Mongolian food data (CSV or JSON) and load via the seed script or admin API. Minimum ~100 common Mongolian foods for testing.
+- [ ] **Test barcode scanning** — Acquire a few local product barcodes and test the `/api/v1/barcodes/:code` lookup flow manually.
+- [ ] **Test the dashboard** — After logging a few test meals, verify `/api/v1/dashboard` returns correct consumed/remaining totals matching your test data.
+- [ ] **Test weight trend** — Log weights for a few days and verify `/api/v1/weight-logs/trend` returns sensible weekly averages.
 
 ## Weekly Tracking Snapshot
 

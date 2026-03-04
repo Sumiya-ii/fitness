@@ -8,6 +8,9 @@ import { TargetsModule } from './targets';
 import { FoodsModule } from './foods';
 import { MealLogsModule } from './meal-logs';
 import { FavoritesModule } from './favorites';
+import { BarcodesModule } from './barcodes';
+import { DashboardModule } from './dashboard';
+import { WeightLogsModule } from './weight-logs';
 import { SearchModule } from './search';
 import { HealthController } from './health/health.controller';
 
@@ -22,6 +25,9 @@ import { HealthController } from './health/health.controller';
     FoodsModule,
     MealLogsModule,
     FavoritesModule,
+    BarcodesModule,
+    DashboardModule,
+    WeightLogsModule,
     SearchModule,
   ],
   controllers: [HealthController],
