@@ -11,6 +11,8 @@ export interface ReminderJobData {
   userId: string;
   type: ReminderType;
   channels: string[];
+  chatId?: string;
+  locale?: string;
 }
 
 /**
@@ -78,12 +80,19 @@ export class RemindersService {
         continue;
       }
 
+      const [tgLink, profile] = await Promise.all([
+        this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
+      ]);
+
       await this.reminderQueue.add(
         'morning',
         {
           userId: pref.userId,
           type: 'morning' as ReminderType,
           channels: pref.channels,
+          chatId: tgLink?.active ? (tgLink.chatId ?? undefined) : undefined,
+          locale: profile?.locale ?? undefined,
         } satisfies ReminderJobData,
         { jobId: `morning-${pref.userId}-${Date.now()}` },
       );
@@ -125,12 +134,19 @@ export class RemindersService {
 
       if (mealCount > 0) continue;
 
+      const [tgLink, profile] = await Promise.all([
+        this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
+      ]);
+
       await this.reminderQueue.add(
         'evening',
         {
           userId: pref.userId,
           type: 'evening' as ReminderType,
           channels: pref.channels,
+          chatId: tgLink?.active ? (tgLink.chatId ?? undefined) : undefined,
+          locale: profile?.locale ?? undefined,
         } satisfies ReminderJobData,
         { jobId: `evening-${pref.userId}-${Date.now()}` },
       );

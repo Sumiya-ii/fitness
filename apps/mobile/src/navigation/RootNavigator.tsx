@@ -7,7 +7,6 @@ import { SetupStack } from './SetupStack';
 import { MainStack } from './MainStack';
 
 function RootContent() {
-  const onboardingComplete = useOnboardingStore((s) => s.onboardingComplete);
   const profileSetupComplete = useOnboardingStore((s) => s.profileSetupComplete);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
@@ -27,7 +26,7 @@ export function RootNavigator() {
 
   if (onboardingComplete === null || isLoading) {
     return (
-      <View className="flex-1 bg-surface dark:bg-slate-900 items-center justify-center">
+      <View className="flex-1 bg-slate-950 items-center justify-center">
         <ActivityIndicator size="large" color="#22c55e" />
       </View>
     );

@@ -5,20 +5,30 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  FadeInDown,
+} from 'react-native-reanimated';
 import {
   ProgressRing,
-  MacroBar,
+  CircularMacro,
   Card,
-  Button,
   EmptyState,
   LoadingScreen,
 } from '../components/ui';
 import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
 import { api } from '../api';
+import { useLocale } from '../i18n';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: 'Breakfast',
@@ -27,26 +37,25 @@ const MEAL_TYPE_LABELS: Record<string, string> = {
   snack: 'Snack',
 };
 
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
+const MEAL_TYPE_ICONS: Record<string, string> = {
+  breakfast: 'sunny-outline',
+  lunch: 'restaurant-outline',
+  dinner: 'moon-outline',
+  snack: 'cafe-outline',
+};
 
-function formatDisplayDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-}
+const MEAL_TYPE_COLORS: Record<string, string> = {
+  breakfast: '#f59e0b',
+  lunch: '#22c55e',
+  dinner: '#6366f1',
+  snack: '#ec4899',
+};
 
 export function HomeScreen() {
+  const { t } = useLocale();
   const navigation = useNavigation();
   const [displayName, setDisplayName] = useState<string>('there');
-  const { data, isLoading, error, fetchDashboard } = useDashboardStore();
+  const { data, isLoading, fetchDashboard } = useDashboardStore();
 
   const loadProfile = useCallback(async () => {
     try {
@@ -74,8 +83,8 @@ export function HomeScreen() {
     (navigation as { navigate: (s: string) => void }).navigate('Log');
   };
 
-  const handleScan = () => {
-    (navigation as { navigate: (s: string) => void }).navigate('Search');
+  const handleWeeklySummary = () => {
+    (navigation as { navigate: (s: string) => void }).navigate('WeeklySummary');
   };
 
   if (isLoading && !data) {
@@ -84,12 +93,10 @@ export function HomeScreen() {
 
   const targets = data?.targets ?? { calories: 2000, protein: 150, carbs: 200, fat: 65 };
   const consumed = data?.consumed ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  const remaining = Math.max(targets.calories - consumed.calories, 0);
   const calorieProgress = targets.calories > 0
     ? Math.min(consumed.calories / targets.calories, 1)
     : 0;
-  const centerLabel = targets.calories > 0
-    ? `${consumed.calories} / ${targets.calories}`
-    : '0';
 
   const mealsByType = (data?.meals ?? []).reduce<Record<string, DashboardMeal[]>>(
     (acc, m) => {
@@ -104,10 +111,11 @@ export function HomeScreen() {
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack'];
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+    <View className="flex-1 bg-slate-950">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={isLoading && !!data}
@@ -116,103 +124,201 @@ export function HomeScreen() {
           />
         }
       >
-        <View className="px-4 pt-4 pb-2">
-          <Text className="text-2xl font-sans-bold text-text dark:text-slate-100">
-            {getGreeting()}, {displayName}
-          </Text>
-          <Text className="mt-1 text-base text-text-secondary dark:text-slate-400">
-            {data?.date ? formatDisplayDate(data.date) : formatDisplayDate(new Date().toISOString().split('T')[0])}
-          </Text>
-        </View>
+        {/* Hero Section with Gradient */}
+        <LinearGradient
+          colors={['#0f172a', '#1e293b', '#0f172a']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <SafeAreaView edges={['top']}>
+            {/* Header */}
+            <View className="px-5 pt-2 pb-1">
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <Text className="text-base text-slate-400 font-sans-medium">
+                    {new Date().getHours() < 12
+                      ? t('dashboard.greeting')
+                      : new Date().getHours() < 18
+                        ? t('dashboard.greetingAfternoon')
+                        : t('dashboard.greetingEvening')}
+                  </Text>
+                  <Text className="text-2xl font-sans-bold text-white mt-0.5">
+                    {displayName}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={handleWeeklySummary}
+                  className="h-10 w-10 items-center justify-center rounded-full bg-white/10"
+                >
+                  <Ionicons name="stats-chart" size={20} color="#22c55e" />
+                </Pressable>
+              </View>
+            </View>
 
-        <View className="items-center py-6">
-          <ProgressRing
-            progress={calorieProgress}
-            size={160}
-            color="#22c55e"
-            centerLabel={centerLabel}
-            label="kcal"
-          />
-        </View>
+            {/* Calorie Ring */}
+            <View className="items-center pt-4 pb-2">
+              <ProgressRing
+                progress={calorieProgress}
+                size={SCREEN_WIDTH * 0.52}
+                color="#22c55e"
+                gradientEnd="#4ade80"
+                backgroundColor="#334155"
+                strokeWidth={14}
+                centerLabel={`${remaining}`}
+                centerSubLabel="remaining"
+                centerCaption={`${consumed.calories} eaten`}
+              />
+            </View>
 
-        <View className="px-4 gap-4">
-          <View className="gap-1">
-            <MacroBar
-              label="Protein"
-              current={consumed.protein}
-              target={targets.protein}
-              color="#3b82f6"
-              size="large"
-            />
-            <View className="h-2" />
-            <MacroBar
-              label="Carbs"
-              current={consumed.carbs}
-              target={targets.carbs}
-              color="#f59e0b"
-            />
-            <MacroBar
-              label="Fat"
-              current={consumed.fat}
-              target={targets.fat}
-              color="#ec4899"
-            />
-          </View>
+            {/* Macro Circles Row */}
+            <Animated.View
+              entering={FadeInDown.delay(200).duration(400)}
+              className="flex-row justify-evenly px-4 pt-4 pb-6"
+            >
+              <CircularMacro
+                label={t('dashboard.protein')}
+                current={consumed.protein}
+                target={targets.protein}
+                color="#3b82f6"
+              />
+              <CircularMacro
+                label={t('dashboard.carbs')}
+                current={consumed.carbs}
+                target={targets.carbs}
+                color="#f59e0b"
+              />
+              <CircularMacro
+                label={t('dashboard.fat')}
+                current={consumed.fat}
+                target={targets.fat}
+                color="#ec4899"
+              />
+            </Animated.View>
+          </SafeAreaView>
+        </LinearGradient>
 
-          <View className="flex-row flex-wrap gap-2 pt-2">
+        {/* Quick Actions */}
+        <View className="px-4 -mt-3">
+          <View className="flex-row gap-2">
             <Pressable
               onPress={handleLogMeal}
-              className="flex-row items-center gap-2 rounded-full bg-primary-100 px-4 py-2 dark:bg-primary-900/40"
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-primary-500 px-4 py-3.5 shadow-lg shadow-primary-500/30"
             >
-              <Ionicons name="add-circle" size={20} color="#16a34a" />
-              <Text className="font-sans-medium text-primary-700 dark:text-primary-300">
-                Log Meal
-              </Text>
+              <Ionicons name="add-circle" size={20} color="#ffffff" />
+              <Text className="font-sans-semibold text-white">Log Meal</Text>
             </Pressable>
             <Pressable
               onPress={handleQuickAdd}
-              className="flex-row items-center gap-2 rounded-full bg-slate-100 px-4 py-2 dark:bg-slate-700"
+              className="flex-row items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3.5 border border-white/10"
             >
-              <Ionicons name="flash" size={20} color="#475569" />
-              <Text className="font-sans-medium text-text dark:text-slate-300">
-                Quick Add
-              </Text>
+              <Ionicons name="flash" size={18} color="#f59e0b" />
+              <Text className="font-sans-medium text-white">Quick</Text>
             </Pressable>
             <Pressable
-              onPress={handleScan}
-              className="flex-row items-center gap-2 rounded-full bg-slate-100 px-4 py-2 dark:bg-slate-700"
+              onPress={() => (navigation as { navigate: (s: string) => void }).navigate('Log')}
+              className="flex-row items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3.5 border border-white/10"
             >
-              <Ionicons name="barcode" size={20} color="#475569" />
-              <Text className="font-sans-medium text-text dark:text-slate-300">
-                Scan
-              </Text>
+              <Ionicons name="barcode-outline" size={18} color="#a78bfa" />
+              <Text className="font-sans-medium text-white">Scan</Text>
             </Pressable>
           </View>
+        </View>
 
-          <Text className="pt-4 text-lg font-sans-semibold text-text dark:text-slate-100">
-            Today&apos;s Meals
-          </Text>
+        {/* Today's Meals */}
+        <View className="px-4 pt-6">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-lg font-sans-semibold text-white">
+              {t('dashboard.todaysMeals')}
+            </Text>
+            <Text className="text-sm text-slate-400 font-sans-medium">
+              {consumed.calories} kcal total
+            </Text>
+          </View>
 
           {mealOrder.some((t) => mealsByType[t]?.length) ? (
-            mealOrder.map((type) => {
+            mealOrder.map((type, index) => {
               const meals = mealsByType[type] ?? [];
               if (meals.length === 0) return null;
               return (
-                <MealCard key={type} type={type} meals={meals} />
+                <Animated.View
+                  key={type}
+                  entering={FadeInDown.delay(100 * index).duration(400)}
+                >
+                  <MealCard type={type} meals={meals} />
+                </Animated.View>
               );
             })
           ) : (
-            <EmptyState
-              icon="nutrition"
-              title="No meals logged yet"
-              subtitle="Log your first meal to see your progress"
-              actionLabel="Log Meal"
-              onAction={handleLogMeal}
-            />
+            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-6 items-center">
+              <View className="h-16 w-16 rounded-full bg-slate-800 items-center justify-center mb-4">
+                <Ionicons name="nutrition-outline" size={32} color="#475569" />
+              </View>
+              <Text className="text-base font-sans-semibold text-white mb-1">
+                No meals logged yet
+              </Text>
+              <Text className="text-sm text-slate-400 text-center mb-4">
+                Log your first meal to track your daily nutrition
+              </Text>
+              <Pressable
+                onPress={handleLogMeal}
+                className="rounded-full bg-primary-500 px-6 py-2.5"
+              >
+                <Text className="font-sans-semibold text-white text-sm">
+                  Log Meal
+                </Text>
+              </Pressable>
+            </View>
           )}
         </View>
+
+        {/* Calorie Budget by Meal (CalAI-style targets) */}
+        <View className="px-4 pt-6">
+          <Text className="text-lg font-sans-semibold text-white mb-3">
+            {t('dashboard.caloriesBudget')}
+          </Text>
+          <View className="flex-row gap-2">
+            {mealOrder.map((type) => {
+              const meals = mealsByType[type] ?? [];
+              const mealCals = meals.reduce((s, m) => s + m.totalCalories, 0);
+              const budgetPerMeal = Math.round(targets.calories * (type === 'snack' ? 0.1 : 0.3));
+              const used = budgetPerMeal > 0 ? Math.min(mealCals / budgetPerMeal, 1) : 0;
+              return (
+                <View
+                  key={type}
+                  className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-3 items-center"
+                >
+                  <View
+                    className="h-9 w-9 rounded-full items-center justify-center mb-2"
+                    style={{ backgroundColor: `${MEAL_TYPE_COLORS[type]}20` }}
+                  >
+                    <Ionicons
+                      name={MEAL_TYPE_ICONS[type] as keyof typeof Ionicons.glyphMap}
+                      size={18}
+                      color={MEAL_TYPE_COLORS[type]}
+                    />
+                  </View>
+                  <Text className="text-xs text-slate-400 font-sans-medium mb-1">
+                    {MEAL_TYPE_LABELS[type]}
+                  </Text>
+                  <Text className="text-sm font-sans-bold text-white">
+                    {mealCals}
+                  </Text>
+                  <View className="w-full h-1 rounded-full bg-slate-700 mt-2 overflow-hidden">
+                    <View
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${used * 100}%`,
+                        backgroundColor: MEAL_TYPE_COLORS[type],
+                      }}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -224,51 +330,97 @@ interface MealCardProps {
 function MealCard({ type, meals }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
-  const foodNames = meals.flatMap((m) => m.items.map((i) => i.snapshotFoodName)).filter(Boolean);
+  const totalProtein = meals.reduce((s, m) => s + m.totalProtein, 0);
+  const foodNames = meals
+    .flatMap((m) => m.items.map((i) => i.snapshotFoodName))
+    .filter(Boolean);
+
+  const iconScale = useSharedValue(1);
+  const chevronRotation = useSharedValue(0);
+
+  useEffect(() => {
+    chevronRotation.value = withSpring(expanded ? 180 : 0, {
+      damping: 15,
+      stiffness: 200,
+    });
+  }, [expanded, chevronRotation]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.value}deg` }],
+  }));
+
+  const handlePress = () => {
+    iconScale.value = withSpring(1.1, {}, () => {
+      iconScale.value = withSpring(1);
+    });
+    setExpanded((e) => !e);
+  };
+
+  const color = MEAL_TYPE_COLORS[type] ?? '#22c55e';
 
   return (
-    <Card
-      pressable
-      onPress={() => setExpanded((e) => !e)}
-      className="mb-3"
+    <Pressable
+      onPress={handlePress}
+      className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 mb-3"
     >
-      <View className="flex-row items-center justify-between">
-        <Text className="font-sans-semibold text-text dark:text-slate-100">
-          {MEAL_TYPE_LABELS[type] ?? type}
-        </Text>
-        <Text className="text-sm text-text-secondary dark:text-slate-400">
-          {totalCal} kcal
-        </Text>
+      <View className="flex-row items-center">
+        <View
+          className="h-10 w-10 rounded-full items-center justify-center mr-3"
+          style={{ backgroundColor: `${color}20` }}
+        >
+          <Ionicons
+            name={MEAL_TYPE_ICONS[type] as keyof typeof Ionicons.glyphMap}
+            size={20}
+            color={color}
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="font-sans-semibold text-white text-base">
+            {MEAL_TYPE_LABELS[type] ?? type}
+          </Text>
+          <Text
+            className="text-sm text-slate-400 mt-0.5"
+            numberOfLines={expanded ? undefined : 1}
+          >
+            {foodNames.join(', ') || 'Quick add'}
+          </Text>
+        </View>
+        <View className="items-end">
+          <Text className="text-base font-sans-bold text-white">
+            {totalCal}
+          </Text>
+          <Text className="text-xs text-slate-400">kcal</Text>
+        </View>
+        <Animated.View style={chevronStyle} className="ml-2">
+          <Ionicons name="chevron-down" size={18} color="#64748b" />
+        </Animated.View>
       </View>
-      <Text
-        className="mt-1 text-sm text-text-secondary dark:text-slate-400"
-        numberOfLines={expanded ? undefined : 1}
-      >
-        {foodNames.join(', ') || 'Quick add'}
-      </Text>
+
       {expanded && (
-        <View className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-600">
+        <View className="mt-3 pt-3 border-t border-slate-800">
           {meals.flatMap((m) =>
             m.items.map((item) => (
-              <View key={item.id} className="flex-row justify-between py-1">
-                <Text className="text-sm text-text dark:text-slate-200">
-                  {item.snapshotFoodName}
-                </Text>
-                <Text className="text-sm text-text-secondary dark:text-slate-400">
+              <View key={item.id} className="flex-row items-center justify-between py-2">
+                <View className="flex-row items-center flex-1 mr-4">
+                  <View className="h-2 w-2 rounded-full mr-3" style={{ backgroundColor: color }} />
+                  <Text className="text-sm text-slate-200 flex-1" numberOfLines={1}>
+                    {item.snapshotFoodName}
+                  </Text>
+                </View>
+                <Text className="text-sm font-sans-medium text-white">
                   {item.snapshotCalories} kcal
                 </Text>
               </View>
             ))
           )}
+          <View className="flex-row items-center justify-between pt-2 mt-1 border-t border-slate-800/50">
+            <Text className="text-xs text-slate-500">Total protein</Text>
+            <Text className="text-sm font-sans-medium text-blue-400">
+              {totalProtein}g
+            </Text>
+          </View>
         </View>
       )}
-      <View className="mt-2 flex-row justify-end">
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color="#94a3b8"
-        />
-      </View>
-    </Card>
+    </Pressable>
   );
 }

@@ -30,22 +30,27 @@ model User {
   privacyRequests      PrivacyRequest[]
   favorites            Favorite[]
   aiParseResults       AiParseResult[]
+  qpayInvoices         QPayInvoice[]
 
   @@map("users")
 }
 
 model Profile {
-  id            String   @id @default(uuid()) @db.Uuid
-  userId        String   @unique @map("user_id") @db.Uuid
-  displayName   String?  @map("display_name")
-  locale        String   @default("mn") @db.VarChar(5)
-  unitSystem    String   @default("metric") @map("unit_system") @db.VarChar(10)
-  gender        String?  @db.VarChar(20)
-  birthDate     DateTime? @map("birth_date") @db.Date
-  heightCm      Decimal? @map("height_cm") @db.Decimal(5, 1)
-  activityLevel String?  @map("activity_level") @db.VarChar(30)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @unique @map("user_id") @db.Uuid
+  displayName    String?  @map("display_name")
+  locale         String   @default("mn") @db.VarChar(5)
+  unitSystem     String   @default("metric") @map("unit_system") @db.VarChar(10)
+  gender         String?  @db.VarChar(20)
+  birthDate      DateTime? @map("birth_date") @db.Date
+  heightCm       Decimal? @map("height_cm") @db.Decimal(5, 1)
+  weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 1)
+  goalWeightKg   Decimal? @map("goal_weight_kg") @db.Decimal(5, 1)
+  activityLevel  String?  @map("activity_level") @db.VarChar(30)
+  dietPreference String?  @map("diet_preference") @db.VarChar(30)
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -310,7 +315,7 @@ model Subscription {
   userId          String   @unique @map("user_id") @db.Uuid
   tier            String   @default("free") @db.VarChar(20) // free | pro
   status          String   @default("active") @db.VarChar(20) // active | canceled | expired | past_due
-  provider        String?  @db.VarChar(20) // apple | google
+  provider        String?  @db.VarChar(20) // apple | google | qpay
   providerSubId   String?  @map("provider_sub_id")
   currentPeriodStart DateTime? @map("current_period_start")
   currentPeriodEnd   DateTime? @map("current_period_end")
@@ -335,6 +340,31 @@ model SubscriptionLedger {
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@map("subscription_ledger")
+}
+
+// ─── QPay ───────────────────────────────────────────────────────
+
+model QPayInvoice {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  plan            String   @db.VarChar(20) // monthly | yearly
+  amountMnt       Int      @map("amount_mnt")
+  qpayInvoiceId   String?  @map("qpay_invoice_id") @db.VarChar(255)
+  senderInvoiceNo String   @unique @map("sender_invoice_no") @db.VarChar(50)
+  qrText          String?  @map("qr_text") @db.Text
+  qrImage         String?  @map("qr_image") @db.Text
+  urls            Json?    // bank deeplink URLs
+  status          String   @default("pending") @db.VarChar(20) // pending | paid | expired | canceled
+  paidAt          DateTime? @map("paid_at")
+  qpayPaymentId   String?  @map("qpay_payment_id") @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([qpayInvoiceId])
+  @@map("qpay_invoices")
 }
 
 // ─── Moderation ─────────────────────────────────────────────────
@@ -391,7 +421,7 @@ model PrivacyRequest {
 
 model IdempotencyKey {
   id              String   @id @default(uuid()) @db.Uuid
-  externalSystem  String   @map("external_system") @db.VarChar(30) // telegram | apple_iap | google_play
+  externalSystem  String   @map("external_system") @db.VarChar(30) // telegram | apple_iap | google_play | qpay
   externalEventId String   @map("external_event_id") @db.VarChar(255)
   responseStatus  Int?     @map("response_status")
   responseBody    Json?    @map("response_body")

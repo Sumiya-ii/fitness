@@ -28,7 +28,10 @@ export class ProfileService {
         ...(dto.gender !== undefined && { gender: dto.gender }),
         ...(dto.birthDate !== undefined && { birthDate: new Date(dto.birthDate) }),
         ...(dto.heightCm !== undefined && { heightCm: dto.heightCm }),
+        ...(dto.weightKg !== undefined && { weightKg: dto.weightKg }),
+        ...(dto.goalWeightKg !== undefined && { goalWeightKg: dto.goalWeightKg }),
         ...(dto.activityLevel !== undefined && { activityLevel: dto.activityLevel }),
+        ...(dto.dietPreference !== undefined && { dietPreference: dto.dietPreference }),
       },
     });
 
@@ -44,7 +47,11 @@ export class ProfileService {
     gender: string | null;
     birthDate: Date | null;
     heightCm: unknown;
+    weightKg: unknown;
+    goalWeightKg: unknown;
     activityLevel: string | null;
+    dietPreference: string | null;
+    onboardingCompletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }) {
@@ -57,7 +64,11 @@ export class ProfileService {
       gender: profile.gender,
       birthDate: profile.birthDate?.toISOString().split('T')[0] ?? null,
       heightCm: profile.heightCm ? Number(profile.heightCm) : null,
+      weightKg: profile.weightKg ? Number(profile.weightKg) : null,
+      goalWeightKg: profile.goalWeightKg ? Number(profile.goalWeightKg) : null,
       activityLevel: profile.activityLevel,
+      dietPreference: profile.dietPreference,
+      onboardingCompletedAt: profile.onboardingCompletedAt?.toISOString() ?? null,
       createdAt: profile.createdAt.toISOString(),
       updatedAt: profile.updatedAt.toISOString(),
     };

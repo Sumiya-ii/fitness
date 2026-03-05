@@ -39,6 +39,7 @@ export interface QuickAddPayload {
   proteinGrams?: number;
   carbsGrams?: number;
   fatGrams?: number;
+  source?: string;
 }
 
 export interface BarcodeLookupResult {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const webhookPayloadSchema = z.object({
   event: z.enum(['started', 'renewed', 'canceled', 'expired', 'refunded']),
-  provider: z.enum(['apple', 'google']),
+  provider: z.enum(['apple', 'google', 'qpay']),
   providerEventId: z.string().optional(),
   userId: z.string().uuid().optional(),
   providerSubId: z.string().optional(),

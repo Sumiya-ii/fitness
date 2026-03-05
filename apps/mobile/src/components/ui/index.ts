@@ -1,6 +1,9 @@
 export { Badge } from './Badge';
 export type { BadgeProps, BadgeVariant } from './Badge';
 
+export { CircularMacro } from './CircularMacro';
+export type { CircularMacroProps } from './CircularMacro';
+
 export { BottomSheet } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
 

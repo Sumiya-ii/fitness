@@ -1,4 +1,11 @@
-import { GoalType, SupportedLocale, UnitSystem } from './constants';
+import {
+  GoalType,
+  Gender,
+  ActivityLevel,
+  DietPreference,
+  SupportedLocale,
+  UnitSystem,
+} from './constants';
 
 export interface UserProfile {
   id: string;
@@ -19,6 +26,40 @@ export interface UserTarget {
   weeklyRateKg: number;
   effectiveFrom: Date;
   effectiveTo: Date | null;
+}
+
+export interface OnboardingPayload {
+  goalType: GoalType;
+  goalWeightKg: number;
+  weeklyRateKg: number;
+  gender: Gender;
+  birthDate: string;
+  heightCm: number;
+  weightKg: number;
+  activityLevel: ActivityLevel;
+  dietPreference: DietPreference;
+}
+
+export interface OnboardingResult {
+  profile: {
+    id: string;
+    gender: Gender;
+    birthDate: string;
+    heightCm: number;
+    weightKg: number;
+    goalWeightKg: number;
+    activityLevel: ActivityLevel;
+    dietPreference: DietPreference;
+  };
+  target: {
+    id: string;
+    goalType: GoalType;
+    calorieTarget: number;
+    proteinGrams: number;
+    carbsGrams: number;
+    fatGrams: number;
+    weeklyRateKg: number;
+  };
 }
 
 export interface ApiResponse<T> {

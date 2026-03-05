@@ -2,11 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from '@coach/shared';
+import type { ParsedFoodItem } from './photo-parser.service';
 
 export interface PhotoDraftStatus {
   id: string;
   status: 'waiting' | 'active' | 'completed' | 'failed';
   reference?: string;
+  items?: ParsedFoodItem[];
+  totalCalories?: number;
+  totalProtein?: number;
+  totalCarbs?: number;
+  totalFat?: number;
 }
 
 @Injectable()
@@ -47,6 +53,22 @@ export class PhotosService {
     if (reference) {
       result.reference = reference;
     }
+
+    if (state === 'completed' && job.returnvalue) {
+      const parsed = job.returnvalue as {
+        items?: ParsedFoodItem[];
+        totalCalories?: number;
+        totalProtein?: number;
+        totalCarbs?: number;
+        totalFat?: number;
+      };
+      result.items = parsed.items;
+      result.totalCalories = parsed.totalCalories;
+      result.totalProtein = parsed.totalProtein;
+      result.totalCarbs = parsed.totalCarbs;
+      result.totalFat = parsed.totalFat;
+    }
+
     return result;
   }
 }

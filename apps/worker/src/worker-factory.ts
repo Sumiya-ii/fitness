@@ -10,8 +10,9 @@ export function createWorkerForQueue(
     queueName,
     async (job: Job) => {
       console.log(`[${queueName}] Processing job ${job.id}: ${job.name}`);
-      await processJob(queueName, job);
+      const result = await processJob(queueName, job);
       console.log(`[${queueName}] Completed job ${job.id}`);
+      return result;
     },
     {
       connection: { url: redisUrl },
@@ -37,9 +38,9 @@ function getConcurrency(queueName: QueueName): number {
   switch (queueName) {
     case QUEUE_NAMES.STT_PROCESSING:
     case QUEUE_NAMES.PHOTO_PARSING:
-      return 2; // AI workloads - limit concurrency
+      return 2;
     case QUEUE_NAMES.ANALYTICS:
-      return 10; // High-throughput, low-cost
+      return 10;
     default:
       return 5;
   }

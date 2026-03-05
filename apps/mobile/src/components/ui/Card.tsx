@@ -43,7 +43,7 @@ export function Card({
   }));
 
   const baseClasses =
-    'rounded-2xl bg-white p-4 shadow-md shadow-slate-200/50 dark:bg-slate-800 dark:shadow-slate-900/50';
+    'rounded-2xl bg-slate-900/80 border border-slate-800 p-4';
 
   if (pressable && onPress) {
     return (

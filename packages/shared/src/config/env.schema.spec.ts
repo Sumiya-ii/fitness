@@ -62,9 +62,11 @@ describe('validateEnv', () => {
       TELEGRAM_BOT_TOKEN: 'bot-token',
       S3_BUCKET: 'my-bucket',
       SENTRY_DSN: 'https://sentry.io/123',
+      ADMIN_USER_IDS: 'user-1,user-2',
     });
     expect(config.TELEGRAM_BOT_TOKEN).toBe('bot-token');
     expect(config.S3_BUCKET).toBe('my-bucket');
     expect(config.SENTRY_DSN).toBe('https://sentry.io/123');
+    expect(config.ADMIN_USER_IDS).toEqual(['user-1', 'user-2']);
   });
 });

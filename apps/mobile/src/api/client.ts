@@ -1,6 +1,25 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
-const BASE_URL = 'http://localhost:3000/api/v1';
+function normalizeBaseUrl(url: string): string {
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
+function resolveBaseUrl(): string {
+  const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+  if (envBaseUrl) {
+    return normalizeBaseUrl(envBaseUrl);
+  }
+
+  // Android emulator cannot reach host localhost directly.
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:3000/api/v1';
+  }
+
+  return 'http://localhost:3000/api/v1';
+}
+
+const BASE_URL = resolveBaseUrl();
 const TOKEN_KEY = 'auth_token';
 
 async function getToken(): Promise<string | null> {

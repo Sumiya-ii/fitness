@@ -6,12 +6,15 @@ import {
   Param,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { AdminService } from './admin.service';
 import { moderationQuerySchema, rejectSchema } from './admin.dto';
+import { AdminGuard } from './admin.guard';
 
 @Controller('admin')
+@UseGuards(AdminGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

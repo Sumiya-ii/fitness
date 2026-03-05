@@ -9,13 +9,21 @@ export type AuthStackParamList = {
 
 export type SetupStackParamList = {
   GoalSetup: undefined;
-  ProfileSetup: undefined;
+  DesiredWeight: undefined;
+  WeeklyRate: undefined;
+  GenderSelect: undefined;
+  BirthDateSelect: undefined;
+  HeightSelect: undefined;
+  WeightSelect: undefined;
+  ActivityLevelSelect: undefined;
+  DietPreferenceSelect: undefined;
+  Motivation: undefined;
   TargetReview: undefined;
 };
 
 export type LogStackParamList = {
   LogHome: undefined;
-  TextSearch: undefined;
+  TextSearch: { initialQuery?: string } | undefined;
   QuickAdd: undefined;
   BarcodeScan: undefined;
   BarcodeSubmit: { barcode: string };
@@ -46,6 +54,8 @@ export type RootStackParamList = {
 };
 
 declare global {
+  // React Navigation relies on this namespace augmentation for route type inference.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace ReactNavigation {
     interface RootParamList extends RootStackParamList {}
     interface AuthParamList extends AuthStackParamList {}

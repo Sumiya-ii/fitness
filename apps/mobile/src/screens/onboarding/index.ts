@@ -1,4 +1,12 @@
 export { OnboardingScreen } from './OnboardingScreen';
 export { GoalSetupScreen } from './GoalSetupScreen';
-export { ProfileSetupScreen } from './ProfileSetupScreen';
+export { DesiredWeightScreen } from './DesiredWeightScreen';
+export { WeeklyRateScreen } from './WeeklyRateScreen';
+export { GenderSelectScreen } from './GenderSelectScreen';
+export { BirthDateSelectScreen } from './BirthDateSelectScreen';
+export { HeightSelectScreen } from './HeightSelectScreen';
+export { WeightSelectScreen } from './WeightSelectScreen';
+export { ActivityLevelSelectScreen } from './ActivityLevelSelectScreen';
+export { DietPreferenceSelectScreen } from './DietPreferenceSelectScreen';
+export { MotivationScreen } from './MotivationScreen';
 export { TargetReviewScreen } from './TargetReviewScreen';

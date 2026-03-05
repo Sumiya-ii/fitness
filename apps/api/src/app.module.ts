@@ -24,6 +24,8 @@ import { VoiceModule } from './voice';
 import { PhotosModule } from './photos';
 import { TelegramModule } from './telegram';
 import { RemindersModule } from './reminders';
+import { OnboardingModule } from './onboarding';
+import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -34,6 +36,7 @@ import { HealthController } from './health/health.controller';
     AuthModule,
     ProfileModule,
     TargetsModule,
+    OnboardingModule,
     FoodsModule,
     MealLogsModule,
     FavoritesModule,
@@ -53,6 +56,7 @@ import { HealthController } from './health/health.controller';
     PhotosModule,
     TelegramModule,
     RemindersModule,
+    QPayModule,
   ],
   controllers: [HealthController],
   providers: [],

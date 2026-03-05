@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,19 +10,39 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 import { Button, Card } from '../../components/ui';
+import { api } from '../../api';
+import { mealsApi } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'VoiceLog'>;
 
+interface VoiceDraft {
+  id: string;
+  status: 'waiting' | 'active' | 'completed' | 'failed';
+  transcription?: string;
+}
+
+const POLL_INTERVAL_MS = 1500;
+const MAX_POLL_ATTEMPTS = 40;
+
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
-  const [, setRecording] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [draft, setDraft] = useState<{ transcription?: string } | null>(null);
+  const [draft, setDraft] = useState<VoiceDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    };
+  }, []);
 
   const startPulse = useCallback(() => {
     Animated.loop(
@@ -39,7 +59,7 @@ export function VoiceLogScreen() {
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   }, [pulseAnim]);
 
@@ -48,34 +68,118 @@ export function VoiceLogScreen() {
     pulseAnim.setValue(1);
   }, [pulseAnim]);
 
-  const handlePressIn = () => {
-    setRecording(true);
+  const pollDraft = useCallback(async (draftId: string, attempt = 0) => {
+    if (attempt >= MAX_POLL_ATTEMPTS) {
+      setError('Processing timed out. Please try again.');
+      setProcessing(false);
+      return;
+    }
+
+    try {
+      const res = await api.get<{ data: VoiceDraft }>(`/voice/drafts/${draftId}`);
+      const d = res.data;
+
+      if (d.status === 'completed') {
+        setDraft(d);
+        setProcessing(false);
+        return;
+      }
+
+      if (d.status === 'failed') {
+        setError('Voice processing failed. Please try again.');
+        setProcessing(false);
+        return;
+      }
+
+      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), POLL_INTERVAL_MS);
+    } catch {
+      setError('Failed to check processing status.');
+      setProcessing(false);
+    }
+  }, []);
+
+  const handlePressIn = async () => {
     setError(null);
     setDraft(null);
-    startPulse();
+
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (!permission.granted) {
+        setError('Microphone permission is required for voice logging.');
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
+      );
+      recordingRef.current = rec;
+      setRecording(true);
+      startPulse();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to start recording');
+    }
   };
 
   const handlePressOut = async () => {
-    setRecording(false);
     stopPulse();
+    setRecording(false);
+
+    const rec = recordingRef.current;
+    if (!rec) return;
+
     setProcessing(true);
     setError(null);
+
     try {
-      // In production: use expo-av to record, upload via api.upload, poll draft
-      await new Promise((r) => setTimeout(r, 2000));
-      setDraft({
-        transcription: 'Example: 2 eggs, 100g rice, 1 apple (parsed items would appear here)',
-      });
+      await rec.stopAndUnloadAsync();
+      const uri = rec.getURI();
+      recordingRef.current = null;
+
+      if (!uri) {
+        setError('No audio recorded.');
+        setProcessing(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('audio', {
+        uri,
+        type: 'audio/m4a',
+        name: 'voice.m4a',
+      } as unknown as Blob);
+
+      const res = await api.upload<{ data: { draftId: string } }>('/voice/upload', formData);
+      pollDraft(res.data.draftId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Processing failed');
-    } finally {
+      setError(e instanceof Error ? e.message : 'Upload failed');
       setProcessing(false);
     }
   };
 
   const handleConfirmSave = async () => {
+    if (!draft?.transcription) return;
     setSaving(true);
+    setError(null);
+
     try {
+      const text = draft.transcription.trim();
+      const calMatch = text.match(/(\d+)\s*(?:cal|kcal|калори)?/i);
+      const calories = calMatch ? parseInt(calMatch[1], 10) : 0;
+
+      await mealsApi.quickAdd({
+        calories,
+        proteinGrams: 0,
+        carbsGrams: 0,
+        fatGrams: 0,
+        note: text,
+        source: 'voice',
+      });
+
       navigation.goBack();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
@@ -85,94 +189,104 @@ export function VoiceLogScreen() {
   };
 
   const handleDiscard = () => {
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     setDraft(null);
     navigation.goBack();
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
-      <View className="flex-row items-center border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-        <Pressable onPress={() => navigation.goBack()} className="p-1">
-          <Ionicons name="arrow-back" size={24} color="#0f172a" />
-        </Pressable>
-        <Text className="ml-4 text-lg font-sans-semibold text-text dark:text-slate-100">
-          Voice Log
-        </Text>
-      </View>
+    <View className="flex-1 bg-slate-950">
+      <SafeAreaView edges={['top']} className="flex-1">
+        <View className="flex-row items-center px-4 py-3 border-b border-slate-800">
+          <Pressable onPress={() => navigation.goBack()} className="p-1">
+            <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
+          </Pressable>
+          <Text className="ml-4 text-lg font-sans-semibold text-white">
+            Voice Log
+          </Text>
+        </View>
 
-      <View className="flex-1 items-center justify-center px-8">
-        {processing && (
-          <>
-            <ActivityIndicator size="large" color="#22c55e" />
-            <Text className="mt-4 text-text-secondary dark:text-slate-400">
-              Processing...
-            </Text>
-          </>
-        )}
+        <View className="flex-1 items-center justify-center px-8">
+          {processing && (
+            <>
+              <ActivityIndicator size="large" color="#22c55e" />
+              <Text className="mt-4 text-slate-400">
+                Processing your voice...
+              </Text>
+            </>
+          )}
 
-        {!processing && !draft && (
-          <>
-            <Text className="mb-8 text-center text-text-secondary dark:text-slate-400">
-              Press and hold to record your meal. Speak clearly for best results.
-            </Text>
-            <Pressable
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              className="items-center justify-center"
-            >
-              <Animated.View
-                style={{ transform: [{ scale: pulseAnim }] }}
-                className="h-28 w-28 items-center justify-center rounded-full bg-primary-500"
+          {!processing && !draft && (
+            <>
+              <Text className="mb-8 text-center text-slate-400">
+                Press and hold to record your meal. Speak clearly for best
+                results.
+              </Text>
+              <Pressable
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                className="items-center justify-center"
               >
-                <Ionicons name="mic" size={48} color="#ffffff" />
-              </Animated.View>
-            </Pressable>
-            <Text className="mt-6 text-center text-sm text-text-tertiary dark:text-slate-500">
-              (AIR-001) Voice quality affects accuracy. Please confirm parsed items before saving.
-            </Text>
-          </>
-        )}
+                <Animated.View
+                  style={{ transform: [{ scale: pulseAnim }] }}
+                  className="h-28 w-28 items-center justify-center rounded-full bg-primary-500"
+                >
+                  <Ionicons name="mic" size={48} color="#ffffff" />
+                </Animated.View>
+              </Pressable>
+              {recording && (
+                <Text className="mt-4 text-primary-400 font-sans-medium">
+                  Recording...
+                </Text>
+              )}
+              <Text className="mt-6 text-center text-sm text-slate-500">
+                Voice quality affects accuracy. Please confirm parsed items
+                before saving.
+              </Text>
+            </>
+          )}
 
-        {draft && (
-          <View className="w-full">
-            <Card className="mb-6">
-              <Text className="mb-2 font-sans-semibold text-text dark:text-slate-100">
-                Parsed draft
-              </Text>
-              <Text className="text-text-secondary dark:text-slate-400">
-                {draft.transcription || 'No transcription available'}
-              </Text>
-              <Text className="mt-4 text-xs text-text-tertiary dark:text-slate-500">
-                Editable quantities would appear here. Confirm before saving.
-              </Text>
-            </Card>
-            {error && (
-              <Text className="mb-4 text-center text-danger">{error}</Text>
-            )}
-            <View className="flex-row gap-3">
-              <Button
-                variant="outline"
-                onPress={handleDiscard}
-                className="flex-1"
-              >
-                Discard
-              </Button>
-              <Button
-                onPress={handleConfirmSave}
-                loading={saving}
-                disabled={saving}
-                className="flex-1"
-              >
-                Confirm & Save
-              </Button>
+          {draft && (
+            <View className="w-full">
+              <Card className="mb-6">
+                <Text className="mb-2 font-sans-semibold text-white">
+                  Transcription
+                </Text>
+                <Text className="text-slate-300">
+                  {draft.transcription || 'No transcription available'}
+                </Text>
+                <Text className="mt-4 text-xs text-slate-500">
+                  Review the text above and confirm to save as a meal log.
+                </Text>
+              </Card>
+              {error && (
+                <Text className="mb-4 text-center text-red-400">{error}</Text>
+              )}
+              <View className="flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onPress={handleDiscard}
+                  className="flex-1"
+                >
+                  Discard
+                </Button>
+                <Button
+                  onPress={handleConfirmSave}
+                  loading={saving}
+                  disabled={saving || !draft.transcription}
+                  className="flex-1"
+                >
+                  Confirm & Save
+                </Button>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {error && !draft && !processing && (
-          <Text className="mt-4 text-center text-danger">{error}</Text>
-        )}
-      </View>
-    </SafeAreaView>
+          {error && !draft && !processing && (
+            <Text className="mt-4 text-center text-red-400">{error}</Text>
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }

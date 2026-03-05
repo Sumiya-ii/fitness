@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle } from 'react-native-svg';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
-  Card,
   Button,
   BottomSheet,
   Input,
   Badge,
-  EmptyState,
   LoadingScreen,
 } from '../components/ui';
 import { useWeightStore, type WeightLogEntry } from '../stores/weight.store';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type Period = 'week' | 'month' | '3months';
 
@@ -24,15 +26,18 @@ const PERIOD_DAYS: Record<Period, number> = {
 };
 
 function WeightChart({ data }: { data: WeightLogEntry[] }) {
-  const width = 280;
-  const height = 120;
-  const padding = { top: 10, right: 10, bottom: 20, left: 40 };
+  const chartWidth = SCREEN_WIDTH - 64;
+  const height = 160;
+  const padding = { top: 20, right: 16, bottom: 30, left: 48 };
 
   if (data.length < 2) {
     return (
-      <View style={{ width, height }} className="items-center justify-center">
-        <Text className="text-sm text-text-secondary dark:text-slate-400">
-          Log more weights to see trend
+      <View style={{ width: chartWidth, height }} className="items-center justify-center">
+        <View className="h-14 w-14 rounded-full bg-slate-800 items-center justify-center mb-3">
+          <Ionicons name="trending-up-outline" size={24} color="#475569" />
+        </View>
+        <Text className="text-sm text-slate-400 font-sans-medium">
+          Log more weights to see your trend
         </Text>
       </View>
     );
@@ -42,34 +47,99 @@ function WeightChart({ data }: { data: WeightLogEntry[] }) {
     (a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime()
   );
   const weights = sorted.map((d) => d.weightKg);
-  const minW = Math.min(...weights);
-  const maxW = Math.max(...weights);
+  const minW = Math.min(...weights) - 0.5;
+  const maxW = Math.max(...weights) + 0.5;
   const range = maxW - minW || 1;
-  const chartW = width - padding.left - padding.right;
+  const chartW = chartWidth - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
   const points = sorted.map((d, i) => {
     const x = padding.left + (i / (sorted.length - 1)) * chartW;
     const y = padding.top + chartH - ((d.weightKg - minW) / range) * chartH;
-    return { x, y };
+    return { x, y, weight: d.weightKg };
   });
 
-  const pathD = points
-    .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-    .join(' ');
+  // Smooth curve using cubic bezier
+  let pathD = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpx1 = prev.x + (curr.x - prev.x) * 0.4;
+    const cpx2 = prev.x + (curr.x - prev.x) * 0.6;
+    pathD += ` C ${cpx1} ${prev.y} ${cpx2} ${curr.y} ${curr.x} ${curr.y}`;
+  }
+
+  // Area fill path
+  const areaD = `${pathD} L ${points[points.length - 1].x} ${height - padding.bottom} L ${points[0].x} ${height - padding.bottom} Z`;
+
+  // Y-axis labels
+  const yLabels = [minW, (minW + maxW) / 2, maxW].map((v) => ({
+    value: v.toFixed(1),
+    y: padding.top + chartH - ((v - minW) / range) * chartH,
+  }));
 
   return (
     <View>
-      <Svg width={width} height={height}>
+      <Svg width={chartWidth} height={height}>
+        <Defs>
+          <SvgGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
+            <Stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+          </SvgGradient>
+          <SvgGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#4ade80" />
+            <Stop offset="100%" stopColor="#22c55e" />
+          </SvgGradient>
+        </Defs>
+
+        {/* Grid lines */}
+        {yLabels.map((l) => (
+          <Path
+            key={l.value}
+            d={`M ${padding.left} ${l.y} L ${chartWidth - padding.right} ${l.y}`}
+            stroke="#1e293b"
+            strokeWidth={1}
+            strokeDasharray="4,4"
+          />
+        ))}
+
+        {/* Area fill */}
+        <Path d={areaD} fill="url(#chartGradient)" />
+
+        {/* Line */}
         <Path
           d={pathD}
           fill="none"
-          stroke="#22c55e"
-          strokeWidth={2}
+          stroke="url(#lineGradient)"
+          strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+
+        {/* Data points */}
+        {points.map((p, i) => (
+          <Circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r={3}
+            fill="#22c55e"
+            stroke="#0f172a"
+            strokeWidth={2}
+          />
+        ))}
       </Svg>
+
+      {/* Y-axis labels */}
+      {yLabels.map((l) => (
+        <Text
+          key={l.value}
+          className="absolute text-xs text-slate-500 font-sans-medium"
+          style={{ top: l.y - 7, left: 4 }}
+        >
+          {l.value}
+        </Text>
+      ))}
     </View>
   );
 }
@@ -122,185 +192,317 @@ export function ProgressScreen() {
   const weeklyAvg = trend?.weeklyAverage;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
-        <View className="px-4 pt-4">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-2xl font-sans-bold text-text dark:text-slate-100">
-              Progress
-            </Text>
-            <Pressable
-              onPress={() =>
-                (navigation.getParent() as { navigate: (s: string) => void } | undefined)
-                  ?.navigate('WeeklySummary')
-              }
-              className="rounded-full bg-primary-100 px-4 py-2 dark:bg-primary-900/40"
-            >
-              <Text className="font-sans-medium text-primary-700 dark:text-primary-300">
-                Weekly Summary
+    <View className="flex-1 bg-slate-950">
+      <SafeAreaView edges={['top']} className="flex-1">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View className="px-5 pt-2 pb-4">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-2xl font-sans-bold text-white">
+                Progress
               </Text>
-            </Pressable>
-          </View>
-
-          <View className="mt-4 flex-row gap-2">
-            {(['week', 'month', '3months'] as const).map((p) => (
               <Pressable
-                key={p}
-                onPress={() => setPeriod(p)}
-                className={`rounded-full px-4 py-2 ${
-                  period === p
-                    ? 'bg-primary-500'
-                    : 'bg-slate-100 dark:bg-slate-700'
-                }`}
+                onPress={() =>
+                  (navigation.getParent() as { navigate: (s: string) => void } | undefined)
+                    ?.navigate('WeeklySummary')
+                }
+                className="flex-row items-center gap-2 rounded-full bg-primary-500/15 px-4 py-2"
               >
-                <Text
-                  className={`font-sans-medium ${
-                    period === p
-                      ? 'text-white'
-                      : 'text-text dark:text-slate-300'
-                  }`}
-                >
-                  {p === 'week' ? 'Week' : p === 'month' ? 'Month' : '3 Months'}
+                <Ionicons name="calendar-outline" size={16} color="#22c55e" />
+                <Text className="font-sans-medium text-primary-400 text-sm">
+                  Weekly
                 </Text>
               </Pressable>
-            ))}
+            </View>
           </View>
 
-          <Card className="mt-4">
-            <View className="items-center">
-              {currentWeight !== null ? (
-                <>
-                  <Text className="text-4xl font-sans-bold text-text dark:text-slate-100">
-                    {currentWeight}
-                    <Text className="text-2xl font-sans-medium text-text-secondary dark:text-slate-400">
-                      {' '}
-                      kg
+          {/* Current Weight Hero */}
+          <Animated.View entering={FadeInDown.duration(400)} className="px-4 mb-4">
+            <LinearGradient
+              colors={['#1e293b', '#0f172a']}
+              className="rounded-3xl border border-slate-800 p-5"
+            >
+              <View className="items-center">
+                {currentWeight !== null ? (
+                  <>
+                    <Text className="text-sm text-slate-400 font-sans-medium mb-2">
+                      Current Weight
                     </Text>
-                  </Text>
-                  <View className="mt-2 flex-row gap-2">
-                    {weeklyDelta !== null && weeklyDelta !== undefined && (
-                      <Badge
-                        variant={weeklyDelta < 0 ? 'success' : weeklyDelta > 0 ? 'warning' : 'neutral'}
-                      >
-                        {weeklyDelta > 0 ? '+' : ''}
-                        {weeklyDelta} kg this week
-                      </Badge>
-                    )}
-                    {weeklyAvg !== null && weeklyAvg !== undefined && (
-                      <Badge variant="neutral">Avg: {weeklyAvg} kg</Badge>
-                    )}
-                  </View>
-                </>
-              ) : (
-                <Text className="text-lg text-text-secondary dark:text-slate-400">
-                  No weight logged yet
-                </Text>
-              )}
-            </View>
-            <View className="mt-4 items-center">
-              <WeightChart data={chartData} />
-            </View>
-          </Card>
-
-          <Text className="mt-4 text-lg font-sans-semibold text-text dark:text-slate-100">
-            Weight History
-          </Text>
-
-          {history.length > 0 ? (
-            <View className="mt-2 gap-2">
-              {[...history]
-                .sort(
-                  (a, b) =>
-                    new Date(b.loggedAt).getTime() -
-                    new Date(a.loggedAt).getTime()
-                )
-                .map((entry, idx, arr) => {
-                  const prev = arr[idx + 1];
-                  const delta =
-                    prev != null
-                      ? Number((entry.weightKg - prev.weightKg).toFixed(1))
-                      : null;
-                  return (
-                    <Card key={entry.id}>
-                      <View className="flex-row items-center justify-between">
-                        <Text className="font-sans-medium text-text dark:text-slate-100">
-                          {new Date(entry.loggedAt + 'T12:00:00').toLocaleDateString()}
-                        </Text>
-                        <View className="flex-row items-center gap-2">
-                          <Text className="font-sans-semibold text-text dark:text-slate-100">
-                            {entry.weightKg} kg
+                    <View className="flex-row items-baseline">
+                      <Text className="text-5xl font-sans-bold text-white">
+                        {currentWeight}
+                      </Text>
+                      <Text className="text-xl font-sans-medium text-slate-400 ml-1">
+                        kg
+                      </Text>
+                    </View>
+                    <View className="flex-row gap-3 mt-3">
+                      {weeklyDelta !== null && weeklyDelta !== undefined && (
+                        <View
+                          className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
+                          style={{
+                            backgroundColor:
+                              weeklyDelta < 0
+                                ? 'rgba(34, 197, 94, 0.15)'
+                                : weeklyDelta > 0
+                                  ? 'rgba(245, 158, 11, 0.15)'
+                                  : 'rgba(100, 116, 139, 0.15)',
+                          }}
+                        >
+                          <Ionicons
+                            name={
+                              weeklyDelta < 0
+                                ? 'trending-down'
+                                : weeklyDelta > 0
+                                  ? 'trending-up'
+                                  : 'remove'
+                            }
+                            size={14}
+                            color={
+                              weeklyDelta < 0
+                                ? '#22c55e'
+                                : weeklyDelta > 0
+                                  ? '#f59e0b'
+                                  : '#64748b'
+                            }
+                          />
+                          <Text
+                            className="text-sm font-sans-medium"
+                            style={{
+                              color:
+                                weeklyDelta < 0
+                                  ? '#22c55e'
+                                  : weeklyDelta > 0
+                                    ? '#f59e0b'
+                                    : '#64748b',
+                            }}
+                          >
+                            {weeklyDelta > 0 ? '+' : ''}
+                            {weeklyDelta} kg
                           </Text>
+                        </View>
+                      )}
+                      {weeklyAvg !== null && weeklyAvg !== undefined && (
+                        <View className="flex-row items-center gap-1.5 rounded-full bg-slate-800 px-3 py-1.5">
+                          <Text className="text-sm font-sans-medium text-slate-300">
+                            Avg: {weeklyAvg} kg
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                ) : (
+                  <View className="items-center py-4">
+                    <View className="h-16 w-16 rounded-full bg-slate-800 items-center justify-center mb-3">
+                      <Ionicons name="scale-outline" size={28} color="#475569" />
+                    </View>
+                    <Text className="text-base font-sans-medium text-slate-300">
+                      No weight logged yet
+                    </Text>
+                    <Text className="text-sm text-slate-500 mt-1">
+                      Start tracking your weight journey
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Period Tabs */}
+          <View className="px-4 mb-4">
+            <View className="flex-row rounded-2xl bg-slate-900/80 border border-slate-800 p-1">
+              {(['week', 'month', '3months'] as const).map((p) => (
+                <Pressable
+                  key={p}
+                  onPress={() => setPeriod(p)}
+                  className={`flex-1 rounded-xl py-2.5 items-center ${
+                    period === p ? 'bg-primary-500' : ''
+                  }`}
+                >
+                  <Text
+                    className={`font-sans-semibold text-sm ${
+                      period === p ? 'text-white' : 'text-slate-400'
+                    }`}
+                  >
+                    {p === 'week' ? '7 Days' : p === 'month' ? '30 Days' : '90 Days'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {/* Chart */}
+          <Animated.View
+            entering={FadeInDown.delay(100).duration(400)}
+            className="px-4 mb-6"
+          >
+            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4">
+              <Text className="text-sm font-sans-semibold text-slate-300 mb-3">
+                Weight Trend
+              </Text>
+              <View className="items-center">
+                <WeightChart data={chartData} />
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Stats Row */}
+          {history.length > 0 && (
+            <Animated.View
+              entering={FadeInDown.delay(200).duration(400)}
+              className="flex-row gap-3 px-4 mb-6"
+            >
+              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 items-center">
+                <Ionicons name="arrow-down-circle-outline" size={22} color="#22c55e" />
+                <Text className="text-lg font-sans-bold text-white mt-2">
+                  {Math.min(...history.map((h) => h.weightKg))}
+                </Text>
+                <Text className="text-xs text-slate-400 font-sans-medium">
+                  Lowest
+                </Text>
+              </View>
+              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 items-center">
+                <Ionicons name="arrow-up-circle-outline" size={22} color="#f59e0b" />
+                <Text className="text-lg font-sans-bold text-white mt-2">
+                  {Math.max(...history.map((h) => h.weightKg))}
+                </Text>
+                <Text className="text-xs text-slate-400 font-sans-medium">
+                  Highest
+                </Text>
+              </View>
+              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 items-center">
+                <Ionicons name="analytics-outline" size={22} color="#3b82f6" />
+                <Text className="text-lg font-sans-bold text-white mt-2">
+                  {history.length}
+                </Text>
+                <Text className="text-xs text-slate-400 font-sans-medium">
+                  Entries
+                </Text>
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Weight History */}
+          <View className="px-4">
+            <Text className="text-lg font-sans-semibold text-white mb-3">
+              History
+            </Text>
+
+            {history.length > 0 ? (
+              <View className="gap-2">
+                {[...history]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.loggedAt).getTime() -
+                      new Date(a.loggedAt).getTime()
+                  )
+                  .slice(0, 10)
+                  .map((entry, idx, arr) => {
+                    const prev = arr[idx + 1];
+                    const delta =
+                      prev != null
+                        ? Number((entry.weightKg - prev.weightKg).toFixed(1))
+                        : null;
+                    return (
+                      <View
+                        key={entry.id}
+                        className="flex-row items-center justify-between rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <View className="h-10 w-10 rounded-full bg-slate-800 items-center justify-center">
+                            <Ionicons name="scale-outline" size={18} color="#64748b" />
+                          </View>
+                          <Text className="font-sans-medium text-slate-200">
+                            {new Date(entry.loggedAt + 'T12:00:00').toLocaleDateString(
+                              undefined,
+                              { weekday: 'short', month: 'short', day: 'numeric' }
+                            )}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center gap-2">
                           {delta !== null && delta !== 0 && (
                             <Badge
-                              variant={
-                                delta < 0 ? 'success' : 'warning'
-                              }
+                              variant={delta < 0 ? 'success' : 'warning'}
                             >
                               {delta > 0 ? '+' : ''}
                               {delta}
                             </Badge>
                           )}
+                          <Text className="font-sans-bold text-white text-base">
+                            {entry.weightKg} kg
+                          </Text>
                         </View>
                       </View>
-                    </Card>
-                  );
-                })}
-            </View>
-          ) : (
-            <EmptyState
-              icon="heart"
-              title="No weight logs yet"
-              subtitle="Tap the button below to log your first weight"
-              actionLabel="Log Weight"
-              onAction={() => setSheetVisible(true)}
-            />
-          )}
+                    );
+                  })}
+              </View>
+            ) : (
+              <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-6 items-center">
+                <View className="h-14 w-14 rounded-full bg-slate-800 items-center justify-center mb-3">
+                  <Ionicons name="heart-outline" size={24} color="#475569" />
+                </View>
+                <Text className="text-base font-sans-medium text-white mb-1">
+                  No weight logs yet
+                </Text>
+                <Text className="text-sm text-slate-400 text-center mb-4">
+                  Tap the button below to log your first weight
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* FAB */}
+        <View className="absolute bottom-6 right-5">
+          <Pressable
+            onPress={() => setSheetVisible(true)}
+            className="h-14 w-14 items-center justify-center rounded-full bg-primary-500 shadow-lg shadow-primary-500/40"
+          >
+            <Ionicons name="add" size={28} color="white" />
+          </Pressable>
         </View>
-      </ScrollView>
 
-      <View className="absolute bottom-6 right-4">
-        <Pressable
-          onPress={() => setSheetVisible(true)}
-          className="h-14 w-14 items-center justify-center rounded-full bg-primary-500 shadow-lg"
+        <BottomSheet
+          visible={sheetVisible}
+          onClose={() => setSheetVisible(false)}
         >
-          <Ionicons name="add" size={28} color="white" />
-        </Pressable>
-      </View>
-
-      <BottomSheet
-        visible={sheetVisible}
-        onClose={() => setSheetVisible(false)}
-      >
-        <Text className="mb-4 text-lg font-sans-semibold text-text dark:text-slate-100">
-          Log Weight
-        </Text>
-        <Input
-          label="Weight (kg)"
-          placeholder="e.g. 72.5"
-          value={weightInput}
-          onChangeText={setWeightInput}
-          keyboardType="decimal-pad"
-          containerClassName="mb-4"
-        />
-        <Input
-          label="Date"
-          placeholder="YYYY-MM-DD"
-          value={dateInput}
-          onChangeText={setDateInput}
-          containerClassName="mb-6"
-        />
-        <Button
-          variant="primary"
-          onPress={handleLogWeight}
-          loading={saving}
-          disabled={!weightInput.trim()}
-        >
-          Save
-        </Button>
-      </BottomSheet>
-    </SafeAreaView>
+          <View className="px-1">
+            <Text className="mb-1 text-lg font-sans-bold text-white">
+              Log Weight
+            </Text>
+            <Text className="mb-5 text-sm text-slate-400">
+              Track your daily weight measurement
+            </Text>
+            <Input
+              label="Weight (kg)"
+              placeholder="e.g. 72.5"
+              value={weightInput}
+              onChangeText={setWeightInput}
+              keyboardType="decimal-pad"
+              containerClassName="mb-4"
+            />
+            <Input
+              label="Date"
+              placeholder="YYYY-MM-DD"
+              value={dateInput}
+              onChangeText={setDateInput}
+              containerClassName="mb-6"
+            />
+            <Button
+              variant="primary"
+              onPress={handleLogWeight}
+              loading={saving}
+              disabled={!weightInput.trim()}
+            >
+              Save Weight
+            </Button>
+          </View>
+        </BottomSheet>
+      </SafeAreaView>
+    </View>
   );
 }

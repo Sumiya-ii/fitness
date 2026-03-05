@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import type { SetupStackParamList } from '../../navigation/types';
 import type { GoalType } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
+import { OnboardingLayout } from './OnboardingLayout';
+
+const TOTAL_STEPS = 10;
 
 type GoalOption = {
   id: GoalType;
@@ -19,100 +19,78 @@ type GoalOption = {
 
 const GOAL_OPTIONS: GoalOption[] = [
   {
-    id: 'lose',
+    id: 'lose_fat',
     icon: 'trending-down-outline',
     title: 'Lose Fat',
-    description: 'Create a calorie deficit to lose weight gradually and sustainably.',
+    description: 'Burn fat and get leaner with a calorie deficit',
     gradient: ['#22c55e', '#16a34a'],
   },
   {
     id: 'maintain',
     icon: 'scale-outline',
-    title: 'Maintain',
-    description: 'Keep your current weight with balanced nutrition and consistent habits.',
+    title: 'Maintain Weight',
+    description: 'Keep your current weight with balanced nutrition',
     gradient: ['#0ea5e9', '#0284c7'],
   },
   {
     id: 'gain',
     icon: 'trending-up-outline',
-    title: 'Gain',
-    description: 'Build muscle and gain weight with a controlled calorie surplus.',
+    title: 'Build Muscle',
+    description: 'Gain lean mass with a controlled calorie surplus',
     gradient: ['#f59e0b', '#d97706'],
   },
 ];
 
-type Props = NativeStackScreenProps<any, 'GoalSetup'>;
+type Props = NativeStackScreenProps<SetupStackParamList, 'GoalSetup'>;
 
 export function GoalSetupScreen({ navigation }: Props) {
-  const [selected, setSelected] = useState<GoalType | null>(null);
-  const setGoal = useProfileStore((s) => s.setGoal);
-
-  const handleContinue = () => {
-    if (selected) {
-      setGoal(selected);
-      navigation.navigate('ProfileSetup');
-    }
-  };
+  const goalType = useProfileStore((s) => s.goalType);
+  const setGoalType = useProfileStore((s) => s.setGoalType);
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
-      <LinearGradient
-        colors={['#22c55e', '#16a34a']}
-        className="pt-8 pb-12 px-6"
-        style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
-      >
-        <Text className="text-2xl font-sans-bold text-white mb-1">Choose Your Goal</Text>
-        <Text className="text-base text-white/90">
-          We'll personalize your targets based on this
-        </Text>
-      </LinearGradient>
-
-      <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
+    <OnboardingLayout
+      step={1}
+      totalSteps={TOTAL_STEPS}
+      title="What's your goal?"
+      subtitle="We'll create a personalized plan just for you"
+      onContinue={() => navigation.navigate('DesiredWeight')}
+      continueDisabled={!goalType}
+    >
+      <View className="gap-4">
         {GOAL_OPTIONS.map((option) => {
-          const isSelected = selected === option.id;
+          const selected = goalType === option.id;
           return (
-            <Card
+            <Pressable
               key={option.id}
-              pressable
-              onPress={() => setSelected(option.id)}
-              className={`mb-4 overflow-hidden border-2 ${
-                isSelected ? 'border-primary-500' : 'border-transparent'
+              onPress={() => setGoalType(option.id)}
+              className={`flex-row items-center p-4 rounded-2xl border-2 bg-white dark:bg-slate-800 ${
+                selected
+                  ? 'border-primary-500 dark:border-primary-400'
+                  : 'border-slate-200 dark:border-slate-700'
               }`}
             >
-              <View className="flex-row items-center">
-                <LinearGradient
-                  colors={option.gradient}
-                  className="w-14 h-14 rounded-xl items-center justify-center mr-4"
-                >
-                  <Ionicons name={option.icon} size={28} color="white" />
-                </LinearGradient>
-                <View className="flex-1">
-                  <Text className="text-lg font-sans-semibold text-text dark:text-slate-100">
-                    {option.title}
-                  </Text>
-                  <Text className="text-sm text-text-secondary mt-0.5 dark:text-slate-400">
-                    {option.description}
-                  </Text>
-                </View>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
-                )}
+              <LinearGradient
+                colors={option.gradient}
+                className="w-14 h-14 rounded-xl items-center justify-center mr-4"
+                style={{ borderRadius: 12 }}
+              >
+                <Ionicons name={option.icon} size={28} color="white" />
+              </LinearGradient>
+              <View className="flex-1">
+                <Text className="text-lg font-sans-semibold text-text dark:text-slate-100">
+                  {option.title}
+                </Text>
+                <Text className="text-sm text-text-secondary dark:text-slate-400 mt-0.5">
+                  {option.description}
+                </Text>
               </View>
-            </Card>
+              {selected && (
+                <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+              )}
+            </Pressable>
           );
         })}
-      </ScrollView>
-
-      <View className="px-6 pb-8 pt-4">
-        <Button
-          onPress={handleContinue}
-          size="lg"
-          disabled={!selected}
-          className="w-full"
-        >
-          Continue
-        </Button>
       </View>
-    </SafeAreaView>
+    </OnboardingLayout>
   );
 }

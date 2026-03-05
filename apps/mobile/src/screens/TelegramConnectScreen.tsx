@@ -3,10 +3,13 @@ import { View, Text, Pressable, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Button, Badge, LoadingScreen } from '../components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Button, Badge, LoadingScreen } from '../components/ui';
 import { api } from '../api';
 
-const TELEGRAM_BOT_USERNAME = 'CoachBot';
+const TELEGRAM_BOT_USERNAME = (
+  process.env.EXPO_PUBLIC_TELEGRAM_BOT_USERNAME ?? 'CoachBot'
+).replace(/^@/, '');
 const TELEGRAM_DEEP_LINK = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
 
 export function TelegramConnectScreen() {
@@ -92,104 +95,113 @@ export function TelegramConnectScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <View className="flex-row items-center px-4 py-3">
-        <Pressable
-          onPress={() => navigation.goBack()}
-          className="mr-4 p-2"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color="#475569" />
-        </Pressable>
-        <Text className="flex-1 text-xl font-sans-bold text-text dark:text-slate-100">
-          Telegram Coach
-        </Text>
-      </View>
-
-      <View className="flex-1 px-4 pt-8">
-        <View className="items-center pb-8">
-          <View className="mb-4 rounded-full bg-blue-100 p-8 dark:bg-blue-900/40">
-            <Ionicons name="paper-plane" size={64} color="#3b82f6" />
-          </View>
-          <Text className="text-center text-lg font-sans-semibold text-text dark:text-slate-100">
-            Connect with Coach on Telegram
+    <View className="flex-1 bg-slate-950">
+      <SafeAreaView edges={['top']} className="flex-1">
+        {/* Header */}
+        <View className="flex-row items-center px-4 py-3">
+          <Pressable
+            onPress={() => navigation.goBack()}
+            className="h-10 w-10 rounded-full bg-slate-900 items-center justify-center mr-3"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="arrow-back" size={20} color="#94a3b8" />
+          </Pressable>
+          <Text className="flex-1 text-xl font-sans-bold text-white">
+            Telegram Coach
           </Text>
-          <Text className="mt-2 text-center text-text-secondary dark:text-slate-400">
-            Log meals and get reminders via Telegram
-          </Text>
-          <View className="mt-4">
-            <Badge variant={linked ? 'success' : 'warning'}>
-              {linked ? 'Connected' : 'Not Connected'}
-            </Badge>
-          </View>
         </View>
 
-        {linked ? (
-          <Card>
-            <Text className="font-sans-semibold text-text dark:text-slate-100">
-              Connected as @{username ?? 'user'}
-            </Text>
-            <Text className="mt-1 text-sm text-text-secondary dark:text-slate-400">
-              You can log meals and receive reminders on Telegram.
-            </Text>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onPress={handleUnlink}
-              loading={unlinking}
+        <View className="flex-1 px-4 pt-6">
+          {/* Hero */}
+          <View className="items-center pb-8">
+            <LinearGradient
+              colors={['#1d4ed8', '#3b82f6']}
+              className="mb-5 h-24 w-24 rounded-3xl items-center justify-center"
             >
-              Unlink
-            </Button>
-          </Card>
-        ) : (
-          <Card>
-            <Text className="font-sans-semibold text-text dark:text-slate-100">
-              Link your account
+              <Ionicons name="paper-plane" size={44} color="#ffffff" />
+            </LinearGradient>
+            <Text className="text-center text-xl font-sans-bold text-white">
+              Connect with Coach on Telegram
             </Text>
-            <Text className="mt-2 text-sm text-text-secondary dark:text-slate-400">
-              {linkCode
-                ? 'Send this code to @CoachBot on Telegram to complete linking:'
-                : 'Generate a link code and send it to the Coach bot on Telegram.'}
+            <Text className="mt-2 text-center text-sm text-slate-400">
+              Log meals and get reminders via Telegram
             </Text>
-            {linkCode ? (
-              <>
-                <View className="mt-4 rounded-xl bg-slate-100 py-4 dark:bg-slate-700">
-                  <Text className="text-center text-3xl font-mono font-sans-bold tracking-widest text-text dark:text-slate-100">
-                    {linkCode}
-                  </Text>
+            <View className="mt-4">
+              <Badge variant={linked ? 'success' : 'warning'}>
+                {linked ? 'Connected' : 'Not Connected'}
+              </Badge>
+            </View>
+          </View>
+
+          {linked ? (
+            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5">
+              <View className="flex-row items-center gap-3 mb-3">
+                <View className="h-10 w-10 rounded-full bg-blue-500/20 items-center justify-center">
+                  <Ionicons name="person" size={20} color="#3b82f6" />
                 </View>
-                <Text className="mt-4 text-center text-sm text-text-secondary dark:text-slate-400">
-                  Step 2: Send this code to @{TELEGRAM_BOT_USERNAME} on Telegram
-                </Text>
+                <View>
+                  <Text className="font-sans-semibold text-white">
+                    @{username ?? 'user'}
+                  </Text>
+                  <Text className="text-xs text-slate-400">Connected account</Text>
+                </View>
+              </View>
+              <Text className="text-sm text-slate-400 mb-4">
+                You can log meals and receive reminders on Telegram.
+              </Text>
+              <Button
+                variant="outline"
+                onPress={handleUnlink}
+                loading={unlinking}
+              >
+                Unlink Account
+              </Button>
+            </View>
+          ) : (
+            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5">
+              <Text className="font-sans-semibold text-white mb-2">
+                Link your account
+              </Text>
+              <Text className="text-sm text-slate-400 mb-4">
+                {linkCode
+                  ? `Send this code to @${TELEGRAM_BOT_USERNAME} on Telegram:`
+                  : 'Generate a link code and send it to the Coach bot on Telegram.'}
+              </Text>
+              {linkCode ? (
+                <>
+                  <View className="rounded-2xl bg-slate-800 py-5 mb-4">
+                    <Text className="text-center text-3xl font-sans-bold tracking-widest text-white">
+                      {linkCode}
+                    </Text>
+                  </View>
+                  <Text className="text-center text-xs text-slate-400 mb-4">
+                    Send this code to @{TELEGRAM_BOT_USERNAME} on Telegram
+                  </Text>
+                  <Button variant="primary" onPress={handleOpenTelegram}>
+                    Open Telegram
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="mt-2"
+                    onPress={handleGenerateCode}
+                    loading={generating}
+                  >
+                    Generate New Code
+                  </Button>
+                </>
+              ) : (
                 <Button
                   variant="primary"
-                  className="mt-4"
-                  onPress={handleOpenTelegram}
-                >
-                  Open Telegram
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="mt-2"
                   onPress={handleGenerateCode}
                   loading={generating}
                 >
-                  Generate New Code
+                  Generate Link Code
                 </Button>
-              </>
-            ) : (
-              <Button
-                variant="primary"
-                className="mt-4"
-                onPress={handleGenerateCode}
-                loading={generating}
-              >
-                Generate Link Code
-              </Button>
-            )}
-          </Card>
-        )}
-      </View>
-    </SafeAreaView>
+              )}
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }

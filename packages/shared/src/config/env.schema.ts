@@ -15,6 +15,19 @@ export const envSchema = z.object({
   FIREBASE_CLIENT_EMAIL: z.string().email().optional(),
   FIREBASE_PRIVATE_KEY: z.string().optional(),
 
+  // Admin access
+  ADMIN_USER_IDS: z
+    .string()
+    .optional()
+    .transform((value) =>
+      value
+        ? value
+            .split(',')
+            .map((id) => id.trim())
+            .filter(Boolean)
+        : [],
+    ),
+
   // Telegram Bot
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
@@ -35,7 +48,11 @@ export const envSchema = z.object({
   STT_PROVIDER: z.string().optional(),
   STT_API_KEY: z.string().optional(),
   GOOGLE_STT_CREDENTIALS: z.string().optional(),
+  GOOGLE_STT_API_KEY: z.string().optional(),
   CHIMEGE_API_KEY: z.string().optional(),
+
+  // OpenAI (Vision + general AI)
+  OPENAI_API_KEY: z.string().optional(),
 
   // Observability
   SENTRY_DSN: z.string().url().optional(),
@@ -44,6 +61,12 @@ export const envSchema = z.object({
   // PostHog
   POSTHOG_API_KEY: z.string().optional(),
   POSTHOG_HOST: z.string().url().optional(),
+
+  // QPay
+  QPAY_API_URL: z.string().url().optional(),
+  QPAY_CLIENT_ID: z.string().optional(),
+  QPAY_CLIENT_SECRET: z.string().optional(),
+  QPAY_INVOICE_CODE: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

@@ -48,6 +48,13 @@ npm run start:dev -w @coach/api
 npm run start:dev -w @coach/worker
 ```
 
+## Mobile Runtime Config
+
+For `apps/mobile`, configure these Expo public env vars instead of editing source files:
+
+- `EXPO_PUBLIC_API_BASE_URL` (example: `http://192.168.1.x:3000/api/v1` for physical device testing)
+- `EXPO_PUBLIC_TELEGRAM_BOT_USERNAME` (example: `MyCoachBot`, with or without `@`)
+
 ## Tech Stack
 
 - **Backend**: NestJS (TypeScript) with REST

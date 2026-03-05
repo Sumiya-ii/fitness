@@ -9,11 +9,12 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Input, Button, Card, Badge } from '../../components/ui';
 import { mealsApi, type FoodSearchResult } from '../../api/meals';
-import type { LogStackScreenProps } from '../../navigation/types';
+import type { LogStackScreenProps, LogStackParamList } from '../../navigation/types';
+import type { RouteProp } from '@react-navigation/native';
 
 type Props = LogStackScreenProps<'TextSearch'>;
 
@@ -30,7 +31,9 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export function TextSearchScreen() {
   const navigation = useNavigation<Props['navigation']>();
-  const [query, setQuery] = useState('');
+  const route = useRoute<RouteProp<LogStackParamList, 'TextSearch'>>();
+  const initialQuery = route.params?.initialQuery ?? '';
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<FoodSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

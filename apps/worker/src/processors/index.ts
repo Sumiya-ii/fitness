@@ -1,40 +1,40 @@
 import { Job } from 'bullmq';
 import { QueueName, QUEUE_NAMES } from '@coach/shared';
+import { processSttJob } from './stt.processor';
+import { processPhotoJob } from './photo.processor';
+import { processReminderJob } from './reminders.processor';
 
-/**
- * Route jobs to their respective processors.
- * Individual processors will be implemented in their respective chunks.
- */
-export async function processJob(queueName: QueueName, job: Job): Promise<void> {
+export async function processJob(queueName: QueueName, job: Job): Promise<unknown> {
   switch (queueName) {
     case QUEUE_NAMES.STT_PROCESSING:
-      // Implemented in C-020
-      console.log(`[STT] Would process: ${job.name}`);
-      break;
+      return processSttJob(job);
+
     case QUEUE_NAMES.PHOTO_PARSING:
-      // Implemented in C-023
-      console.log(`[Photo] Would process: ${job.name}`);
-      break;
-    case QUEUE_NAMES.FOOD_INDEX_SYNC:
-      // Implemented in C-010
-      console.log(`[FoodIndex] Would process: ${job.name}`);
-      break;
+      return processPhotoJob(job);
+
     case QUEUE_NAMES.REMINDERS:
-      // Implemented in C-031
-      console.log(`[Reminders] Would process: ${job.name}`);
-      break;
-    case QUEUE_NAMES.WEBHOOK_RETRY:
-      // Implemented in C-019
-      console.log(`[Webhook] Would process: ${job.name}`);
-      break;
+      return processReminderJob(job);
+
+    case QUEUE_NAMES.FOOD_INDEX_SYNC:
+      // TODO: Call Typesense reindex when Typesense is configured
+      console.log(`[FoodIndex] Would sync: ${job.name} (${job.id})`);
+      return;
+
     case QUEUE_NAMES.DATA_EXPORT:
-      // Implemented in C-028
-      console.log(`[DataExport] Would process: ${job.name}`);
-      break;
+      // TODO: Generate JSON/CSV export, upload to S3, notify user
+      console.log(`[DataExport] Would process: ${job.name} (${job.id})`);
+      return;
+
+    case QUEUE_NAMES.WEBHOOK_RETRY:
+      // TODO: Retry failed webhook deliveries
+      console.log(`[Webhook] Would retry: ${job.name} (${job.id})`);
+      return;
+
     case QUEUE_NAMES.ANALYTICS:
-      // Implemented in C-032
-      console.log(`[Analytics] Would process: ${job.name}`);
-      break;
+      // TODO: Forward to PostHog or analytics pipeline
+      console.log(`[Analytics] Would process: ${job.name} (${job.id})`);
+      return;
+
     default:
       console.warn(`No processor for queue: ${queueName}`);
   }

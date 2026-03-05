@@ -1,4 +1,4 @@
-import { GoalType } from '@coach/shared';
+import { GoalType, DietPreference } from '@coach/shared';
 
 export interface CalcInput {
   gender: string;
@@ -8,6 +8,7 @@ export interface CalcInput {
   activityLevel: string;
   goalType: GoalType;
   weeklyRateKg: number;
+  dietPreference?: DietPreference;
 }
 
 export interface CalcResult {
@@ -80,8 +81,12 @@ export function calculateTargets(input: CalcInput): CalcResult {
 
   const calorieTarget = Math.max(1200, Math.round(tdee + dailyAdjustment));
 
-  const proteinGrams = Math.round(Math.max(input.weightKg * PROTEIN_MIN_G_PER_KG));
-  const fatGrams = Math.round((calorieTarget * FAT_MIN_PERCENT) / 9);
+  const { proteinRatio, fatRatio } = getMacroRatios(input.dietPreference);
+
+  const proteinGrams = Math.round(
+    Math.max(input.weightKg * PROTEIN_MIN_G_PER_KG, (calorieTarget * proteinRatio) / 4),
+  );
+  const fatGrams = Math.round((calorieTarget * fatRatio) / 9);
 
   const proteinCalories = proteinGrams * 4;
   const fatCalories = fatGrams * 9;
@@ -95,4 +100,25 @@ export function calculateTargets(input: CalcInput): CalcResult {
     carbsGrams,
     fatGrams,
   };
+}
+
+/**
+ * Macro split ratios by diet preference.
+ * Protein min is always enforced at PROTEIN_MIN_G_PER_KG via Math.max above.
+ */
+function getMacroRatios(preference?: DietPreference): {
+  proteinRatio: number;
+  fatRatio: number;
+} {
+  switch (preference) {
+    case 'high_protein':
+      return { proteinRatio: 0.35, fatRatio: 0.25 };
+    case 'low_carb':
+      return { proteinRatio: 0.30, fatRatio: 0.40 };
+    case 'low_fat':
+      return { proteinRatio: 0.30, fatRatio: 0.15 };
+    case 'standard':
+    default:
+      return { proteinRatio: 0.25, fatRatio: FAT_MIN_PERCENT };
+  }
 }

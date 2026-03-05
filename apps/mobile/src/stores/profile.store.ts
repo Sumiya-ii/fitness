@@ -1,16 +1,23 @@
 import { create } from 'zustand';
+import type {
+  GoalType,
+  Gender,
+  ActivityLevel,
+  DietPreference,
+} from '@coach/shared';
 
-export type GoalType = 'lose' | 'maintain' | 'gain';
-export type Gender = 'male' | 'female';
-export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+export type { GoalType, Gender, ActivityLevel, DietPreference };
 
-export interface ProfileData {
-  goal: GoalType;
-  gender: Gender;
-  dateOfBirth: Date;
-  heightCm: number;
-  weightKg: number;
-  activityLevel: ActivityLevel;
+export interface OnboardingData {
+  goalType: GoalType | null;
+  goalWeightKg: number | null;
+  weeklyRateKg: number | null;
+  gender: Gender | null;
+  birthDate: Date | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  activityLevel: ActivityLevel | null;
+  dietPreference: DietPreference | null;
 }
 
 export interface CalculatedTargets {
@@ -20,86 +27,167 @@ export interface CalculatedTargets {
   fat: number;
 }
 
-// Mifflin-St Jeor BMR formula
-function calculateBMR(gender: Gender, weightKg: number, heightCm: number, age: number): number {
-  if (gender === 'male') {
-    return 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
-  }
-  return 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
-}
-
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
-  light: 1.375,
-  moderate: 1.55,
-  active: 1.725,
-  very_active: 1.9,
+  lightly_active: 1.375,
+  moderately_active: 1.55,
+  very_active: 1.725,
+  extra_active: 1.9,
 };
 
-export function calculateTargets(profile: ProfileData): CalculatedTargets {
-  const age = Math.floor(
-    (Date.now() - profile.dateOfBirth.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-  );
-  const bmr = calculateBMR(profile.gender, profile.weightKg, profile.heightCm, age);
-  const tdee = bmr * ACTIVITY_MULTIPLIERS[profile.activityLevel];
+function calculateBMR(
+  gender: Gender,
+  weightKg: number,
+  heightCm: number,
+  age: number,
+): number {
+  if (gender === 'female') {
+    return 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+  }
+  return 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+}
 
-  let calories: number;
-  switch (profile.goal) {
-    case 'lose':
-      calories = tdee - 500; // ~0.5kg/week
-      break;
-    case 'gain':
-      calories = tdee + 300; // ~0.3kg/week
-      break;
+function getMacroRatios(pref: DietPreference): {
+  proteinRatio: number;
+  fatRatio: number;
+} {
+  switch (pref) {
+    case 'high_protein':
+      return { proteinRatio: 0.35, fatRatio: 0.25 };
+    case 'low_carb':
+      return { proteinRatio: 0.3, fatRatio: 0.4 };
+    case 'low_fat':
+      return { proteinRatio: 0.3, fatRatio: 0.15 };
+    case 'standard':
     default:
-      calories = tdee;
+      return { proteinRatio: 0.25, fatRatio: 0.2 };
+  }
+}
+
+export function calculateTargets(data: OnboardingData): CalculatedTargets | null {
+  const {
+    goalType,
+    weeklyRateKg,
+    gender,
+    birthDate,
+    heightCm,
+    weightKg,
+    activityLevel,
+    dietPreference,
+  } = data;
+
+  if (
+    !goalType ||
+    weeklyRateKg == null ||
+    !gender ||
+    !birthDate ||
+    !heightCm ||
+    !weightKg ||
+    !activityLevel ||
+    !dietPreference
+  ) {
+    return null;
   }
 
-  const protein = Math.round(profile.weightKg * 2); // 2g per kg
-  const fat = Math.round((calories * 0.25) / 9); // 25% from fat
-  const carbs = Math.round((calories - protein * 4 - fat * 9) / 4);
+  const age = Math.floor(
+    (Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
+  );
+  const bmr = calculateBMR(gender, weightKg, heightCm, age);
+  const tdee = bmr * ACTIVITY_MULTIPLIERS[activityLevel];
 
-  return {
-    calories: Math.round(calories),
-    protein,
-    carbs: Math.max(0, carbs),
-    fat,
-  };
+  let calories: number;
+  if (goalType === 'lose_fat') {
+    calories = tdee - (weeklyRateKg * 7700) / 7;
+  } else if (goalType === 'gain') {
+    calories = tdee + (weeklyRateKg * 7700) / 7;
+  } else {
+    calories = tdee;
+  }
+  calories = Math.max(1200, Math.round(calories));
+
+  const { proteinRatio, fatRatio } = getMacroRatios(dietPreference);
+  const protein = Math.round(
+    Math.max(weightKg * 1.6, (calories * proteinRatio) / 4),
+  );
+  const fat = Math.round((calories * fatRatio) / 9);
+  const remaining = Math.max(0, calories - protein * 4 - fat * 9);
+  const carbs = Math.round(remaining / 4);
+
+  return { calories, protein, carbs, fat };
 }
 
-interface ProfileState extends Partial<ProfileData> {
-  setGoal: (goal: GoalType) => void;
-  setProfile: (data: Partial<ProfileData>) => void;
-  getProfile: () => ProfileData | null;
+interface ProfileState extends OnboardingData {
+  setGoalType: (goal: GoalType) => void;
+  setGoalWeightKg: (weight: number) => void;
+  setWeeklyRateKg: (rate: number) => void;
+  setGender: (gender: Gender) => void;
+  setBirthDate: (date: Date) => void;
+  setHeightCm: (height: number) => void;
+  setWeightKg: (weight: number) => void;
+  setActivityLevel: (level: ActivityLevel) => void;
+  setDietPreference: (pref: DietPreference) => void;
+  getOnboardingData: () => OnboardingData;
   getTargets: () => CalculatedTargets | null;
+  isComplete: () => boolean;
+  reset: () => void;
 }
+
+const initialState: OnboardingData = {
+  goalType: null,
+  goalWeightKg: null,
+  weeklyRateKg: null,
+  gender: null,
+  birthDate: null,
+  heightCm: null,
+  weightKg: null,
+  activityLevel: null,
+  dietPreference: null,
+};
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
-  setGoal: (goal) => set({ goal }),
-  setProfile: (data) => set(data),
-  getProfile: () => {
+  ...initialState,
+
+  setGoalType: (goalType) => set({ goalType }),
+  setGoalWeightKg: (goalWeightKg) => set({ goalWeightKg }),
+  setWeeklyRateKg: (weeklyRateKg) => set({ weeklyRateKg }),
+  setGender: (gender) => set({ gender }),
+  setBirthDate: (birthDate) => set({ birthDate }),
+  setHeightCm: (heightCm) => set({ heightCm }),
+  setWeightKg: (weightKg) => set({ weightKg }),
+  setActivityLevel: (activityLevel) => set({ activityLevel }),
+  setDietPreference: (dietPreference) => set({ dietPreference }),
+
+  getOnboardingData: () => {
     const s = get();
-    if (
-      s.goal &&
-      s.gender &&
-      s.dateOfBirth &&
-      s.heightCm &&
-      s.weightKg &&
-      s.activityLevel
-    ) {
-      return {
-        goal: s.goal,
-        gender: s.gender,
-        dateOfBirth: s.dateOfBirth,
-        heightCm: s.heightCm,
-        weightKg: s.weightKg,
-        activityLevel: s.activityLevel,
-      };
-    }
-    return null;
+    return {
+      goalType: s.goalType,
+      goalWeightKg: s.goalWeightKg,
+      weeklyRateKg: s.weeklyRateKg,
+      gender: s.gender,
+      birthDate: s.birthDate,
+      heightCm: s.heightCm,
+      weightKg: s.weightKg,
+      activityLevel: s.activityLevel,
+      dietPreference: s.dietPreference,
+    };
   },
-  getTargets: () => {
-    const profile = get().getProfile();
-    return profile ? calculateTargets(profile) : null;
+
+  getTargets: () => calculateTargets(get().getOnboardingData()),
+
+  isComplete: () => {
+    const d = get().getOnboardingData();
+    return !!(
+      d.goalType &&
+      d.goalWeightKg &&
+      d.weeklyRateKg != null &&
+      d.gender &&
+      d.birthDate &&
+      d.heightCm &&
+      d.weightKg &&
+      d.activityLevel &&
+      d.dietPreference
+    );
   },
+
+  reset: () => set(initialState),
 }));

@@ -3,16 +3,62 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '../components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { mealsApi, type RecentItem } from '../api/meals';
 import type { LogStackParamList } from '../navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useLocale } from '../i18n';
 
 type NavProp = NativeStackNavigationProp<LogStackParamList, 'LogHome'>;
 
+interface ActionItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  gradient: [string, string];
+  route: keyof LogStackParamList;
+}
+
+const ACTION_ITEMS: ActionItem[] = [
+  {
+    id: 'text-search',
+    title: 'Search',
+    subtitle: 'Find foods',
+    icon: 'search',
+    gradient: ['#22c55e', '#16a34a'],
+    route: 'TextSearch',
+  },
+  {
+    id: 'barcode',
+    title: 'Barcode',
+    subtitle: 'Scan label',
+    icon: 'barcode-outline',
+    gradient: ['#f59e0b', '#d97706'],
+    route: 'BarcodeScan',
+  },
+  {
+    id: 'voice',
+    title: 'Voice',
+    subtitle: 'Speak it',
+    icon: 'mic',
+    gradient: ['#3b82f6', '#2563eb'],
+    route: 'VoiceLog',
+  },
+  {
+    id: 'quick-add',
+    title: 'Quick Add',
+    subtitle: 'Manual entry',
+    icon: 'flash',
+    gradient: ['#ec4899', '#db2777'],
+    route: 'QuickAdd',
+  },
+];
+
 export function LogScreen() {
   const navigation = useNavigation<NavProp>();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { t } = useLocale();
   const [recents, setRecents] = useState<RecentItem[]>([]);
 
   useFocusEffect(
@@ -21,176 +67,164 @@ export function LogScreen() {
     }, [])
   );
 
-  const formatDate = (d: Date) =>
-    d.toLocaleDateString(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-
-  const actionCards = [
-    {
-      id: 'text-search',
-      title: 'Text Search',
-      icon: 'search' as const,
-      color: 'bg-primary-500',
-      onPress: () => navigation.navigate('TextSearch'),
-    },
-    {
-      id: 'quick-add',
-      title: 'Quick Add',
-      icon: 'flash' as const,
-      color: 'bg-accent-500',
-      onPress: () => navigation.navigate('QuickAdd'),
-    },
-    {
-      id: 'barcode',
-      title: 'Scan Barcode',
-      icon: 'barcode' as const,
-      color: 'bg-orange-500',
-      onPress: () => navigation.navigate('BarcodeScan'),
-    },
-    {
-      id: 'voice',
-      title: 'Voice',
-      icon: 'mic' as const,
-      color: 'bg-blue-500',
-      onPress: () => navigation.navigate('VoiceLog'),
-    },
-  ];
-
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-          <Text className="text-2xl font-sans-bold text-text dark:text-slate-100">
-            Log a Meal
-          </Text>
-          <Pressable
-            onPress={() => {
-              // Simple date picker - could use @react-native-community/datetimepicker
-              const d = new Date(selectedDate);
-              d.setDate(d.getDate() - 1);
-              setSelectedDate(d);
-            }}
-            className="flex-row items-center gap-2 rounded-xl bg-surface-secondary px-4 py-2.5 dark:bg-slate-800"
-          >
-            <Ionicons name="calendar-outline" size={20} color="#475569" />
-            <Text className="font-sans-medium text-text dark:text-slate-200">
-              {formatDate(selectedDate)}
+    <View className="flex-1 bg-slate-950">
+      <SafeAreaView edges={['top']} className="flex-1">
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          {/* Header */}
+          <View className="px-5 pt-2 pb-4">
+            <Text className="text-2xl font-sans-bold text-white">
+              {t('logging.logMeal')}
             </Text>
-          </Pressable>
-        </View>
-
-        {/* 2x2 Action Grid */}
-        <View className="flex-row flex-wrap gap-3 px-4 py-4">
-          {actionCards.map((card) => (
-            <Card
-              key={card.id}
-              pressable
-              onPress={card.onPress}
-              className="flex-1 min-w-[45%] max-w-[48%]"
-            >
-              <View
-                className={`mb-3 h-12 w-12 items-center justify-center rounded-xl ${card.color}`}
-              >
-                <Ionicons name={card.icon} size={24} color="#ffffff" />
-              </View>
-              <Text className="font-sans-semibold text-text dark:text-slate-100">
-                {card.title}
-              </Text>
-            </Card>
-          ))}
-        </View>
-
-        {/* Photo Card - Full Width */}
-        <View className="px-4 pb-4">
-          <Card
-            pressable
-            onPress={() => navigation.navigate('PhotoLog')}
-            className="flex-row items-center gap-4"
-          >
-            <View className="h-14 w-14 items-center justify-center rounded-xl bg-purple-500">
-              <Ionicons name="camera" size={28} color="#ffffff" />
-            </View>
-            <View className="flex-1">
-              <Text className="font-sans-semibold text-text dark:text-slate-100">
-                Photo
-              </Text>
-              <Text className="text-sm text-text-secondary dark:text-slate-400">
-                Snap a photo of your meal
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
-          </Card>
-        </View>
-
-        {/* Recent Meals Section */}
-        <View className="px-4 pb-8">
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-lg font-sans-semibold text-text dark:text-slate-100">
-              Recent Meals
+            <Text className="text-sm text-slate-400 font-sans-medium mt-1">
+              {t('logging.chooseHow')}
             </Text>
-            <Pressable onPress={() => navigation.navigate('FavoritesRecents')}>
-              <Text className="text-sm font-sans-medium text-primary-600 dark:text-primary-400">
-                See all
-              </Text>
-            </Pressable>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12, paddingRight: 16 }}
-          >
-            {recents.length === 0 ? (
-              <Card
-                pressable
-                onPress={() => navigation.navigate('FavoritesRecents')}
-                className="w-40"
+
+          {/* AI Scan Hero Card */}
+          <Animated.View entering={FadeInDown.duration(400)} className="px-4 mb-4">
+            <Pressable
+              onPress={() => navigation.navigate('PhotoLog')}
+              className="overflow-hidden rounded-3xl"
+            >
+              <LinearGradient
+                colors={['#7c3aed', '#4f46e5', '#6d28d9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="p-5"
               >
-                <View className="mb-2 flex-row items-center justify-between">
-                  <Ionicons name="time-outline" size={18} color="#94a3b8" />
-                  <Text className="text-xs text-text-tertiary dark:text-slate-500">
-                    Today
-                  </Text>
-                </View>
-                <Text
-                  className="mb-1 font-sans-medium text-text dark:text-slate-100"
-                  numberOfLines={2}
-                >
-                  No recent meals
-                </Text>
-                <Text className="text-sm text-text-secondary dark:text-slate-400">
-                  Tap to add
-                </Text>
-              </Card>
-            ) : (
-              recents.slice(0, 5).map((item) => (
-                <Card
-                  key={item.foodId}
-                  pressable
-                  onPress={() => navigation.navigate('TextSearch')}
-                  className="w-40"
-                >
-                  <View className="mb-2 flex-row items-center justify-between">
-                    <Ionicons name="time-outline" size={18} color="#94a3b8" />
+                <View className="flex-row items-center">
+                  <View className="flex-1">
+                    <View className="flex-row items-center gap-2 mb-2">
+                      <View className="h-6 w-6 rounded-full bg-white/20 items-center justify-center">
+                        <Ionicons name="sparkles" size={14} color="#ffffff" />
+                      </View>
+                      <Text className="text-xs font-sans-semibold text-white/70 uppercase tracking-wider">
+                        AI Powered
+                      </Text>
+                    </View>
+                    <Text className="text-xl font-sans-bold text-white mb-1">
+                      Snap & Track
+                    </Text>
+                    <Text className="text-sm text-white/70 font-sans-medium">
+                      Take a photo and let AI estimate calories and macros instantly
+                    </Text>
                   </View>
-                  <Text
-                    className="mb-1 font-sans-medium text-text dark:text-slate-100"
-                    numberOfLines={2}
+                  <View className="h-16 w-16 rounded-2xl bg-white/15 items-center justify-center ml-4">
+                    <Ionicons name="camera" size={32} color="#ffffff" />
+                  </View>
+                </View>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+
+          {/* Action Grid */}
+          <View className="px-4 mb-6">
+            <View className="flex-row flex-wrap gap-3">
+              {ACTION_ITEMS.map((action, index) => (
+                <Animated.View
+                  key={action.id}
+                  entering={FadeInDown.delay(100 + index * 60).duration(400)}
+                  className="flex-1 min-w-[45%]"
+                >
+                  <Pressable
+                    onPress={() => navigation.navigate(action.route as never)}
+                    className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
                   >
-                    {item.name}
-                  </Text>
-                  <Text className="text-sm text-text-secondary dark:text-slate-400">
-                    {item.lastCalories} cal
-                  </Text>
-                </Card>
-              ))
-            )}
-          </ScrollView>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+                    <LinearGradient
+                      colors={action.gradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      className="h-11 w-11 rounded-xl items-center justify-center mb-3"
+                    >
+                      <Ionicons name={action.icon} size={22} color="#ffffff" />
+                    </LinearGradient>
+                    <Text className="font-sans-semibold text-white text-base">
+                      {action.title}
+                    </Text>
+                    <Text className="text-xs text-slate-400 font-sans-medium mt-0.5">
+                      {action.subtitle}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              ))}
+            </View>
+          </View>
+
+          {/* Favorites & Recents */}
+          <View className="px-4">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-lg font-sans-semibold text-white">
+                {t('logging.recentMeals')}
+              </Text>
+              <Pressable onPress={() => navigation.navigate('FavoritesRecents')}>
+                <Text className="text-sm font-sans-medium text-primary-400">
+                  {t('common.seeAll')}
+                </Text>
+              </Pressable>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12, paddingRight: 16 }}
+            >
+              {recents.length === 0 ? (
+                <Animated.View entering={FadeInRight.duration(400)}>
+                  <Pressable
+                    onPress={() => navigation.navigate('FavoritesRecents')}
+                    className="w-44 rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+                  >
+                    <View className="h-10 w-10 rounded-full bg-slate-800 items-center justify-center mb-3">
+                      <Ionicons name="time-outline" size={20} color="#64748b" />
+                    </View>
+                    <Text className="font-sans-medium text-white mb-1">
+                      No recent meals
+                    </Text>
+                    <Text className="text-xs text-slate-400">
+                      Your logged meals will appear here
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              ) : (
+                recents.slice(0, 6).map((item, index) => (
+                  <Animated.View
+                    key={item.foodId}
+                    entering={FadeInRight.delay(60 * index).duration(400)}
+                  >
+                    <Pressable
+                      onPress={() => navigation.navigate('TextSearch')}
+                      className="w-44 rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+                    >
+                      <View className="flex-row items-center justify-between mb-3">
+                        <View className="h-8 w-8 rounded-full bg-primary-500/20 items-center justify-center">
+                          <Ionicons name="nutrition" size={16} color="#22c55e" />
+                        </View>
+                        <Pressable className="h-7 w-7 rounded-full bg-slate-800 items-center justify-center">
+                          <Ionicons name="add" size={16} color="#94a3b8" />
+                        </Pressable>
+                      </View>
+                      <Text
+                        className="font-sans-medium text-white mb-1"
+                        numberOfLines={2}
+                      >
+                        {item.name}
+                      </Text>
+                      <Text className="text-xs text-slate-400 font-sans-medium">
+                        {item.lastCalories} kcal
+                      </Text>
+                    </Pressable>
+                  </Animated.View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }

@@ -36,22 +36,21 @@ export const Input = forwardRef<TextInput, InputProps>(
 
     const hasError = Boolean(error);
     const borderColor = hasError
-      ? 'border-danger dark:border-red-500'
+      ? 'border-red-500'
       : isFocused
-        ? 'border-primary-500 dark:border-primary-400'
-        : 'border-slate-200 dark:border-slate-600';
+        ? 'border-primary-500'
+        : 'border-slate-700';
 
     return (
       <View className={`${containerClassName}`}>
         {label ? (
-          <Text className="mb-1.5 text-sm font-sans-medium text-text dark:text-slate-200">
+          <Text className="mb-1.5 text-sm font-sans-medium text-slate-300">
             {label}
           </Text>
         ) : null}
         <View
           className={`
-            flex-row items-center rounded-xl border-2 bg-white px-4
-            dark:bg-slate-800
+            flex-row items-center rounded-xl border-2 bg-slate-800/50 px-4
             ${borderColor}
           `}
         >
@@ -61,13 +60,10 @@ export const Input = forwardRef<TextInput, InputProps>(
           <TextInput
             ref={ref}
             className={`
-              flex-1 py-3 text-base text-text placeholder:text-text-tertiary
-              dark:text-slate-100 dark:placeholder:text-slate-500
-              ${leftIcon ? '' : ''}
-              ${rightIcon ? '' : ''}
+              flex-1 py-3 text-base text-white
               ${className}
             `}
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#475569"
             onFocus={(e) => {
               setIsFocused(true);
               onFocus?.(e);
@@ -83,9 +79,9 @@ export const Input = forwardRef<TextInput, InputProps>(
           ) : null}
         </View>
         {error ? (
-          <Text className="mt-1.5 text-sm text-danger dark:text-red-400">{error}</Text>
+          <Text className="mt-1.5 text-sm text-red-400">{error}</Text>
         ) : helperText ? (
-          <Text className="mt-1.5 text-sm text-text-secondary dark:text-slate-400">
+          <Text className="mt-1.5 text-sm text-slate-400">
             {helperText}
           </Text>
         ) : null}

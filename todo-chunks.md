@@ -543,7 +543,7 @@ These items cannot be done by the AI and need to be completed by you.
 ### After C-026..C-030 completion
 
 - [ ] **Subscription webhook verification** — Before production, implement real Apple/Google receipt verification in the webhook handler. Currently the webhook endpoint is `@Public()` and trusts the payload.
-- [ ] **Admin RBAC** — The admin moderation endpoints currently allow any authenticated user. Add role-based access control (e.g., `admin` role check) before exposing to production.
+- [x] **Admin RBAC** — Implemented in API via `ADMIN_USER_IDS` allowlist guard for `/api/v1/admin/*` routes.
 - [ ] **Privacy legal copy** — Provide the consent text versions (health_data, marketing, analytics) and their exact legal wording for each locale (mn/en). These need legal review.
 - [ ] **Data export/deletion jobs** — The privacy service creates request records but doesn't actually process them. Background jobs for data export (generate JSON/CSV, upload to S3) and account deletion need to be wired into the worker.
 - [ ] **App Store / Google Play setup** — Set up in-app purchase products and subscription tiers in both stores.
@@ -559,7 +559,7 @@ These items cannot be done by the AI and need to be completed by you.
 - [ ] **Create Telegram Bot** — Go to @BotFather on Telegram, create a bot, and set `TELEGRAM_BOT_TOKEN` in `.env`.
 - [ ] **Set Telegram Webhook URL** — After deploying, configure the webhook URL via: `https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://your-domain/api/v1/telegram/webhook`
 - [ ] **Test Telegram linking** — Use the in-app link code flow: call `POST /api/v1/telegram/link-code` to get a 6-digit code, then send it to the bot on Telegram.
-- [ ] **STT Provider** — Configure `STT_PROVIDER` (e.g., `chimege` or `google`) and `STT_API_KEY` for voice-to-text. The STT service currently returns a placeholder when no provider is configured.
+- [x] **STT Provider** — Wire Google STT via `GOOGLE_STT_API_KEY` env var. SttService calls Google Speech-to-Text API with mn-MN + en-US support. Worker processor implemented.
 - [ ] **S3 Storage** — Configure `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` for photo upload storage. Currently photo uploads pass a reference path in the job data; actual S3 upload needs provider-specific implementation.
 - [ ] **Run Prisma migration** — The `TelegramLink` model was updated with a `chatId` field. Run `npm run db:migrate -w @coach/api` after connecting to the database.
 
@@ -567,12 +567,12 @@ These items cannot be done by the AI and need to be completed by you.
 
 - [ ] **Install Expo CLI** — Run `npm install -g expo-cli` or use `npx expo` commands.
 - [ ] **Start the mobile app** — Run `npx expo start` from `apps/mobile/` and scan the QR code with Expo Go on your phone.
-- [ ] **Update API base URL** — In `apps/mobile/src/api/client.ts`, change `http://localhost:3000/api/v1` to your machine's local IP (e.g., `http://192.168.1.x:3000/api/v1`) for device testing.
+- [x] **Update API base URL** — Implemented in mobile client via `EXPO_PUBLIC_API_BASE_URL` env var (with sane localhost/emulator defaults).
 - [ ] **Wire Firebase Auth SDK** — The auth screens use placeholder API calls. Install `@react-native-firebase/auth` or Expo's Firebase SDK and connect to your Firebase project.
 - [ ] **Configure app.json** — Update the Expo config in `apps/mobile/app.json` with your app name, bundle identifier, and splash screen assets.
 - [ ] **Load custom fonts** — The design system references Inter font family. Use `expo-font` to load Inter weights (Regular, Medium, SemiBold, Bold).
 - [ ] **Test barcode scanning** — Barcode scanning requires a physical device (not simulator). Test with expo-camera on a real phone.
-- [ ] **Configure Telegram bot username** — Update the bot username in `TelegramConnectScreen.tsx` from `@CoachBot` to your actual bot username.
+- [x] **Configure Telegram bot username** — Implemented via `EXPO_PUBLIC_TELEGRAM_BOT_USERNAME` env var.
 - [ ] **Set up IAP** — Wire `react-native-purchases` or `expo-in-app-purchases` for subscription flows in `SubscriptionScreen.tsx`.
 
 ## Weekly Tracking Snapshot
@@ -583,3 +583,12 @@ These items cannot be done by the AI and need to be completed by you.
 | 2026-03-09 |                |                |         |                                |
 | 2026-03-16 |                |                |         |                                |
 | 2026-03-23 |                |                |         |                                |
+
+## Maintenance Checklist
+
+- [x] 2026-03-04: Mobile lint error cleanup pass completed (navigation + home/progress screen imports/unused vars).
+- [x] 2026-03-04: Reduced manual setup by implementing Admin RBAC allowlist + mobile env-driven API base URL + Telegram bot username config.
+- [x] 2026-03-05: CalAI-inspired UI redesign — dark-first aesthetic with gradient accents, circular macro indicators, redesigned HomeScreen/LogScreen/ProgressScreen/SettingsScreen/WeeklySummaryScreen/SearchScreen/TelegramConnectScreen/SubscriptionScreen, new CircularMacro component, enhanced ProgressRing with gradient support, dark tab bar.
+- [x] 2026-03-05: Cal AI-style onboarding overhaul — 10-step progressive flow (Goal → DesiredWeight → WeeklyRate → Gender → BirthDate → Height → Weight → ActivityLevel → DietPreference → Motivation → TargetReview). Backend `POST /onboarding/complete` endpoint (transactional profile+target creation). Prisma schema updated: `weightKg`, `goalWeightKg`, `dietPreference`, `onboardingCompletedAt` on Profile. Shared constants for `Gender`, `ActivityLevel`, `DietPreference`. Diet-preference-aware macro calculator. Reusable `OnboardingLayout` component with progress bar.
+- [x] 2026-03-05: QPay payment integration — Full QPay v2 API integration for Mongolian bank payments. Backend: `QPayService` (token management, invoice creation, payment verification), `QPayController` (POST /qpay/invoice, GET /qpay/callback, GET /qpay/invoice/:id/status), `QPayModule`. Prisma: `QPayInvoice` model tracking invoices. Env: `QPAY_API_URL`, `QPAY_CLIENT_ID`, `QPAY_CLIENT_SECRET`, `QPAY_INVOICE_CODE`. Mobile: Redesigned `SubscriptionScreen` with MNT pricing (19,900₮/month, 149,900₮/year), QPay QR code display, bank app deeplinks (Khan Bank, TDB, XacBank, etc.), payment status polling, success confirmation screen. Subscription model updated to support `qpay` provider.
+- [x] 2026-03-05: MVP UAT readiness — Full E2E voice logging (expo-av + Google STT via GOOGLE_STT_API_KEY). Full E2E photo logging (OpenAI GPT-4o Vision via OPENAI_API_KEY). Real worker processors for STT, photo parsing, and Telegram reminders. SearchScreen navigates into TextSearch with pre-populated query. SettingsScreen wired: language/units pickers, edit profile name, delete account, export data. Telegram NLP food parsing with DB lookup, inline confirmation keyboard, and coaching queries (calories left/today). ~100 Mongolian food seed data (traditional, dairy, proteins, grains, vegetables, fruits, modern, snacks, supplements) with mn/en localizations. i18n integration (en/mn) into MainTabs, HomeScreen, LogScreen, SettingsScreen. Docker deployment (Dockerfile multi-stage + docker-compose with postgres, redis, typesense, api, worker).
