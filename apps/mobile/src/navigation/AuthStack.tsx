@@ -4,16 +4,13 @@ import { OnboardingScreen } from '../screens/onboarding';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { SignInScreen } from '../screens/SignInScreen';
 import { SignUpScreen } from '../screens/SignUpScreen';
-import { useOnboardingStore } from '../stores/onboarding.store';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export function AuthStack() {
-  const onboardingComplete = useOnboardingStore((s) => s.onboardingComplete);
-
   return (
     <Stack.Navigator
-      initialRouteName={onboardingComplete ? 'Welcome' : 'Onboarding'}
+      initialRouteName="Welcome"
       screenOptions={{
         headerShown: false,
       }}

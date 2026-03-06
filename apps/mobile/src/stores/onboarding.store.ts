@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { api } from '../api/client';
 
 const ONBOARDING_COMPLETE_KEY = 'onboarding_complete';
 const PROFILE_SETUP_COMPLETE_KEY = 'profile_setup_complete';
@@ -8,6 +9,7 @@ interface OnboardingState {
   onboardingComplete: boolean | null;
   profileSetupComplete: boolean | null;
   loadOnboardingStatus: () => Promise<void>;
+  syncProfileSetupStatus: () => Promise<void>;
   setOnboardingComplete: () => Promise<void>;
   setProfileSetupComplete: () => Promise<void>;
 }
@@ -28,6 +30,28 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       });
     } catch {
       set({ onboardingComplete: false, profileSetupComplete: false });
+    }
+  },
+
+  syncProfileSetupStatus: async () => {
+    set({ profileSetupComplete: null });
+    try {
+      const response = await api.get<{ data: { completed: boolean } }>(
+        '/onboarding/status',
+      );
+      const completed = response.data.completed === true;
+      await AsyncStorage.setItem(
+        PROFILE_SETUP_COMPLETE_KEY,
+        completed ? 'true' : 'false',
+      );
+      set({ profileSetupComplete: completed });
+    } catch {
+      try {
+        const profile = await AsyncStorage.getItem(PROFILE_SETUP_COMPLETE_KEY);
+        set({ profileSetupComplete: profile === 'true' });
+      } catch {
+        set({ profileSetupComplete: false });
+      }
     }
   },
 

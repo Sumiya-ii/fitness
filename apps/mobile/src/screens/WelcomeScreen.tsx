@@ -46,6 +46,14 @@ export function WelcomeScreen({ navigation }: Props) {
 
         <View className="w-full gap-3">
           <Button
+            onPress={() => navigation.navigate('Onboarding')}
+            variant="ghost"
+            size="md"
+            className="w-full"
+          >
+            See how it works
+          </Button>
+          <Button
             onPress={() => navigation.navigate('SignIn')}
             size="lg"
             className="w-full"
