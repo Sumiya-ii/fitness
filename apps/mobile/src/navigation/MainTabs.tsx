@@ -7,6 +7,7 @@ import { SearchScreen } from '../screens/SearchScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useLocale } from '../i18n';
+import { themeColors } from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -17,11 +18,11 @@ export function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#22c55e',
-        tabBarInactiveTintColor: '#475569',
+        tabBarActiveTintColor: themeColors.primary['500'],
+        tabBarInactiveTintColor: themeColors.text.secondary,
         tabBarStyle: {
-          backgroundColor: '#020617',
-          borderTopColor: '#1e293b',
+          backgroundColor: themeColors.surface.app,
+          borderTopColor: themeColors.surface.border,
           borderTopWidth: 1,
           paddingTop: 4,
         },

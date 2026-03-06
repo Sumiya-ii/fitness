@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { Button } from './Button';
+import { themeColors } from '../../theme';
 
 export interface ErrorStateProps {
   message: string;
@@ -24,7 +25,7 @@ export function ErrorState({
         <Ionicons
           name="alert-circle-outline"
           size={48}
-          color="#ef4444"
+          color={themeColors.status.danger}
           style={{ opacity: 0.9 }}
         />
       </View>

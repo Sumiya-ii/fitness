@@ -43,7 +43,7 @@ export function Card({
   }));
 
   const baseClasses =
-    'rounded-2xl bg-slate-900/80 border border-slate-800 p-4';
+    'rounded-2xl bg-surface-card border border-surface-border p-4';
 
   if (pressable && onPress) {
     return (

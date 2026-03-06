@@ -5,6 +5,7 @@ import {
   Text,
   type TextInputProps,
 } from 'react-native';
+import { themeColors } from '../../theme';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -39,18 +40,18 @@ export const Input = forwardRef<TextInput, InputProps>(
       ? 'border-red-500'
       : isFocused
         ? 'border-primary-500'
-        : 'border-slate-700';
+        : 'border-surface-border';
 
     return (
       <View className={`${containerClassName}`}>
         {label ? (
-          <Text className="mb-1.5 text-sm font-sans-medium text-slate-300">
+          <Text className="mb-1.5 text-sm font-sans-medium text-text-tertiary">
             {label}
           </Text>
         ) : null}
         <View
           className={`
-            flex-row items-center rounded-xl border-2 bg-slate-800/50 px-4
+            flex-row items-center rounded-xl border-2 bg-surface-card px-4
             ${borderColor}
           `}
         >
@@ -60,10 +61,10 @@ export const Input = forwardRef<TextInput, InputProps>(
           <TextInput
             ref={ref}
             className={`
-              flex-1 py-3 text-base text-white
+              flex-1 py-3 text-base text-text-app
               ${className}
             `}
-            placeholderTextColor="#475569"
+            placeholderTextColor={themeColors.text.secondary}
             onFocus={(e) => {
               setIsFocused(true);
               onFocus?.(e);
@@ -81,7 +82,7 @@ export const Input = forwardRef<TextInput, InputProps>(
         {error ? (
           <Text className="mt-1.5 text-sm text-red-400">{error}</Text>
         ) : helperText ? (
-          <Text className="mt-1.5 text-sm text-slate-400">
+          <Text className="mt-1.5 text-sm text-text-tertiary">
             {helperText}
           </Text>
         ) : null}

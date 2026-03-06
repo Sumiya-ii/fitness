@@ -5,6 +5,7 @@ import { useOnboardingStore } from '../stores/onboarding.store';
 import { AuthStack } from './AuthStack';
 import { SetupStack } from './SetupStack';
 import { MainStack } from './MainStack';
+import { themeColors } from '../theme';
 
 function RootContent() {
   const profileSetupComplete = useOnboardingStore((s) => s.profileSetupComplete);
@@ -26,8 +27,8 @@ export function RootNavigator() {
 
   if (onboardingComplete === null || isLoading) {
     return (
-      <View className="flex-1 bg-slate-950 items-center justify-center">
-        <ActivityIndicator size="large" color="#22c55e" />
+      <View className="flex-1 bg-surface-app items-center justify-center">
+        <ActivityIndicator size="large" color={themeColors.primary['500']} />
       </View>
     );
   }

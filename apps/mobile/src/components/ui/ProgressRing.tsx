@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { themeColors } from '../../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -30,9 +31,9 @@ export interface ProgressRingProps {
 export function ProgressRing({
   progress,
   size = 120,
-  color = '#22c55e',
+  color = themeColors.primary['500'],
   gradientEnd,
-  backgroundColor = '#1e293b',
+  backgroundColor = themeColors.surface.border,
   strokeWidth = 10,
   label,
   centerLabel,

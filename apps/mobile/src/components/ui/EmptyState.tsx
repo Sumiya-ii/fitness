@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { Button } from './Button';
+import { themeColors } from '../../theme';
 
 type EmptyStateIcon = 'nutrition' | 'search' | 'camera' | 'mic' | 'barcode' | 'heart' | 'list';
 
@@ -44,7 +45,7 @@ export function EmptyState({
         <Ionicons
           name={iconName}
           size={36}
-          color="#475569"
+          color={themeColors.text.secondary}
         />
       </View>
       <Text className="mb-2 text-center text-lg font-sans-semibold text-white">

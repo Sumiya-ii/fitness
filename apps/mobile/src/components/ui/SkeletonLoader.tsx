@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, type ViewStyle } from 'react-native';
+import { themeColors } from '../../theme';
 
 export type SkeletonVariant = 'rect' | 'circle';
 
@@ -53,7 +54,7 @@ export function SkeletonLoader({
     width: typeof resolvedWidth === 'string' ? (resolvedWidth as `${number}%`) : resolvedWidth,
     height: typeof resolvedHeight === 'string' ? (resolvedHeight as `${number}%`) : resolvedHeight,
     borderRadius: resolvedBorderRadius,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: themeColors.surface.secondary,
   };
 
   return (

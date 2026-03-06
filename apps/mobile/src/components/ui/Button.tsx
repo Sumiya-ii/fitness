@@ -10,6 +10,7 @@ import {
   Text,
   type PressableProps,
 } from 'react-native';
+import { themeColors } from '../../theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -98,7 +99,11 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         {loading ? (
           <ActivityIndicator
             size="small"
-            color={variant === 'primary' || variant === 'danger' ? '#ffffff' : '#22c55e'}
+            color={
+              variant === 'primary' || variant === 'danger'
+                ? themeColors.text.inverse
+                : themeColors.primary['500']
+            }
           />
         ) : (
           <Text
