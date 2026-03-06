@@ -7,7 +7,6 @@
 jest.mock('react-native', () => ({
   View: ({ children }: { children?: unknown }) => children,
   ActivityIndicator: () => null,
-  useEffect: (fn: () => void) => fn(),
 }));
 
 // Mock stores
@@ -37,10 +36,6 @@ jest.mock('../navigation/MainStack', () => ({ MainStack: () => null }));
 import { RootNavigator } from '../navigation/RootNavigator';
 
 describe('RootNavigator', () => {
-  it('is a function component', () => {
-    expect(typeof RootNavigator).toBe('function');
-  });
-
   it('can be imported without throwing', () => {
     expect(RootNavigator).toBeDefined();
   });

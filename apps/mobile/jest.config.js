@@ -15,6 +15,7 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^nativewind/jsx-runtime$': 'react/jsx-runtime',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(@react-native|react-native|react-native-svg|expo)/)',

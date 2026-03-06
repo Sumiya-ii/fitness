@@ -36,7 +36,7 @@ export function VoiceLogScreen() {
     };
   }, []);
 
-  const startPulse = useCallback(() => {
+  const _startPulse = useCallback(() => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
