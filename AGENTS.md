@@ -49,6 +49,15 @@ Ask before:
 - If there is a port conflict, resolve it automatically (reuse or switch port) and report the active port.
 - Default Expo connection mode is **Tunnel** for all interactive testing sessions. Start with `--tunnel` unless explicitly requested otherwise.
 
+## Feature Documentation Sync (Required)
+
+- Treat `docs/features/` as a **living source of truth** for implemented feature behavior.
+- Any task that changes feature logic, API behavior, data modeling, validation, or UX flow **must** update the corresponding `docs/features/feature-*.md` file in the same task.
+- Update docs by **replacing/editing existing content** to reflect the current state. Do **not** append changelogs, timelines, or historical notes.
+- If a new feature is introduced, create a new `docs/features/feature-*.md` file and update `docs/features/README.md` feature index and count.
+- If scope shifts between features, update all impacted feature docs so PM/dev docs stay consistent with code.
+- A task is not complete until code and matching feature docs are aligned.
+
 ## Output requirements
 
 When finishing a task, report:
