@@ -42,7 +42,7 @@ export function MotivationScreen({ navigation }: Props) {
     >
       <View className="flex-1 justify-center">
         <LinearGradient
-          colors={['#22c55e', '#16a34a']}
+          colors={['#1f2028', '#15161d']}
           className="rounded-3xl p-6 mb-6"
           style={{ borderRadius: 24 }}
         >
@@ -50,20 +50,20 @@ export function MotivationScreen({ navigation }: Props) {
             <View className="w-16 h-16 rounded-full bg-white/20 items-center justify-center mb-3">
               <Ionicons name="checkmark-done" size={36} color="white" />
             </View>
-            <Text className="text-xl font-sans-bold text-white text-center">
+            <Text className="text-xl font-sans-bold text-text text-center">
               {goalMessage}
             </Text>
           </View>
 
           {weeks && goalType !== 'maintain' && (
             <View className="bg-white/15 rounded-2xl p-4">
-              <Text className="text-sm text-white/80 text-center mb-1">
+              <Text className="text-sm text-text/80 text-center mb-1">
                 Estimated time to reach your goal
               </Text>
-              <Text className="text-3xl font-sans-bold text-white text-center">
+              <Text className="text-3xl font-sans-bold text-text text-center">
                 {weeks} weeks
               </Text>
-              <Text className="text-xs text-white/70 text-center mt-1">
+              <Text className="text-xs text-text/70 text-center mt-1">
                 {diff?.toFixed(1)} kg · {weeklyRateKg} kg/week
               </Text>
             </View>
@@ -87,9 +87,9 @@ export function MotivationScreen({ navigation }: Props) {
           ].map((item, i) => (
             <View key={i} className="flex-row items-center">
               <View className="w-8 h-8 rounded-full bg-primary-500/15 items-center justify-center mr-3">
-                <Ionicons name={item.icon} size={16} color="#22c55e" />
+                <Ionicons name={item.icon} size={16} color="#1f2028" />
               </View>
-              <Text className="text-sm font-sans-medium text-white flex-1">
+              <Text className="text-sm font-sans-medium text-text flex-1">
                 {item.text}
               </Text>
             </View>

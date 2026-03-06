@@ -25,7 +25,7 @@ const OPTIONS: DietOption[] = [
     title: 'Standard',
     description: 'Balanced macro split for most people',
     macroSplit: '25% P · 55% C · 20% F',
-    gradient: ['#22c55e', '#16a34a'],
+    gradient: ['#1f2028', '#15161d'],
   },
   {
     id: 'high_protein',
@@ -33,7 +33,7 @@ const OPTIONS: DietOption[] = [
     title: 'High Protein',
     description: 'More protein to preserve and build muscle',
     macroSplit: '35% P · 40% C · 25% F',
-    gradient: ['#3b82f6', '#2563eb'],
+    gradient: ['#8b8fa0', '#767b8f'],
   },
   {
     id: 'low_carb',
@@ -41,7 +41,7 @@ const OPTIONS: DietOption[] = [
     title: 'Low Carb',
     description: 'Reduced carbs with higher fat intake',
     macroSplit: '30% P · 30% C · 40% F',
-    gradient: ['#a855f7', '#7e22ce'],
+    gradient: ['#8f93a4', '#7d8194'],
   },
   {
     id: 'low_fat',
@@ -49,7 +49,7 @@ const OPTIONS: DietOption[] = [
     title: 'Low Fat',
     description: 'Reduced fat for heart-healthy eating',
     macroSplit: '30% P · 55% C · 15% F',
-    gradient: ['#f59e0b', '#d97706'],
+    gradient: ['#8f93a4', '#797d90'],
   },
 ];
 
@@ -76,10 +76,10 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
             <Pressable
               key={opt.id}
               onPress={() => setDietPreference(opt.id)}
-              className={`flex-row items-center p-4 rounded-2xl border-2 bg-slate-900/80 ${
+              className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
                 selected
                   ? 'border-primary-500'
-                  : 'border-slate-800'
+                  : 'border-surface-border'
               }`}
             >
               <LinearGradient
@@ -90,10 +90,10 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
                 <Ionicons name={opt.icon} size={24} color="white" />
               </LinearGradient>
               <View className="flex-1">
-                <Text className="text-base font-sans-semibold text-white">
+                <Text className="text-base font-sans-semibold text-text">
                   {opt.title}
                 </Text>
-                <Text className="text-xs text-slate-400 mt-0.5">
+                <Text className="text-xs text-text-secondary mt-0.5">
                   {opt.description}
                 </Text>
                 <Text className="text-xs font-sans-medium text-primary-600 mt-1">
@@ -101,7 +101,7 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
                 </Text>
               </View>
               {selected && (
-                <Ionicons name="checkmark-circle" size={22} color="#22c55e" />
+                <Ionicons name="checkmark-circle" size={22} color="#1f2028" />
               )}
             </Pressable>
           );

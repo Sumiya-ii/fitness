@@ -39,7 +39,7 @@ export function WeightSelectScreen({ navigation }: Props) {
     >
       <View className="flex-1 justify-center items-center">
         <View className="w-20 h-20 rounded-full bg-emerald-500/15 items-center justify-center mb-8">
-          <Ionicons name="barbell-outline" size={40} color="#22c55e" />
+          <Ionicons name="barbell-outline" size={40} color="#1f2028" />
         </View>
 
         <View className="flex-row items-end mb-4">
@@ -49,17 +49,17 @@ export function WeightSelectScreen({ navigation }: Props) {
             keyboardType="decimal-pad"
             placeholder="75"
             placeholderTextColor="#94a3b8"
-            className="text-5xl font-sans-bold text-white text-center min-w-[120px]"
+            className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
             maxLength={5}
             autoFocus
           />
-          <Text className="text-2xl font-sans-medium text-slate-400 ml-2 mb-2">
+          <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">
             kg
           </Text>
         </View>
 
         {lbs && (
-          <Text className="text-sm font-sans-medium text-slate-400">
+          <Text className="text-sm font-sans-medium text-text-secondary">
             ≈ {lbs} lbs
           </Text>
         )}

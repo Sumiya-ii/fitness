@@ -19,7 +19,7 @@ export default function App() {
       <SafeAreaProvider>
         <NavigationContainer theme={appNavigationTheme}>
           <RootNavigator />
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
         </NavigationContainer>
       </SafeAreaProvider>
     </GestureHandlerRootView>

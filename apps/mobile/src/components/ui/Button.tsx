@@ -17,29 +17,37 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary-500 active:bg-primary-600 shadow-md shadow-primary-500/25 dark:bg-primary-600 dark:active:bg-primary-700',
+    'bg-primary-500 active:bg-primary-600 shadow-sm shadow-black/10',
   secondary:
-    'bg-surface-secondary active:bg-surface-tertiary dark:bg-slate-700 dark:active:bg-slate-600',
+    'bg-surface-card active:bg-surface-secondary border border-surface-border',
   outline:
-    'bg-transparent border-2 border-primary-500 active:bg-primary-50 dark:border-primary-400 dark:active:bg-primary-900/30',
+    'bg-transparent border-2 border-surface-border active:bg-surface-secondary',
   ghost:
-    'bg-transparent active:bg-surface-secondary dark:active:bg-slate-700',
+    'bg-transparent active:bg-surface-secondary',
   danger:
-    'bg-danger active:bg-red-600 shadow-md shadow-red-500/25 dark:bg-red-600 dark:active:bg-red-700',
+    'bg-danger active:bg-red-600 shadow-sm shadow-red-500/20',
 };
 
 const variantTextClasses: Record<ButtonVariant, string> = {
-  primary: 'text-white dark:text-white',
-  secondary: 'text-text dark:text-slate-100',
-  outline: 'text-primary-600 dark:text-primary-400',
-  ghost: 'text-text dark:text-slate-100',
-  danger: 'text-white dark:text-white',
+  primary: 'text-white',
+  secondary: 'text-text',
+  outline: 'text-text',
+  ghost: 'text-text',
+  danger: 'text-white',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'px-4 py-2 min-h-[36px]',
   md: 'px-6 py-3 min-h-[44px]',
   lg: 'px-8 py-4 min-h-[52px]',
+};
+
+const disabledVariantClasses: Record<ButtonVariant, string> = {
+  primary: 'bg-surface-muted active:bg-surface-muted',
+  secondary: 'bg-surface-secondary active:bg-surface-secondary',
+  outline: 'border-surface-border bg-surface-secondary active:bg-surface-secondary',
+  ghost: 'bg-surface-secondary active:bg-surface-secondary',
+  danger: 'bg-surface-muted active:bg-surface-muted',
 };
 
 const sizeTextClasses: Record<ButtonSize, string> = {
@@ -88,10 +96,10 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         onPress={handlePress}
         disabled={isDisabled}
         className={`
-          rounded-2xl flex-row items-center justify-center
+          rounded-full flex-row items-center justify-center
           ${variantClasses[variant]}
           ${sizeClasses[size]}
-          ${isDisabled ? 'opacity-50' : ''}
+          ${isDisabled ? disabledVariantClasses[variant] : ''}
           ${className}
         `}
         {...props}

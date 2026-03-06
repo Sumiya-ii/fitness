@@ -17,6 +17,7 @@ module.exports = {
           app: colors.surface.app,
           card: colors.surface.card,
           border: colors.surface.border,
+          muted: colors.surface.muted,
         },
         text: {
           DEFAULT: colors.text.primary,

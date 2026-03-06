@@ -77,29 +77,29 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
             <Pressable
               key={opt.id}
               onPress={() => setActivityLevel(opt.id)}
-              className={`flex-row items-center p-3.5 rounded-2xl border-2 bg-slate-900/80 ${
+              className={`flex-row items-center p-3.5 rounded-2xl border-2 bg-surface-card ${
                 selected
                   ? 'border-primary-500'
-                  : 'border-slate-800'
+                  : 'border-surface-border'
               }`}
             >
-              <View className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center mr-3">
+              <View className="w-10 h-10 rounded-full bg-surface-secondary items-center justify-center mr-3">
                 <Ionicons
                   name={opt.icon}
                   size={20}
-                  color={selected ? '#22c55e' : '#64748b'}
+                  color={selected ? '#1f2028' : '#9a9caa'}
                 />
               </View>
               <View className="flex-1">
-                <Text className="text-base font-sans-semibold text-white">
+                <Text className="text-base font-sans-semibold text-text">
                   {opt.title}
                 </Text>
-                <Text className="text-xs text-slate-400">
+                <Text className="text-xs text-text-secondary">
                   {opt.description} · {opt.examples}
                 </Text>
               </View>
               {selected && (
-                <Ionicons name="checkmark-circle" size={22} color="#22c55e" />
+                <Ionicons name="checkmark-circle" size={22} color="#1f2028" />
               )}
             </Pressable>
           );

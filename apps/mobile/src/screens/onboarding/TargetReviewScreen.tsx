@@ -68,9 +68,9 @@ export function TargetReviewScreen({ navigation }: Props) {
 
   if (!targets) {
     return (
-      <SafeAreaView className="flex-1 bg-slate-950 items-center justify-center">
+      <SafeAreaView className="flex-1 bg-surface-app items-center justify-center">
         <Ionicons name="alert-circle-outline" size={48} color="#94a3b8" />
-        <Text className="text-slate-400 mt-4 text-center px-8">
+        <Text className="text-text-secondary mt-4 text-center px-8">
           No targets calculated. Please go back and complete all steps.
         </Text>
         <Button onPress={() => navigation.popToTop()} variant="outline" className="mt-6">
@@ -81,33 +81,33 @@ export function TargetReviewScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-surface-app">
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
         <LinearGradient
-          colors={['#22c55e', '#16a34a']}
+          colors={['#1f2028', '#15161d']}
           className="pt-8 pb-12 px-6"
           style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
         >
-          <Text className="text-2xl font-sans-bold text-white mb-1">
+          <Text className="text-2xl font-sans-bold text-text mb-1">
             Your Personalized Plan
           </Text>
-          <Text className="text-base text-white/90">
+          <Text className="text-base text-text-secondary">
             Based on your profile and goals
           </Text>
         </LinearGradient>
 
         <View className="px-6 -mt-6">
-          <View className="bg-slate-900/80 rounded-2xl p-6 shadow-lg shadow-black/5 mb-6">
+          <View className="bg-surface-card rounded-2xl p-6 shadow-lg shadow-black/5 mb-6">
             <View className="items-center mb-6">
               <ProgressRing
                 progress={1}
                 size={160}
-                color="#22c55e"
-                gradientEnd="#16a34a"
+                color="#1f2028"
+                gradientEnd="#15161d"
                 backgroundColor="#334155"
                 centerLabel={`${targets.calories}`}
                 centerSubLabel="kcal / day"
@@ -119,26 +119,26 @@ export function TargetReviewScreen({ navigation }: Props) {
                 label="Protein"
                 current={targets.protein}
                 target={targets.protein}
-                color="#22c55e"
+                color="#1f2028"
                 size="large"
               />
               <MacroBar
                 label="Carbs"
                 current={targets.carbs}
                 target={targets.carbs}
-                color="#0ea5e9"
+                color="#8b8fa0"
               />
               <MacroBar
                 label="Fat"
                 current={targets.fat}
                 target={targets.fat}
-                color="#f59e0b"
+                color="#8f93a4"
               />
             </View>
           </View>
 
-          <View className="bg-slate-900/80 rounded-2xl p-4 mb-6">
-            <Text className="text-sm font-sans-semibold text-white mb-3">
+          <View className="bg-surface-card rounded-2xl p-4 mb-6">
+            <Text className="text-sm font-sans-semibold text-text mb-3">
               Your Profile Summary
             </Text>
             <View className="gap-2">
@@ -163,10 +163,10 @@ export function TargetReviewScreen({ navigation }: Props) {
             <Ionicons
               name="information-circle"
               size={20}
-              color="#22c55e"
+              color="#1f2028"
               style={{ marginTop: 1 }}
             />
-            <Text className="text-xs text-slate-400 ml-2 flex-1 leading-5">
+            <Text className="text-xs text-text-secondary ml-2 flex-1 leading-5">
               These targets are AI-generated recommendations. You can always
               adjust them later in Settings.
             </Text>
@@ -200,8 +200,8 @@ export function TargetReviewScreen({ navigation }: Props) {
 function SummaryRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <View className="flex-row justify-between py-1">
-      <Text className="text-xs text-slate-400">{label}</Text>
-      <Text className="text-xs font-sans-medium text-white">
+      <Text className="text-xs text-text-secondary">{label}</Text>
+      <Text className="text-xs font-sans-medium text-text">
         {value ?? '—'}
       </Text>
     </View>

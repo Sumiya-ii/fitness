@@ -23,21 +23,21 @@ const GOAL_OPTIONS: GoalOption[] = [
     icon: 'trending-down-outline',
     title: 'Lose Fat',
     description: 'Burn fat and get leaner with a calorie deficit',
-    gradient: ['#22c55e', '#16a34a'],
+    gradient: ['#1f2028', '#15161d'],
   },
   {
     id: 'maintain',
     icon: 'scale-outline',
     title: 'Maintain Weight',
     description: 'Keep your current weight with balanced nutrition',
-    gradient: ['#0ea5e9', '#0284c7'],
+    gradient: ['#8b8fa0', '#767b8f'],
   },
   {
     id: 'gain',
     icon: 'trending-up-outline',
     title: 'Build Muscle',
     description: 'Gain lean mass with a controlled calorie surplus',
-    gradient: ['#f59e0b', '#d97706'],
+    gradient: ['#8f93a4', '#797d90'],
   },
 ];
 
@@ -63,10 +63,10 @@ export function GoalSetupScreen({ navigation }: Props) {
             <Pressable
               key={option.id}
               onPress={() => setGoalType(option.id)}
-              className={`flex-row items-center p-4 rounded-2xl border-2 bg-slate-900/80 ${
+              className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
                 selected
                   ? 'border-primary-500'
-                  : 'border-slate-800'
+                  : 'border-surface-border'
               }`}
             >
               <LinearGradient
@@ -77,15 +77,15 @@ export function GoalSetupScreen({ navigation }: Props) {
                 <Ionicons name={option.icon} size={28} color="white" />
               </LinearGradient>
               <View className="flex-1">
-                <Text className="text-lg font-sans-semibold text-white">
+                <Text className="text-lg font-sans-semibold text-text">
                   {option.title}
                 </Text>
-                <Text className="text-sm text-slate-400 mt-0.5">
+                <Text className="text-sm text-text-secondary mt-0.5">
                   {option.description}
                 </Text>
               </View>
               {selected && (
-                <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+                <Ionicons name="checkmark-circle" size={24} color="#1f2028" />
               )}
             </Pressable>
           );

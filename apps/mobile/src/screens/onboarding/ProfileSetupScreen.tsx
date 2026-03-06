@@ -72,15 +72,15 @@ export function ProfileSetupScreen({ navigation }: Props) {
     activityLevel;
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface-app" edges={['top']}>
       <View className="relative">
         <LinearGradient
-        colors={['#0ea5e9', '#0284c7']}
+        colors={['#8b8fa0', '#767b8f']}
         className="pt-8 pb-12 px-6"
         style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
       >
-        <Text className="text-2xl font-sans-bold text-white mb-1">Your Profile</Text>
-        <Text className="text-base text-white/90">
+        <Text className="text-2xl font-sans-bold text-text mb-1">Your Profile</Text>
+        <Text className="text-base text-text-secondary">
           We need a few details to calculate your targets
         </Text>
       </LinearGradient>
@@ -93,24 +93,24 @@ export function ProfileSetupScreen({ navigation }: Props) {
       </View>
 
       <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-        <Text className="text-sm font-sans-medium text-white mb-2">
+        <Text className="text-sm font-sans-medium text-text mb-2">
           Gender
         </Text>
         <View className="flex-row gap-3 mb-6">
           <Pressable
             onPress={() => setGender('male')}
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-              gender === 'male' ? 'border-primary-500 bg-primary-500/10' : 'border-slate-800 bg-slate-900/80'
+              gender === 'male' ? 'border-primary-500 bg-primary-500/10' : 'border-surface-border bg-surface-card'
             }`}
           >
             <Ionicons
               name="male"
               size={20}
-              color={gender === 'male' ? '#22c55e' : '#64748b'}
+              color={gender === 'male' ? '#1f2028' : '#9a9caa'}
             />
             <Text
               className={`ml-2 font-sans-medium ${
-                gender === 'male' ? 'text-primary-400' : 'text-slate-400'
+                gender === 'male' ? 'text-primary-500' : 'text-text-secondary'
               }`}
             >
               Male
@@ -119,17 +119,17 @@ export function ProfileSetupScreen({ navigation }: Props) {
           <Pressable
             onPress={() => setGender('female')}
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-              gender === 'female' ? 'border-primary-500 bg-primary-500/10' : 'border-slate-800 bg-slate-900/80'
+              gender === 'female' ? 'border-primary-500 bg-primary-500/10' : 'border-surface-border bg-surface-card'
             }`}
           >
             <Ionicons
               name="female"
               size={20}
-              color={gender === 'female' ? '#22c55e' : '#64748b'}
+              color={gender === 'female' ? '#1f2028' : '#9a9caa'}
             />
             <Text
               className={`ml-2 font-sans-medium ${
-                gender === 'female' ? 'text-primary-400' : 'text-slate-400'
+                gender === 'female' ? 'text-primary-500' : 'text-text-secondary'
               }`}
             >
               Female
@@ -167,7 +167,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <Text className="text-sm font-sans-medium text-white mb-2">
+        <Text className="text-sm font-sans-medium text-text mb-2">
           Activity Level
         </Text>
         <ScrollView
@@ -182,12 +182,12 @@ export function ProfileSetupScreen({ navigation }: Props) {
                 key={level.id}
                 onPress={() => setActivityLevel(level.id)}
                 className={`mr-3 px-4 py-2.5 rounded-full ${
-                  isSelected ? 'bg-primary-500' : 'bg-slate-700'
+                  isSelected ? 'bg-primary-500' : 'bg-surface-muted'
                 }`}
               >
                 <Text
                   className={`text-sm font-sans-medium ${
-                    isSelected ? 'text-white' : 'text-white'
+                    isSelected ? 'text-text' : 'text-text'
                   }`}
                 >
                   {level.label}

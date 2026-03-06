@@ -44,7 +44,7 @@ export function HeightSelectScreen({ navigation }: Props) {
     >
       <View className="flex-1 justify-center items-center">
         <View className="w-20 h-20 rounded-full bg-amber-500/15 items-center justify-center mb-8">
-          <Ionicons name="resize-outline" size={40} color="#f59e0b" />
+          <Ionicons name="resize-outline" size={40} color="#8f93a4" />
         </View>
 
         <View className="flex-row items-end mb-4">
@@ -54,17 +54,17 @@ export function HeightSelectScreen({ navigation }: Props) {
             keyboardType="number-pad"
             placeholder="170"
             placeholderTextColor="#94a3b8"
-            className="text-5xl font-sans-bold text-white text-center min-w-[120px]"
+            className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
             maxLength={3}
             autoFocus
           />
-          <Text className="text-2xl font-sans-medium text-slate-400 ml-2 mb-2">
+          <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">
             cm
           </Text>
         </View>
 
         {feetInches && (
-          <Text className="text-sm font-sans-medium text-slate-400">
+          <Text className="text-sm font-sans-medium text-text-secondary">
             ≈ {feetInches.feet}'{feetInches.inches}"
           </Text>
         )}

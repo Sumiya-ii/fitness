@@ -28,28 +28,28 @@ type OnboardingPage = {
 const PAGES: OnboardingPage[] = [
   {
     id: '1',
-    gradient: ['#22c55e', '#16a34a'],
+    gradient: ['#d9dae3', '#c8cad6'],
     icon: 'nutrition-outline',
     title: 'Track Your Nutrition',
     subtitle: 'Log meals quickly and easily. Stay on top of what you eat with our intuitive food logging.',
   },
   {
     id: '2',
-    gradient: ['#a855f7', '#7e22ce'],
+    gradient: ['#dbdce5', '#c7c9d7'],
     icon: 'sparkles-outline',
     title: 'AI-Powered Insights',
     subtitle: 'Use voice or photo to log meals. Our AI understands what you ate and helps you stay accurate.',
   },
   {
     id: '3',
-    gradient: ['#0ea5e9', '#0284c7'],
+    gradient: ['#d8dae4', '#c5c7d4'],
     icon: 'chatbubbles-outline',
     title: 'Telegram Coach',
     subtitle: 'Get daily accountability through Telegram. Log meals on the go and stay motivated.',
   },
   {
     id: '4',
-    gradient: ['#f59e0b', '#d97706'],
+    gradient: ['#d6d8e3', '#c3c6d4'],
     icon: 'trophy-outline',
     title: 'Reach Your Goals',
     subtitle: 'Personalized calorie and macro targets based on your profile. Track progress and succeed.',
@@ -95,13 +95,13 @@ export function OnboardingScreen({ navigation }: Props) {
             className="w-40 h-40 rounded-3xl items-center justify-center"
             style={{ borderRadius: 24 }}
           >
-            <Ionicons name={item.icon} size={80} color="white" />
+            <Ionicons name={item.icon} size={80} color="#111218" />
           </LinearGradient>
         </View>
-        <Text className="text-2xl font-sans-bold text-white text-center mb-3">
+        <Text className="text-2xl font-sans-bold text-text text-center mb-3">
           {item.title}
         </Text>
-        <Text className="text-base text-slate-400 text-center leading-6">
+        <Text className="text-base text-text-secondary text-center leading-6">
           {item.subtitle}
         </Text>
       </View>
@@ -109,17 +109,11 @@ export function OnboardingScreen({ navigation }: Props) {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
-      <LinearGradient
-        colors={['#020617', '#0f172a', '#111827']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
-      />
+    <SafeAreaView className="flex-1 bg-surface-app">
       <View className="flex-1">
         <View className="flex-row justify-end px-6 pt-2">
           <Pressable onPress={handleSkip} className="py-2 px-4 active:opacity-70">
-            <Text className="text-base font-sans-medium text-primary-400">
+            <Text className="text-base font-sans-medium text-text-secondary">
               Skip
             </Text>
           </Pressable>
@@ -144,7 +138,7 @@ export function OnboardingScreen({ navigation }: Props) {
               <View
                 key={i}
                 className={`h-2 rounded-full ${
-                  i === currentIndex ? 'w-6 bg-primary-500' : 'w-2 bg-slate-700'
+                  i === currentIndex ? 'w-6 bg-primary-500' : 'w-2 bg-surface-muted'
                 }`}
               />
             ))}
