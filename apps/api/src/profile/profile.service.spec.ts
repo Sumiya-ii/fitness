@@ -9,6 +9,9 @@ describe('ProfileService', () => {
       findUnique: jest.Mock;
       update: jest.Mock;
     };
+    weightLog: {
+      findFirst: jest.Mock;
+    };
   };
 
   const mockProfile = {
@@ -20,6 +23,10 @@ describe('ProfileService', () => {
     gender: 'male',
     birthDate: new Date('1990-05-15'),
     heightCm: { toString: () => '175.0' },
+    weightKg: { toString: () => '80.0' },
+    goalWeightKg: { toString: () => '75.0' },
+    dietPreference: 'standard',
+    onboardingCompletedAt: null,
     activityLevel: 'moderately_active',
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-02'),
@@ -31,6 +38,9 @@ describe('ProfileService', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
       },
+      weightLog: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
     };
     service = new ProfileService(prisma as unknown as PrismaService);
   });
@@ -38,6 +48,9 @@ describe('ProfileService', () => {
   describe('getProfile', () => {
     it('should return formatted profile', async () => {
       prisma.profile.findUnique.mockResolvedValue(mockProfile);
+      prisma.weightLog.findFirst.mockResolvedValue({
+        weightKg: { toString: () => '78.0' },
+      });
 
       const result = await service.getProfile('user-uuid');
       expect(result.userId).toBe('user-uuid');
@@ -45,6 +58,15 @@ describe('ProfileService', () => {
       expect(result.unitSystem).toBe('metric');
       expect(result.birthDate).toBe('1990-05-15');
       expect(result.heightCm).toBe(175);
+      expect(result.bmi).toBe(25.5);
+    });
+
+    it('should fallback BMI to profile weight when no weight logs exist', async () => {
+      prisma.profile.findUnique.mockResolvedValue(mockProfile);
+      prisma.weightLog.findFirst.mockResolvedValue(null);
+
+      const result = await service.getProfile('user-uuid');
+      expect(result.bmi).toBe(26.1);
     });
 
     it('should throw NotFoundException if profile missing', async () => {

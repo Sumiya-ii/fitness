@@ -26,6 +26,8 @@ Last updated: 2026-03-06
 - Notification preferences are auto-created on first read.
 - `PUT /profile` supports partial updates.
 - Locale and unit changes are persisted and reflected in UI.
+- `GET /profile` and `PUT /profile` include derived `bmi` (kg/m², rounded to 1 decimal).
+- BMI uses the latest available user weight from `WeightLog` when present; otherwise it falls back to `Profile.weightKg`.
 
 ## Current gaps / next improvements
 - Quiet hours and multi-channel notification controls are modeled but not fully exposed in mobile UI.

@@ -1,25 +1,36 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { UpdateProfileDto } from './profile.dto';
+import { calculateBmi } from './bmi';
 
 @Injectable()
 export class ProfileService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getProfile(userId: string) {
-    const profile = await this.prisma.profile.findUnique({
-      where: { userId },
-    });
+    const [profile, latestWeightLog] = await Promise.all([
+      this.prisma.profile.findUnique({
+        where: { userId },
+      }),
+      this.prisma.weightLog.findFirst({
+        where: { userId },
+        orderBy: { loggedAt: 'desc' },
+      }),
+    ]);
 
     if (!profile) {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.formatProfile(profile);
+    return this.formatProfile(
+      profile,
+      latestWeightLog ? Number(latestWeightLog.weightKg) : null,
+    );
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const profile = await this.prisma.profile.update({
+    const [profile, latestWeightLog] = await Promise.all([
+      this.prisma.profile.update({
       where: { userId },
       data: {
         ...(dto.displayName !== undefined && { displayName: dto.displayName }),
@@ -33,9 +44,17 @@ export class ProfileService {
         ...(dto.activityLevel !== undefined && { activityLevel: dto.activityLevel }),
         ...(dto.dietPreference !== undefined && { dietPreference: dto.dietPreference }),
       },
-    });
+      }),
+      this.prisma.weightLog.findFirst({
+        where: { userId },
+        orderBy: { loggedAt: 'desc' },
+      }),
+    ]);
 
-    return this.formatProfile(profile);
+    return this.formatProfile(
+      profile,
+      latestWeightLog ? Number(latestWeightLog.weightKg) : null,
+    );
   }
 
   private formatProfile(profile: {
@@ -54,7 +73,11 @@ export class ProfileService {
     onboardingCompletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
-  }) {
+  }, latestWeightKg: number | null = null) {
+    const heightCm = profile.heightCm ? Number(profile.heightCm) : null;
+    const profileWeightKg = profile.weightKg ? Number(profile.weightKg) : null;
+    const effectiveWeightKg = latestWeightKg ?? profileWeightKg;
+
     return {
       id: profile.id,
       userId: profile.userId,
@@ -63,9 +86,10 @@ export class ProfileService {
       unitSystem: profile.unitSystem,
       gender: profile.gender,
       birthDate: profile.birthDate?.toISOString().split('T')[0] ?? null,
-      heightCm: profile.heightCm ? Number(profile.heightCm) : null,
-      weightKg: profile.weightKg ? Number(profile.weightKg) : null,
+      heightCm,
+      weightKg: profileWeightKg,
       goalWeightKg: profile.goalWeightKg ? Number(profile.goalWeightKg) : null,
+      bmi: calculateBmi(heightCm, effectiveWeightKg),
       activityLevel: profile.activityLevel,
       dietPreference: profile.dietPreference,
       onboardingCompletedAt: profile.onboardingCompletedAt?.toISOString() ?? null,

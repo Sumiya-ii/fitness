@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,14 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle } from 'react-native-svg';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -22,11 +25,17 @@ import {
   CircularMacro,
   LoadingScreen,
 } from '../components/ui';
-import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
+import {
+  useDashboardStore,
+  type DashboardData,
+  type DashboardMeal,
+} from '../stores/dashboard.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const WEEK_PAGE_COUNT = 53;
+const INITIAL_WEEK_PAGE = Math.floor(WEEK_PAGE_COUNT / 2);
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: 'Breakfast',
@@ -49,11 +58,58 @@ const MEAL_TYPE_COLORS: Record<string, string> = {
   snack: '#8f93a4',
 };
 
+interface DayProgressSummary {
+  consumedCalories: number;
+  targetCalories: number;
+  mealCount: number;
+}
+
+function toDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function fromDateKey(key: string): Date {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+}
+
+function startOfWeek(date: Date): Date {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  copy.setDate(copy.getDate() - copy.getDay());
+  return copy;
+}
+
+function addDays(date: Date, days: number): Date {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
 export function HomeScreen() {
   const { t } = useLocale();
   const navigation = useNavigation();
   const [displayName, setDisplayName] = useState<string>('there');
+  const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
+  const [activeWeekPage, setActiveWeekPage] = useState(INITIAL_WEEK_PAGE);
+  const [weekProgressByDate, setWeekProgressByDate] = useState<Record<string, DayProgressSummary>>({});
+  const weekProgressRef = useRef<Record<string, DayProgressSummary>>({});
   const { data, isLoading, fetchDashboard } = useDashboardStore();
+
+  useEffect(() => {
+    weekProgressRef.current = weekProgressByDate;
+  }, [weekProgressByDate]);
+
+  const weekPages = useMemo(() => Array.from({ length: WEEK_PAGE_COUNT }, (_, index) => index), []);
+  const selectedDate = useMemo(() => fromDateKey(selectedDateKey), [selectedDateKey]);
+  const selectedWeekday = selectedDate.getDay();
+  const activeWeekStart = useMemo(() => {
+    const todayWeekStart = startOfWeek(new Date());
+    return addDays(todayWeekStart, (activeWeekPage - INITIAL_WEEK_PAGE) * 7);
+  }, [activeWeekPage]);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -64,14 +120,71 @@ export function HomeScreen() {
     }
   }, []);
 
+  const prefetchWeek = useCallback(async (weekStartDate: Date) => {
+    const missingDateKeys: string[] = [];
+    for (let i = 0; i < 7; i += 1) {
+      const dateKey = toDateKey(addDays(weekStartDate, i));
+      if (!weekProgressRef.current[dateKey]) {
+        missingDateKeys.push(dateKey);
+      }
+    }
+    if (missingDateKeys.length === 0) return;
+
+    const responses = await Promise.all(
+      missingDateKeys.map(async (dateKey) => {
+        const response = await api.get<{ data: DashboardData }>(`/dashboard?date=${dateKey}`);
+        const dashboard = response.data;
+        return {
+          dateKey,
+          consumedCalories: dashboard.consumed.calories,
+          targetCalories: dashboard.targets?.calories ?? 0,
+          mealCount: dashboard.mealCount,
+        };
+      })
+    );
+
+    setWeekProgressByDate((current) => {
+      const next = { ...current };
+      for (const entry of responses) {
+        next[entry.dateKey] = {
+          consumedCalories: entry.consumedCalories,
+          targetCalories: entry.targetCalories,
+          mealCount: entry.mealCount,
+        };
+      }
+      return next;
+    });
+  }, []);
+
   const onRefresh = useCallback(() => {
     loadProfile();
-    fetchDashboard();
-  }, [fetchDashboard, loadProfile]);
+    fetchDashboard(selectedDateKey);
+    prefetchWeek(activeWeekStart).catch(() => undefined);
+  }, [activeWeekStart, fetchDashboard, loadProfile, prefetchWeek, selectedDateKey]);
 
   useEffect(() => {
-    onRefresh();
-  }, [onRefresh]);
+    loadProfile();
+  }, [loadProfile]);
+
+  useEffect(() => {
+    fetchDashboard(selectedDateKey);
+  }, [fetchDashboard, selectedDateKey]);
+
+  useEffect(() => {
+    prefetchWeek(activeWeekStart).catch(() => undefined);
+  }, [activeWeekStart, prefetchWeek]);
+
+  useEffect(() => {
+    if (!data) return;
+    setWeekProgressByDate((current) => ({
+      ...current,
+      [data.date]: {
+        consumedCalories: data.consumed.calories,
+        targetCalories: data.targets?.calories ?? 0,
+        mealCount: data.mealCount,
+      },
+    }));
+  }, [data]);
 
   const handleLogMeal = () => {
     (navigation as { navigate: (s: string) => void }).navigate('Log');
@@ -85,18 +198,86 @@ export function HomeScreen() {
     (navigation as { navigate: (s: string) => void }).navigate('WeeklySummary');
   };
 
+  const handleDaySelect = (dateKey: string) => {
+    setSelectedDateKey(dateKey);
+  };
+
+  const handleWeekMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const pageIndex = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    if (pageIndex === activeWeekPage) return;
+
+    setActiveWeekPage(pageIndex);
+    const todayWeekStart = startOfWeek(new Date());
+    const weekStart = addDays(todayWeekStart, (pageIndex - INITIAL_WEEK_PAGE) * 7);
+    const nextSelectedDate = toDateKey(addDays(weekStart, selectedWeekday));
+    setSelectedDateKey(nextSelectedDate);
+  };
+
+  const renderWeekPage = (item: number) => {
+    const todayWeekStart = startOfWeek(new Date());
+    const weekStart = addDays(todayWeekStart, (item - INITIAL_WEEK_PAGE) * 7);
+    const todayKey = toDateKey(new Date());
+    const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    return (
+      <View key={`week-${item}`} style={{ width: SCREEN_WIDTH }} className="px-4 pb-5 pt-2">
+        <View className="flex-row justify-between">
+          {weekdayLabels.map((weekday, dayIndex) => {
+            const date = addDays(weekStart, dayIndex);
+            const dateKey = toDateKey(date);
+            const isSelected = selectedDateKey === dateKey;
+            const isToday = todayKey === dateKey;
+            const summary = weekProgressByDate[dateKey];
+            return (
+              <Pressable
+                key={dateKey}
+                onPress={() => handleDaySelect(dateKey)}
+                className={`w-11 items-center rounded-2xl py-2 ${isSelected ? 'bg-white/80' : ''}`}
+              >
+                <Text
+                  className={`mb-1 text-xs font-sans-medium ${isSelected ? 'text-text' : 'text-text-secondary'}`}
+                >
+                  {weekday}
+                </Text>
+                <DayProgressCircle
+                  dayNumber={date.getDate()}
+                  consumedCalories={summary?.consumedCalories ?? 0}
+                  targetCalories={summary?.targetCalories ?? 0}
+                  hasMeals={(summary?.mealCount ?? 0) > 0}
+                  isSelected={isSelected}
+                  isToday={isToday}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
   if (isLoading && !data) {
     return <LoadingScreen />;
   }
 
-  const targets = data?.targets ?? { calories: 2000, protein: 150, carbs: 200, fat: 65 };
-  const consumed = data?.consumed ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  const selectedDashboardData = data;
+  const targets = selectedDashboardData?.targets ?? {
+    calories: 2000,
+    protein: 150,
+    carbs: 200,
+    fat: 65,
+  };
+  const consumed = selectedDashboardData?.consumed ?? {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+  };
   const remaining = Math.max(targets.calories - consumed.calories, 0);
   const calorieProgress = targets.calories > 0
     ? Math.min(consumed.calories / targets.calories, 1)
     : 0;
 
-  const mealsByType = (data?.meals ?? []).reduce<Record<string, DashboardMeal[]>>(
+  const mealsByType = (selectedDashboardData?.meals ?? []).reduce<Record<string, DashboardMeal[]>>(
     (acc, m) => {
       const type = m.mealType || 'snack';
       if (!acc[type]) acc[type] = [];
@@ -107,6 +288,8 @@ export function HomeScreen() {
   );
 
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack'];
+  const isTodaySelected = selectedDateKey === toDateKey(new Date());
+  const mealsHeading = isTodaySelected ? t('dashboard.todaysMeals') : `Meals • ${selectedDateKey}`;
 
   return (
     <View className="flex-1 bg-surface-app">
@@ -152,6 +335,17 @@ export function HomeScreen() {
                 </Pressable>
               </View>
             </View>
+
+            {/* Weekly Progress Calendar */}
+            <ScrollView
+              horizontal
+              pagingEnabled
+              contentOffset={{ x: SCREEN_WIDTH * INITIAL_WEEK_PAGE, y: 0 }}
+              onMomentumScrollEnd={handleWeekMomentumEnd}
+              showsHorizontalScrollIndicator={false}
+            >
+              {weekPages.map(renderWeekPage)}
+            </ScrollView>
 
             {/* Calorie Ring */}
             <View className="items-center pt-4 pb-2">
@@ -226,7 +420,7 @@ export function HomeScreen() {
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-lg font-sans-semibold text-text">
-              {t('dashboard.todaysMeals')}
+              {mealsHeading}
             </Text>
             <Text className="text-sm text-text-secondary font-sans-medium">
               {consumed.calories} kcal total
@@ -316,6 +510,71 @@ export function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+interface DayProgressCircleProps {
+  dayNumber: number;
+  consumedCalories: number;
+  targetCalories: number;
+  hasMeals: boolean;
+  isSelected: boolean;
+  isToday: boolean;
+}
+
+function DayProgressCircle({
+  dayNumber,
+  consumedCalories,
+  targetCalories,
+  hasMeals,
+  isSelected,
+  isToday,
+}: DayProgressCircleProps) {
+  const size = 42;
+  const stroke = 3;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = targetCalories > 0 ? Math.min(consumedCalories / targetCalories, 1) : 0;
+  const strokeDashoffset = circumference * (1 - progress);
+
+  const trackColor = isSelected ? '#b9bbc8' : '#cbccd8';
+  const progressColor = isSelected ? '#1f2028' : '#8f93a4';
+  const textColor = isSelected ? '#1f2028' : isToday ? '#2a2b35' : '#777985';
+
+  return (
+    <View className="items-center justify-center">
+      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={trackColor}
+          strokeWidth={stroke}
+          fill="none"
+          strokeDasharray={hasMeals ? undefined : '5 4'}
+          opacity={0.8}
+        />
+        {hasMeals ? (
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={progressColor}
+            strokeWidth={stroke}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+          />
+        ) : null}
+      </Svg>
+      <Text
+        style={{ position: 'absolute', color: textColor }}
+        className="font-sans-semibold text-base"
+      >
+        {dayNumber}
+      </Text>
     </View>
   );
 }
