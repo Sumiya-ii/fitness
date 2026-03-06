@@ -8,6 +8,7 @@ export type CreateInvoiceBodyDto = z.infer<typeof createInvoiceBodySchema>;
 
 export const qpayCallbackQuerySchema = z.object({
   sender_invoice_no: z.string().min(1),
+  token: z.string().optional(),
 });
 
 export type QPayCallbackQueryDto = z.infer<typeof qpayCallbackQuerySchema>;

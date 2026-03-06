@@ -77,13 +77,13 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
             <Pressable
               key={opt.id}
               onPress={() => setActivityLevel(opt.id)}
-              className={`flex-row items-center p-3.5 rounded-2xl border-2 bg-white dark:bg-slate-800 ${
+              className={`flex-row items-center p-3.5 rounded-2xl border-2 bg-slate-900/80 ${
                 selected
-                  ? 'border-primary-500 dark:border-primary-400'
-                  : 'border-slate-200 dark:border-slate-700'
+                  ? 'border-primary-500'
+                  : 'border-slate-800'
               }`}
             >
-              <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 items-center justify-center mr-3">
+              <View className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center mr-3">
                 <Ionicons
                   name={opt.icon}
                   size={20}
@@ -91,10 +91,10 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                 />
               </View>
               <View className="flex-1">
-                <Text className="text-base font-sans-semibold text-text dark:text-slate-100">
+                <Text className="text-base font-sans-semibold text-white">
                   {opt.title}
                 </Text>
-                <Text className="text-xs text-text-secondary dark:text-slate-400">
+                <Text className="text-xs text-slate-400">
                   {opt.description} · {opt.examples}
                 </Text>
               </View>

@@ -67,6 +67,8 @@ export const envSchema = z.object({
   QPAY_CLIENT_ID: z.string().optional(),
   QPAY_CLIENT_SECRET: z.string().optional(),
   QPAY_INVOICE_CODE: z.string().optional(),
+  QPAY_CALLBACK_TOKEN: z.string().optional(),
+  QPAY_INVOICE_TTL_MINUTES: z.coerce.number().int().positive().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

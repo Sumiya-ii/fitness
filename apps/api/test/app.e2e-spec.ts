@@ -1,15 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
 import { API_PREFIX } from '@coach/shared';
+import { HealthController } from '../src/health/health.controller';
+import { QueueHealthService } from '../src/queue';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      controllers: [HealthController],
+      providers: [
+        {
+          provide: QueueHealthService,
+          useValue: {
+            getHealth: jest.fn().mockResolvedValue([]),
+          },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -18,7 +27,9 @@ describe('AppController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   it('/api/v1/health (GET)', () => {

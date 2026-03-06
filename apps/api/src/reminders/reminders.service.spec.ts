@@ -6,7 +6,12 @@ import { QUEUE_NAMES } from '@coach/shared';
 
 describe('RemindersService', () => {
   let service: RemindersService;
-  let prisma: { notificationPreference: { findMany: jest.Mock }; mealLog: { count: jest.Mock } };
+  let prisma: {
+    notificationPreference: { findMany: jest.Mock };
+    mealLog: { count: jest.Mock };
+    telegramLink: { findUnique: jest.Mock };
+    profile: { findUnique: jest.Mock };
+  };
   let reminderQueue: { add: jest.Mock };
 
   beforeEach(async () => {
@@ -14,6 +19,8 @@ describe('RemindersService', () => {
     prisma = {
       notificationPreference: { findMany: jest.fn() },
       mealLog: { count: jest.fn() },
+      telegramLink: { findUnique: jest.fn().mockResolvedValue(null) },
+      profile: { findUnique: jest.fn().mockResolvedValue({ locale: 'mn' }) },
     };
 
     const module: TestingModule = await Test.createTestingModule({

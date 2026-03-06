@@ -17,7 +17,6 @@ type Props = NativeStackScreenProps<SetupStackParamList, 'TargetReview'>;
 export function TargetReviewScreen({ navigation }: Props) {
   const targets = useProfileStore((s) => s.getTargets());
   const data = useProfileStore((s) => s.getOnboardingData());
-  const reset = useProfileStore((s) => s.reset);
   const setProfileSetupComplete = useOnboardingStore(
     (s) => s.setProfileSetupComplete,
   );
@@ -69,9 +68,9 @@ export function TargetReviewScreen({ navigation }: Props) {
 
   if (!targets) {
     return (
-      <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900 items-center justify-center">
+      <SafeAreaView className="flex-1 bg-slate-950 items-center justify-center">
         <Ionicons name="alert-circle-outline" size={48} color="#94a3b8" />
-        <Text className="text-text-secondary dark:text-slate-400 mt-4 text-center px-8">
+        <Text className="text-slate-400 mt-4 text-center px-8">
           No targets calculated. Please go back and complete all steps.
         </Text>
         <Button onPress={() => navigation.popToTop()} variant="outline" className="mt-6">
@@ -82,7 +81,7 @@ export function TargetReviewScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900">
+    <SafeAreaView className="flex-1 bg-slate-950">
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -102,14 +101,14 @@ export function TargetReviewScreen({ navigation }: Props) {
         </LinearGradient>
 
         <View className="px-6 -mt-6">
-          <View className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg shadow-black/5 mb-6">
+          <View className="bg-slate-900/80 rounded-2xl p-6 shadow-lg shadow-black/5 mb-6">
             <View className="items-center mb-6">
               <ProgressRing
                 progress={1}
                 size={160}
                 color="#22c55e"
                 gradientEnd="#16a34a"
-                backgroundColor="#e2e8f0"
+                backgroundColor="#334155"
                 centerLabel={`${targets.calories}`}
                 centerSubLabel="kcal / day"
               />
@@ -138,8 +137,8 @@ export function TargetReviewScreen({ navigation }: Props) {
             </View>
           </View>
 
-          <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 mb-6">
-            <Text className="text-sm font-sans-semibold text-text dark:text-slate-200 mb-3">
+          <View className="bg-slate-900/80 rounded-2xl p-4 mb-6">
+            <Text className="text-sm font-sans-semibold text-white mb-3">
               Your Profile Summary
             </Text>
             <View className="gap-2">
@@ -160,14 +159,14 @@ export function TargetReviewScreen({ navigation }: Props) {
             </View>
           </View>
 
-          <View className="flex-row items-start bg-primary-50 dark:bg-primary-900/20 rounded-2xl p-4 mb-6">
+          <View className="flex-row items-start bg-primary-500/10 border border-primary-500/20 rounded-2xl p-4 mb-6">
             <Ionicons
               name="information-circle"
               size={20}
               color="#22c55e"
               style={{ marginTop: 1 }}
             />
-            <Text className="text-xs text-text-secondary dark:text-slate-400 ml-2 flex-1 leading-5">
+            <Text className="text-xs text-slate-400 ml-2 flex-1 leading-5">
               These targets are AI-generated recommendations. You can always
               adjust them later in Settings.
             </Text>
@@ -201,8 +200,8 @@ export function TargetReviewScreen({ navigation }: Props) {
 function SummaryRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <View className="flex-row justify-between py-1">
-      <Text className="text-xs text-text-secondary dark:text-slate-400">{label}</Text>
-      <Text className="text-xs font-sans-medium text-text dark:text-slate-200">
+      <Text className="text-xs text-slate-400">{label}</Text>
+      <Text className="text-xs font-sans-medium text-white">
         {value ?? '—'}
       </Text>
     </View>

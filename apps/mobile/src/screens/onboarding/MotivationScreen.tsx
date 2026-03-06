@@ -86,10 +86,10 @@ export function MotivationScreen({ navigation }: Props) {
             },
           ].map((item, i) => (
             <View key={i} className="flex-row items-center">
-              <View className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 items-center justify-center mr-3">
+              <View className="w-8 h-8 rounded-full bg-primary-500/15 items-center justify-center mr-3">
                 <Ionicons name={item.icon} size={16} color="#22c55e" />
               </View>
-              <Text className="text-sm font-sans-medium text-text dark:text-slate-200 flex-1">
+              <Text className="text-sm font-sans-medium text-white flex-1">
                 {item.text}
               </Text>
             </View>

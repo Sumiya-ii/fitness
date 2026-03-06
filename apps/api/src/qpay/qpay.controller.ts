@@ -49,7 +49,10 @@ export class QPayController {
       throw new BadRequestException(parsed.error.issues);
     }
 
-    return this.qpayService.handleCallback(parsed.data.sender_invoice_no);
+    return this.qpayService.handleCallback(
+      parsed.data.sender_invoice_no,
+      parsed.data.token,
+    );
   }
 
   @Get('invoice/:invoiceId/status')

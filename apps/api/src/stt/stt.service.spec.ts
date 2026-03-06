@@ -34,7 +34,7 @@ describe('SttService', () => {
       );
 
       expect(result).toEqual({
-        text: 'transcription not available',
+        text: 'transcription not available (GOOGLE_STT_API_KEY missing)',
         locale: 'en-US',
       });
     });
@@ -45,7 +45,7 @@ describe('SttService', () => {
       const result = await service.transcribe(Buffer.from('fake-audio'));
 
       expect(result).toEqual({
-        text: 'transcription not available',
+        text: 'transcription not available (no STT provider configured)',
         locale: undefined,
       });
     });

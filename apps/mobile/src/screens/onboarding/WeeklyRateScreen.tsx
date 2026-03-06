@@ -60,10 +60,10 @@ export function WeeklyRateScreen({ navigation }: Props) {
         onContinue={handleContinue}
       >
         <View className="flex-1 justify-center items-center">
-          <View className="w-24 h-24 rounded-full bg-sky-100 dark:bg-sky-900/30 items-center justify-center mb-4">
+          <View className="w-24 h-24 rounded-full bg-sky-500/15 items-center justify-center mb-4">
             <Ionicons name="scale-outline" size={48} color="#0ea5e9" />
           </View>
-          <Text className="text-lg font-sans-medium text-text dark:text-slate-200 text-center">
+          <Text className="text-lg font-sans-medium text-white text-center">
             No weekly change target needed
           </Text>
         </View>
@@ -94,13 +94,13 @@ export function WeeklyRateScreen({ navigation }: Props) {
             <Pressable
               key={rate.value}
               onPress={() => setSelected(rate.value)}
-              className={`flex-row items-center p-4 rounded-2xl border-2 bg-white dark:bg-slate-800 ${
+              className={`flex-row items-center p-4 rounded-2xl border-2 bg-slate-900/80 ${
                 isSelected
-                  ? 'border-primary-500 dark:border-primary-400'
-                  : 'border-slate-200 dark:border-slate-700'
+                  ? 'border-primary-500'
+                  : 'border-slate-800'
               }`}
             >
-              <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 items-center justify-center mr-3">
+              <View className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center mr-3">
                 <Ionicons
                   name={rate.icon}
                   size={20}
@@ -109,18 +109,18 @@ export function WeeklyRateScreen({ navigation }: Props) {
               </View>
               <View className="flex-1">
                 <View className="flex-row items-center">
-                  <Text className="text-base font-sans-semibold text-text dark:text-slate-100">
+                  <Text className="text-base font-sans-semibold text-white">
                     {rate.label}
                   </Text>
                   {isRecommended && (
-                    <View className="ml-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 rounded-full">
-                      <Text className="text-xs font-sans-medium text-primary-600 dark:text-primary-400">
+                    <View className="ml-2 px-2 py-0.5 bg-primary-500/15 rounded-full">
+                      <Text className="text-xs font-sans-medium text-primary-600">
                         Recommended
                       </Text>
                     </View>
                   )}
                 </View>
-                <Text className="text-sm text-text-secondary dark:text-slate-400">
+                <Text className="text-sm text-slate-400">
                   {rate.description}
                 </Text>
               </View>

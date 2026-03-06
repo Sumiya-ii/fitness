@@ -56,4 +56,12 @@ export class ConfigService {
   get qpayInvoiceCode(): string | undefined {
     return this.config.QPAY_INVOICE_CODE;
   }
+
+  get qpayCallbackToken(): string | undefined {
+    return this.config.QPAY_CALLBACK_TOKEN;
+  }
+
+  get qpayInvoiceTtlMinutes(): number {
+    return this.config.QPAY_INVOICE_TTL_MINUTES ?? 30;
+  }
 }

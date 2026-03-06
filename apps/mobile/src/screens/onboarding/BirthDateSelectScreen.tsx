@@ -60,13 +60,13 @@ export function BirthDateSelectScreen({ navigation }: Props) {
       continueDisabled={!parsedDate}
     >
       <View className="flex-1 justify-center items-center">
-        <View className="w-20 h-20 rounded-full bg-purple-100 dark:bg-purple-900/30 items-center justify-center mb-8">
+        <View className="w-20 h-20 rounded-full bg-purple-500/15 items-center justify-center mb-8">
           <Ionicons name="calendar-outline" size={40} color="#a855f7" />
         </View>
 
         <View className="flex-row items-center gap-3 mb-6">
           <View className="items-center">
-            <Text className="text-xs font-sans-medium text-text-secondary dark:text-slate-400 mb-1">
+            <Text className="text-xs font-sans-medium text-slate-400 mb-1">
               YEAR
             </Text>
             <TextInput
@@ -75,18 +75,18 @@ export function BirthDateSelectScreen({ navigation }: Props) {
               keyboardType="number-pad"
               placeholder="1990"
               placeholderTextColor="#94a3b8"
-              className="text-2xl font-sans-bold text-text dark:text-slate-100 text-center bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 min-w-[100px]"
+              className="text-2xl font-sans-bold text-white text-center bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 min-w-[100px]"
               maxLength={4}
               autoFocus
             />
           </View>
 
-          <Text className="text-2xl font-sans-bold text-slate-300 dark:text-slate-600 mt-4">
+          <Text className="text-2xl font-sans-bold text-slate-600 mt-4">
             /
           </Text>
 
           <View className="items-center">
-            <Text className="text-xs font-sans-medium text-text-secondary dark:text-slate-400 mb-1">
+            <Text className="text-xs font-sans-medium text-slate-400 mb-1">
               MONTH
             </Text>
             <TextInput
@@ -95,17 +95,17 @@ export function BirthDateSelectScreen({ navigation }: Props) {
               keyboardType="number-pad"
               placeholder="06"
               placeholderTextColor="#94a3b8"
-              className="text-2xl font-sans-bold text-text dark:text-slate-100 text-center bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 min-w-[70px]"
+              className="text-2xl font-sans-bold text-white text-center bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 min-w-[70px]"
               maxLength={2}
             />
           </View>
 
-          <Text className="text-2xl font-sans-bold text-slate-300 dark:text-slate-600 mt-4">
+          <Text className="text-2xl font-sans-bold text-slate-600 mt-4">
             /
           </Text>
 
           <View className="items-center">
-            <Text className="text-xs font-sans-medium text-text-secondary dark:text-slate-400 mb-1">
+            <Text className="text-xs font-sans-medium text-slate-400 mb-1">
               DAY
             </Text>
             <TextInput
@@ -114,15 +114,15 @@ export function BirthDateSelectScreen({ navigation }: Props) {
               keyboardType="number-pad"
               placeholder="15"
               placeholderTextColor="#94a3b8"
-              className="text-2xl font-sans-bold text-text dark:text-slate-100 text-center bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 min-w-[70px]"
+              className="text-2xl font-sans-bold text-white text-center bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 min-w-[70px]"
               maxLength={2}
             />
           </View>
         </View>
 
         {age !== null && age > 0 && (
-          <Pressable disabled className="px-4 py-2 bg-primary-100 dark:bg-primary-900/30 rounded-full">
-            <Text className="text-sm font-sans-medium text-primary-600 dark:text-primary-400">
+          <Pressable disabled className="px-4 py-2 bg-primary-500/15 rounded-full">
+            <Text className="text-sm font-sans-medium text-primary-600">
               {age} years old
             </Text>
           </Pressable>

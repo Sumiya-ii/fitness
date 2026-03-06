@@ -3,9 +3,8 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Badge, LoadingScreen, ProgressRing } from '../components/ui';
+import { LoadingScreen, ProgressRing } from '../components/ui';
 import { api } from '../api';
 
 interface WeeklySummaryData {

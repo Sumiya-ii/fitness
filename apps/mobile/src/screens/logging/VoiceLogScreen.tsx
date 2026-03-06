@@ -3,16 +3,13 @@ import {
   View,
   Text,
   Pressable,
-  ActivityIndicator,
   Animated,
   Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
 import { Button, Card } from '../../components/ui';
-import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 
@@ -24,18 +21,13 @@ interface VoiceDraft {
   transcription?: string;
 }
 
-const POLL_INTERVAL_MS = 1500;
-const MAX_POLL_ATTEMPTS = 40;
-
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
   const [recording, setRecording] = useState(false);
-  const [processing, setProcessing] = useState(false);
   const [draft, setDraft] = useState<VoiceDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const recordingRef = useRef<Audio.Recording | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -68,97 +60,18 @@ export function VoiceLogScreen() {
     pulseAnim.setValue(1);
   }, [pulseAnim]);
 
-  const pollDraft = useCallback(async (draftId: string, attempt = 0) => {
-    if (attempt >= MAX_POLL_ATTEMPTS) {
-      setError('Processing timed out. Please try again.');
-      setProcessing(false);
-      return;
-    }
-
-    try {
-      const res = await api.get<{ data: VoiceDraft }>(`/voice/drafts/${draftId}`);
-      const d = res.data;
-
-      if (d.status === 'completed') {
-        setDraft(d);
-        setProcessing(false);
-        return;
-      }
-
-      if (d.status === 'failed') {
-        setError('Voice processing failed. Please try again.');
-        setProcessing(false);
-        return;
-      }
-
-      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), POLL_INTERVAL_MS);
-    } catch {
-      setError('Failed to check processing status.');
-      setProcessing(false);
-    }
-  }, []);
-
   const handlePressIn = async () => {
     setError(null);
     setDraft(null);
-
-    try {
-      const permission = await Audio.requestPermissionsAsync();
-      if (!permission.granted) {
-        setError('Microphone permission is required for voice logging.');
-        return;
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording: rec } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
-      recordingRef.current = rec;
-      setRecording(true);
-      startPulse();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to start recording');
-    }
+    setError(
+      'Voice recording is temporarily unavailable in this iOS build. Use text/photo logging for now.',
+    );
   };
 
   const handlePressOut = async () => {
     stopPulse();
     setRecording(false);
-
-    const rec = recordingRef.current;
-    if (!rec) return;
-
-    setProcessing(true);
-    setError(null);
-
-    try {
-      await rec.stopAndUnloadAsync();
-      const uri = rec.getURI();
-      recordingRef.current = null;
-
-      if (!uri) {
-        setError('No audio recorded.');
-        setProcessing(false);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('audio', {
-        uri,
-        type: 'audio/m4a',
-        name: 'voice.m4a',
-      } as unknown as Blob);
-
-      const res = await api.upload<{ data: { draftId: string } }>('/voice/upload', formData);
-      pollDraft(res.data.draftId);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed');
-      setProcessing(false);
-    }
+    await Promise.resolve();
   };
 
   const handleConfirmSave = async () => {
@@ -207,16 +120,7 @@ export function VoiceLogScreen() {
         </View>
 
         <View className="flex-1 items-center justify-center px-8">
-          {processing && (
-            <>
-              <ActivityIndicator size="large" color="#22c55e" />
-              <Text className="mt-4 text-slate-400">
-                Processing your voice...
-              </Text>
-            </>
-          )}
-
-          {!processing && !draft && (
+          {!draft && (
             <>
               <Text className="mb-8 text-center text-slate-400">
                 Press and hold to record your meal. Speak clearly for best
@@ -282,7 +186,7 @@ export function VoiceLogScreen() {
             </View>
           )}
 
-          {error && !draft && !processing && (
+          {error && !draft && (
             <Text className="mt-4 text-center text-red-400">{error}</Text>
           )}
         </View>

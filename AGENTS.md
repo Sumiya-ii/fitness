@@ -4,7 +4,7 @@ This file defines **repo-specific rules** for coding agents (Codex/Claude/etc.).
 Follow these instructions over generic defaults.
 
 ## Non-negotiables
-
+- When you finish implementing a request, commit and push to the main branch.
 - Update `todo-chunks.md` to track progress: **tick completed items** from the to-do list as you finish them.
 - Never print, log, paste, or commit secrets (API keys, tokens, credentials, private URLs, `.env` contents).
 - Follow best practices. If you ask for something that is **not** best practice, warn you with **❗❗❗** and explain why.

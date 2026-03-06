@@ -63,10 +63,10 @@ export function GoalSetupScreen({ navigation }: Props) {
             <Pressable
               key={option.id}
               onPress={() => setGoalType(option.id)}
-              className={`flex-row items-center p-4 rounded-2xl border-2 bg-white dark:bg-slate-800 ${
+              className={`flex-row items-center p-4 rounded-2xl border-2 bg-slate-900/80 ${
                 selected
-                  ? 'border-primary-500 dark:border-primary-400'
-                  : 'border-slate-200 dark:border-slate-700'
+                  ? 'border-primary-500'
+                  : 'border-slate-800'
               }`}
             >
               <LinearGradient
@@ -77,10 +77,10 @@ export function GoalSetupScreen({ navigation }: Props) {
                 <Ionicons name={option.icon} size={28} color="white" />
               </LinearGradient>
               <View className="flex-1">
-                <Text className="text-lg font-sans-semibold text-text dark:text-slate-100">
+                <Text className="text-lg font-sans-semibold text-white">
                   {option.title}
                 </Text>
-                <Text className="text-sm text-text-secondary dark:text-slate-400 mt-0.5">
+                <Text className="text-sm text-slate-400 mt-0.5">
                   {option.description}
                 </Text>
               </View>

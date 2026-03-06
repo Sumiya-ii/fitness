@@ -76,10 +76,10 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
             <Pressable
               key={opt.id}
               onPress={() => setDietPreference(opt.id)}
-              className={`flex-row items-center p-4 rounded-2xl border-2 bg-white dark:bg-slate-800 ${
+              className={`flex-row items-center p-4 rounded-2xl border-2 bg-slate-900/80 ${
                 selected
-                  ? 'border-primary-500 dark:border-primary-400'
-                  : 'border-slate-200 dark:border-slate-700'
+                  ? 'border-primary-500'
+                  : 'border-slate-800'
               }`}
             >
               <LinearGradient
@@ -90,13 +90,13 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
                 <Ionicons name={opt.icon} size={24} color="white" />
               </LinearGradient>
               <View className="flex-1">
-                <Text className="text-base font-sans-semibold text-text dark:text-slate-100">
+                <Text className="text-base font-sans-semibold text-white">
                   {opt.title}
                 </Text>
-                <Text className="text-xs text-text-secondary dark:text-slate-400 mt-0.5">
+                <Text className="text-xs text-slate-400 mt-0.5">
                   {opt.description}
                 </Text>
-                <Text className="text-xs font-sans-medium text-primary-600 dark:text-primary-400 mt-1">
+                <Text className="text-xs font-sans-medium text-primary-600 mt-1">
                   {opt.macroSplit}
                 </Text>
               </View>

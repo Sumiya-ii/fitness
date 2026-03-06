@@ -98,10 +98,10 @@ export function OnboardingScreen({ navigation }: Props) {
             <Ionicons name={item.icon} size={80} color="white" />
           </LinearGradient>
         </View>
-        <Text className="text-2xl font-sans-bold text-text text-center mb-3 dark:text-slate-100">
+        <Text className="text-2xl font-sans-bold text-white text-center mb-3">
           {item.title}
         </Text>
-        <Text className="text-base text-text-secondary text-center leading-6 dark:text-slate-400">
+        <Text className="text-base text-slate-400 text-center leading-6">
           {item.subtitle}
         </Text>
       </View>
@@ -109,11 +109,17 @@ export function OnboardingScreen({ navigation }: Props) {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900">
+    <SafeAreaView className="flex-1 bg-slate-950">
+      <LinearGradient
+        colors={['#020617', '#0f172a', '#111827']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        className="absolute inset-0"
+      />
       <View className="flex-1">
         <View className="flex-row justify-end px-6 pt-2">
           <Pressable onPress={handleSkip} className="py-2 px-4 active:opacity-70">
-            <Text className="text-base font-sans-medium text-primary-600 dark:text-primary-400">
+            <Text className="text-base font-sans-medium text-primary-400">
               Skip
             </Text>
           </Pressable>
@@ -138,7 +144,7 @@ export function OnboardingScreen({ navigation }: Props) {
               <View
                 key={i}
                 className={`h-2 rounded-full ${
-                  i === currentIndex ? 'w-6 bg-primary-500' : 'w-2 bg-slate-300 dark:bg-slate-600'
+                  i === currentIndex ? 'w-6 bg-primary-500' : 'w-2 bg-slate-700'
                 }`}
               />
             ))}

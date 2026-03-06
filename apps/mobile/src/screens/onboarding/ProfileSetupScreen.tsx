@@ -3,25 +3,32 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import type { Gender, ActivityLevel } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
+import type { SetupStackParamList } from '../../navigation/types';
 
 const ACTIVITY_LEVELS: { id: ActivityLevel; label: string }[] = [
   { id: 'sedentary', label: 'Sedentary' },
-  { id: 'light', label: 'Light' },
-  { id: 'moderate', label: 'Moderate' },
-  { id: 'active', label: 'Active' },
+  { id: 'lightly_active', label: 'Light' },
+  { id: 'moderately_active', label: 'Moderate' },
+  { id: 'extra_active', label: 'Active' },
   { id: 'very_active', label: 'Very Active' },
 ];
 
-type Props = NativeStackScreenProps<any, 'ProfileSetup'>;
+type Props = {
+  navigation: NativeStackNavigationProp<SetupStackParamList>;
+};
 
 export function ProfileSetupScreen({ navigation }: Props) {
   const profile = useProfileStore((s) => s);
-  const setProfile = useProfileStore((s) => s.setProfile);
+  const setGenderValue = useProfileStore((s) => s.setGender);
+  const setBirthDate = useProfileStore((s) => s.setBirthDate);
+  const setHeightCmValue = useProfileStore((s) => s.setHeightCm);
+  const setWeightKgValue = useProfileStore((s) => s.setWeightKg);
+  const setActivityLevelValue = useProfileStore((s) => s.setActivityLevel);
 
   const [gender, setGender] = useState<Gender | null>(profile.gender ?? null);
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -46,13 +53,11 @@ export function ProfileSetupScreen({ navigation }: Props) {
 
     if (!gender || !dob || !h || !w || !activityLevel) return;
 
-    setProfile({
-      gender,
-      dateOfBirth: dob,
-      heightCm: h,
-      weightKg: w,
-      activityLevel,
-    });
+    setGenderValue(gender);
+    setBirthDate(dob);
+    setHeightCmValue(h);
+    setWeightKgValue(w);
+    setActivityLevelValue(activityLevel);
     navigation.navigate('TargetReview');
   };
 
@@ -67,7 +72,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
     activityLevel;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-slate-950" edges={['top']}>
       <View className="relative">
         <LinearGradient
         colors={['#0ea5e9', '#0284c7']}
@@ -88,15 +93,15 @@ export function ProfileSetupScreen({ navigation }: Props) {
       </View>
 
       <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-        <Text className="text-sm font-sans-medium text-text mb-2 dark:text-slate-200">
+        <Text className="text-sm font-sans-medium text-white mb-2">
           Gender
         </Text>
         <View className="flex-row gap-3 mb-6">
           <Pressable
             onPress={() => setGender('male')}
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-              gender === 'male' ? 'border-primary-500 bg-primary-50' : 'border-slate-200 bg-white'
-            } dark:bg-slate-800 dark:border-slate-600`}
+              gender === 'male' ? 'border-primary-500 bg-primary-500/10' : 'border-slate-800 bg-slate-900/80'
+            }`}
           >
             <Ionicons
               name="male"
@@ -105,8 +110,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
             />
             <Text
               className={`ml-2 font-sans-medium ${
-                gender === 'male' ? 'text-primary-600' : 'text-text-secondary'
-              } dark:text-slate-400`}
+                gender === 'male' ? 'text-primary-400' : 'text-slate-400'
+              }`}
             >
               Male
             </Text>
@@ -114,8 +119,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
           <Pressable
             onPress={() => setGender('female')}
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-              gender === 'female' ? 'border-primary-500 bg-primary-50' : 'border-slate-200 bg-white'
-            } dark:bg-slate-800 dark:border-slate-600`}
+              gender === 'female' ? 'border-primary-500 bg-primary-500/10' : 'border-slate-800 bg-slate-900/80'
+            }`}
           >
             <Ionicons
               name="female"
@@ -124,8 +129,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
             />
             <Text
               className={`ml-2 font-sans-medium ${
-                gender === 'female' ? 'text-primary-600' : 'text-text-secondary'
-              } dark:text-slate-400`}
+                gender === 'female' ? 'text-primary-400' : 'text-slate-400'
+              }`}
             >
               Female
             </Text>
@@ -162,7 +167,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <Text className="text-sm font-sans-medium text-text mb-2 dark:text-slate-200">
+        <Text className="text-sm font-sans-medium text-white mb-2">
           Activity Level
         </Text>
         <ScrollView
@@ -177,12 +182,12 @@ export function ProfileSetupScreen({ navigation }: Props) {
                 key={level.id}
                 onPress={() => setActivityLevel(level.id)}
                 className={`mr-3 px-4 py-2.5 rounded-full ${
-                  isSelected ? 'bg-primary-500' : 'bg-slate-200 dark:bg-slate-700'
+                  isSelected ? 'bg-primary-500' : 'bg-slate-700'
                 }`}
               >
                 <Text
                   className={`text-sm font-sans-medium ${
-                    isSelected ? 'text-white' : 'text-text dark:text-slate-300'
+                    isSelected ? 'text-white' : 'text-white'
                   }`}
                 >
                   {level.label}

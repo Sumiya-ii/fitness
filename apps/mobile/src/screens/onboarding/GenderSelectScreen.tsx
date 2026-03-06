@@ -22,14 +22,14 @@ const OPTIONS: GenderOption[] = [
     icon: 'male',
     label: 'Male',
     color: '#3b82f6',
-    bgClass: 'bg-blue-100 dark:bg-blue-900/30',
+    bgClass: 'bg-blue-500/15',
   },
   {
     id: 'female',
     icon: 'female',
     label: 'Female',
     color: '#ec4899',
-    bgClass: 'bg-pink-100 dark:bg-pink-900/30',
+    bgClass: 'bg-pink-500/15',
   },
 ];
 
@@ -57,10 +57,10 @@ export function GenderSelectScreen({ navigation }: Props) {
               <Pressable
                 key={opt.id}
                 onPress={() => setGender(opt.id)}
-                className={`flex-1 items-center py-8 rounded-2xl border-2 bg-white dark:bg-slate-800 ${
+                className={`flex-1 items-center py-8 rounded-2xl border-2 bg-slate-900/80 ${
                   selected
-                    ? 'border-primary-500 dark:border-primary-400'
-                    : 'border-slate-200 dark:border-slate-700'
+                    ? 'border-primary-500'
+                    : 'border-slate-800'
                 }`}
               >
                 <View
@@ -68,7 +68,7 @@ export function GenderSelectScreen({ navigation }: Props) {
                 >
                   <Ionicons name={opt.icon} size={40} color={opt.color} />
                 </View>
-                <Text className="text-lg font-sans-semibold text-text dark:text-slate-100">
+                <Text className="text-lg font-sans-semibold text-white">
                   {opt.label}
                 </Text>
                 {selected && (

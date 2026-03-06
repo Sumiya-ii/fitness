@@ -7,7 +7,6 @@ import {
   ScrollView,
   Image,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -63,6 +62,9 @@ const PLAN_PRICES: Record<Plan, { amount: string; period: string; yearly?: strin
 };
 
 const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+type IoniconName = keyof typeof Ionicons.glyphMap;
+type PaymentStatus = 'pending' | 'paid' | 'expired' | 'canceled';
 
 export function SubscriptionScreen() {
   const navigation = useNavigation();
@@ -70,7 +72,11 @@ export function SubscriptionScreen() {
   const [loading, setLoading] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
+  const [statusError, setStatusError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollStartRef = useRef<number | null>(null);
+  const statusRequestInFlightRef = useRef(false);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -83,36 +89,78 @@ export function SubscriptionScreen() {
     return () => stopPolling();
   }, [stopPolling]);
 
-  const pollPaymentStatus = useCallback(
-    (invoiceId: string) => {
-      stopPolling();
-      pollRef.current = setInterval(async () => {
-        try {
-          const res = await api.get<{ data: { status: string; paidAt: string | null } }>(
-            `/qpay/invoice/${invoiceId}/status`,
-          );
-          if (res.data.status === 'paid') {
-            stopPolling();
-            setPaymentSuccess(true);
-          }
-        } catch {
-          // ignore polling errors
-        }
-      }, POLL_INTERVAL_MS);
+  const checkPaymentStatus = useCallback(
+    async (invoiceId: string) => {
+      const res = await api.get<{
+        data: { status: PaymentStatus; paidAt: string | null };
+      }>(`/qpay/invoice/${invoiceId}/status`);
+
+      setPaymentStatus(res.data.status);
+      if (res.data.status === 'paid') {
+        stopPolling();
+        await api.get('/subscriptions/status').catch(() => undefined);
+        setPaymentSuccess(true);
+      } else if (
+        res.data.status === 'expired'
+        || res.data.status === 'canceled'
+      ) {
+        stopPolling();
+      }
     },
     [stopPolling],
   );
 
+  const pollPaymentStatus = useCallback(
+    (invoiceId: string) => {
+      stopPolling();
+      pollStartRef.current = Date.now();
+      statusRequestInFlightRef.current = false;
+      setPaymentStatus('pending');
+      setStatusError(null);
+      pollRef.current = setInterval(async () => {
+        if (statusRequestInFlightRef.current) {
+          return;
+        }
+        const startedAt = pollStartRef.current;
+        if (startedAt && Date.now() - startedAt >= POLL_TIMEOUT_MS) {
+          stopPolling();
+          setStatusError(
+            'Төлбөрийн баталгаажуулалт удааширлаа. Дараа дахин шалгана уу.',
+          );
+          return;
+        }
+
+        statusRequestInFlightRef.current = true;
+        try {
+          await checkPaymentStatus(invoiceId);
+          setStatusError(null);
+        } catch (err: unknown) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Төлбөрийн статус шалгахад алдаа гарлаа.';
+          setStatusError(message);
+        } finally {
+          statusRequestInFlightRef.current = false;
+        }
+      }, POLL_INTERVAL_MS);
+    },
+    [checkPaymentStatus, stopPolling],
+  );
+
   const handleSubscribe = async () => {
     setLoading(true);
+    setStatusError(null);
+    setPaymentStatus('pending');
     try {
       const res = await api.post<{ data: InvoiceData }>('/qpay/invoice', {
         plan: selectedPlan,
       });
       setInvoice(res.data);
       pollPaymentStatus(res.data.invoiceId);
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to create invoice');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create invoice';
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -131,6 +179,43 @@ export function SubscriptionScreen() {
       }
     } catch {
       Alert.alert('Error', 'Could not open the banking app.');
+    }
+  };
+
+  const handleManualStatusCheck = async () => {
+    if (!invoice) return;
+    setStatusError(null);
+    try {
+      await checkPaymentStatus(invoice.invoiceId);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Төлбөрийн статус шалгахад алдаа гарлаа.';
+      setStatusError(message);
+    }
+  };
+
+  const handleLegalLink = async (kind: 'terms' | 'privacy') => {
+    const url =
+      kind === 'terms'
+        ? process.env.EXPO_PUBLIC_TERMS_URL?.trim()
+        : process.env.EXPO_PUBLIC_PRIVACY_URL?.trim();
+
+    if (!url) {
+      Alert.alert(
+        'Мэдээлэл байхгүй',
+        kind === 'terms'
+          ? 'Үйлчилгээний нөхцлийн холбоос тохируулагдаагүй байна.'
+          : 'Нууцлалын бодлогын холбоос тохируулагдаагүй байна.',
+      );
+      return;
+    }
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Error', 'Could not open the link.');
     }
   };
 
@@ -198,17 +283,44 @@ export function SubscriptionScreen() {
                   />
                 </View>
 
-                <View className="flex-row items-center gap-2">
-                  <View className="h-2 w-2 rounded-full bg-primary-500 animate-pulse" />
-                  <Text className="text-sm text-slate-400">
-                    Төлбөр хүлээж байна...
+                {paymentStatus === 'pending' && (
+                  <View className="flex-row items-center gap-2">
+                    <View className="h-2 w-2 rounded-full bg-primary-500 animate-pulse" />
+                    <Text className="text-sm text-slate-400">
+                      Төлбөр хүлээж байна...
+                    </Text>
+                  </View>
+                )}
+                {paymentStatus === 'expired' && (
+                  <Text className="text-sm text-amber-400 text-center">
+                    Нэхэмжлэхийн хугацаа дууссан. Дахин үүсгэнэ үү.
                   </Text>
-                </View>
+                )}
+                {paymentStatus === 'canceled' && (
+                  <Text className="text-sm text-amber-400 text-center">
+                    Нэхэмжлэх цуцлагдсан байна. Дахин оролдоно уу.
+                  </Text>
+                )}
+                {statusError && (
+                  <Text className="text-xs text-red-400 text-center mt-2">
+                    {statusError}
+                  </Text>
+                )}
 
                 <View className="mt-3 px-4 py-2 rounded-xl bg-slate-800">
                   <Text className="text-lg font-sans-bold text-primary-400 text-center">
                     {invoice.amount.toLocaleString()}₮
                   </Text>
+                </View>
+
+                <View className="mt-4 w-full">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={handleManualStatusCheck}
+                  >
+                    Статус шалгах
+                  </Button>
                 </View>
               </View>
             </Animated.View>
@@ -234,7 +346,7 @@ export function SubscriptionScreen() {
                   >
                     <View className="h-10 w-10 rounded-xl bg-primary-500/15 items-center justify-center mr-3">
                       <Ionicons
-                        name={(BANK_ICONS[bank.name] ?? 'business-outline') as any}
+                        name={(BANK_ICONS[bank.name] ?? 'business-outline') as IoniconName}
                         size={20}
                         color="#22c55e"
                       />
@@ -252,6 +364,19 @@ export function SubscriptionScreen() {
                 ))}
               </View>
             </Animated.View>
+
+            <View className="px-4 mt-6">
+              <Button
+                variant="outline"
+                size="md"
+                onPress={() => {
+                  stopPolling();
+                  setInvoice(null);
+                }}
+              >
+                Дараа төлөх
+              </Button>
+            </View>
           </ScrollView>
         </SafeAreaView>
       </View>
@@ -405,10 +530,10 @@ export function SubscriptionScreen() {
             </Button>
 
             <View className="mt-6 flex-row flex-wrap justify-center gap-4">
-              <Pressable onPress={() => Linking.openURL('https://example.com/terms')}>
+              <Pressable onPress={() => handleLegalLink('terms')}>
                 <Text className="text-xs text-slate-500">Үйлчилгээний нөхцөл</Text>
               </Pressable>
-              <Pressable onPress={() => Linking.openURL('https://example.com/privacy')}>
+              <Pressable onPress={() => handleLegalLink('privacy')}>
                 <Text className="text-xs text-slate-500">Нууцлалын бодлого</Text>
               </Pressable>
             </View>

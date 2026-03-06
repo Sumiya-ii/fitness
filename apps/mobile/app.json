@@ -1,29 +1,45 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Coach",
     "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos so you can attach meal images.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use your camera for meal photo logging."
+        }
+      ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning and meal photo logging.",
           "barcodeScannerEnabled": true
         }
       ]
     ],
-    "slug": "mobile",
+    "slug": "coach-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.coach.mobile",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning and meal photo logging.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use your microphone for voice meal logging.",
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos so you can attach meal images."
+      }
     },
     "android": {
+      "package": "com.coach.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

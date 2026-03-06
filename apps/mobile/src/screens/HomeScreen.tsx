@@ -20,8 +20,6 @@ import Animated, {
 import {
   ProgressRing,
   CircularMacro,
-  Card,
-  EmptyState,
   LoadingScreen,
 } from '../components/ui';
 import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';

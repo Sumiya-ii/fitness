@@ -1,7 +1,13 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { timingSafeEqual } from 'node:crypto';
+import type { Prisma, QPayInvoice } from '@prisma/client';
 import { ConfigService } from '../config/config.service';
 import { PrismaService } from '../prisma';
-import { SubscriptionsService } from '../subscriptions';
 import {
   PLAN_PRICES_MNT,
   type QPayTokenResponse,
@@ -13,13 +19,12 @@ import {
 export class QPayService {
   private readonly logger = new Logger(QPayService.name);
   private accessToken: string | null = null;
-  private refreshToken: string | null = null;
   private tokenExpiresAt = 0;
+  private static readonly EXPECTED_CURRENCY = 'MNT';
 
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
   private get apiUrl(): string {
@@ -59,7 +64,6 @@ export class QPayService {
 
     const data = (await res.json()) as QPayTokenResponse;
     this.accessToken = data.access_token;
-    this.refreshToken = data.refresh_token;
     this.tokenExpiresAt = Date.now() + data.expires_in * 1000 - 60_000;
 
     return this.accessToken;
@@ -77,6 +81,12 @@ export class QPayService {
 
     const token = await this.authenticate();
     const senderInvoiceNo = `coach_${userId.slice(0, 8)}_${Date.now()}`;
+    const callbackQuery = new URLSearchParams({
+      sender_invoice_no: senderInvoiceNo,
+    });
+    if (this.config.qpayCallbackToken) {
+      callbackQuery.set('token', this.config.qpayCallbackToken);
+    }
 
     const res = await fetch(`${this.apiUrl}/invoice`, {
       method: 'POST',
@@ -90,7 +100,7 @@ export class QPayService {
         invoice_receiver_code: userId,
         invoice_description: `Coach Pro - ${plan === 'monthly' ? 'Сарын' : 'Жилийн'} эрх`,
         amount,
-        callback_url: `${callbackBaseUrl}/api/v1/qpay/callback?sender_invoice_no=${senderInvoiceNo}`,
+        callback_url: `${callbackBaseUrl}/api/v1/qpay/callback?${callbackQuery.toString()}`,
       }),
     });
 
@@ -111,7 +121,7 @@ export class QPayService {
         senderInvoiceNo,
         qrText: data.qr_text,
         qrImage: data.qr_image,
-        urls: data.urls as any,
+        urls: data.urls as unknown as Prisma.InputJsonValue,
         status: 'pending',
       },
     });
@@ -127,7 +137,9 @@ export class QPayService {
     };
   }
 
-  async handleCallback(senderInvoiceNo: string) {
+  async handleCallback(senderInvoiceNo: string, callbackToken?: string) {
+    this.validateCallbackToken(callbackToken);
+
     const invoice = await this.prisma.qPayInvoice.findUnique({
       where: { senderInvoiceNo },
     });
@@ -137,25 +149,10 @@ export class QPayService {
       return { success: false };
     }
 
-    if (invoice.status === 'paid') {
-      return { success: true };
-    }
-
-    const paid = await this.verifyPayment(invoice.qpayInvoiceId!);
-    if (!paid) {
+    const status = await this.resolveInvoiceStatus(invoice);
+    if (status.status !== 'paid') {
       return { success: false };
     }
-
-    await this.prisma.qPayInvoice.update({
-      where: { id: invoice.id },
-      data: {
-        status: 'paid',
-        paidAt: new Date(),
-        qpayPaymentId: paid.paymentId,
-      },
-    });
-
-    await this.activateSubscription(invoice.userId, invoice.plan);
 
     return { success: true };
   }
@@ -169,31 +166,13 @@ export class QPayService {
       throw new BadRequestException('Invoice not found');
     }
 
-    if (invoice.status === 'paid') {
-      return { status: 'paid' as const, paidAt: invoice.paidAt };
-    }
-
-    const paid = await this.verifyPayment(invoice.qpayInvoiceId!);
-    if (paid) {
-      await this.prisma.qPayInvoice.update({
-        where: { id: invoice.id },
-        data: {
-          status: 'paid',
-          paidAt: new Date(),
-          qpayPaymentId: paid.paymentId,
-        },
-      });
-
-      await this.activateSubscription(invoice.userId, invoice.plan);
-      return { status: 'paid' as const, paidAt: new Date() };
-    }
-
-    return { status: 'pending' as const, paidAt: null };
+    return this.resolveInvoiceStatus(invoice);
   }
 
   private async verifyPayment(
     qpayInvoiceId: string,
-  ): Promise<{ paymentId: string; amount: number } | null> {
+    expectedAmountMnt: number,
+  ): Promise<{ paymentId: string; amount: number; currency: string } | null> {
     const token = await this.authenticate();
 
     const res = await fetch(`${this.apiUrl}/payment/check`, {
@@ -215,18 +194,129 @@ export class QPayService {
     }
 
     const data = (await res.json()) as QPayCheckResponse;
-    const paidRow = data.rows?.find((r) => r.payment_status === 'PAID');
-    if (paidRow) {
+    const paidRows = data.rows?.filter((r) => r.payment_status === 'PAID') ?? [];
+    for (const paidRow of paidRows) {
+      const amount = Number.parseFloat(paidRow.payment_amount);
+      if (
+        Number.isNaN(amount)
+        || paidRow.payment_currency !== QPayService.EXPECTED_CURRENCY
+        || amount !== expectedAmountMnt
+      ) {
+        this.logger.warn(
+          `Ignoring paid row due to mismatch for invoice ${qpayInvoiceId}: amount=${paidRow.payment_amount} currency=${paidRow.payment_currency}`,
+        );
+        continue;
+      }
+
       return {
         paymentId: paidRow.payment_id,
-        amount: parseFloat(paidRow.payment_amount),
+        amount,
+        currency: paidRow.payment_currency,
       };
     }
 
     return null;
   }
 
-  private async activateSubscription(userId: string, plan: string) {
+  private validateCallbackToken(receivedToken?: string): void {
+    const expectedToken = this.config.qpayCallbackToken;
+    if (!expectedToken) {
+      return;
+    }
+    if (!receivedToken) {
+      throw new UnauthorizedException('Invalid callback token');
+    }
+    const expected = Buffer.from(expectedToken);
+    const received = Buffer.from(receivedToken);
+    if (expected.length !== received.length || !timingSafeEqual(expected, received)) {
+      throw new UnauthorizedException('Invalid callback token');
+    }
+  }
+
+  private isInvoiceExpired(createdAt: Date): boolean {
+    const ttlMs = this.config.qpayInvoiceTtlMinutes * 60_000;
+    return Date.now() - createdAt.getTime() > ttlMs;
+  }
+
+  private async resolveInvoiceStatus(invoice: QPayInvoice): Promise<{
+    status: 'paid' | 'pending' | 'expired' | 'canceled';
+    paidAt: Date | null;
+  }> {
+    if (invoice.status === 'paid') {
+      return { status: 'paid', paidAt: invoice.paidAt };
+    }
+
+    if (invoice.status === 'expired' || invoice.status === 'canceled') {
+      return { status: invoice.status, paidAt: invoice.paidAt };
+    }
+
+    if (this.isInvoiceExpired(invoice.createdAt)) {
+      await this.prisma.qPayInvoice.updateMany({
+        where: { id: invoice.id, status: 'pending' },
+        data: { status: 'expired' },
+      });
+      return { status: 'expired', paidAt: null };
+    }
+
+    const paid = await this.verifyPayment(invoice.qpayInvoiceId!, invoice.amountMnt);
+    if (!paid) {
+      return { status: 'pending', paidAt: null };
+    }
+
+    return this.finalizePaidInvoice(invoice, paid.paymentId);
+  }
+
+  private async finalizePaidInvoice(
+    invoice: QPayInvoice,
+    paymentId: string,
+  ): Promise<{
+    status: 'paid' | 'pending' | 'expired' | 'canceled';
+    paidAt: Date | null;
+  }> {
+    const paidAt = new Date();
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.qPayInvoice.updateMany({
+        where: { id: invoice.id, status: 'pending' },
+        data: {
+          status: 'paid',
+          paidAt,
+          qpayPaymentId: paymentId,
+        },
+      });
+
+      if (result.count !== 1) {
+        return false;
+      }
+
+      await this.activateSubscription(tx, invoice.userId, invoice.plan);
+      return true;
+    });
+
+    if (updated) {
+      return { status: 'paid', paidAt };
+    }
+
+    const latest = await this.prisma.qPayInvoice.findUnique({
+      where: { id: invoice.id },
+    });
+
+    if (latest?.status === 'paid') {
+      return { status: 'paid', paidAt: latest.paidAt };
+    }
+
+    if (latest?.status === 'expired' || latest?.status === 'canceled') {
+      return { status: latest.status, paidAt: latest.paidAt };
+    }
+
+    return { status: 'pending', paidAt: null };
+  }
+
+  private async activateSubscription(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    plan: string,
+  ) {
     const now = new Date();
     const periodEnd = new Date(now);
     if (plan === 'monthly') {
@@ -235,39 +325,28 @@ export class QPayService {
       periodEnd.setFullYear(periodEnd.getFullYear() + 1);
     }
 
-    const existing = await this.prisma.subscription.findUnique({
+    const subscription = await tx.subscription.upsert({
       where: { userId },
+      update: {
+        tier: 'pro',
+        status: 'active',
+        provider: 'qpay',
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+      },
+      create: {
+        userId,
+        tier: 'pro',
+        status: 'active',
+        provider: 'qpay',
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+      },
     });
 
-    if (existing) {
-      await this.prisma.subscription.update({
-        where: { userId },
-        data: {
-          tier: 'pro',
-          status: 'active',
-          provider: 'qpay',
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-        },
-      });
-    } else {
-      await this.prisma.subscription.create({
-        data: {
-          userId,
-          tier: 'pro',
-          status: 'active',
-          provider: 'qpay',
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-        },
-      });
-    }
-
-    await this.prisma.subscriptionLedger.create({
+    await tx.subscriptionLedger.create({
       data: {
-        subscriptionId: (
-          await this.prisma.subscription.findUnique({ where: { userId } })
-        )!.id,
+        subscriptionId: subscription.id,
         event: 'started',
         provider: 'qpay',
         metadata: { plan },

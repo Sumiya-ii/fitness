@@ -54,6 +54,12 @@ For `apps/mobile`, configure these Expo public env vars instead of editing sourc
 
 - `EXPO_PUBLIC_API_BASE_URL` (example: `http://192.168.1.x:3000/api/v1` for physical device testing)
 - `EXPO_PUBLIC_TELEGRAM_BOT_USERNAME` (example: `MyCoachBot`, with or without `@`)
+- `EXPO_PUBLIC_FIREBASE_API_KEY`
+- `EXPO_PUBLIC_FIREBASE_PROJECT_ID`
+- `EXPO_PUBLIC_FIREBASE_APP_ID`
+- `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` (optional)
+- `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` (optional)
+- `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` (optional)
 
 ## Tech Stack
 
