@@ -8,6 +8,7 @@ Follow these instructions over generic defaults.
 - Update `todo-chunks.md` to track progress: **tick completed items** from the to-do list as you finish them.
 - Never print, log, paste, or commit secrets (API keys, tokens, credentials, private URLs, `.env` contents).
 - Follow best practices. If you ask for something that is **not** best practice, warn you with **❗❗❗** and explain why.
+- Before any push, run quality checks (`lint`, `typecheck`, `test`) using repo scripts. If any check fails, fix the issue, rerun checks, and repeat until all checks pass; only then commit/push.
 
 ## Prime directive
 
@@ -40,6 +41,13 @@ Ask before:
 - Changes to auth / payments / permissions
 - DB schema changes or migrations
 - Infra/deploy changes (CI, cloud bindings, secrets)
+
+## Dev Server Restart Policy (Mobile)
+
+- If a change requires restarting Expo/Metro (for example Babel config, Metro config, NativeWind config, env/config loading, native modules), **always restart it automatically** so the user can test immediately.
+- If a change is JS/TS-only and supports Fast Refresh, **do not restart**; explicitly tell the user: `No restart needed (JS-only change).`
+- If there is a port conflict, resolve it automatically (reuse or switch port) and report the active port.
+- Default Expo connection mode is **Tunnel** for all interactive testing sessions. Start with `--tunnel` unless explicitly requested otherwise.
 
 ## Output requirements
 
