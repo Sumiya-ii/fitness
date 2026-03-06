@@ -29,11 +29,11 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const variantTextClasses: Record<ButtonVariant, string> = {
-  primary: 'text-white',
+  primary: 'text-text',
   secondary: 'text-text',
   outline: 'text-text',
   ghost: 'text-text',
-  danger: 'text-white',
+  danger: 'text-text',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

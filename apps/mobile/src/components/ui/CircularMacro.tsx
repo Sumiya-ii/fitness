@@ -82,23 +82,23 @@ export function CircularMacro({
           }}
         >
           <Text
-            className="font-sans-bold text-text dark:text-white"
+            className="font-sans-bold text-text"
             style={{ fontSize: size * 0.2 }}
           >
             {remaining}
           </Text>
           <Text
-            className="text-text-secondary dark:text-slate-400"
+            className="text-text-secondary"
             style={{ fontSize: size * 0.12 }}
           >
             {unit}
           </Text>
         </View>
       </View>
-      <Text className="mt-1.5 text-xs font-sans-medium text-text-secondary dark:text-slate-400">
+      <Text className="mt-1.5 text-xs font-sans-medium text-text-secondary">
         {label}
       </Text>
-      <Text className="text-xs text-text-tertiary dark:text-slate-500">
+      <Text className="text-xs text-text-tertiary">
         {current}/{target}{unit}
       </Text>
     </View>

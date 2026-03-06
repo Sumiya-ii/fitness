@@ -105,15 +105,15 @@ export function TextSearchScreen() {
   const calcFat = nutrient ? Math.round(nutrient.fatPer100g * factor * 10) / 10 : 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
         {/* Header */}
-        <View className="flex-row items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+        <View className="flex-row items-center gap-3 border-b border-surface-border px-4 py-3">
           <Pressable onPress={() => navigation.goBack()} className="p-1">
-            <Ionicons name="arrow-back" size={24} color="#0f172a" />
+            <Ionicons name="arrow-back" size={24} color="#111218" />
           </Pressable>
           <Input
             value={query}
@@ -130,7 +130,7 @@ export function TextSearchScreen() {
         <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
           {loading && (
             <View className="py-8">
-              <ActivityIndicator size="large" color="#22c55e" />
+              <ActivityIndicator size="large" color="#1f2028" />
             </View>
           )}
 
@@ -154,10 +154,10 @@ export function TextSearchScreen() {
                     >
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1">
-                          <Text className="font-sans-semibold text-text dark:text-slate-100">
+                          <Text className="font-sans-semibold text-text">
                             {food.normalizedName}
                           </Text>
-                          <Text className="text-sm text-text-secondary dark:text-slate-400">
+                          <Text className="text-sm text-text-secondary">
                             {cal} cal / 100g
                           </Text>
                         </View>
@@ -167,26 +167,26 @@ export function TextSearchScreen() {
                         <Ionicons
                           name={isExpanded ? 'chevron-up' : 'chevron-down'}
                           size={20}
-                          color="#94a3b8"
+                          color="#9a9caa"
                         />
                       </View>
                     </Pressable>
 
                     {isExpanded && (
-                      <View className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-                        <Text className="mb-2 text-sm font-sans-medium text-text-secondary dark:text-slate-400">
+                      <View className="mt-4 border-t border-surface-border pt-4">
+                        <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
                           Select serving
                         </Text>
                         {food.servings.map((s) => (
                           <Pressable
                             key={s.id}
                             onPress={() => handleSelectServing(food, s.id)}
-                            className="mb-2 flex-row items-center justify-between rounded-xl bg-surface-secondary py-2.5 px-3 dark:bg-slate-800"
+                            className="mb-2 flex-row items-center justify-between rounded-xl bg-surface-secondary py-2.5 px-3"
                           >
-                            <Text className="font-sans-medium text-text dark:text-slate-100">
+                            <Text className="font-sans-medium text-text">
                               {s.label}
                             </Text>
-                            <Text className="text-sm text-text-tertiary dark:text-slate-500">
+                            <Text className="text-sm text-text-tertiary">
                               {s.gramsPerUnit}g
                             </Text>
                           </Pressable>
@@ -200,8 +200,8 @@ export function TextSearchScreen() {
           )}
 
           {selectedFood && (
-            <View className="border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
-              <Text className="mb-3 font-sans-semibold text-text dark:text-slate-100">
+            <View className="border-t border-surface-border bg-white px-4 py-4">
+              <Text className="mb-3 font-sans-semibold text-text">
                 {selectedFood.food.normalizedName}
               </Text>
               <View className="mb-4 flex-row items-center justify-center gap-4">
@@ -213,11 +213,11 @@ export function TextSearchScreen() {
                         : p
                     )
                   }
-                  className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary dark:bg-slate-700"
+                  className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
                 >
-                  <Ionicons name="remove" size={24} color="#475569" />
+                  <Ionicons name="remove" size={24} color="#777985" />
                 </Pressable>
-                <Text className="min-w-[60px] text-center text-xl font-sans-bold text-text dark:text-slate-100">
+                <Text className="min-w-[60px] text-center text-xl font-sans-bold text-text">
                   {selectedFood.quantity}
                 </Text>
                 <Pressable
@@ -226,26 +226,26 @@ export function TextSearchScreen() {
                       p ? { ...p, quantity: p.quantity + 0.5 } : p
                     )
                   }
-                  className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary dark:bg-slate-700"
+                  className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
                 >
-                  <Ionicons name="add" size={24} color="#475569" />
+                  <Ionicons name="add" size={24} color="#777985" />
                 </Pressable>
               </View>
-              <View className="mb-4 rounded-xl bg-surface-secondary p-3 dark:bg-slate-800">
-                <Text className="mb-2 text-sm font-sans-medium text-text-secondary dark:text-slate-400">
+              <View className="mb-4 rounded-xl bg-surface-secondary p-3">
+                <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
                   Calculated macros
                 </Text>
                 <View className="flex-row flex-wrap gap-4">
-                  <Text className="text-text dark:text-slate-100">
+                  <Text className="text-text">
                     {calcCal} cal
                   </Text>
-                  <Text className="text-text dark:text-slate-100">
+                  <Text className="text-text">
                     P: {calcProtein}g
                   </Text>
-                  <Text className="text-text dark:text-slate-100">
+                  <Text className="text-text">
                     C: {calcCarbs}g
                   </Text>
-                  <Text className="text-text dark:text-slate-100">
+                  <Text className="text-text">
                     F: {calcFat}g
                   </Text>
                 </View>

@@ -52,8 +52,8 @@ interface SettingsRowProps {
 
 function SettingsRow({
   icon,
-  iconColor = '#94a3b8',
-  iconBg = 'bg-slate-800',
+  iconColor = '#9a9caa',
+  iconBg = 'bg-surface-secondary',
   label,
   value,
   right,
@@ -69,19 +69,19 @@ function SettingsRow({
       </View>
       <View className="flex-1">
         <Text
-          className={`font-sans-medium ${danger ? 'text-red-400' : 'text-white'}`}
+          className={`font-sans-medium ${danger ? 'text-red-400' : 'text-text'}`}
         >
           {label}
         </Text>
       </View>
       {value && (
-        <Text className="text-sm text-slate-400 font-sans-medium mr-2">
+        <Text className="text-sm text-text-secondary font-sans-medium mr-2">
           {value}
         </Text>
       )}
       {right}
       {onPress && !right && (
-        <Ionicons name="chevron-forward" size={18} color="#475569" />
+        <Ionicons name="chevron-forward" size={18} color="#777985" />
       )}
     </Pressable>
   );
@@ -96,10 +96,10 @@ function SettingsSection({
 }) {
   return (
     <View className="mb-6">
-      <Text className="text-xs font-sans-semibold text-slate-500 uppercase tracking-wider mb-2 px-1">
+      <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2 px-1">
         {title}
       </Text>
-      <View className="rounded-2xl bg-slate-900/80 border border-slate-800 px-4">
+      <View className="rounded-2xl bg-surface-card border border-surface-border px-4">
         {children}
       </View>
     </View>
@@ -107,7 +107,7 @@ function SettingsSection({
 }
 
 function SettingsDivider() {
-  return <View className="h-px bg-slate-800" />;
+  return <View className="h-px bg-surface-secondary" />;
 }
 
 export function SettingsScreen() {
@@ -299,10 +299,10 @@ export function SettingsScreen() {
     profile?.unitSystem === 'imperial' ? 'Imperial' : 'Metric';
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <View className="px-5 pt-2 pb-4">
-          <Text className="text-2xl font-sans-bold text-white">Settings</Text>
+          <Text className="text-2xl font-sans-bold text-text">Settings</Text>
         </View>
 
         <ScrollView
@@ -311,37 +311,37 @@ export function SettingsScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Profile Card */}
-          <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 mb-6">
+          <View className="rounded-2xl bg-surface-card border border-surface-border p-4 mb-6">
             <View className="flex-row items-center">
               <View className="h-14 w-14 items-center justify-center rounded-full bg-primary-500/20">
-                <Ionicons name="person" size={24} color="#22c55e" />
+                <Ionicons name="person" size={24} color="#1f2028" />
               </View>
               <View className="flex-1 ml-3">
                 {editingName ? (
                   <View className="flex-row items-center gap-2">
                     <TextInput
-                      className="flex-1 text-white font-sans-medium text-base border-b border-primary-500 pb-1"
+                      className="flex-1 text-text font-sans-medium text-base border-b border-primary-500 pb-1"
                       value={nameInput}
                       onChangeText={setNameInput}
                       autoFocus
                       onSubmitEditing={handleSaveName}
                       returnKeyType="done"
-                      placeholderTextColor="#64748b"
+                      placeholderTextColor="#9a9caa"
                       placeholder="Your name"
                     />
                     <Pressable onPress={handleSaveName}>
-                      <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+                      <Ionicons name="checkmark-circle" size={24} color="#1f2028" />
                     </Pressable>
                     <Pressable onPress={() => setEditingName(false)}>
-                      <Ionicons name="close-circle" size={24} color="#64748b" />
+                      <Ionicons name="close-circle" size={24} color="#9a9caa" />
                     </Pressable>
                   </View>
                 ) : (
                   <>
-                    <Text className="font-sans-semibold text-white text-base">
+                    <Text className="font-sans-semibold text-text text-base">
                       {profile?.displayName ?? 'User'}
                     </Text>
-                    <Text className="text-sm text-slate-400">
+                    <Text className="text-sm text-text-secondary">
                       {profile?.id ? `ID: ${profile.id.slice(0, 8)}...` : ''}
                     </Text>
                   </>
@@ -350,7 +350,7 @@ export function SettingsScreen() {
               {!editingName && (
                 <Pressable
                   onPress={handleEditProfile}
-                  className="rounded-full bg-slate-800 px-3 py-1.5"
+                  className="rounded-full bg-surface-secondary px-3 py-1.5"
                 >
                   <Text className="text-xs font-sans-medium text-primary-400">
                     Edit
@@ -363,7 +363,7 @@ export function SettingsScreen() {
           <SettingsSection title="Preferences">
             <SettingsRow
               icon="language-outline"
-              iconColor="#3b82f6"
+              iconColor="#8b8fa0"
               iconBg="bg-blue-500/15"
               label="Language"
               value={languageLabel}
@@ -383,15 +383,15 @@ export function SettingsScreen() {
           <SettingsSection title="Notifications">
             <View className="flex-row items-center py-3.5">
               <View className="h-9 w-9 rounded-xl bg-amber-500/15 items-center justify-center mr-3">
-                <Ionicons name="sunny-outline" size={18} color="#f59e0b" />
+                <Ionicons name="sunny-outline" size={18} color="#8f93a4" />
               </View>
-              <Text className="flex-1 font-sans-medium text-white">
+              <Text className="flex-1 font-sans-medium text-text">
                 Morning reminder
               </Text>
               <Switch
                 value={notifPrefs.morningReminder}
                 onValueChange={(v) => updateNotifPref('morningReminder', v)}
-                trackColor={{ false: '#334155', true: '#16a34a' }}
+                trackColor={{ false: '#d2d2db', true: '#15161d' }}
                 thumbColor="#ffffff"
               />
             </View>
@@ -400,13 +400,13 @@ export function SettingsScreen() {
               <View className="h-9 w-9 rounded-xl bg-indigo-500/15 items-center justify-center mr-3">
                 <Ionicons name="moon-outline" size={18} color="#818cf8" />
               </View>
-              <Text className="flex-1 font-sans-medium text-white">
+              <Text className="flex-1 font-sans-medium text-text">
                 Evening reminder
               </Text>
               <Switch
                 value={notifPrefs.eveningReminder}
                 onValueChange={(v) => updateNotifPref('eveningReminder', v)}
-                trackColor={{ false: '#334155', true: '#16a34a' }}
+                trackColor={{ false: '#d2d2db', true: '#15161d' }}
                 thumbColor="#ffffff"
               />
             </View>
@@ -415,7 +415,7 @@ export function SettingsScreen() {
           <SettingsSection title="Connected Accounts">
             <SettingsRow
               icon="paper-plane"
-              iconColor="#3b82f6"
+              iconColor="#8b8fa0"
               iconBg="bg-blue-500/15"
               label="Telegram"
               right={
@@ -428,7 +428,7 @@ export function SettingsScreen() {
                   <Ionicons
                     name="chevron-forward"
                     size={18}
-                    color="#475569"
+                    color="#777985"
                   />
                 </View>
               }
@@ -445,7 +445,7 @@ export function SettingsScreen() {
           <SettingsSection title="Subscription">
             <SettingsRow
               icon="diamond-outline"
-              iconColor="#22c55e"
+              iconColor="#1f2028"
               iconBg="bg-primary-500/15"
               label="Current plan"
               right={
@@ -460,7 +460,7 @@ export function SettingsScreen() {
                   <Ionicons
                     name="chevron-forward"
                     size={18}
-                    color="#475569"
+                    color="#777985"
                   />
                 </View>
               }
@@ -485,8 +485,8 @@ export function SettingsScreen() {
             <SettingsDivider />
             <SettingsRow
               icon="shield-checkmark-outline"
-              iconColor="#94a3b8"
-              iconBg="bg-slate-800"
+              iconColor="#9a9caa"
+              iconBg="bg-surface-secondary"
               label="Privacy Policy"
               onPress={() =>
                 Alert.alert(
@@ -498,8 +498,8 @@ export function SettingsScreen() {
             <SettingsDivider />
             <SettingsRow
               icon="document-text-outline"
-              iconColor="#94a3b8"
-              iconBg="bg-slate-800"
+              iconColor="#9a9caa"
+              iconBg="bg-surface-secondary"
               label="Terms of Service"
               onPress={() =>
                 Alert.alert(
@@ -519,7 +519,7 @@ export function SettingsScreen() {
             />
           </SettingsSection>
 
-          <Text className="text-center text-xs text-slate-600 mb-4 font-sans-medium">
+          <Text className="text-center text-xs text-text-tertiary mb-4 font-sans-medium">
             Coach v{appVersion}
           </Text>
 

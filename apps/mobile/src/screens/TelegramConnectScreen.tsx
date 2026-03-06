@@ -95,18 +95,18 @@ export function TelegramConnectScreen() {
   }
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
         <View className="flex-row items-center px-4 py-3">
           <Pressable
             onPress={() => navigation.goBack()}
-            className="h-10 w-10 rounded-full bg-slate-900 items-center justify-center mr-3"
+            className="h-10 w-10 rounded-full bg-surface-card items-center justify-center mr-3"
             accessibilityLabel="Go back"
           >
-            <Ionicons name="arrow-back" size={20} color="#94a3b8" />
+            <Ionicons name="arrow-back" size={20} color="#9a9caa" />
           </Pressable>
-          <Text className="flex-1 text-xl font-sans-bold text-white">
+          <Text className="flex-1 text-xl font-sans-bold text-text">
             Telegram Coach
           </Text>
         </View>
@@ -115,15 +115,15 @@ export function TelegramConnectScreen() {
           {/* Hero */}
           <View className="items-center pb-8">
             <LinearGradient
-              colors={['#1d4ed8', '#3b82f6']}
+              colors={['#1d4ed8', '#8b8fa0']}
               className="mb-5 h-24 w-24 rounded-3xl items-center justify-center"
             >
               <Ionicons name="paper-plane" size={44} color="#ffffff" />
             </LinearGradient>
-            <Text className="text-center text-xl font-sans-bold text-white">
+            <Text className="text-center text-xl font-sans-bold text-text">
               Connect with Coach on Telegram
             </Text>
-            <Text className="mt-2 text-center text-sm text-slate-400">
+            <Text className="mt-2 text-center text-sm text-text-secondary">
               Log meals and get reminders via Telegram
             </Text>
             <View className="mt-4">
@@ -134,19 +134,19 @@ export function TelegramConnectScreen() {
           </View>
 
           {linked ? (
-            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5">
+            <View className="rounded-2xl bg-surface-card border border-surface-border p-5">
               <View className="flex-row items-center gap-3 mb-3">
                 <View className="h-10 w-10 rounded-full bg-blue-500/20 items-center justify-center">
-                  <Ionicons name="person" size={20} color="#3b82f6" />
+                  <Ionicons name="person" size={20} color="#8b8fa0" />
                 </View>
                 <View>
-                  <Text className="font-sans-semibold text-white">
+                  <Text className="font-sans-semibold text-text">
                     @{username ?? 'user'}
                   </Text>
-                  <Text className="text-xs text-slate-400">Connected account</Text>
+                  <Text className="text-xs text-text-secondary">Connected account</Text>
                 </View>
               </View>
-              <Text className="text-sm text-slate-400 mb-4">
+              <Text className="text-sm text-text-secondary mb-4">
                 You can log meals and receive reminders on Telegram.
               </Text>
               <Button
@@ -158,23 +158,23 @@ export function TelegramConnectScreen() {
               </Button>
             </View>
           ) : (
-            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5">
-              <Text className="font-sans-semibold text-white mb-2">
+            <View className="rounded-2xl bg-surface-card border border-surface-border p-5">
+              <Text className="font-sans-semibold text-text mb-2">
                 Link your account
               </Text>
-              <Text className="text-sm text-slate-400 mb-4">
+              <Text className="text-sm text-text-secondary mb-4">
                 {linkCode
                   ? `Send this code to @${TELEGRAM_BOT_USERNAME} on Telegram:`
                   : 'Generate a link code and send it to the Coach bot on Telegram.'}
               </Text>
               {linkCode ? (
                 <>
-                  <View className="rounded-2xl bg-slate-800 py-5 mb-4">
-                    <Text className="text-center text-3xl font-sans-bold tracking-widest text-white">
+                  <View className="rounded-2xl bg-surface-secondary py-5 mb-4">
+                    <Text className="text-center text-3xl font-sans-bold tracking-widest text-text">
                       {linkCode}
                     </Text>
                   </View>
-                  <Text className="text-center text-xs text-slate-400 mb-4">
+                  <Text className="text-center text-xs text-text-secondary mb-4">
                     Send this code to @{TELEGRAM_BOT_USERNAME} on Telegram
                   </Text>
                   <Button variant="primary" onPress={handleOpenTelegram}>

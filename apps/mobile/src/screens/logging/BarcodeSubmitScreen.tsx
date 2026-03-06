@@ -90,16 +90,16 @@ export function BarcodeSubmitScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        <View className="flex-row items-center border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+        <View className="flex-row items-center border-b border-surface-border px-4 py-3">
           <Pressable onPress={() => navigation.goBack()} className="p-1">
-            <Ionicons name="arrow-back" size={24} color="#0f172a" />
+            <Ionicons name="arrow-back" size={24} color="#111218" />
           </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text dark:text-slate-100">
+          <Text className="ml-4 text-lg font-sans-semibold text-text">
             Submit Product
           </Text>
         </View>
@@ -169,10 +169,10 @@ export function BarcodeSubmitScreen() {
 
             <Pressable
               onPress={handleCapturePhoto}
-              className="mb-6 flex-row items-center justify-center rounded-xl border-2 border-dashed border-slate-300 py-6 dark:border-slate-600"
+              className="mb-6 flex-row items-center justify-center rounded-xl border-2 border-dashed border-surface-border py-6"
             >
-              <Ionicons name="camera-outline" size={32} color="#94a3b8" />
-              <Text className="ml-2 font-sans-medium text-text-secondary dark:text-slate-400">
+              <Ionicons name="camera-outline" size={32} color="#9a9caa" />
+              <Text className="ml-2 font-sans-medium text-text-secondary">
                 {photoUri ? 'Photo captured' : 'Capture label photo'}
               </Text>
             </Pressable>

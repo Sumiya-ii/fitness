@@ -48,7 +48,7 @@ export function WeightSelectScreen({ navigation }: Props) {
             onChangeText={setValue}
             keyboardType="decimal-pad"
             placeholder="75"
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#9a9caa"
             className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
             maxLength={5}
             autoFocus

@@ -56,17 +56,17 @@ export function QuickAddScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
         {/* Header */}
-        <View className="flex-row items-center border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+        <View className="flex-row items-center border-b border-surface-border px-4 py-3">
           <Pressable onPress={() => navigation.goBack()} className="p-1">
-            <Ionicons name="arrow-back" size={24} color="#0f172a" />
+            <Ionicons name="arrow-back" size={24} color="#111218" />
           </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text dark:text-slate-100">
+          <Text className="ml-4 text-lg font-sans-semibold text-text">
             Quick Add
           </Text>
         </View>
@@ -74,7 +74,7 @@ export function QuickAddScreen() {
         <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
           <View className="p-4">
             {/* Meal type chips */}
-            <Text className="mb-2 text-sm font-sans-medium text-text-secondary dark:text-slate-400">
+            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
               Meal type
             </Text>
             <View className="mb-6 flex-row flex-wrap gap-2">
@@ -85,14 +85,14 @@ export function QuickAddScreen() {
                   className={`rounded-full px-4 py-2 ${
                     mealType === type
                       ? 'bg-primary-500'
-                      : 'bg-surface-secondary dark:bg-slate-700'
+                      : 'bg-surface-secondary'
                   }`}
                 >
                   <Text
                     className={`font-sans-medium capitalize ${
                       mealType === type
-                        ? 'text-white'
-                        : 'text-text dark:text-slate-200'
+                        ? 'text-text'
+                        : 'text-text-secondary'
                     }`}
                   >
                     {type}
@@ -102,7 +102,7 @@ export function QuickAddScreen() {
             </View>
 
             {/* Calorie input */}
-            <Text className="mb-2 text-sm font-sans-medium text-text-secondary dark:text-slate-400">
+            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
               Calories
             </Text>
             <Input
@@ -118,13 +118,13 @@ export function QuickAddScreen() {
               onPress={() => setShowMacros(!showMacros)}
               className="mb-4 flex-row items-center justify-between"
             >
-              <Text className="text-sm font-sans-medium text-text-secondary dark:text-slate-400">
+              <Text className="text-sm font-sans-medium text-text-secondary">
                 Macro breakdown (optional)
               </Text>
               <Ionicons
                 name={showMacros ? 'chevron-up' : 'chevron-down'}
                 size={20}
-                color="#94a3b8"
+                color="#9a9caa"
               />
             </Pressable>
             {showMacros && (

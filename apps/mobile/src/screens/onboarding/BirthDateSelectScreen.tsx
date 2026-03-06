@@ -74,7 +74,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
               onChangeText={(t) => setYear(t.replace(/\D/g, '').slice(0, 4))}
               keyboardType="number-pad"
               placeholder="1990"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor="#9a9caa"
               className="text-2xl font-sans-bold text-text text-center bg-surface-card border border-surface-border rounded-xl px-4 py-3 min-w-[100px]"
               maxLength={4}
               autoFocus
@@ -94,7 +94,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
               onChangeText={(t) => setMonth(t.replace(/\D/g, '').slice(0, 2))}
               keyboardType="number-pad"
               placeholder="06"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor="#9a9caa"
               className="text-2xl font-sans-bold text-text text-center bg-surface-card border border-surface-border rounded-xl px-4 py-3 min-w-[70px]"
               maxLength={2}
             />
@@ -113,7 +113,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
               onChangeText={(t) => setDay(t.replace(/\D/g, '').slice(0, 2))}
               keyboardType="number-pad"
               placeholder="15"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor="#9a9caa"
               className="text-2xl font-sans-bold text-text text-center bg-surface-card border border-surface-border rounded-xl px-4 py-3 min-w-[70px]"
               maxLength={2}
             />

@@ -87,18 +87,18 @@ export function WeeklySummaryScreen() {
   const adherenceProgress = d.adherenceScore / 100;
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
         <View className="flex-row items-center px-4 py-3">
           <Pressable
             onPress={() => navigation.goBack()}
-            className="h-10 w-10 rounded-full bg-slate-900 items-center justify-center mr-3"
+            className="h-10 w-10 rounded-full bg-surface-card items-center justify-center mr-3"
             accessibilityLabel="Go back"
           >
-            <Ionicons name="arrow-back" size={20} color="#94a3b8" />
+            <Ionicons name="arrow-back" size={20} color="#9a9caa" />
           </Pressable>
-          <Text className="flex-1 text-xl font-sans-bold text-white">
+          <Text className="flex-1 text-xl font-sans-bold text-text">
             Weekly Summary
           </Text>
         </View>
@@ -112,18 +112,18 @@ export function WeeklySummaryScreen() {
           <View className="flex-row items-center justify-center gap-4 px-4 py-4">
             <Pressable
               onPress={() => setWeekOffset((o) => o - 1)}
-              className="h-10 w-10 rounded-full bg-slate-900 border border-slate-800 items-center justify-center"
+              className="h-10 w-10 rounded-full bg-surface-card border border-surface-border items-center justify-center"
             >
-              <Ionicons name="chevron-back" size={20} color="#94a3b8" />
+              <Ionicons name="chevron-back" size={20} color="#9a9caa" />
             </Pressable>
-            <Text className="text-base font-sans-semibold text-white min-w-[160px] text-center">
+            <Text className="text-base font-sans-semibold text-text min-w-[160px] text-center">
               {formatWeekRange(d.weekStart)}
             </Text>
             <Pressable
               onPress={() => setWeekOffset((o) => o + 1)}
-              className="h-10 w-10 rounded-full bg-slate-900 border border-slate-800 items-center justify-center"
+              className="h-10 w-10 rounded-full bg-surface-card border border-surface-border items-center justify-center"
             >
-              <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+              <Ionicons name="chevron-forward" size={20} color="#9a9caa" />
             </Pressable>
           </View>
 
@@ -135,9 +135,9 @@ export function WeeklySummaryScreen() {
             <ProgressRing
               progress={adherenceProgress}
               size={140}
-              color="#22c55e"
-              gradientEnd="#4ade80"
-              backgroundColor="#334155"
+              color="#1f2028"
+              gradientEnd="#2a2b35"
+              backgroundColor="#d2d2db"
               strokeWidth={12}
               centerLabel={`${d.adherenceScore}%`}
               centerSubLabel="adherence"
@@ -151,29 +151,29 @@ export function WeeklySummaryScreen() {
               entering={FadeInDown.delay(100).duration(400)}
               className="flex-row gap-3"
             >
-              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4">
+              <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4">
                 <View className="flex-row items-center gap-2 mb-2">
                   <View className="h-7 w-7 rounded-lg bg-amber-500/15 items-center justify-center">
-                    <Ionicons name="flame-outline" size={14} color="#f59e0b" />
+                    <Ionicons name="flame-outline" size={14} color="#8f93a4" />
                   </View>
-                  <Text className="text-xs text-slate-400 font-sans-medium">Avg Calories</Text>
+                  <Text className="text-xs text-text-secondary font-sans-medium">Avg Calories</Text>
                 </View>
-                <Text className="text-2xl font-sans-bold text-white">
+                <Text className="text-2xl font-sans-bold text-text">
                   {d.averageCalories}
                 </Text>
-                <Text className="text-xs text-slate-500">kcal/day</Text>
+                <Text className="text-xs text-text-tertiary">kcal/day</Text>
               </View>
-              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4">
+              <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4">
                 <View className="flex-row items-center gap-2 mb-2">
                   <View className="h-7 w-7 rounded-lg bg-blue-500/15 items-center justify-center">
-                    <Ionicons name="fitness-outline" size={14} color="#3b82f6" />
+                    <Ionicons name="fitness-outline" size={14} color="#8b8fa0" />
                   </View>
-                  <Text className="text-xs text-slate-400 font-sans-medium">Avg Protein</Text>
+                  <Text className="text-xs text-text-secondary font-sans-medium">Avg Protein</Text>
                 </View>
-                <Text className="text-2xl font-sans-bold text-white">
+                <Text className="text-2xl font-sans-bold text-text">
                   {d.averageProtein}g
                 </Text>
-                <View className="h-1.5 w-full overflow-hidden rounded-full bg-slate-700 mt-2">
+                <View className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted mt-2">
                   <View
                     className="h-full rounded-full bg-blue-500"
                     style={{ width: `${Math.min(100, (d.averageProtein / 150) * 100)}%` }}
@@ -186,43 +186,43 @@ export function WeeklySummaryScreen() {
               entering={FadeInDown.delay(200).duration(400)}
               className="flex-row gap-3"
             >
-              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4">
+              <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4">
                 <View className="flex-row items-center gap-2 mb-2">
                   <View className="h-7 w-7 rounded-lg bg-primary-500/15 items-center justify-center">
-                    <Ionicons name="checkmark-circle-outline" size={14} color="#22c55e" />
+                    <Ionicons name="checkmark-circle-outline" size={14} color="#1f2028" />
                   </View>
-                  <Text className="text-xs text-slate-400 font-sans-medium">Days Logged</Text>
+                  <Text className="text-xs text-text-secondary font-sans-medium">Days Logged</Text>
                 </View>
-                <Text className="text-2xl font-sans-bold text-white">
+                <Text className="text-2xl font-sans-bold text-text">
                   {d.daysLogged}
-                  <Text className="text-base text-slate-400">/7</Text>
+                  <Text className="text-base text-text-secondary">/7</Text>
                 </Text>
               </View>
-              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4">
+              <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4">
                 <View className="flex-row items-center gap-2 mb-2">
                   <View className="h-7 w-7 rounded-lg bg-violet-500/15 items-center justify-center">
                     <Ionicons name="scale-outline" size={14} color="#a78bfa" />
                   </View>
-                  <Text className="text-xs text-slate-400 font-sans-medium">Weight Change</Text>
+                  <Text className="text-xs text-text-secondary font-sans-medium">Weight Change</Text>
                 </View>
                 {d.weightDelta !== null ? (
                   <View className="flex-row items-center gap-1">
                     <Ionicons
                       name={d.weightDelta < 0 ? 'trending-down' : d.weightDelta > 0 ? 'trending-up' : 'remove'}
                       size={20}
-                      color={d.weightDelta < 0 ? '#22c55e' : d.weightDelta > 0 ? '#f59e0b' : '#64748b'}
+                      color={d.weightDelta < 0 ? '#1f2028' : d.weightDelta > 0 ? '#8f93a4' : '#9a9caa'}
                     />
                     <Text
                       className="text-2xl font-sans-bold"
                       style={{
-                        color: d.weightDelta < 0 ? '#22c55e' : d.weightDelta > 0 ? '#f59e0b' : '#94a3b8',
+                        color: d.weightDelta < 0 ? '#1f2028' : d.weightDelta > 0 ? '#8f93a4' : '#9a9caa',
                       }}
                     >
                       {d.weightDelta > 0 ? '+' : ''}{d.weightDelta} kg
                     </Text>
                   </View>
                 ) : (
-                  <Text className="text-lg text-slate-500">—</Text>
+                  <Text className="text-lg text-text-tertiary">—</Text>
                 )}
               </View>
             </Animated.View>
@@ -230,38 +230,38 @@ export function WeeklySummaryScreen() {
             {/* Macro Breakdown */}
             <Animated.View
               entering={FadeInDown.delay(300).duration(400)}
-              className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+              className="rounded-2xl bg-surface-card border border-surface-border p-4"
             >
-              <Text className="font-sans-semibold text-white mb-3">
+              <Text className="font-sans-semibold text-text mb-3">
                 Daily Macro Averages
               </Text>
               <View className="gap-3">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-2">
                     <View className="h-3 w-3 rounded-full bg-blue-500" />
-                    <Text className="text-sm text-slate-300 font-sans-medium">Protein</Text>
+                    <Text className="text-sm text-text-secondary font-sans-medium">Protein</Text>
                   </View>
-                  <Text className="text-sm font-sans-semibold text-white">{d.averageProtein}g</Text>
+                  <Text className="text-sm font-sans-semibold text-text">{d.averageProtein}g</Text>
                 </View>
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-2">
                     <View className="h-3 w-3 rounded-full bg-amber-500" />
-                    <Text className="text-sm text-slate-300 font-sans-medium">Carbs</Text>
+                    <Text className="text-sm text-text-secondary font-sans-medium">Carbs</Text>
                   </View>
-                  <Text className="text-sm font-sans-semibold text-white">{d.averageCarbs}g</Text>
+                  <Text className="text-sm font-sans-semibold text-text">{d.averageCarbs}g</Text>
                 </View>
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-2">
                     <View className="h-3 w-3 rounded-full bg-pink-500" />
-                    <Text className="text-sm text-slate-300 font-sans-medium">Fat</Text>
+                    <Text className="text-sm text-text-secondary font-sans-medium">Fat</Text>
                   </View>
-                  <Text className="text-sm font-sans-semibold text-white">{d.averageFat}g</Text>
+                  <Text className="text-sm font-sans-semibold text-text">{d.averageFat}g</Text>
                 </View>
               </View>
 
               {d.weightStart != null && d.weightEnd != null && (
-                <View className="mt-4 pt-3 border-t border-slate-800">
-                  <Text className="text-sm text-slate-400">
+                <View className="mt-4 pt-3 border-t border-surface-border">
+                  <Text className="text-sm text-text-secondary">
                     Weight: {d.weightStart} kg → {d.weightEnd} kg
                   </Text>
                 </View>

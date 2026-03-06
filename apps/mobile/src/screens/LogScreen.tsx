@@ -27,7 +27,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Search',
     subtitle: 'Find foods',
     icon: 'search',
-    gradient: ['#22c55e', '#16a34a'],
+    gradient: ['#1f2028', '#15161d'],
     route: 'TextSearch',
   },
   {
@@ -35,7 +35,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Barcode',
     subtitle: 'Scan label',
     icon: 'barcode-outline',
-    gradient: ['#f59e0b', '#d97706'],
+    gradient: ['#8f93a4', '#797d90'],
     route: 'BarcodeScan',
   },
   {
@@ -43,7 +43,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Voice',
     subtitle: 'Speak it',
     icon: 'mic',
-    gradient: ['#3b82f6', '#2563eb'],
+    gradient: ['#8b8fa0', '#767b8f'],
     route: 'VoiceLog',
   },
   {
@@ -51,7 +51,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Quick Add',
     subtitle: 'Manual entry',
     icon: 'flash',
-    gradient: ['#ec4899', '#db2777'],
+    gradient: ['#8f93a4', '#db2777'],
     route: 'QuickAdd',
   },
 ];
@@ -68,7 +68,7 @@ export function LogScreen() {
   );
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <ScrollView
           className="flex-1"
@@ -77,10 +77,10 @@ export function LogScreen() {
         >
           {/* Header */}
           <View className="px-5 pt-2 pb-4">
-            <Text className="text-2xl font-sans-bold text-white">
+            <Text className="text-2xl font-sans-bold text-text">
               {t('logging.logMeal')}
             </Text>
-            <Text className="text-sm text-slate-400 font-sans-medium mt-1">
+            <Text className="text-sm text-text-secondary font-sans-medium mt-1">
               {t('logging.chooseHow')}
             </Text>
           </View>
@@ -103,14 +103,14 @@ export function LogScreen() {
                       <View className="h-6 w-6 rounded-full bg-white/20 items-center justify-center">
                         <Ionicons name="sparkles" size={14} color="#ffffff" />
                       </View>
-                      <Text className="text-xs font-sans-semibold text-white/70 uppercase tracking-wider">
+                      <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider">
                         AI Powered
                       </Text>
                     </View>
-                    <Text className="text-xl font-sans-bold text-white mb-1">
+                    <Text className="text-xl font-sans-bold text-text mb-1">
                       Snap & Track
                     </Text>
-                    <Text className="text-sm text-white/70 font-sans-medium">
+                    <Text className="text-sm text-text-secondary font-sans-medium">
                       Take a photo and let AI estimate calories and macros instantly
                     </Text>
                   </View>
@@ -133,7 +133,7 @@ export function LogScreen() {
                 >
                   <Pressable
                     onPress={() => navigation.navigate(action.route as never)}
-                    className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+                    className="rounded-2xl bg-surface-card border border-surface-border p-4"
                   >
                     <LinearGradient
                       colors={action.gradient}
@@ -143,10 +143,10 @@ export function LogScreen() {
                     >
                       <Ionicons name={action.icon} size={22} color="#ffffff" />
                     </LinearGradient>
-                    <Text className="font-sans-semibold text-white text-base">
+                    <Text className="font-sans-semibold text-text text-base">
                       {action.title}
                     </Text>
-                    <Text className="text-xs text-slate-400 font-sans-medium mt-0.5">
+                    <Text className="text-xs text-text-secondary font-sans-medium mt-0.5">
                       {action.subtitle}
                     </Text>
                   </Pressable>
@@ -158,7 +158,7 @@ export function LogScreen() {
           {/* Favorites & Recents */}
           <View className="px-4">
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-lg font-sans-semibold text-white">
+              <Text className="text-lg font-sans-semibold text-text">
                 {t('logging.recentMeals')}
               </Text>
               <Pressable onPress={() => navigation.navigate('FavoritesRecents')}>
@@ -177,15 +177,15 @@ export function LogScreen() {
                 <Animated.View entering={FadeInRight.duration(400)}>
                   <Pressable
                     onPress={() => navigation.navigate('FavoritesRecents')}
-                    className="w-44 rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+                    className="w-44 rounded-2xl bg-surface-card border border-surface-border p-4"
                   >
-                    <View className="h-10 w-10 rounded-full bg-slate-800 items-center justify-center mb-3">
-                      <Ionicons name="time-outline" size={20} color="#64748b" />
+                    <View className="h-10 w-10 rounded-full bg-surface-secondary items-center justify-center mb-3">
+                      <Ionicons name="time-outline" size={20} color="#9a9caa" />
                     </View>
-                    <Text className="font-sans-medium text-white mb-1">
+                    <Text className="font-sans-medium text-text mb-1">
                       No recent meals
                     </Text>
-                    <Text className="text-xs text-slate-400">
+                    <Text className="text-xs text-text-secondary">
                       Your logged meals will appear here
                     </Text>
                   </Pressable>
@@ -198,23 +198,23 @@ export function LogScreen() {
                   >
                     <Pressable
                       onPress={() => navigation.navigate('TextSearch')}
-                      className="w-44 rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+                      className="w-44 rounded-2xl bg-surface-card border border-surface-border p-4"
                     >
                       <View className="flex-row items-center justify-between mb-3">
                         <View className="h-8 w-8 rounded-full bg-primary-500/20 items-center justify-center">
-                          <Ionicons name="nutrition" size={16} color="#22c55e" />
+                          <Ionicons name="nutrition" size={16} color="#1f2028" />
                         </View>
-                        <Pressable className="h-7 w-7 rounded-full bg-slate-800 items-center justify-center">
-                          <Ionicons name="add" size={16} color="#94a3b8" />
+                        <Pressable className="h-7 w-7 rounded-full bg-surface-secondary items-center justify-center">
+                          <Ionicons name="add" size={16} color="#9a9caa" />
                         </Pressable>
                       </View>
                       <Text
-                        className="font-sans-medium text-white mb-1"
+                        className="font-sans-medium text-text mb-1"
                         numberOfLines={2}
                       >
                         {item.name}
                       </Text>
-                      <Text className="text-xs text-slate-400 font-sans-medium">
+                      <Text className="text-xs text-text-secondary font-sans-medium">
                         {item.lastCalories} kcal
                       </Text>
                     </Pressable>

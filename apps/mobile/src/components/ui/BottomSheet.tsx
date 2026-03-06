@@ -71,12 +71,12 @@ export function BottomSheet({
         <Animated.View
           style={sheetStyle}
           className={`
-            rounded-t-3xl bg-slate-900 border-t border-slate-800
+            rounded-t-3xl bg-surface-card border-t border-surface-border
             ${className}
           `}
         >
           <View className="items-center py-3">
-            <View className="h-1 w-12 rounded-full bg-slate-700" />
+            <View className="h-1 w-12 rounded-full bg-surface-muted" />
           </View>
           <View className="px-4" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
             {children}

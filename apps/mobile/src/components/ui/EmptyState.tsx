@@ -41,18 +41,18 @@ export function EmptyState({
         ${className}
       `}
     >
-      <View className="mb-4 h-20 w-20 rounded-full bg-slate-900 border border-slate-800 items-center justify-center">
+      <View className="mb-4 h-20 w-20 rounded-full bg-surface-card border border-surface-border items-center justify-center">
         <Ionicons
           name={iconName}
           size={36}
           color={themeColors.text.secondary}
         />
       </View>
-      <Text className="mb-2 text-center text-lg font-sans-semibold text-white">
+      <Text className="mb-2 text-center text-lg font-sans-semibold text-text">
         {title}
       </Text>
       {subtitle ? (
-        <Text className="mb-6 text-center text-base text-slate-400">
+        <Text className="mb-6 text-center text-base text-text-secondary">
           {subtitle}
         </Text>
       ) : null}

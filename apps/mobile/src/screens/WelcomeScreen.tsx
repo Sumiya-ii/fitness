@@ -20,9 +20,9 @@ export function WelcomeScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-surface-app">
       <LinearGradient
-        colors={['#020617', '#0f172a', '#111827']}
+        colors={['#f4f4f7', '#ececf2', '#f4f4f7']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="absolute inset-0"
@@ -30,16 +30,16 @@ export function WelcomeScreen({ navigation }: Props) {
       <View className="flex-1 justify-center items-center px-8">
         <View className="items-center mb-12">
           <LinearGradient
-            colors={['#22c55e', '#16a34a']}
+            colors={['#1f2028', '#15161d']}
             className="px-8 py-4 rounded-2xl mb-5"
             style={{ borderRadius: 16 }}
           >
-            <Text className="text-4xl font-sans-bold text-white">Coach</Text>
+            <Text className="text-4xl font-sans-bold text-text">Coach</Text>
           </LinearGradient>
-          <Text className="text-lg text-slate-300 text-center">
+          <Text className="text-lg text-text-secondary text-center">
             Your AI nutrition companion
           </Text>
-          <Text className="text-sm text-slate-500 mt-2 text-center leading-5">
+          <Text className="text-sm text-text-tertiary mt-2 text-center leading-5">
             Track meals, hit macros, and stay consistent with AI coaching.
           </Text>
         </View>
@@ -64,9 +64,9 @@ export function WelcomeScreen({ navigation }: Props) {
 
         <Pressable
           onPress={handleContinueAsGuest}
-          className="mt-8 py-2 px-3 rounded-full border border-slate-800 bg-slate-900/80 active:opacity-70 flex-row items-center gap-2"
+          className="mt-8 py-2 px-3 rounded-full border border-surface-border bg-surface-card active:opacity-70 flex-row items-center gap-2"
         >
-          <Ionicons name="person-outline" size={16} color="#4ade80" />
+          <Ionicons name="person-outline" size={16} color="#2a2b35" />
           <Text className="text-base text-primary-400 font-sans-medium">
             Continue as Guest
           </Text>

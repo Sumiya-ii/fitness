@@ -221,15 +221,15 @@ export function SubscriptionScreen() {
 
   if (paymentSuccess) {
     return (
-      <View className="flex-1 bg-slate-950 items-center justify-center px-6">
+      <View className="flex-1 bg-surface-app items-center justify-center px-6">
         <SafeAreaView className="items-center">
           <View className="h-24 w-24 rounded-full bg-primary-500/20 items-center justify-center mb-6">
-            <Ionicons name="checkmark-circle" size={64} color="#22c55e" />
+            <Ionicons name="checkmark-circle" size={64} color="#1f2028" />
           </View>
-          <Text className="text-2xl font-sans-bold text-white text-center mb-2">
+          <Text className="text-2xl font-sans-bold text-text text-center mb-2">
             Амжилттай!
           </Text>
-          <Text className="text-base text-slate-400 text-center mb-8">
+          <Text className="text-base text-text-secondary text-center mb-8">
             Coach Pro эрхийг амжилттай идэвхжүүллээ. Бүх Pro боломжуудыг ашиглах боломжтой боллоо.
           </Text>
           <Button variant="primary" size="lg" onPress={() => navigation.goBack()}>
@@ -242,7 +242,7 @@ export function SubscriptionScreen() {
 
   if (invoice) {
     return (
-      <View className="flex-1 bg-slate-950">
+      <View className="flex-1 bg-surface-app">
         <SafeAreaView edges={['top']} className="flex-1">
           <View className="flex-row items-center px-4 py-3">
             <Pressable
@@ -250,12 +250,12 @@ export function SubscriptionScreen() {
                 stopPolling();
                 setInvoice(null);
               }}
-              className="h-10 w-10 rounded-full bg-slate-900 items-center justify-center mr-3"
+              className="h-10 w-10 rounded-full bg-surface-card items-center justify-center mr-3"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="arrow-back" size={20} color="#94a3b8" />
+              <Ionicons name="arrow-back" size={20} color="#9a9caa" />
             </Pressable>
-            <Text className="flex-1 text-xl font-sans-bold text-white">
+            <Text className="flex-1 text-xl font-sans-bold text-text">
               Төлбөр төлөх
             </Text>
           </View>
@@ -267,11 +267,11 @@ export function SubscriptionScreen() {
           >
             {/* QR Code */}
             <Animated.View entering={FadeInDown.duration(400)} className="px-4 mt-2">
-              <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-6 items-center">
-                <Text className="text-lg font-sans-semibold text-white mb-1">
+              <View className="rounded-2xl bg-surface-card border border-surface-border p-6 items-center">
+                <Text className="text-lg font-sans-semibold text-text mb-1">
                   QR кодоор төлөх
                 </Text>
-                <Text className="text-sm text-slate-400 mb-4 text-center">
+                <Text className="text-sm text-text-secondary mb-4 text-center">
                   Банкны аппаараа QR кодыг уншуулна уу
                 </Text>
 
@@ -286,7 +286,7 @@ export function SubscriptionScreen() {
                 {paymentStatus === 'pending' && (
                   <View className="flex-row items-center gap-2">
                     <View className="h-2 w-2 rounded-full bg-primary-500 animate-pulse" />
-                    <Text className="text-sm text-slate-400">
+                    <Text className="text-sm text-text-secondary">
                       Төлбөр хүлээж байна...
                     </Text>
                   </View>
@@ -307,7 +307,7 @@ export function SubscriptionScreen() {
                   </Text>
                 )}
 
-                <View className="mt-3 px-4 py-2 rounded-xl bg-slate-800">
+                <View className="mt-3 px-4 py-2 rounded-xl bg-surface-secondary">
                   <Text className="text-lg font-sans-bold text-primary-400 text-center">
                     {invoice.amount.toLocaleString()}₮
                   </Text>
@@ -330,10 +330,10 @@ export function SubscriptionScreen() {
               entering={FadeInDown.delay(100).duration(400)}
               className="px-4 mt-6"
             >
-              <Text className="text-lg font-sans-semibold text-white mb-3">
+              <Text className="text-lg font-sans-semibold text-text mb-3">
                 Банкны апп-аар төлөх
               </Text>
-              <Text className="text-sm text-slate-400 mb-4">
+              <Text className="text-sm text-text-secondary mb-4">
                 Банкны аппаа сонгон шууд төлбөрөө хийнэ үү
               </Text>
 
@@ -342,24 +342,24 @@ export function SubscriptionScreen() {
                   <Pressable
                     key={bank.name}
                     onPress={() => handleOpenBank(bank.link)}
-                    className="flex-row items-center rounded-2xl bg-slate-900/80 border border-slate-800 p-4 active:bg-slate-800"
+                    className="flex-row items-center rounded-2xl bg-surface-card border border-surface-border p-4 active:bg-surface-secondary"
                   >
                     <View className="h-10 w-10 rounded-xl bg-primary-500/15 items-center justify-center mr-3">
                       <Ionicons
                         name={(BANK_ICONS[bank.name] ?? 'business-outline') as IoniconName}
                         size={20}
-                        color="#22c55e"
+                        color="#1f2028"
                       />
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-medium text-white">
+                      <Text className="font-sans-medium text-text">
                         {bank.name}
                       </Text>
-                      <Text className="text-xs text-slate-500">
+                      <Text className="text-xs text-text-tertiary">
                         {bank.description}
                       </Text>
                     </View>
-                    <Ionicons name="open-outline" size={18} color="#64748b" />
+                    <Ionicons name="open-outline" size={18} color="#9a9caa" />
                   </Pressable>
                 ))}
               </View>
@@ -384,17 +384,17 @@ export function SubscriptionScreen() {
   }
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <View className="flex-row items-center px-4 py-3">
           <Pressable
             onPress={() => navigation.goBack()}
-            className="h-10 w-10 rounded-full bg-slate-900 items-center justify-center mr-3"
+            className="h-10 w-10 rounded-full bg-surface-card items-center justify-center mr-3"
             accessibilityLabel="Go back"
           >
-            <Ionicons name="arrow-back" size={20} color="#94a3b8" />
+            <Ionicons name="arrow-back" size={20} color="#9a9caa" />
           </Pressable>
-          <Text className="flex-1 text-xl font-sans-bold text-white">
+          <Text className="flex-1 text-xl font-sans-bold text-text">
             Coach Pro
           </Text>
         </View>
@@ -407,7 +407,7 @@ export function SubscriptionScreen() {
           {/* Hero */}
           <Animated.View entering={FadeInDown.duration(400)} className="px-4 mt-2">
             <LinearGradient
-              colors={['#059669', '#22c55e', '#4ade80']}
+              colors={['#059669', '#1f2028', '#2a2b35']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               className="overflow-hidden rounded-3xl p-6 items-center"
@@ -415,10 +415,10 @@ export function SubscriptionScreen() {
               <View className="h-16 w-16 rounded-2xl bg-white/20 items-center justify-center mb-3">
                 <Ionicons name="diamond" size={32} color="#ffffff" />
               </View>
-              <Text className="text-2xl font-sans-bold text-white">
+              <Text className="text-2xl font-sans-bold text-text">
                 Coach Pro
               </Text>
-              <Text className="mt-1 text-center text-white/80 text-sm">
+              <Text className="mt-1 text-center text-text-secondary text-sm">
                 Coach-ийн бүрэн боломжуудыг нээх
               </Text>
             </LinearGradient>
@@ -429,23 +429,23 @@ export function SubscriptionScreen() {
             entering={FadeInDown.delay(100).duration(400)}
             className="px-4 mt-6"
           >
-            <Text className="text-lg font-sans-semibold text-white mb-3">
+            <Text className="text-lg font-sans-semibold text-text mb-3">
               Pro боломжууд
             </Text>
-            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4">
+            <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
               {FEATURES_PRO.map((f, i) => (
                 <View key={f.label}>
                   <View className="flex-row items-center gap-3 py-3">
                     <View className="h-9 w-9 rounded-xl bg-primary-500/15 items-center justify-center">
-                      <Ionicons name={f.icon} size={18} color="#22c55e" />
+                      <Ionicons name={f.icon} size={18} color="#1f2028" />
                     </View>
-                    <Text className="flex-1 font-sans-medium text-white">
+                    <Text className="flex-1 font-sans-medium text-text">
                       {f.label}
                     </Text>
-                    <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                    <Ionicons name="checkmark-circle" size={20} color="#1f2028" />
                   </View>
                   {i < FEATURES_PRO.length - 1 && (
-                    <View className="h-px bg-slate-800" />
+                    <View className="h-px bg-surface-secondary" />
                   )}
                 </View>
               ))}
@@ -457,7 +457,7 @@ export function SubscriptionScreen() {
             entering={FadeInDown.delay(200).duration(400)}
             className="px-4 mt-6"
           >
-            <Text className="text-lg font-sans-semibold text-white mb-3">
+            <Text className="text-lg font-sans-semibold text-text mb-3">
               Төлөвлөгөө сонгох
             </Text>
             <View className="gap-3">
@@ -466,26 +466,26 @@ export function SubscriptionScreen() {
                 className={`rounded-2xl border p-4 ${
                   selectedPlan === 'yearly'
                     ? 'bg-primary-500/10 border-primary-500'
-                    : 'bg-slate-900/80 border-slate-800'
+                    : 'bg-surface-card border-surface-border'
                 }`}
               >
                 <View className="flex-row items-center justify-between">
                   <View>
                     <View className="flex-row items-center gap-2">
-                      <Text className="font-sans-semibold text-white text-base">
+                      <Text className="font-sans-semibold text-text text-base">
                         Жилийн
                       </Text>
                       <Badge variant="success">37% хэмнэлт</Badge>
                     </View>
-                    <Text className="text-sm text-slate-400 mt-1">
+                    <Text className="text-sm text-text-secondary mt-1">
                       {PLAN_PRICES.yearly.yearly}
                     </Text>
                   </View>
                   <View className="items-end">
-                    <Text className="text-lg font-sans-bold text-white">
+                    <Text className="text-lg font-sans-bold text-text">
                       {PLAN_PRICES.yearly.amount}
                     </Text>
-                    <Text className="text-xs text-slate-400">{PLAN_PRICES.yearly.period}</Text>
+                    <Text className="text-xs text-text-secondary">{PLAN_PRICES.yearly.period}</Text>
                   </View>
                 </View>
               </Pressable>
@@ -495,23 +495,23 @@ export function SubscriptionScreen() {
                 className={`rounded-2xl border p-4 ${
                   selectedPlan === 'monthly'
                     ? 'bg-primary-500/10 border-primary-500'
-                    : 'bg-slate-900/80 border-slate-800'
+                    : 'bg-surface-card border-surface-border'
                 }`}
               >
                 <View className="flex-row items-center justify-between">
                   <View>
-                    <Text className="font-sans-semibold text-white text-base">
+                    <Text className="font-sans-semibold text-text text-base">
                       Сарын
                     </Text>
-                    <Text className="text-sm text-slate-400 mt-1">
+                    <Text className="text-sm text-text-secondary mt-1">
                       Сар бүр нэхэмжлэгдэнэ
                     </Text>
                   </View>
                   <View className="items-end">
-                    <Text className="text-lg font-sans-bold text-white">
+                    <Text className="text-lg font-sans-bold text-text">
                       {PLAN_PRICES.monthly.amount}
                     </Text>
-                    <Text className="text-xs text-slate-400">{PLAN_PRICES.monthly.period}</Text>
+                    <Text className="text-xs text-text-secondary">{PLAN_PRICES.monthly.period}</Text>
                   </View>
                 </View>
               </Pressable>
@@ -531,10 +531,10 @@ export function SubscriptionScreen() {
 
             <View className="mt-6 flex-row flex-wrap justify-center gap-4">
               <Pressable onPress={() => handleLegalLink('terms')}>
-                <Text className="text-xs text-slate-500">Үйлчилгээний нөхцөл</Text>
+                <Text className="text-xs text-text-tertiary">Үйлчилгээний нөхцөл</Text>
               </Pressable>
               <Pressable onPress={() => handleLegalLink('privacy')}>
-                <Text className="text-xs text-slate-500">Нууцлалын бодлого</Text>
+                <Text className="text-xs text-text-tertiary">Нууцлалын бодлого</Text>
               </Pressable>
             </View>
           </View>

@@ -91,25 +91,25 @@ export function BarcodeScanScreen() {
 
   if (!permission) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface dark:bg-slate-900">
-        <ActivityIndicator size="large" color="#22c55e" />
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface">
+        <ActivityIndicator size="large" color="#1f2028" />
       </SafeAreaView>
     );
   }
 
   if (!permission.granted) {
     return (
-      <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
-        <View className="flex-row items-center border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+      <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+        <View className="flex-row items-center border-b border-surface-border px-4 py-3">
           <Pressable onPress={() => navigation.goBack()} className="p-1">
-            <Ionicons name="arrow-back" size={24} color="#0f172a" />
+            <Ionicons name="arrow-back" size={24} color="#111218" />
           </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text dark:text-slate-100">
+          <Text className="ml-4 text-lg font-sans-semibold text-text">
             Scan Barcode
           </Text>
         </View>
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="mb-4 text-center text-text dark:text-slate-100">
+          <Text className="mb-4 text-center text-text">
             Camera permission is required to scan barcodes.
           </Text>
           <Button onPress={requestPermission}>Grant Permission</Button>
@@ -144,7 +144,7 @@ export function BarcodeScanScreen() {
           >
             <Ionicons name="arrow-back" size={24} color="#ffffff" />
           </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-white">
+          <Text className="ml-4 text-lg font-sans-semibold text-text">
             Scan Barcode
           </Text>
         </View>
@@ -152,7 +152,7 @@ export function BarcodeScanScreen() {
         {loading && (
           <View className="items-center py-8">
             <ActivityIndicator size="large" color="#ffffff" />
-            <Text className="mt-2 text-white">Looking up product...</Text>
+            <Text className="mt-2 text-text">Looking up product...</Text>
           </View>
         )}
 
@@ -175,29 +175,29 @@ export function BarcodeScanScreen() {
       >
         {result && (
           <View>
-            <Text className="mb-2 text-lg font-sans-semibold text-text dark:text-slate-100">
+            <Text className="mb-2 text-lg font-sans-semibold text-text">
               {result.food.name}
             </Text>
             {result.food.nutrients && (
-              <Text className="mb-4 text-sm text-text-secondary dark:text-slate-400">
+              <Text className="mb-4 text-sm text-text-secondary">
                 {result.food.nutrients.caloriesPer100g} cal / 100g
               </Text>
             )}
             <View className="mb-4 flex-row items-center justify-center gap-4">
               <Pressable
                 onPress={() => setQuantity((q) => Math.max(0.5, q - 0.5))}
-                className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary dark:bg-slate-700"
+                className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
               >
-                <Ionicons name="remove" size={24} color="#475569" />
+                <Ionicons name="remove" size={24} color="#777985" />
               </Pressable>
-              <Text className="min-w-[60px] text-center text-xl font-sans-bold text-text dark:text-slate-100">
+              <Text className="min-w-[60px] text-center text-xl font-sans-bold text-text">
                 {quantity}
               </Text>
               <Pressable
                 onPress={() => setQuantity((q) => q + 0.5)}
-                className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary dark:bg-slate-700"
+                className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
               >
-                <Ionicons name="add" size={24} color="#475569" />
+                <Ionicons name="add" size={24} color="#777985" />
               </Pressable>
             </View>
             <Button onPress={handleSaveFromResult} loading={saving} disabled={saving}>
@@ -216,10 +216,10 @@ export function BarcodeScanScreen() {
         }}
       >
         <View className="items-center">
-          <Text className="mb-2 text-center text-lg font-sans-semibold text-text dark:text-slate-100">
+          <Text className="mb-2 text-center text-lg font-sans-semibold text-text">
             Product not found
           </Text>
-          <Text className="mb-6 text-center text-text-secondary dark:text-slate-400">
+          <Text className="mb-6 text-center text-text-secondary">
             This barcode is not in our database. You can submit it for review.
           </Text>
           <Button onPress={handleSubmitProduct}>
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   frame: {
     borderWidth: 2,
-    borderColor: '#22c55e',
+    borderColor: '#1f2028',
     borderRadius: 12,
     backgroundColor: 'transparent',
   },

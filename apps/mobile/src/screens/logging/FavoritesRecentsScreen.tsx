@@ -103,10 +103,10 @@ export function FavoritesRecentsScreen() {
       className="mb-3 flex-row items-center justify-between"
     >
       <View className="flex-1">
-        <Text className="font-sans-semibold text-text dark:text-slate-100">
+        <Text className="font-sans-semibold text-text">
           {item.name}
         </Text>
-        <Text className="text-sm text-text-secondary dark:text-slate-400">
+        <Text className="text-sm text-text-secondary">
           {item.caloriesPer100g} cal / 100g
         </Text>
       </View>
@@ -117,7 +117,7 @@ export function FavoritesRecentsScreen() {
         <Ionicons
           name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
           size={24}
-          color={favoritedIds.has(item.foodId) ? '#ef4444' : '#94a3b8'}
+          color={favoritedIds.has(item.foodId) ? '#ef4444' : '#9a9caa'}
         />
       </Pressable>
     </Card>
@@ -130,10 +130,10 @@ export function FavoritesRecentsScreen() {
       className="mb-3 flex-row items-center justify-between"
     >
       <View className="flex-1">
-        <Text className="font-sans-semibold text-text dark:text-slate-100">
+        <Text className="font-sans-semibold text-text">
           {item.name}
         </Text>
-        <Text className="text-sm text-text-secondary dark:text-slate-400">
+        <Text className="text-sm text-text-secondary">
           Last: {item.lastCalories} cal
         </Text>
       </View>
@@ -144,7 +144,7 @@ export function FavoritesRecentsScreen() {
         <Ionicons
           name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
           size={24}
-          color={favoritedIds.has(item.foodId) ? '#ef4444' : '#94a3b8'}
+          color={favoritedIds.has(item.foodId) ? '#ef4444' : '#9a9caa'}
         />
       </Pressable>
     </Card>
@@ -154,18 +154,18 @@ export function FavoritesRecentsScreen() {
   const isEmpty = listData.length === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface dark:bg-slate-900" edges={['top']}>
-      <View className="flex-row items-center border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      <View className="flex-row items-center border-b border-surface-border px-4 py-3">
         <Pressable onPress={() => navigation.goBack()} className="p-1">
-          <Ionicons name="arrow-back" size={24} color="#0f172a" />
+          <Ionicons name="arrow-back" size={24} color="#111218" />
         </Pressable>
-        <Text className="ml-4 text-lg font-sans-semibold text-text dark:text-slate-100">
+        <Text className="ml-4 text-lg font-sans-semibold text-text">
           Favorites & Recents
         </Text>
       </View>
 
       {/* Tabs */}
-      <View className="flex-row border-b border-slate-200 px-4 dark:border-slate-700">
+      <View className="flex-row border-b border-surface-border px-4">
         <Pressable
           onPress={() => setTab('favorites')}
           className={`border-b-2 py-3 px-4 ${
@@ -177,8 +177,8 @@ export function FavoritesRecentsScreen() {
           <Text
             className={`font-sans-medium ${
               tab === 'favorites'
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-text-secondary dark:text-slate-400'
+                ? 'text-primary-600'
+                : 'text-text-secondary'
             }`}
           >
             Favorites
@@ -193,8 +193,8 @@ export function FavoritesRecentsScreen() {
           <Text
             className={`font-sans-medium ${
               tab === 'recents'
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-text-secondary dark:text-slate-400'
+                ? 'text-primary-600'
+                : 'text-text-secondary'
             }`}
           >
             Recents
@@ -204,7 +204,7 @@ export function FavoritesRecentsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center py-16">
-          <ActivityIndicator size="large" color="#22c55e" />
+          <ActivityIndicator size="large" color="#1f2028" />
         </View>
       ) : isEmpty ? (
         <EmptyState
@@ -230,7 +230,7 @@ export function FavoritesRecentsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#22c55e"
+              tintColor="#1f2028"
             />
           }
         />

@@ -60,7 +60,7 @@ export function SkeletonLoader({
   return (
     <Animated.View
       style={[baseStyle, { opacity }]}
-      className={`dark:bg-slate-700 ${className}`}
+      className={className}
     />
   );
 }

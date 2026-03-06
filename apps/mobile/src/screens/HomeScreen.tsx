@@ -43,10 +43,10 @@ const MEAL_TYPE_ICONS: Record<string, string> = {
 };
 
 const MEAL_TYPE_COLORS: Record<string, string> = {
-  breakfast: '#f59e0b',
-  lunch: '#22c55e',
+  breakfast: '#8f93a4',
+  lunch: '#1f2028',
   dinner: '#6366f1',
-  snack: '#ec4899',
+  snack: '#8f93a4',
 };
 
 export function HomeScreen() {
@@ -109,7 +109,7 @@ export function HomeScreen() {
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack'];
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -118,13 +118,13 @@ export function HomeScreen() {
           <RefreshControl
             refreshing={isLoading && !!data}
             onRefresh={onRefresh}
-            tintColor="#22c55e"
+            tintColor="#1f2028"
           />
         }
       >
         {/* Hero Section with Gradient */}
         <LinearGradient
-          colors={['#0f172a', '#1e293b', '#0f172a']}
+          colors={['#ececf2', '#dedee6', '#ececf2']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -133,14 +133,14 @@ export function HomeScreen() {
             <View className="px-5 pt-2 pb-1">
               <View className="flex-row items-center justify-between">
                 <View>
-                  <Text className="text-base text-slate-400 font-sans-medium">
+                  <Text className="text-base text-text-secondary font-sans-medium">
                     {new Date().getHours() < 12
                       ? t('dashboard.greeting')
                       : new Date().getHours() < 18
                         ? t('dashboard.greetingAfternoon')
                         : t('dashboard.greetingEvening')}
                   </Text>
-                  <Text className="text-2xl font-sans-bold text-white mt-0.5">
+                  <Text className="text-2xl font-sans-bold text-text mt-0.5">
                     {displayName}
                   </Text>
                 </View>
@@ -148,7 +148,7 @@ export function HomeScreen() {
                   onPress={handleWeeklySummary}
                   className="h-10 w-10 items-center justify-center rounded-full bg-white/10"
                 >
-                  <Ionicons name="stats-chart" size={20} color="#22c55e" />
+                  <Ionicons name="stats-chart" size={20} color="#1f2028" />
                 </Pressable>
               </View>
             </View>
@@ -158,9 +158,9 @@ export function HomeScreen() {
               <ProgressRing
                 progress={calorieProgress}
                 size={SCREEN_WIDTH * 0.52}
-                color="#22c55e"
-                gradientEnd="#4ade80"
-                backgroundColor="#334155"
+                color="#1f2028"
+                gradientEnd="#2a2b35"
+                backgroundColor="#d2d2db"
                 strokeWidth={14}
                 centerLabel={`${remaining}`}
                 centerSubLabel="remaining"
@@ -177,19 +177,19 @@ export function HomeScreen() {
                 label={t('dashboard.protein')}
                 current={consumed.protein}
                 target={targets.protein}
-                color="#3b82f6"
+                color="#8b8fa0"
               />
               <CircularMacro
                 label={t('dashboard.carbs')}
                 current={consumed.carbs}
                 target={targets.carbs}
-                color="#f59e0b"
+                color="#8f93a4"
               />
               <CircularMacro
                 label={t('dashboard.fat')}
                 current={consumed.fat}
                 target={targets.fat}
-                color="#ec4899"
+                color="#8f93a4"
               />
             </Animated.View>
           </SafeAreaView>
@@ -203,21 +203,21 @@ export function HomeScreen() {
               className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-primary-500 px-4 py-3.5 shadow-lg shadow-primary-500/30"
             >
               <Ionicons name="add-circle" size={20} color="#ffffff" />
-              <Text className="font-sans-semibold text-white">Log Meal</Text>
+              <Text className="font-sans-semibold text-text">Log Meal</Text>
             </Pressable>
             <Pressable
               onPress={handleQuickAdd}
               className="flex-row items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3.5 border border-white/10"
             >
-              <Ionicons name="flash" size={18} color="#f59e0b" />
-              <Text className="font-sans-medium text-white">Quick</Text>
+              <Ionicons name="flash" size={18} color="#8f93a4" />
+              <Text className="font-sans-medium text-text">Quick</Text>
             </Pressable>
             <Pressable
               onPress={() => (navigation as { navigate: (s: string) => void }).navigate('Log')}
               className="flex-row items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3.5 border border-white/10"
             >
               <Ionicons name="barcode-outline" size={18} color="#a78bfa" />
-              <Text className="font-sans-medium text-white">Scan</Text>
+              <Text className="font-sans-medium text-text">Scan</Text>
             </Pressable>
           </View>
         </View>
@@ -225,10 +225,10 @@ export function HomeScreen() {
         {/* Today's Meals */}
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-sans-semibold text-white">
+            <Text className="text-lg font-sans-semibold text-text">
               {t('dashboard.todaysMeals')}
             </Text>
-            <Text className="text-sm text-slate-400 font-sans-medium">
+            <Text className="text-sm text-text-secondary font-sans-medium">
               {consumed.calories} kcal total
             </Text>
           </View>
@@ -247,21 +247,21 @@ export function HomeScreen() {
               );
             })
           ) : (
-            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-6 items-center">
-              <View className="h-16 w-16 rounded-full bg-slate-800 items-center justify-center mb-4">
-                <Ionicons name="nutrition-outline" size={32} color="#475569" />
+            <View className="rounded-2xl bg-surface-card border border-surface-border p-6 items-center">
+              <View className="h-16 w-16 rounded-full bg-surface-secondary items-center justify-center mb-4">
+                <Ionicons name="nutrition-outline" size={32} color="#777985" />
               </View>
-              <Text className="text-base font-sans-semibold text-white mb-1">
+              <Text className="text-base font-sans-semibold text-text mb-1">
                 No meals logged yet
               </Text>
-              <Text className="text-sm text-slate-400 text-center mb-4">
+              <Text className="text-sm text-text-secondary text-center mb-4">
                 Log your first meal to track your daily nutrition
               </Text>
               <Pressable
                 onPress={handleLogMeal}
                 className="rounded-full bg-primary-500 px-6 py-2.5"
               >
-                <Text className="font-sans-semibold text-white text-sm">
+                <Text className="font-sans-semibold text-text text-sm">
                   Log Meal
                 </Text>
               </Pressable>
@@ -271,7 +271,7 @@ export function HomeScreen() {
 
         {/* Calorie Budget by Meal (CalAI-style targets) */}
         <View className="px-4 pt-6">
-          <Text className="text-lg font-sans-semibold text-white mb-3">
+          <Text className="text-lg font-sans-semibold text-text mb-3">
             {t('dashboard.caloriesBudget')}
           </Text>
           <View className="flex-row gap-2">
@@ -283,7 +283,7 @@ export function HomeScreen() {
               return (
                 <View
                   key={type}
-                  className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-3 items-center"
+                  className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-3 items-center"
                 >
                   <View
                     className="h-9 w-9 rounded-full items-center justify-center mb-2"
@@ -295,13 +295,13 @@ export function HomeScreen() {
                       color={MEAL_TYPE_COLORS[type]}
                     />
                   </View>
-                  <Text className="text-xs text-slate-400 font-sans-medium mb-1">
+                  <Text className="text-xs text-text-secondary font-sans-medium mb-1">
                     {MEAL_TYPE_LABELS[type]}
                   </Text>
-                  <Text className="text-sm font-sans-bold text-white">
+                  <Text className="text-sm font-sans-bold text-text">
                     {mealCals}
                   </Text>
-                  <View className="w-full h-1 rounded-full bg-slate-700 mt-2 overflow-hidden">
+                  <View className="w-full h-1 rounded-full bg-surface-muted mt-2 overflow-hidden">
                     <View
                       className="h-full rounded-full"
                       style={{
@@ -354,12 +354,12 @@ function MealCard({ type, meals }: MealCardProps) {
     setExpanded((e) => !e);
   };
 
-  const color = MEAL_TYPE_COLORS[type] ?? '#22c55e';
+  const color = MEAL_TYPE_COLORS[type] ?? '#1f2028';
 
   return (
     <Pressable
       onPress={handlePress}
-      className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 mb-3"
+      className="rounded-2xl bg-surface-card border border-surface-border p-4 mb-3"
     >
       <View className="flex-row items-center">
         <View
@@ -373,46 +373,46 @@ function MealCard({ type, meals }: MealCardProps) {
           />
         </View>
         <View className="flex-1">
-          <Text className="font-sans-semibold text-white text-base">
+          <Text className="font-sans-semibold text-text text-base">
             {MEAL_TYPE_LABELS[type] ?? type}
           </Text>
           <Text
-            className="text-sm text-slate-400 mt-0.5"
+            className="text-sm text-text-secondary mt-0.5"
             numberOfLines={expanded ? undefined : 1}
           >
             {foodNames.join(', ') || 'Quick add'}
           </Text>
         </View>
         <View className="items-end">
-          <Text className="text-base font-sans-bold text-white">
+          <Text className="text-base font-sans-bold text-text">
             {totalCal}
           </Text>
-          <Text className="text-xs text-slate-400">kcal</Text>
+          <Text className="text-xs text-text-secondary">kcal</Text>
         </View>
         <Animated.View style={chevronStyle} className="ml-2">
-          <Ionicons name="chevron-down" size={18} color="#64748b" />
+          <Ionicons name="chevron-down" size={18} color="#9a9caa" />
         </Animated.View>
       </View>
 
       {expanded && (
-        <View className="mt-3 pt-3 border-t border-slate-800">
+        <View className="mt-3 pt-3 border-t border-surface-border">
           {meals.flatMap((m) =>
             m.items.map((item) => (
               <View key={item.id} className="flex-row items-center justify-between py-2">
                 <View className="flex-row items-center flex-1 mr-4">
                   <View className="h-2 w-2 rounded-full mr-3" style={{ backgroundColor: color }} />
-                  <Text className="text-sm text-slate-200 flex-1" numberOfLines={1}>
+                  <Text className="text-sm text-text-secondary flex-1" numberOfLines={1}>
                     {item.snapshotFoodName}
                   </Text>
                 </View>
-                <Text className="text-sm font-sans-medium text-white">
+                <Text className="text-sm font-sans-medium text-text">
                   {item.snapshotCalories} kcal
                 </Text>
               </View>
             ))
           )}
-          <View className="flex-row items-center justify-between pt-2 mt-1 border-t border-slate-800/50">
-            <Text className="text-xs text-slate-500">Total protein</Text>
+          <View className="flex-row items-center justify-between pt-2 mt-1 border-t border-surface-border/50">
+            <Text className="text-xs text-text-tertiary">Total protein</Text>
             <Text className="text-sm font-sans-medium text-blue-400">
               {totalProtein}g
             </Text>

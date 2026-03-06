@@ -21,7 +21,7 @@ export function ErrorState({
         ${className}
       `}
     >
-      <View className="mb-4 rounded-full bg-danger/10 p-6 dark:bg-red-500/20">
+      <View className="mb-4 rounded-full bg-danger/10 p-6">
         <Ionicons
           name="alert-circle-outline"
           size={48}
@@ -29,7 +29,7 @@ export function ErrorState({
           style={{ opacity: 0.9 }}
         />
       </View>
-      <Text className="mb-2 text-center text-lg font-sans-semibold text-text dark:text-slate-100">
+      <Text className="mb-2 text-center text-lg font-sans-semibold text-text">
         {message}
       </Text>
       {onRetry ? (

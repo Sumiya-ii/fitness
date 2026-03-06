@@ -53,7 +53,7 @@ export function HeightSelectScreen({ navigation }: Props) {
             onChangeText={(t) => setValue(t.replace(/\D/g, ''))}
             keyboardType="number-pad"
             placeholder="170"
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#9a9caa"
             className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
             maxLength={3}
             autoFocus

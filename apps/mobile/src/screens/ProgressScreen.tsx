@@ -33,10 +33,10 @@ function WeightChart({ data }: { data: WeightLogEntry[] }) {
   if (data.length < 2) {
     return (
       <View style={{ width: chartWidth, height }} className="items-center justify-center">
-        <View className="h-14 w-14 rounded-full bg-slate-800 items-center justify-center mb-3">
-          <Ionicons name="trending-up-outline" size={24} color="#475569" />
+        <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-3">
+          <Ionicons name="trending-up-outline" size={24} color="#777985" />
         </View>
-        <Text className="text-sm text-slate-400 font-sans-medium">
+        <Text className="text-sm text-text-secondary font-sans-medium">
           Log more weights to see your trend
         </Text>
       </View>
@@ -83,12 +83,12 @@ function WeightChart({ data }: { data: WeightLogEntry[] }) {
       <Svg width={chartWidth} height={height}>
         <Defs>
           <SvgGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
-            <Stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+            <Stop offset="0%" stopColor="#1f2028" stopOpacity={0.3} />
+            <Stop offset="100%" stopColor="#1f2028" stopOpacity={0} />
           </SvgGradient>
           <SvgGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor="#4ade80" />
-            <Stop offset="100%" stopColor="#22c55e" />
+            <Stop offset="0%" stopColor="#2a2b35" />
+            <Stop offset="100%" stopColor="#1f2028" />
           </SvgGradient>
         </Defs>
 
@@ -97,7 +97,7 @@ function WeightChart({ data }: { data: WeightLogEntry[] }) {
           <Path
             key={l.value}
             d={`M ${padding.left} ${l.y} L ${chartWidth - padding.right} ${l.y}`}
-            stroke="#1e293b"
+            stroke="#dedee6"
             strokeWidth={1}
             strokeDasharray="4,4"
           />
@@ -123,8 +123,8 @@ function WeightChart({ data }: { data: WeightLogEntry[] }) {
             cx={p.x}
             cy={p.y}
             r={3}
-            fill="#22c55e"
-            stroke="#0f172a"
+            fill="#1f2028"
+            stroke="#ececf2"
             strokeWidth={2}
           />
         ))}
@@ -134,7 +134,7 @@ function WeightChart({ data }: { data: WeightLogEntry[] }) {
       {yLabels.map((l) => (
         <Text
           key={l.value}
-          className="absolute text-xs text-slate-500 font-sans-medium"
+          className="absolute text-xs text-text-tertiary font-sans-medium"
           style={{ top: l.y - 7, left: 4 }}
         >
           {l.value}
@@ -192,7 +192,7 @@ export function ProgressScreen() {
   const weeklyAvg = trend?.weeklyAverage;
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <ScrollView
           className="flex-1"
@@ -202,7 +202,7 @@ export function ProgressScreen() {
           {/* Header */}
           <View className="px-5 pt-2 pb-4">
             <View className="flex-row items-center justify-between">
-              <Text className="text-2xl font-sans-bold text-white">
+              <Text className="text-2xl font-sans-bold text-text">
                 Progress
               </Text>
               <Pressable
@@ -212,7 +212,7 @@ export function ProgressScreen() {
                 }
                 className="flex-row items-center gap-2 rounded-full bg-primary-500/15 px-4 py-2"
               >
-                <Ionicons name="calendar-outline" size={16} color="#22c55e" />
+                <Ionicons name="calendar-outline" size={16} color="#1f2028" />
                 <Text className="font-sans-medium text-primary-400 text-sm">
                   Weekly
                 </Text>
@@ -223,20 +223,20 @@ export function ProgressScreen() {
           {/* Current Weight Hero */}
           <Animated.View entering={FadeInDown.duration(400)} className="px-4 mb-4">
             <LinearGradient
-              colors={['#1e293b', '#0f172a']}
-              className="rounded-3xl border border-slate-800 p-5"
+              colors={['#dedee6', '#ececf2']}
+              className="rounded-3xl border border-surface-border p-5"
             >
               <View className="items-center">
                 {currentWeight !== null ? (
                   <>
-                    <Text className="text-sm text-slate-400 font-sans-medium mb-2">
+                    <Text className="text-sm text-text-secondary font-sans-medium mb-2">
                       Current Weight
                     </Text>
                     <View className="flex-row items-baseline">
-                      <Text className="text-5xl font-sans-bold text-white">
+                      <Text className="text-5xl font-sans-bold text-text">
                         {currentWeight}
                       </Text>
-                      <Text className="text-xl font-sans-medium text-slate-400 ml-1">
+                      <Text className="text-xl font-sans-medium text-text-secondary ml-1">
                         kg
                       </Text>
                     </View>
@@ -264,10 +264,10 @@ export function ProgressScreen() {
                             size={14}
                             color={
                               weeklyDelta < 0
-                                ? '#22c55e'
+                                ? '#1f2028'
                                 : weeklyDelta > 0
-                                  ? '#f59e0b'
-                                  : '#64748b'
+                                  ? '#8f93a4'
+                                  : '#9a9caa'
                             }
                           />
                           <Text
@@ -275,10 +275,10 @@ export function ProgressScreen() {
                             style={{
                               color:
                                 weeklyDelta < 0
-                                  ? '#22c55e'
+                                  ? '#1f2028'
                                   : weeklyDelta > 0
-                                    ? '#f59e0b'
-                                    : '#64748b',
+                                    ? '#8f93a4'
+                                    : '#9a9caa',
                             }}
                           >
                             {weeklyDelta > 0 ? '+' : ''}
@@ -287,8 +287,8 @@ export function ProgressScreen() {
                         </View>
                       )}
                       {weeklyAvg !== null && weeklyAvg !== undefined && (
-                        <View className="flex-row items-center gap-1.5 rounded-full bg-slate-800 px-3 py-1.5">
-                          <Text className="text-sm font-sans-medium text-slate-300">
+                        <View className="flex-row items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1.5">
+                          <Text className="text-sm font-sans-medium text-text-secondary">
                             Avg: {weeklyAvg} kg
                           </Text>
                         </View>
@@ -297,13 +297,13 @@ export function ProgressScreen() {
                   </>
                 ) : (
                   <View className="items-center py-4">
-                    <View className="h-16 w-16 rounded-full bg-slate-800 items-center justify-center mb-3">
-                      <Ionicons name="scale-outline" size={28} color="#475569" />
+                    <View className="h-16 w-16 rounded-full bg-surface-secondary items-center justify-center mb-3">
+                      <Ionicons name="scale-outline" size={28} color="#777985" />
                     </View>
-                    <Text className="text-base font-sans-medium text-slate-300">
+                    <Text className="text-base font-sans-medium text-text-secondary">
                       No weight logged yet
                     </Text>
-                    <Text className="text-sm text-slate-500 mt-1">
+                    <Text className="text-sm text-text-tertiary mt-1">
                       Start tracking your weight journey
                     </Text>
                   </View>
@@ -314,7 +314,7 @@ export function ProgressScreen() {
 
           {/* Period Tabs */}
           <View className="px-4 mb-4">
-            <View className="flex-row rounded-2xl bg-slate-900/80 border border-slate-800 p-1">
+            <View className="flex-row rounded-2xl bg-surface-card border border-surface-border p-1">
               {(['week', 'month', '3months'] as const).map((p) => (
                 <Pressable
                   key={p}
@@ -325,7 +325,7 @@ export function ProgressScreen() {
                 >
                   <Text
                     className={`font-sans-semibold text-sm ${
-                      period === p ? 'text-white' : 'text-slate-400'
+                      period === p ? 'text-text' : 'text-text-secondary'
                     }`}
                   >
                     {p === 'week' ? '7 Days' : p === 'month' ? '30 Days' : '90 Days'}
@@ -340,8 +340,8 @@ export function ProgressScreen() {
             entering={FadeInDown.delay(100).duration(400)}
             className="px-4 mb-6"
           >
-            <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4">
-              <Text className="text-sm font-sans-semibold text-slate-300 mb-3">
+            <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
+              <Text className="text-sm font-sans-semibold text-text-secondary mb-3">
                 Weight Trend
               </Text>
               <View className="items-center">
@@ -356,30 +356,30 @@ export function ProgressScreen() {
               entering={FadeInDown.delay(200).duration(400)}
               className="flex-row gap-3 px-4 mb-6"
             >
-              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 items-center">
-                <Ionicons name="arrow-down-circle-outline" size={22} color="#22c55e" />
-                <Text className="text-lg font-sans-bold text-white mt-2">
+              <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
+                <Ionicons name="arrow-down-circle-outline" size={22} color="#1f2028" />
+                <Text className="text-lg font-sans-bold text-text mt-2">
                   {Math.min(...history.map((h) => h.weightKg))}
                 </Text>
-                <Text className="text-xs text-slate-400 font-sans-medium">
+                <Text className="text-xs text-text-secondary font-sans-medium">
                   Lowest
                 </Text>
               </View>
-              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 items-center">
-                <Ionicons name="arrow-up-circle-outline" size={22} color="#f59e0b" />
-                <Text className="text-lg font-sans-bold text-white mt-2">
+              <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
+                <Ionicons name="arrow-up-circle-outline" size={22} color="#8f93a4" />
+                <Text className="text-lg font-sans-bold text-text mt-2">
                   {Math.max(...history.map((h) => h.weightKg))}
                 </Text>
-                <Text className="text-xs text-slate-400 font-sans-medium">
+                <Text className="text-xs text-text-secondary font-sans-medium">
                   Highest
                 </Text>
               </View>
-              <View className="flex-1 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 items-center">
-                <Ionicons name="analytics-outline" size={22} color="#3b82f6" />
-                <Text className="text-lg font-sans-bold text-white mt-2">
+              <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
+                <Ionicons name="analytics-outline" size={22} color="#8b8fa0" />
+                <Text className="text-lg font-sans-bold text-text mt-2">
                   {history.length}
                 </Text>
-                <Text className="text-xs text-slate-400 font-sans-medium">
+                <Text className="text-xs text-text-secondary font-sans-medium">
                   Entries
                 </Text>
               </View>
@@ -388,7 +388,7 @@ export function ProgressScreen() {
 
           {/* Weight History */}
           <View className="px-4">
-            <Text className="text-lg font-sans-semibold text-white mb-3">
+            <Text className="text-lg font-sans-semibold text-text mb-3">
               History
             </Text>
 
@@ -410,13 +410,13 @@ export function ProgressScreen() {
                     return (
                       <View
                         key={entry.id}
-                        className="flex-row items-center justify-between rounded-2xl bg-slate-900/80 border border-slate-800 p-4"
+                        className="flex-row items-center justify-between rounded-2xl bg-surface-card border border-surface-border p-4"
                       >
                         <View className="flex-row items-center gap-3">
-                          <View className="h-10 w-10 rounded-full bg-slate-800 items-center justify-center">
-                            <Ionicons name="scale-outline" size={18} color="#64748b" />
+                          <View className="h-10 w-10 rounded-full bg-surface-secondary items-center justify-center">
+                            <Ionicons name="scale-outline" size={18} color="#9a9caa" />
                           </View>
-                          <Text className="font-sans-medium text-slate-200">
+                          <Text className="font-sans-medium text-text-secondary">
                             {new Date(entry.loggedAt + 'T12:00:00').toLocaleDateString(
                               undefined,
                               { weekday: 'short', month: 'short', day: 'numeric' }
@@ -432,7 +432,7 @@ export function ProgressScreen() {
                               {delta}
                             </Badge>
                           )}
-                          <Text className="font-sans-bold text-white text-base">
+                          <Text className="font-sans-bold text-text text-base">
                             {entry.weightKg} kg
                           </Text>
                         </View>
@@ -441,14 +441,14 @@ export function ProgressScreen() {
                   })}
               </View>
             ) : (
-              <View className="rounded-2xl bg-slate-900/80 border border-slate-800 p-6 items-center">
-                <View className="h-14 w-14 rounded-full bg-slate-800 items-center justify-center mb-3">
-                  <Ionicons name="heart-outline" size={24} color="#475569" />
+              <View className="rounded-2xl bg-surface-card border border-surface-border p-6 items-center">
+                <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-3">
+                  <Ionicons name="heart-outline" size={24} color="#777985" />
                 </View>
-                <Text className="text-base font-sans-medium text-white mb-1">
+                <Text className="text-base font-sans-medium text-text mb-1">
                   No weight logs yet
                 </Text>
-                <Text className="text-sm text-slate-400 text-center mb-4">
+                <Text className="text-sm text-text-secondary text-center mb-4">
                   Tap the button below to log your first weight
                 </Text>
               </View>
@@ -471,10 +471,10 @@ export function ProgressScreen() {
           onClose={() => setSheetVisible(false)}
         >
           <View className="px-1">
-            <Text className="mb-1 text-lg font-sans-bold text-white">
+            <Text className="mb-1 text-lg font-sans-bold text-text">
               Log Weight
             </Text>
-            <Text className="mb-5 text-sm text-slate-400">
+            <Text className="mb-5 text-sm text-text-secondary">
               Track your daily weight measurement
             </Text>
             <Input

@@ -43,17 +43,17 @@ export function MacroBar({
   return (
     <View className={`${className}`}>
       <View className="mb-1.5 flex-row items-baseline justify-between">
-        <Text className="text-sm font-sans-medium text-text dark:text-slate-200">
+        <Text className="text-sm font-sans-medium text-text">
           {label}
         </Text>
-        <Text className="text-sm text-text-secondary dark:text-slate-400">
+        <Text className="text-sm text-text-secondary">
           {current}
           {unit} / {target}
           {unit}
         </Text>
       </View>
       <View
-        className={`overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700 ${
+        className={`overflow-hidden rounded-full bg-surface-secondary ${
           size === 'large' ? 'h-3' : 'h-2'
         }`}
       >

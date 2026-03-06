@@ -108,13 +108,13 @@ export function VoiceLogScreen() {
   };
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
-        <View className="flex-row items-center px-4 py-3 border-b border-slate-800">
+        <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
           <Pressable onPress={() => navigation.goBack()} className="p-1">
             <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
           </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-white">
+          <Text className="ml-4 text-lg font-sans-semibold text-text">
             Voice Log
           </Text>
         </View>
@@ -122,7 +122,7 @@ export function VoiceLogScreen() {
         <View className="flex-1 items-center justify-center px-8">
           {!draft && (
             <>
-              <Text className="mb-8 text-center text-slate-400">
+              <Text className="mb-8 text-center text-text-secondary">
                 Press and hold to record your meal. Speak clearly for best
                 results.
               </Text>
@@ -143,7 +143,7 @@ export function VoiceLogScreen() {
                   Recording...
                 </Text>
               )}
-              <Text className="mt-6 text-center text-sm text-slate-500">
+              <Text className="mt-6 text-center text-sm text-text-tertiary">
                 Voice quality affects accuracy. Please confirm parsed items
                 before saving.
               </Text>
@@ -153,13 +153,13 @@ export function VoiceLogScreen() {
           {draft && (
             <View className="w-full">
               <Card className="mb-6">
-                <Text className="mb-2 font-sans-semibold text-white">
+                <Text className="mb-2 font-sans-semibold text-text">
                   Transcription
                 </Text>
-                <Text className="text-slate-300">
+                <Text className="text-text-secondary">
                   {draft.transcription || 'No transcription available'}
                 </Text>
-                <Text className="mt-4 text-xs text-slate-500">
+                <Text className="mt-4 text-xs text-text-tertiary">
                   Review the text above and confirm to save as a meal log.
                 </Text>
               </Card>

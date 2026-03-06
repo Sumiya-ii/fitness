@@ -3,19 +3,19 @@ import { Text, View } from 'react-native';
 export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 const variantBgClasses: Record<BadgeVariant, string> = {
-  success: 'bg-primary-100 dark:bg-primary-900/40',
-  warning: 'bg-amber-100 dark:bg-amber-900/40',
-  danger: 'bg-red-100 dark:bg-red-900/40',
-  info: 'bg-blue-100 dark:bg-blue-900/40',
-  neutral: 'bg-slate-100 dark:bg-slate-700',
+  success: 'bg-primary-100',
+  warning: 'bg-amber-100',
+  danger: 'bg-red-100',
+  info: 'bg-blue-100',
+  neutral: 'bg-surface-secondary',
 };
 
 const variantTextClasses: Record<BadgeVariant, string> = {
-  success: 'text-primary-700 dark:text-primary-300',
-  warning: 'text-amber-800 dark:text-amber-300',
-  danger: 'text-red-700 dark:text-red-300',
-  info: 'text-blue-700 dark:text-blue-300',
-  neutral: 'text-slate-700 dark:text-slate-300',
+  success: 'text-primary-700',
+  warning: 'text-amber-800',
+  danger: 'text-red-700',
+  info: 'text-blue-700',
+  neutral: 'text-text-secondary',
 };
 
 export interface BadgeProps {

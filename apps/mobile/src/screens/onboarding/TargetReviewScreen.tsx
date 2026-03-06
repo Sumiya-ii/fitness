@@ -69,7 +69,7 @@ export function TargetReviewScreen({ navigation }: Props) {
   if (!targets) {
     return (
       <SafeAreaView className="flex-1 bg-surface-app items-center justify-center">
-        <Ionicons name="alert-circle-outline" size={48} color="#94a3b8" />
+        <Ionicons name="alert-circle-outline" size={48} color="#9a9caa" />
         <Text className="text-text-secondary mt-4 text-center px-8">
           No targets calculated. Please go back and complete all steps.
         </Text>
@@ -108,7 +108,7 @@ export function TargetReviewScreen({ navigation }: Props) {
                 size={160}
                 color="#1f2028"
                 gradientEnd="#15161d"
-                backgroundColor="#334155"
+                backgroundColor="#d2d2db"
                 centerLabel={`${targets.calories}`}
                 centerSubLabel="kcal / day"
               />

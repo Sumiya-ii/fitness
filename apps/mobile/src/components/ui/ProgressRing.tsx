@@ -108,14 +108,14 @@ export function ProgressRing({
           }}
         >
           <Text
-            className="font-sans-bold text-text dark:text-white"
+            className="font-sans-bold text-text"
             style={{ fontSize: size * 0.2 }}
           >
             {centerText}
           </Text>
           {centerSubLabel ? (
             <Text
-              className="font-sans-medium text-text-secondary dark:text-slate-400"
+              className="font-sans-medium text-text-secondary"
               style={{ fontSize: size * 0.08, marginTop: 2 }}
             >
               {centerSubLabel}
@@ -123,7 +123,7 @@ export function ProgressRing({
           ) : null}
           {centerCaption ? (
             <Text
-              className="font-sans-medium text-text-tertiary dark:text-slate-500"
+              className="font-sans-medium text-text-tertiary"
               style={{ fontSize: size * 0.07, marginTop: 1 }}
             >
               {centerCaption}
@@ -132,7 +132,7 @@ export function ProgressRing({
         </View>
       </View>
       {label ? (
-        <Text className="mt-2 text-sm font-sans-medium text-text-secondary dark:text-slate-400">
+        <Text className="mt-2 text-sm font-sans-medium text-text-secondary">
           {label}
         </Text>
       ) : null}

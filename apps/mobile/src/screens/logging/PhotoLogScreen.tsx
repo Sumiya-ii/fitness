@@ -187,13 +187,13 @@ export function PhotoLogScreen() {
   };
 
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
-        <View className="flex-row items-center px-4 py-3 border-b border-slate-800">
+        <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
           <Pressable onPress={() => navigation.goBack()} className="p-1">
             <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
           </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-white">
+          <Text className="ml-4 text-lg font-sans-semibold text-text">
             Photo Log
           </Text>
         </View>
@@ -204,19 +204,19 @@ export function PhotoLogScreen() {
               <View className="mb-6 flex-row gap-4">
                 <Pressable
                   onPress={handleCapture}
-                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-slate-700 py-8"
+                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-8"
                 >
-                  <Ionicons name="camera" size={48} color="#22c55e" />
-                  <Text className="mt-2 font-sans-medium text-white">
+                  <Ionicons name="camera" size={48} color="#1f2028" />
+                  <Text className="mt-2 font-sans-medium text-text">
                     Camera
                   </Text>
                 </Pressable>
                 <Pressable
                   onPress={handlePickFromGallery}
-                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-slate-700 py-8"
+                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-8"
                 >
-                  <Ionicons name="images" size={48} color="#22c55e" />
-                  <Text className="mt-2 font-sans-medium text-white">
+                  <Ionicons name="images" size={48} color="#1f2028" />
+                  <Text className="mt-2 font-sans-medium text-text">
                     Gallery
                   </Text>
                 </Pressable>
@@ -226,8 +226,8 @@ export function PhotoLogScreen() {
 
           {analyzing && (
             <View className="items-center py-16">
-              <ActivityIndicator size="large" color="#22c55e" />
-              <Text className="mt-4 text-slate-400">
+              <ActivityIndicator size="large" color="#1f2028" />
+              <Text className="mt-4 text-text-secondary">
                 Analyzing your food...
               </Text>
             </View>
@@ -237,22 +237,22 @@ export function PhotoLogScreen() {
             <View className="p-4">
               <Image
                 source={{ uri: photoUri }}
-                className="mb-6 h-48 w-full rounded-2xl bg-slate-800"
+                className="mb-6 h-48 w-full rounded-2xl bg-surface-secondary"
                 resizeMode="cover"
               />
               {draftItems.length > 0 && (
                 <>
-                  <Text className="mb-3 font-sans-semibold text-white">
+                  <Text className="mb-3 font-sans-semibold text-text">
                     Identified foods
                   </Text>
                   {draftItems.map((item, index) => (
                     <Card key={`${item.name}-${index}`} className="mb-3">
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1">
-                          <Text className="font-sans-semibold text-white">
+                          <Text className="font-sans-semibold text-text">
                             {item.name}
                           </Text>
-                          <Text className="text-xs text-slate-400 mt-0.5">
+                          <Text className="text-xs text-text-secondary mt-0.5">
                             P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F: {Math.round(item.fat)}g
                           </Text>
                           <Badge
@@ -265,27 +265,27 @@ export function PhotoLogScreen() {
                         <View className="flex-row items-center gap-2">
                           <Pressable
                             onPress={() => updateItemCalories(index, -25)}
-                            className="h-9 w-9 items-center justify-center rounded-full bg-slate-800"
+                            className="h-9 w-9 items-center justify-center rounded-full bg-surface-secondary"
                           >
-                            <Ionicons name="remove" size={18} color="#94a3b8" />
+                            <Ionicons name="remove" size={18} color="#9a9caa" />
                           </Pressable>
-                          <Text className="min-w-[50px] text-center font-sans-medium text-white">
+                          <Text className="min-w-[50px] text-center font-sans-medium text-text">
                             {item.calories} cal
                           </Text>
                           <Pressable
                             onPress={() => updateItemCalories(index, 25)}
-                            className="h-9 w-9 items-center justify-center rounded-full bg-slate-800"
+                            className="h-9 w-9 items-center justify-center rounded-full bg-surface-secondary"
                           >
-                            <Ionicons name="add" size={18} color="#94a3b8" />
+                            <Ionicons name="add" size={18} color="#9a9caa" />
                           </Pressable>
                         </View>
                       </View>
                     </Card>
                   ))}
 
-                  <View className="rounded-xl bg-slate-900 border border-slate-800 p-3 mb-4">
-                    <Text className="text-sm text-slate-400 font-sans-medium mb-1">Total</Text>
-                    <Text className="text-white font-sans-semibold">
+                  <View className="rounded-xl bg-surface-card border border-surface-border p-3 mb-4">
+                    <Text className="text-sm text-text-secondary font-sans-medium mb-1">Total</Text>
+                    <Text className="text-text font-sans-semibold">
                       {draftItems.reduce((s, i) => s + i.calories, 0)} cal ·{' '}
                       P: {Math.round(draftItems.reduce((s, i) => s + i.protein, 0))}g ·{' '}
                       C: {Math.round(draftItems.reduce((s, i) => s + i.carbs, 0))}g ·{' '}
@@ -308,7 +308,7 @@ export function PhotoLogScreen() {
 
               {draft && draftItems.length === 0 && (
                 <View className="items-center py-8">
-                  <Text className="text-slate-400">No food items could be identified.</Text>
+                  <Text className="text-text-secondary">No food items could be identified.</Text>
                   <Button
                     variant="outline"
                     onPress={() => {

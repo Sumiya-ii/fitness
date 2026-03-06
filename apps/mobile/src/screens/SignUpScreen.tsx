@@ -43,9 +43,9 @@ export function SignUpScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950">
+    <SafeAreaView className="flex-1 bg-surface-app">
       <LinearGradient
-        colors={['#020617', '#0f172a', '#111827']}
+        colors={['#f4f4f7', '#ececf2', '#f4f4f7']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="absolute inset-0"
@@ -55,16 +55,16 @@ export function SignUpScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           className="absolute top-4 left-6 z-10 p-2 -m-2"
         >
-          <Ionicons name="arrow-back" size={24} color="#64748b" />
+          <Ionicons name="arrow-back" size={24} color="#9a9caa" />
         </Pressable>
-        <Text className="text-2xl font-sans-bold text-white mb-1 mt-10">
+        <Text className="text-2xl font-sans-bold text-text mb-1 mt-10">
           Create Account
         </Text>
-        <Text className="text-base text-slate-400 mb-6">
+        <Text className="text-base text-text-secondary mb-6">
           Join Coach and start your nutrition journey.
         </Text>
 
-        <View className="rounded-3xl bg-slate-900/80 border border-slate-800 p-4 mb-6">
+        <View className="rounded-3xl bg-surface-card border border-surface-border p-4 mb-6">
           <Input
             label="Email"
             placeholder="you@example.com"
@@ -92,7 +92,7 @@ export function SignUpScreen({ navigation }: Props) {
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={22}
-                  color="#64748b"
+                  color="#9a9caa"
                 />
               </Pressable>
             }
@@ -116,12 +116,12 @@ export function SignUpScreen({ navigation }: Props) {
           >
             <View
               className={`w-5 h-5 rounded border-2 mr-3 items-center justify-center ${
-                acceptedTerms ? 'bg-primary-500 border-primary-500' : 'border-slate-700'
+                acceptedTerms ? 'bg-primary-500 border-primary-500' : 'border-surface-border'
               }`}
             >
               {acceptedTerms && <Ionicons name="checkmark" size={14} color="white" />}
             </View>
-            <Text className="flex-1 text-sm text-slate-400">
+            <Text className="flex-1 text-sm text-text-secondary">
               I agree to the{' '}
               <Text className="text-primary-400">Terms of Service</Text>
               {' '}and{' '}
@@ -145,27 +145,27 @@ export function SignUpScreen({ navigation }: Props) {
         </View>
 
         <View className="flex-row items-center gap-4 mb-6">
-          <View className="flex-1 h-px bg-slate-800" />
-          <Text className="text-sm text-slate-500">
+          <View className="flex-1 h-px bg-surface-secondary" />
+          <Text className="text-sm text-text-tertiary">
             or sign up with
           </Text>
-          <View className="flex-1 h-px bg-slate-800" />
+          <View className="flex-1 h-px bg-surface-secondary" />
         </View>
 
         <View className="flex-row gap-3 mb-8">
           <Pressable
-            className="flex-1 flex-row items-center justify-center py-3 rounded-xl border border-slate-800 bg-slate-900/80 active:opacity-80"
+            className="flex-1 flex-row items-center justify-center py-3 rounded-xl border border-surface-border bg-surface-card active:opacity-80"
           >
-            <Ionicons name="logo-google" size={20} color="#64748b" />
-            <Text className="ml-2 font-sans-medium text-slate-200">
+            <Ionicons name="logo-google" size={20} color="#9a9caa" />
+            <Text className="ml-2 font-sans-medium text-text-secondary">
               Google
             </Text>
           </Pressable>
           <Pressable
-            className="flex-1 flex-row items-center justify-center py-3 rounded-xl border border-slate-800 bg-black/80 active:opacity-80"
+            className="flex-1 flex-row items-center justify-center py-3 rounded-xl border border-surface-border bg-surface-muted active:opacity-80"
           >
             <Ionicons name="logo-apple" size={20} color="white" />
-            <Text className="ml-2 font-sans-medium text-white">Apple</Text>
+            <Text className="ml-2 font-sans-medium text-text">Apple</Text>
           </Pressable>
         </View>
 
@@ -173,7 +173,7 @@ export function SignUpScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('SignIn')}
           className="self-center py-2 active:opacity-70"
         >
-          <Text className="text-base text-slate-400">
+          <Text className="text-base text-text-secondary">
             Already have an account?{' '}
             <Text className="text-primary-400 font-sans-semibold">
               Sign In
