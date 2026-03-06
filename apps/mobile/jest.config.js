@@ -18,6 +18,6 @@ module.exports = {
     '^nativewind/jsx-runtime$': 'react/jsx-runtime',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@react-native|react-native|react-native-svg|expo)/)',
+    'node_modules/(?!(@react-native|react-native|react-native-svg|@react-navigation|expo)/)',
   ],
 };
