@@ -187,7 +187,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
               >
                 <Text
                   className={`text-sm font-sans-medium ${
-                    isSelected ? 'text-text' : 'text-text'
+                    isSelected ? 'text-text-inverse' : 'text-text'
                   }`}
                 >
                   {level.label}

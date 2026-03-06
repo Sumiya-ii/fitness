@@ -91,7 +91,7 @@ export function QuickAddScreen() {
                   <Text
                     className={`font-sans-medium capitalize ${
                       mealType === type
-                        ? 'text-text'
+                        ? 'text-text-inverse'
                         : 'text-text-secondary'
                     }`}
                   >

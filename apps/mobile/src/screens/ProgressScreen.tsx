@@ -325,7 +325,7 @@ export function ProgressScreen() {
                 >
                   <Text
                     className={`font-sans-semibold text-sm ${
-                      period === p ? 'text-text' : 'text-text-secondary'
+                      period === p ? 'text-text-inverse' : 'text-text-secondary'
                     }`}
                   >
                     {p === 'week' ? '7 Days' : p === 'month' ? '30 Days' : '90 Days'}

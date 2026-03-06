@@ -29,11 +29,11 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const variantTextClasses: Record<ButtonVariant, string> = {
-  primary: 'text-text',
+  primary: 'text-text-inverse',
   secondary: 'text-text',
   outline: 'text-text',
   ghost: 'text-text',
-  danger: 'text-text',
+  danger: 'text-text-inverse',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -48,6 +48,14 @@ const disabledVariantClasses: Record<ButtonVariant, string> = {
   outline: 'border-surface-border bg-surface-secondary active:bg-surface-secondary',
   ghost: 'bg-surface-secondary active:bg-surface-secondary',
   danger: 'bg-surface-muted active:bg-surface-muted',
+};
+
+const disabledTextClasses: Record<ButtonVariant, string> = {
+  primary: 'text-text-secondary',
+  secondary: 'text-text-secondary',
+  outline: 'text-text-secondary',
+  ghost: 'text-text-secondary',
+  danger: 'text-text-secondary',
 };
 
 const sizeTextClasses: Record<ButtonSize, string> = {
@@ -89,6 +97,10 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
     );
 
     const isDisabled = disabled || loading;
+    const showDisabledStyle = disabled && !loading;
+    const labelTextClass = showDisabledStyle
+      ? disabledTextClasses[variant]
+      : variantTextClasses[variant];
 
     return (
       <Pressable
@@ -99,7 +111,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
           rounded-full flex-row items-center justify-center
           ${variantClasses[variant]}
           ${sizeClasses[size]}
-          ${isDisabled ? disabledVariantClasses[variant] : ''}
+          ${showDisabledStyle ? disabledVariantClasses[variant] : ''}
           ${className}
         `}
         {...props}
@@ -115,7 +127,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
           />
         ) : (
           <Text
-            className={`font-sans-semibold ${variantTextClasses[variant]} ${sizeTextClasses[size]}`}
+            className={`font-sans-semibold ${labelTextClass} ${sizeTextClasses[size]}`}
           >
             {children}
           </Text>
