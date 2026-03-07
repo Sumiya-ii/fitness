@@ -34,7 +34,7 @@ export function WelcomeScreen({ navigation }: Props) {
             className="px-8 py-4 rounded-2xl mb-5"
             style={{ borderRadius: 16 }}
           >
-            <Text className="text-4xl font-sans-bold text-text">Coach</Text>
+            <Text className="text-4xl font-sans-bold text-text-inverse">Coach</Text>
           </LinearGradient>
           <Text className="text-lg text-text-secondary text-center">
             Your AI nutrition companion
@@ -75,7 +75,7 @@ export function WelcomeScreen({ navigation }: Props) {
           className="mt-8 py-2 px-3 rounded-full border border-surface-border bg-surface-card active:opacity-70 flex-row items-center gap-2"
         >
           <Ionicons name="person-outline" size={16} color="#2a2b35" />
-          <Text className="text-base text-primary-400 font-sans-medium">
+          <Text className="text-base text-text font-sans-medium">
             Continue as Guest
           </Text>
         </Pressable>

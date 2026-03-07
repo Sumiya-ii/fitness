@@ -10,6 +10,12 @@ export type { BottomSheetProps } from './BottomSheet';
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 
+export { IconButton } from './IconButton';
+export type { IconButtonProps } from './IconButton';
+
+export { AuthProviderButton } from './AuthProviderButton';
+export type { AuthProviderButtonProps } from './AuthProviderButton';
+
 export { Card } from './Card';
 export type { CardProps } from './Card';
 

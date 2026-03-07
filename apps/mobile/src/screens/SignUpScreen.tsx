@@ -5,8 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import { AuthProviderButton, Button, Card, IconButton, Input } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SignUp'>;
@@ -53,9 +52,9 @@ export function SignUpScreen({ navigation }: Props) {
       <View className="flex-1 px-6 pt-4">
         <Pressable
           onPress={() => navigation.goBack()}
-          className="absolute top-4 left-6 z-10 p-2 -m-2"
+          className="absolute top-4 left-6 z-10"
         >
-          <Ionicons name="arrow-back" size={24} color="#9a9caa" />
+          <IconButton icon="arrow-back" />
         </Pressable>
         <Text className="text-2xl font-sans-bold text-text mb-1 mt-10">
           Create Account
@@ -64,7 +63,7 @@ export function SignUpScreen({ navigation }: Props) {
           Join Coach and start your nutrition journey.
         </Text>
 
-        <View className="rounded-3xl bg-surface-card border border-surface-border p-4 mb-6">
+        <Card className="rounded-3xl p-4 mb-6">
           <Input
             label="Email"
             placeholder="you@example.com"
@@ -123,9 +122,9 @@ export function SignUpScreen({ navigation }: Props) {
             </View>
             <Text className="flex-1 text-sm text-text-secondary">
               I agree to the{' '}
-              <Text className="text-primary-400">Terms of Service</Text>
+              <Text className="text-primary-600">Terms of Service</Text>
               {' '}and{' '}
-              <Text className="text-primary-400">Privacy Policy</Text>
+              <Text className="text-primary-600">Privacy Policy</Text>
             </Text>
           </Pressable>
 
@@ -142,7 +141,7 @@ export function SignUpScreen({ navigation }: Props) {
           {error ? (
             <Text className="text-sm text-red-400 mb-4">{error}</Text>
           ) : null}
-        </View>
+        </Card>
 
         <View className="flex-row items-center gap-4 mb-6">
           <View className="flex-1 h-px bg-surface-secondary" />
@@ -153,20 +152,8 @@ export function SignUpScreen({ navigation }: Props) {
         </View>
 
         <View className="flex-row gap-3 mb-8">
-          <Pressable
-            className="flex-1 flex-row items-center justify-center py-3 rounded-xl border border-surface-border bg-surface-card active:opacity-80"
-          >
-            <Ionicons name="logo-google" size={20} color="#9a9caa" />
-            <Text className="ml-2 font-sans-medium text-text-secondary">
-              Google
-            </Text>
-          </Pressable>
-          <Pressable
-            className="flex-1 flex-row items-center justify-center py-3 rounded-xl border border-surface-border bg-surface-muted active:opacity-80"
-          >
-            <Ionicons name="logo-apple" size={20} color="white" />
-            <Text className="ml-2 font-sans-medium text-text">Apple</Text>
-          </Pressable>
+          <AuthProviderButton icon="logo-google" label="Google" />
+          <AuthProviderButton icon="logo-apple" label="Apple" tone="muted" />
         </View>
 
         <Pressable
@@ -175,7 +162,7 @@ export function SignUpScreen({ navigation }: Props) {
         >
           <Text className="text-base text-text-secondary">
             Already have an account?{' '}
-            <Text className="text-primary-400 font-sans-semibold">
+            <Text className="text-primary-600 font-sans-semibold">
               Sign In
             </Text>
           </Text>
