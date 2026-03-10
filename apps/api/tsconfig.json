@@ -4,10 +4,7 @@
     "outDir": "dist",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "baseUrl": ".",
-    "paths": {
-      "@coach/shared": ["../../packages/shared/src"]
-    }
+    "baseUrl": "."
   },
   "include": ["src"]
 }

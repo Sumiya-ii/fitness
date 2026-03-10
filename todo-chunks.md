@@ -525,16 +525,16 @@ These items cannot be done by the AI and need to be completed by you.
 
 ### After C-001..C-007 completion
 
-- [ ] **Set up PostgreSQL locally** — Install PostgreSQL and create a `coach` database. Then copy `.env.example` to `.env` and fill in `DATABASE_URL` (e.g. `postgresql://coach:coach@localhost:5432/coach`).
-- [ ] **Set up Redis locally** — Install Redis and ensure it runs on the default port. Fill in `REDIS_URL` in `.env` (e.g. `redis://localhost:6379`).
+- [x] **Set up PostgreSQL locally** — Install PostgreSQL and create a `coach` database. Then copy `.env.example` to `.env` and fill in `DATABASE_URL` (e.g. `postgresql://coach:coach@localhost:5432/coach`).
+- [x] **Set up Redis locally** — Install Redis and ensure it runs on the default port. Fill in `REDIS_URL` in `.env` (e.g. `redis://localhost:6379`).
 - [ ] **Set up Firebase project** — Create a Firebase project in the Firebase Console. Enable Email/Phone OTP, Google, and Apple sign-in providers. Download the service account key and fill in `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` in `.env`.
-- [ ] **Run the first database migration** — After setting up `.env`, run: `npm run db:migrate -w @coach/api` to create all tables.
-- [ ] **Verify the API starts** — Run `npm run start:dev -w @coach/api` and visit `http://localhost:3000/api/v1/health` to confirm it returns `{ status: "ok" }`.
+- [x] **Run the first database migration** — After setting up `.env`, run: `npm run db:migrate -w @coach/api` to create all tables.
+- [x] **Verify the API starts** — Run `npm run start:dev -w @coach/api` and visit `http://localhost:3000/api/v1/health` to confirm it returns `{ status: "ok" }`.
 - [ ] **Review the Prisma schema** — Check `apps/api/prisma/schema.prisma` and confirm all entities match your expectations from the PRD Section 9.
 
 ### After C-009..C-025 completion
 
-- [ ] **Set up Typesense** — Install and run Typesense locally (Docker recommended: `docker run -p 8108:8108 typesense/typesense:0.25.2 --data-dir=/data --api-key=your-api-key`). Fill in `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_API_KEY` in `.env`.
+- [x] **Set up Typesense** — Install and run Typesense locally (Docker recommended: `docker run -p 8108:8108 typesense/typesense:0.25.2 --data-dir=/data --api-key=your-api-key`). Fill in `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_API_KEY` in `.env`.
 - [ ] **Seed the food database** — After running migrations, prepare initial Mongolian food data (CSV or JSON) and load via the seed script or admin API. Minimum ~100 common Mongolian foods for testing.
 - [ ] **Test barcode scanning** — Acquire a few local product barcodes and test the `/api/v1/barcodes/:code` lookup flow manually.
 - [ ] **Test the dashboard** — After logging a few test meals, verify `/api/v1/dashboard` returns correct consumed/remaining totals matching your test data.
@@ -561,7 +561,7 @@ These items cannot be done by the AI and need to be completed by you.
 - [ ] **Test Telegram linking** — Use the in-app link code flow: call `POST /api/v1/telegram/link-code` to get a 6-digit code, then send it to the bot on Telegram.
 - [x] **STT Provider** — Wire Google STT via `GOOGLE_STT_API_KEY` env var. SttService calls Google Speech-to-Text API with mn-MN + en-US support. Worker processor implemented.
 - [ ] **S3 Storage** — Configure `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` for photo upload storage. Currently photo uploads pass a reference path in the job data; actual S3 upload needs provider-specific implementation.
-- [ ] **Run Prisma migration** — The `TelegramLink` model was updated with a `chatId` field. Run `npm run db:migrate -w @coach/api` after connecting to the database.
+- [x] **Run Prisma migration** — The `TelegramLink` model was updated with a `chatId` field. Run `npm run db:migrate -w @coach/api` after connecting to the database.
 
 ### After C-039..C-055 completion
 
