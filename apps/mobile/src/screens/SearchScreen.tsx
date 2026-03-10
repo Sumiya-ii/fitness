@@ -61,12 +61,12 @@ export function SearchScreen() {
           <Text className="text-2xl font-sans-bold text-text mb-3">
             Search Foods
           </Text>
-          <View className="flex-row items-center rounded-2xl bg-surface-card border border-surface-border px-4 py-3">
-            <Ionicons name="search" size={20} color="#777985" />
+          <View className="flex-row items-center rounded-3xl bg-surface-default border border-surface-border px-4 py-3 shadow-sm shadow-black/5">
+            <Ionicons name="search" size={20} color="#51617a" />
             <TextInput
               className="flex-1 ml-3 text-base text-text font-sans-medium"
               placeholder="Search for a food..."
-              placeholderTextColor="#777985"
+              placeholderTextColor="#7687a2"
               value={query}
               onChangeText={handleSearch}
               autoCapitalize="none"
@@ -75,7 +75,7 @@ export function SearchScreen() {
             />
             {query.length > 0 && (
               <Pressable onPress={() => handleSearch('')}>
-                <Ionicons name="close-circle" size={20} color="#777985" />
+                <Ionicons name="close-circle" size={20} color="#7687a2" />
               </Pressable>
             )}
           </View>
@@ -83,8 +83,8 @@ export function SearchScreen() {
 
         {query.trim().length === 0 ? (
           <View className="flex-1 items-center justify-center px-8">
-            <View className="h-20 w-20 rounded-full bg-surface-card border border-surface-border items-center justify-center mb-4">
-              <Ionicons name="search-outline" size={36} color="#d2d2db" />
+            <View className="h-20 w-20 rounded-full bg-surface-default border border-surface-border items-center justify-center mb-4">
+              <Ionicons name="search-outline" size={36} color="#c3cedf" />
             </View>
             <Text className="text-base font-sans-semibold text-text mb-1">
               Find any food
@@ -119,8 +119,8 @@ export function SearchScreen() {
                     className="rounded-2xl bg-surface-card border border-surface-border p-4 flex-row items-center"
                     onPress={() => handleSelectFood(item)}
                   >
-                    <View className="h-10 w-10 rounded-full bg-primary-500/15 items-center justify-center mr-3">
-                      <Ionicons name="nutrition" size={18} color="#1f2028" />
+                    <View className="h-10 w-10 rounded-full bg-primary-500/10 items-center justify-center mr-3">
+                      <Ionicons name="nutrition" size={18} color="#0f172a" />
                     </View>
                     <View className="flex-1">
                       <Text className="font-sans-medium text-text" numberOfLines={1}>
@@ -130,7 +130,7 @@ export function SearchScreen() {
                         {display.calories} kcal · {display.protein}g P · {display.carbs}g C · {display.fat}g F
                       </Text>
                     </View>
-                    <Ionicons name="add-circle" size={24} color="#1f2028" />
+                    <Ionicons name="add-circle" size={24} color="#0f172a" />
                   </Pressable>
                 </Animated.View>
               );

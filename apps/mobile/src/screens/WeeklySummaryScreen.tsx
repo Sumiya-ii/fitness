@@ -135,9 +135,9 @@ export function WeeklySummaryScreen() {
             <ProgressRing
               progress={adherenceProgress}
               size={140}
-              color="#1f2028"
-              gradientEnd="#2a2b35"
-              backgroundColor="#d2d2db"
+              color="#0f172a"
+              gradientEnd="#1e293b"
+              backgroundColor="#c3cedf"
               strokeWidth={12}
               centerLabel={`${d.adherenceScore}%`}
               centerSubLabel="adherence"
@@ -189,7 +189,7 @@ export function WeeklySummaryScreen() {
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4">
                 <View className="flex-row items-center gap-2 mb-2">
                   <View className="h-7 w-7 rounded-lg bg-primary-500/15 items-center justify-center">
-                    <Ionicons name="checkmark-circle-outline" size={14} color="#1f2028" />
+                    <Ionicons name="checkmark-circle-outline" size={14} color="#0f172a" />
                   </View>
                   <Text className="text-xs text-text-secondary font-sans-medium">Days Logged</Text>
                 </View>
@@ -200,8 +200,8 @@ export function WeeklySummaryScreen() {
               </View>
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4">
                 <View className="flex-row items-center gap-2 mb-2">
-                  <View className="h-7 w-7 rounded-lg bg-violet-500/15 items-center justify-center">
-                    <Ionicons name="scale-outline" size={14} color="#a78bfa" />
+                  <View className="h-7 w-7 rounded-lg bg-accent-200 items-center justify-center">
+                    <Ionicons name="scale-outline" size={14} color="#0e7490" />
                   </View>
                   <Text className="text-xs text-text-secondary font-sans-medium">Weight Change</Text>
                 </View>
@@ -210,12 +210,12 @@ export function WeeklySummaryScreen() {
                     <Ionicons
                       name={d.weightDelta < 0 ? 'trending-down' : d.weightDelta > 0 ? 'trending-up' : 'remove'}
                       size={20}
-                      color={d.weightDelta < 0 ? '#1f2028' : d.weightDelta > 0 ? '#8f93a4' : '#9a9caa'}
+                      color={d.weightDelta < 0 ? '#0f172a' : d.weightDelta > 0 ? '#ea580c' : '#7687a2'}
                     />
                     <Text
                       className="text-2xl font-sans-bold"
                       style={{
-                        color: d.weightDelta < 0 ? '#1f2028' : d.weightDelta > 0 ? '#8f93a4' : '#9a9caa',
+                        color: d.weightDelta < 0 ? '#0f172a' : d.weightDelta > 0 ? '#ea580c' : '#7687a2',
                       }}
                     >
                       {d.weightDelta > 0 ? '+' : ''}{d.weightDelta} kg

@@ -17,15 +17,15 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary-500 active:bg-primary-600 shadow-sm shadow-black/10',
+    'bg-primary-500 active:bg-primary-600 shadow-sm shadow-black/20',
   secondary:
-    'bg-surface-card active:bg-surface-secondary border border-surface-border',
+    'bg-surface-default active:bg-surface-secondary border border-surface-border',
   outline:
-    'bg-transparent border-2 border-surface-border active:bg-surface-secondary',
+    'bg-transparent border-2 border-primary-200 active:bg-surface-secondary',
   ghost:
     'bg-transparent active:bg-surface-secondary',
   danger:
-    'bg-danger active:bg-red-600 shadow-sm shadow-red-500/20',
+    'bg-danger active:bg-rose-700 shadow-sm shadow-rose-500/20',
 };
 
 const variantTextClasses: Record<ButtonVariant, string> = {
@@ -108,7 +108,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         onPress={handlePress}
         disabled={isDisabled}
         className={`
-          rounded-full flex-row items-center justify-center
+          rounded-2xl flex-row items-center justify-center
           ${variantClasses[variant]}
           ${sizeClasses[size]}
           ${showDisabledStyle ? disabledVariantClasses[variant] : ''}

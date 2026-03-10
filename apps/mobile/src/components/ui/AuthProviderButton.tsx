@@ -4,8 +4,8 @@ import { Pressable, Text, type PressableProps } from 'react-native';
 type AuthProviderTone = 'surface' | 'muted';
 
 const toneClasses: Record<AuthProviderTone, string> = {
-  surface: 'bg-surface-card border-surface-border',
-  muted: 'bg-surface-muted border-surface-border',
+  surface: 'bg-surface-default border-surface-border',
+  muted: 'bg-surface-secondary border-surface-border',
 };
 
 export interface AuthProviderButtonProps extends Omit<PressableProps, 'children'> {
@@ -24,10 +24,10 @@ export function AuthProviderButton({
 }: AuthProviderButtonProps) {
   return (
     <Pressable
-      className={`flex-1 flex-row items-center justify-center rounded-xl border py-3 active:opacity-80 ${toneClasses[tone]} ${className}`}
+      className={`flex-1 flex-row items-center justify-center rounded-2xl border py-3.5 active:opacity-80 ${toneClasses[tone]} ${className}`}
       {...props}
     >
-      <Ionicons name={icon} size={20} color="#111218" />
+      <Ionicons name={icon} size={20} color="#0b1220" />
       <Text className="ml-2 font-sans-medium text-text">{label}</Text>
     </Pressable>
   );

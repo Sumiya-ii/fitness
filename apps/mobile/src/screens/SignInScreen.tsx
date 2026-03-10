@@ -34,7 +34,7 @@ export function SignInScreen({ navigation }: Props) {
   return (
     <SafeAreaView className="flex-1 bg-surface-app">
       <LinearGradient
-        colors={['#f4f4f7', '#ececf2', '#f4f4f7']}
+        colors={['#f4f7fb', '#e7eef8', '#f4f7fb']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="absolute inset-0"
@@ -46,7 +46,7 @@ export function SignInScreen({ navigation }: Props) {
         >
           <IconButton icon="arrow-back" />
         </Pressable>
-        <Text className="text-2xl font-sans-bold text-text mb-1 mt-10">
+        <Text className="text-3xl font-sans-bold text-text mb-1 mt-10">
           Sign In
         </Text>
         <Text className="text-base text-text-secondary mb-8">
@@ -81,7 +81,7 @@ export function SignInScreen({ navigation }: Props) {
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={22}
-                  color="#9a9caa"
+                  color="#7687a2"
                 />
               </Pressable>
             }
@@ -105,7 +105,7 @@ export function SignInScreen({ navigation }: Props) {
 
         <View className="flex-row items-center gap-4 mb-6">
           <View className="flex-1 h-px bg-surface-secondary" />
-          <Text className="text-sm text-text-tertiary">
+          <Text className="text-sm text-text-tertiary font-sans-medium">
             or continue with
           </Text>
           <View className="flex-1 h-px bg-surface-secondary" />

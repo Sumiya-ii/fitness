@@ -52,10 +52,10 @@ const MEAL_TYPE_ICONS: Record<string, string> = {
 };
 
 const MEAL_TYPE_COLORS: Record<string, string> = {
-  breakfast: '#8f93a4',
-  lunch: '#1f2028',
-  dinner: '#6366f1',
-  snack: '#8f93a4',
+  breakfast: '#ea580c',
+  lunch: '#0f172a',
+  dinner: '#0e7490',
+  snack: '#64748b',
 };
 
 interface DayProgressSummary {
@@ -301,13 +301,13 @@ export function HomeScreen() {
           <RefreshControl
             refreshing={isLoading && !!data}
             onRefresh={onRefresh}
-            tintColor="#1f2028"
+            tintColor="#0f172a"
           />
         }
       >
         {/* Hero Section with Gradient */}
         <LinearGradient
-          colors={['#ececf2', '#dedee6', '#ececf2']}
+          colors={['#e7eef8', '#dce6f5', '#e7eef8']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -329,9 +329,9 @@ export function HomeScreen() {
                 </View>
                 <Pressable
                   onPress={handleWeeklySummary}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-white/10"
+                  className="h-10 w-10 items-center justify-center rounded-full bg-white/80 border border-surface-border"
                 >
-                  <Ionicons name="stats-chart" size={20} color="#1f2028" />
+                  <Ionicons name="stats-chart" size={20} color="#0f172a" />
                 </Pressable>
               </View>
             </View>
@@ -352,9 +352,9 @@ export function HomeScreen() {
               <ProgressRing
                 progress={calorieProgress}
                 size={SCREEN_WIDTH * 0.52}
-                color="#1f2028"
-                gradientEnd="#2a2b35"
-                backgroundColor="#d2d2db"
+                color="#0f172a"
+                gradientEnd="#1e293b"
+                backgroundColor="#c3cedf"
                 strokeWidth={14}
                 centerLabel={`${remaining}`}
                 centerSubLabel="remaining"
@@ -371,19 +371,19 @@ export function HomeScreen() {
                 label={t('dashboard.protein')}
                 current={consumed.protein}
                 target={targets.protein}
-                color="#8b8fa0"
+                color="#0e7490"
               />
               <CircularMacro
                 label={t('dashboard.carbs')}
                 current={consumed.carbs}
                 target={targets.carbs}
-                color="#8f93a4"
+                color="#ea580c"
               />
               <CircularMacro
                 label={t('dashboard.fat')}
                 current={consumed.fat}
                 target={targets.fat}
-                color="#8f93a4"
+                color="#64748b"
               />
             </Animated.View>
           </SafeAreaView>
@@ -394,23 +394,23 @@ export function HomeScreen() {
           <View className="flex-row gap-2">
             <Pressable
               onPress={handleLogMeal}
-              className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-primary-500 px-4 py-3.5 shadow-lg shadow-primary-500/30"
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-primary-500 px-4 py-3.5 shadow-lg shadow-primary-500/25"
             >
               <Ionicons name="add-circle" size={20} color="#ffffff" />
               <Text className="font-sans-semibold text-text-inverse">Log Meal</Text>
             </Pressable>
             <Pressable
               onPress={handleQuickAdd}
-              className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-card px-4 py-3.5 border border-surface-border"
+              className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-default px-4 py-3.5 border border-surface-border"
             >
-              <Ionicons name="flash" size={18} color="#8f93a4" />
+              <Ionicons name="flash" size={18} color="#ea580c" />
               <Text className="font-sans-medium text-text">Quick</Text>
             </Pressable>
             <Pressable
               onPress={() => (navigation as { navigate: (s: string) => void }).navigate('Log')}
-              className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-card px-4 py-3.5 border border-surface-border"
+              className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-default px-4 py-3.5 border border-surface-border"
             >
-              <Ionicons name="barcode-outline" size={18} color="#a78bfa" />
+              <Ionicons name="barcode-outline" size={18} color="#0e7490" />
               <Text className="font-sans-medium text-text">Scan</Text>
             </Pressable>
           </View>
@@ -649,7 +649,7 @@ function MealCard({ type, meals }: MealCardProps) {
           <Text className="text-xs text-text-secondary">kcal</Text>
         </View>
         <Animated.View style={chevronStyle} className="ml-2">
-          <Ionicons name="chevron-down" size={18} color="#9a9caa" />
+                  <Ionicons name="chevron-down" size={18} color="#7687a2" />
         </Animated.View>
       </View>
 
@@ -672,9 +672,9 @@ function MealCard({ type, meals }: MealCardProps) {
           )}
           <View className="flex-row items-center justify-between pt-2 mt-1 border-t border-surface-border/50">
             <Text className="text-xs text-text-tertiary">Total protein</Text>
-            <Text className="text-sm font-sans-medium text-blue-400">
-              {totalProtein}g
-            </Text>
+                <Text className="text-sm font-sans-medium text-accent-700">
+                  {totalProtein}g
+                </Text>
           </View>
         </View>
       )}

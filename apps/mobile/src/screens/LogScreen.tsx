@@ -27,7 +27,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Search',
     subtitle: 'Find foods',
     icon: 'search',
-    gradient: ['#1f2028', '#15161d'],
+    gradient: ['#0f172a', '#1e293b'],
     route: 'TextSearch',
   },
   {
@@ -35,7 +35,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Barcode',
     subtitle: 'Scan label',
     icon: 'barcode-outline',
-    gradient: ['#8f93a4', '#797d90'],
+    gradient: ['#0369a1', '#0e7490'],
     route: 'BarcodeScan',
   },
   {
@@ -43,7 +43,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Voice',
     subtitle: 'Speak it',
     icon: 'mic',
-    gradient: ['#8b8fa0', '#767b8f'],
+    gradient: ['#0f766e', '#0e7490'],
     route: 'VoiceLog',
   },
   {
@@ -51,7 +51,7 @@ const ACTION_ITEMS: ActionItem[] = [
     title: 'Quick Add',
     subtitle: 'Manual entry',
     icon: 'flash',
-    gradient: ['#8f93a4', '#db2777'],
+    gradient: ['#ea580c', '#f59e0b'],
     route: 'QuickAdd',
   },
 ];
@@ -89,10 +89,10 @@ export function LogScreen() {
           <Animated.View entering={FadeInDown.duration(400)} className="px-4 mb-4">
             <Pressable
               onPress={() => navigation.navigate('PhotoLog')}
-              className="overflow-hidden rounded-3xl"
+              className="overflow-hidden rounded-3xl shadow-lg shadow-black/15"
             >
               <LinearGradient
-                colors={['#7c3aed', '#4f46e5', '#6d28d9']}
+                colors={['#0f172a', '#1e293b', '#0f766e']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="p-5"
@@ -103,14 +103,14 @@ export function LogScreen() {
                       <View className="h-6 w-6 rounded-full bg-white/20 items-center justify-center">
                         <Ionicons name="sparkles" size={14} color="#ffffff" />
                       </View>
-                      <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider">
+                      <Text className="text-xs font-sans-semibold text-white/80 uppercase tracking-wider">
                         AI Powered
                       </Text>
                     </View>
-                    <Text className="text-xl font-sans-bold text-text mb-1">
+                    <Text className="text-xl font-sans-bold text-text-inverse mb-1">
                       Snap & Track
                     </Text>
-                    <Text className="text-sm text-text-secondary font-sans-medium">
+                    <Text className="text-sm text-white/80 font-sans-medium">
                       Take a photo and let AI estimate calories and macros instantly
                     </Text>
                   </View>

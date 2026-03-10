@@ -15,7 +15,7 @@ const iconSizes: Record<IconButtonSize, number> = {
 };
 
 const variantClasses: Record<IconButtonVariant, string> = {
-  surface: 'bg-surface-card border border-surface-border',
+  surface: 'bg-surface-default border border-surface-border shadow-sm shadow-black/5',
   ghost: 'bg-transparent',
 };
 
@@ -31,7 +31,7 @@ export function IconButton({
   icon,
   size = 'md',
   variant = 'surface',
-  iconColor = '#111218',
+  iconColor = '#0b1220',
   className = '',
   ...props
 }: IconButtonProps) {

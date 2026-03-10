@@ -45,13 +45,13 @@ export const Input = forwardRef<TextInput, InputProps>(
     return (
       <View className={`${containerClassName}`}>
         {label ? (
-          <Text className="mb-1.5 text-sm font-sans-medium text-text-tertiary">
+          <Text className="mb-1.5 text-sm font-sans-medium text-text-secondary">
             {label}
           </Text>
         ) : null}
         <View
           className={`
-            flex-row items-center rounded-xl border-2 bg-surface-card px-4
+            flex-row items-center rounded-2xl border-2 bg-surface-default px-4
             ${borderColor}
           `}
         >
