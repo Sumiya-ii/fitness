@@ -48,11 +48,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : { statusCode: status, message };
 
+    response.setHeader(REQUEST_ID_HEADER, requestId);
+
+    if (response.headersSent) {
+      return;
+    }
+
     response.status(status).json({
       ...(typeof body === 'object' && body !== null ? body : { message: body }),
       requestId,
     });
-
-    response.setHeader(REQUEST_ID_HEADER, requestId);
   }
 }
