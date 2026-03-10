@@ -13,6 +13,9 @@ export function AuthStack() {
       initialRouteName="Welcome"
       screenOptions={{
         headerShown: false,
+        animation: 'fade_from_bottom',
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
       }}
     >
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />

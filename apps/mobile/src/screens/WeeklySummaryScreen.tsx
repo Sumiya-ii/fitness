@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { LoadingScreen, ProgressRing } from '../components/ui';
+import { ProgressRing, SkeletonLoader } from '../components/ui';
 import { api } from '../api';
 
 interface WeeklySummaryData {
@@ -67,7 +67,7 @@ export function WeeklySummaryScreen() {
   }, [fetchSummary]);
 
   if (loading && !data) {
-    return <LoadingScreen />;
+    return <WeeklySummarySkeleton />;
   }
 
   const d = data ?? {
@@ -267,6 +267,39 @@ export function WeeklySummaryScreen() {
                 </View>
               )}
             </Animated.View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+function WeeklySummarySkeleton() {
+  return (
+    <View className="flex-1 bg-surface-app">
+      <SafeAreaView edges={['top']} className="flex-1">
+        <View className="px-4 py-4">
+          <SkeletonLoader width={180} height={28} borderRadius={10} />
+        </View>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+          <View className="px-4 py-3 flex-row justify-between items-center">
+            <SkeletonLoader variant="circle" width={40} />
+            <SkeletonLoader width={180} height={20} borderRadius={10} />
+            <SkeletonLoader variant="circle" width={40} />
+          </View>
+          <View className="items-center pt-4 pb-6">
+            <SkeletonLoader variant="circle" width={140} />
+          </View>
+          <View className="px-4">
+            <View className="flex-row gap-3">
+              <SkeletonLoader height={120} borderRadius={16} className="flex-1" />
+              <SkeletonLoader height={120} borderRadius={16} className="flex-1" />
+            </View>
+            <View className="flex-row gap-3 mt-3">
+              <SkeletonLoader height={120} borderRadius={16} className="flex-1" />
+              <SkeletonLoader height={120} borderRadius={16} className="flex-1" />
+            </View>
+            <SkeletonLoader height={170} borderRadius={16} className="mt-3" />
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -1,6 +1,6 @@
 # Authentication & Session
 
-Last updated: 2026-03-06
+Last updated: 2026-03-10
 
 ## Scope
 - Firebase token based authentication for API access.
@@ -26,6 +26,7 @@ Last updated: 2026-03-06
 - Identity key is `firebaseUid`.
 - Existing users are loaded; no duplicate creation path.
 - New users are provisioned with profile + free entitlement.
+- Auth stack uses native-stack transitions (`fade_from_bottom`) with full-screen swipe gestures enabled.
 
 ## Current gaps / next improvements
 - No dedicated server-side login telemetry for success/failure rates.

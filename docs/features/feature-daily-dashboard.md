@@ -1,6 +1,6 @@
 # Daily Dashboard
 
-Last updated: 2026-03-06
+Last updated: 2026-03-10
 
 ## Scope
 - Daily consumed/remaining calories and macros.
@@ -27,6 +27,7 @@ Last updated: 2026-03-06
 - Calendar uses 7 consecutive days per page and preserves weekday selection while swiping weeks.
 - Weekly day indicators use consumed/target calories from daily dashboard responses.
 - Pull-to-refresh reloads profile, selected date dashboard, and visible week indicator data.
+- Initial dashboard loading state uses structured skeleton placeholders (hero, ring, macros, cards) instead of spinner-only loading.
 
 ## Current gaps / next improvements
 - No explicit caching layer for heavy-user scale yet.

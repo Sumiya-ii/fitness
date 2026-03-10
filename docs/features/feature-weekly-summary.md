@@ -1,6 +1,6 @@
 # Weekly Summary
 
-Last updated: 2026-03-06
+Last updated: 2026-03-10
 
 ## Scope
 - Weekly adherence and nutrition averages.
@@ -21,6 +21,7 @@ Last updated: 2026-03-06
 - `daysLogged` is count of distinct days with meal logs.
 - `adherenceScore = (daysLogged / 7) * 100`.
 - Weight delta uses first and last in-week weight entries.
+- Initial weekly-summary fetch uses a sectioned skeleton layout (header, week controls, ring, cards) for visual loading consistency.
 
 ## Current gaps / next improvements
 - No explicit cross-week comparison endpoint yet.

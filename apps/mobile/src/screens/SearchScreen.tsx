@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SkeletonLoader } from '../components/ui';
 import { mealsApi, type FoodSearchResult } from '../api/meals';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
@@ -93,7 +94,21 @@ export function SearchScreen() {
               Search our database of foods to log your meals quickly
             </Text>
           </View>
-        ) : results.length === 0 && !searching ? (
+        ) : searching ? (
+          <View className="px-4 pt-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <View key={`search-skeleton-${index}`} className="rounded-2xl bg-surface-card border border-surface-border p-4 mb-2">
+                <View className="flex-row items-center">
+                  <SkeletonLoader variant="circle" width={40} />
+                  <View className="flex-1 ml-3">
+                    <SkeletonLoader width="70%" height={14} />
+                    <SkeletonLoader width="88%" height={12} className="mt-2" />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : results.length === 0 ? (
           <View className="flex-1 items-center justify-center px-8">
             <View className="h-16 w-16 rounded-full bg-surface-card items-center justify-center mb-4">
               <Ionicons name="nutrition-outline" size={28} color="#777985" />

@@ -1,6 +1,6 @@
 # Meal Logging (Text + Quick Add)
 
-Last updated: 2026-03-06
+Last updated: 2026-03-10
 
 ## Scope
 - Structured meal logging from selected foods.
@@ -27,6 +27,8 @@ Last updated: 2026-03-06
 - Snapshot values are immutable history.
 - Totals are precomputed at write time for dashboard performance.
 - Source types include `text`, `quick_add`, `barcode`, `voice`, `photo`, `telegram`.
+- Log stack screens use native-stack slide transitions with full-screen swipe gestures.
+- Recent-meals row in Log Home uses skeleton placeholders while recents are loading.
 
 ## Current gaps / next improvements
 - No meal-edit endpoint; current pattern is create/delete.

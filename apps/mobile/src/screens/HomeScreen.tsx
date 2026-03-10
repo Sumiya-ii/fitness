@@ -23,7 +23,7 @@ import Animated, {
 import {
   ProgressRing,
   CircularMacro,
-  LoadingScreen,
+  SkeletonLoader,
 } from '../components/ui';
 import {
   useDashboardStore,
@@ -256,7 +256,7 @@ export function HomeScreen() {
   };
 
   if (isLoading && !data) {
-    return <LoadingScreen />;
+    return <HomeSkeleton />;
   }
 
   const selectedDashboardData = data;
@@ -508,6 +508,38 @@ export function HomeScreen() {
               );
             })}
           </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+function HomeSkeleton() {
+  return (
+    <View className="flex-1 bg-surface-app">
+      <SafeAreaView edges={['top']}>
+        <View className="px-5 pt-3">
+          <SkeletonLoader width={120} height={14} borderRadius={8} />
+          <SkeletonLoader width={180} height={30} borderRadius={10} className="mt-2" />
+        </View>
+        <View className="px-4 pt-5">
+          <SkeletonLoader height={84} borderRadius={20} />
+        </View>
+      </SafeAreaView>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="items-center pt-5">
+          <SkeletonLoader variant="circle" width={220} />
+        </View>
+        <View className="flex-row justify-evenly pt-6 px-4">
+          <SkeletonLoader variant="circle" width={72} />
+          <SkeletonLoader variant="circle" width={72} />
+          <SkeletonLoader variant="circle" width={72} />
+        </View>
+        <View className="px-4 pt-6">
+          <SkeletonLoader height={56} borderRadius={16} />
+          <SkeletonLoader height={96} borderRadius={18} className="mt-4" />
+          <SkeletonLoader height={96} borderRadius={18} className="mt-3" />
+          <SkeletonLoader height={96} borderRadius={18} className="mt-3" />
         </View>
       </ScrollView>
     </View>

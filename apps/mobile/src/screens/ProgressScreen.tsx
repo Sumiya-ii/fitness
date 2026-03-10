@@ -11,7 +11,7 @@ import {
   BottomSheet,
   Input,
   Badge,
-  LoadingScreen,
+  SkeletonLoader,
 } from '../components/ui';
 import { useWeightStore, type WeightLogEntry } from '../stores/weight.store';
 
@@ -184,7 +184,7 @@ export function ProgressScreen() {
   const chartData = history.slice(-PERIOD_DAYS[period]);
 
   if (isLoading && history.length === 0) {
-    return <LoadingScreen />;
+    return <ProgressSkeleton />;
   }
 
   const currentWeight = trend?.current ?? history[0]?.weightKg ?? null;
@@ -502,6 +502,26 @@ export function ProgressScreen() {
             </Button>
           </View>
         </BottomSheet>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+function ProgressSkeleton() {
+  return (
+    <View className="flex-1 bg-surface-app">
+      <SafeAreaView edges={['top']} className="flex-1">
+        <View className="px-5 pt-3 pb-4">
+          <SkeletonLoader width={150} height={30} borderRadius={10} />
+        </View>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+          <View className="px-4">
+            <SkeletonLoader height={180} borderRadius={24} />
+            <SkeletonLoader height={48} borderRadius={16} className="mt-4" />
+            <SkeletonLoader height={220} borderRadius={16} className="mt-4" />
+            <SkeletonLoader height={120} borderRadius={16} className="mt-4" />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );

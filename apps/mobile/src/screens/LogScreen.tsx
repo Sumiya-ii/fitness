@@ -5,6 +5,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import { SkeletonLoader } from '../components/ui';
 import { mealsApi, type RecentItem } from '../api/meals';
 import type { LogStackParamList } from '../navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -60,10 +61,16 @@ export function LogScreen() {
   const navigation = useNavigation<NavProp>();
   const { t } = useLocale();
   const [recents, setRecents] = useState<RecentItem[]>([]);
+  const [loadingRecents, setLoadingRecents] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      mealsApi.getRecents(10).then((res) => setRecents(res.data)).catch(() => {});
+      setLoadingRecents(true);
+      mealsApi
+        .getRecents(10)
+        .then((res) => setRecents(res.data))
+        .catch(() => setRecents([]))
+        .finally(() => setLoadingRecents(false));
     }, [])
   );
 
@@ -173,7 +180,18 @@ export function LogScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ gap: 12, paddingRight: 16 }}
             >
-              {recents.length === 0 ? (
+              {loadingRecents ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <View
+                    key={`recents-skeleton-${index}`}
+                    className="w-44 rounded-2xl bg-surface-card border border-surface-border p-4"
+                  >
+                    <SkeletonLoader variant="circle" width={32} />
+                    <SkeletonLoader width="90%" height={14} className="mt-3" />
+                    <SkeletonLoader width="65%" height={12} className="mt-2" />
+                  </View>
+                ))
+              ) : recents.length === 0 ? (
                 <Animated.View entering={FadeInRight.duration(400)}>
                   <Pressable
                     onPress={() => navigation.navigate('FavoritesRecents')}
