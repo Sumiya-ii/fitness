@@ -4,7 +4,7 @@ import {
   Text,
   Pressable,
   FlatList,
-  Dimensions,
+  useWindowDimensions,
   type ListRenderItem,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,51 +14,53 @@ import { useOnboardingStore } from '../../stores/onboarding.store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/ui/Button';
 import type { AuthStackParamList } from '../../navigation/types';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useLocale } from '../../i18n';
+import { themeColors } from '../../theme';
 
 type OnboardingPage = {
   id: string;
   gradient: [string, string];
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
+  titleKey: string;
+  subtitleKey: string;
 };
 
 const PAGES: OnboardingPage[] = [
   {
     id: '1',
-    gradient: ['#d9dae3', '#c8cad6'],
+    gradient: [themeColors.surface.border, themeColors.surface.muted],
     icon: 'nutrition-outline',
-    title: 'Track Your Nutrition',
-    subtitle: 'Log meals quickly and easily. Stay on top of what you eat with our intuitive food logging.',
+    titleKey: 'onboarding.trackNutrition',
+    subtitleKey: 'onboarding.trackNutritionSubtitle',
   },
   {
     id: '2',
-    gradient: ['#dbdce5', '#c7c9d7'],
+    gradient: [themeColors.surface.tertiary, themeColors.surface.border],
     icon: 'sparkles-outline',
-    title: 'AI-Powered Insights',
-    subtitle: 'Use voice or photo to log meals. Our AI understands what you ate and helps you stay accurate.',
+    titleKey: 'onboarding.aiInsights',
+    subtitleKey: 'onboarding.aiInsightsSubtitle',
   },
   {
     id: '3',
-    gradient: ['#d8dae4', '#c5c7d4'],
+    gradient: [themeColors.surface.border, themeColors.surface.tertiary],
     icon: 'chatbubbles-outline',
-    title: 'Telegram Coach',
-    subtitle: 'Get daily accountability through Telegram. Log meals on the go and stay motivated.',
+    titleKey: 'onboarding.telegramCoach',
+    subtitleKey: 'onboarding.telegramCoachSubtitle',
   },
   {
     id: '4',
-    gradient: ['#d6d8e3', '#c3c6d4'],
+    gradient: [themeColors.surface.tertiary, themeColors.surface.muted],
     icon: 'trophy-outline',
-    title: 'Reach Your Goals',
-    subtitle: 'Personalized calorie and macro targets based on your profile. Track progress and succeed.',
+    titleKey: 'onboarding.reachGoals',
+    subtitleKey: 'onboarding.reachGoalsSubtitle',
   },
 ];
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Onboarding'>;
 
 export function OnboardingScreen({ navigation }: Props) {
+  const { t } = useLocale();
+  const { width } = useWindowDimensions();
   const setOnboardingComplete = useOnboardingStore((s) => s.setOnboardingComplete);
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -87,7 +89,7 @@ export function OnboardingScreen({ navigation }: Props) {
   };
 
   const renderItem: ListRenderItem<OnboardingPage> = ({ item }) => (
-    <View style={{ width: SCREEN_WIDTH }} className="flex-1 px-8">
+    <View style={{ width }} className="flex-1 px-8">
       <View className="flex-1 justify-center">
         <View className="items-center mb-10">
           <LinearGradient
@@ -95,14 +97,14 @@ export function OnboardingScreen({ navigation }: Props) {
             className="w-40 h-40 rounded-3xl items-center justify-center"
             style={{ borderRadius: 24 }}
           >
-            <Ionicons name={item.icon} size={80} color="#111218" />
+            <Ionicons name={item.icon} size={80} color={themeColors.text.primary} />
           </LinearGradient>
         </View>
         <Text className="text-2xl font-sans-bold text-text text-center mb-3">
-          {item.title}
+          {t(item.titleKey)}
         </Text>
         <Text className="text-base text-text-secondary text-center leading-6">
-          {item.subtitle}
+          {t(item.subtitleKey)}
         </Text>
       </View>
     </View>
@@ -112,9 +114,14 @@ export function OnboardingScreen({ navigation }: Props) {
     <SafeAreaView className="flex-1 bg-surface-app">
       <View className="flex-1">
         <View className="flex-row justify-end px-6 pt-2">
-          <Pressable onPress={handleSkip} className="py-2 px-4 active:opacity-70">
+          <Pressable
+            onPress={handleSkip}
+            className="py-2 px-4 active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel={t('onboarding.skip')}
+          >
             <Text className="text-base font-sans-medium text-text-secondary">
-              Skip
+              {t('onboarding.skip')}
             </Text>
           </Pressable>
         </View>
@@ -144,7 +151,7 @@ export function OnboardingScreen({ navigation }: Props) {
             ))}
           </View>
           <Button onPress={handleNext} size="lg" className="w-full">
-            {isLastPage ? 'Get Started' : 'Next'}
+            {isLastPage ? t('onboarding.getStarted') : t('onboarding.next')}
           </Button>
         </View>
       </View>

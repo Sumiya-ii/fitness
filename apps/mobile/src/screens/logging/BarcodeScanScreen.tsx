@@ -5,7 +5,7 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,13 +14,15 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Button, BottomSheet } from '../../components/ui';
 import { mealsApi, type BarcodeLookupResult } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
+import { useLocale } from '../../i18n';
+import { themeColors } from '../../theme';
 
 type Props = LogStackScreenProps<'BarcodeScan'>;
 
-const { width } = Dimensions.get('window');
-const SCAN_FRAME_SIZE = width * 0.7;
-
 export function BarcodeScanScreen() {
+  const { t } = useLocale();
+  const { width } = useWindowDimensions();
+  const scanFrameSize = width * 0.7;
   const navigation = useNavigation<Props['navigation']>();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -92,7 +94,7 @@ export function BarcodeScanScreen() {
   if (!permission) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator size="large" color="#1f2028" />
+        <ActivityIndicator size="large" color={themeColors.primary['500']} />
       </SafeAreaView>
     );
   }
@@ -101,11 +103,16 @@ export function BarcodeScanScreen() {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
         <View className="flex-row items-center border-b border-surface-border px-4 py-3">
-          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
+          <Pressable
+            onPress={() => navigation.goBack()}
+            className="p-3 -m-3"
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
+          >
             <Ionicons name="arrow-back" size={24} color="#111218" />
           </Pressable>
           <Text className="ml-4 text-lg font-sans-semibold text-text">
-            Scan Barcode
+            {t('logging.scanBarcode')}
           </Text>
         </View>
         <View className="flex-1 items-center justify-center px-8">
@@ -129,7 +136,7 @@ export function BarcodeScanScreen() {
       />
       {/* Overlay frame */}
       <View style={styles.overlay} pointerEvents="none">
-        <View style={[styles.frame, { width: SCAN_FRAME_SIZE, height: SCAN_FRAME_SIZE }]} />
+        <View style={[styles.frame, { width: scanFrameSize, height: scanFrameSize }]} />
       </View>
 
       <SafeAreaView
@@ -141,11 +148,13 @@ export function BarcodeScanScreen() {
           <Pressable
             onPress={() => navigation.goBack()}
             className="rounded-full bg-black/50 p-2"
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
           >
             <Ionicons name="arrow-back" size={24} color="#ffffff" />
           </Pressable>
           <Text className="ml-4 text-lg font-sans-semibold text-text">
-            Scan Barcode
+            {t('logging.scanBarcode')}
           </Text>
         </View>
 
@@ -187,6 +196,8 @@ export function BarcodeScanScreen() {
               <Pressable
                 onPress={() => setQuantity((q) => Math.max(0.5, q - 0.5))}
                 className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
+                accessibilityRole="button"
+                accessibilityLabel="Decrease quantity"
               >
                 <Ionicons name="remove" size={24} color="#777985" />
               </Pressable>
@@ -196,6 +207,8 @@ export function BarcodeScanScreen() {
               <Pressable
                 onPress={() => setQuantity((q) => q + 0.5)}
                 className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
+                accessibilityRole="button"
+                accessibilityLabel="Increase quantity"
               >
                 <Ionicons name="add" size={24} color="#777985" />
               </Pressable>

@@ -14,10 +14,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { AuthProviderButton, Button, Card, IconButton, Input } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
+import { useLocale } from '../i18n';
+import { themeColors } from '../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SignIn'>;
 
 export function SignInScreen({ navigation }: Props) {
+  const { t } = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +44,7 @@ export function SignInScreen({ navigation }: Props) {
   return (
     <SafeAreaView className="flex-1 bg-surface-app">
       <LinearGradient
-        colors={['#f4f7fb', '#e7eef8', '#f4f7fb']}
+        colors={[themeColors.surface.app, themeColors.surface.tertiary, themeColors.surface.app]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="absolute inset-0"
@@ -64,15 +67,15 @@ export function SignInScreen({ navigation }: Props) {
               <IconButton icon="arrow-back" />
             </Pressable>
             <Text className="text-3xl font-sans-bold text-text mb-1 mt-10">
-              Sign In
+              {t('auth.signIn')}
             </Text>
             <Text className="text-base text-text-secondary mb-8">
-              Welcome back! Enter your credentials to continue.
+              {t('auth.welcomeBackDesc')}
             </Text>
 
             <Card className="rounded-3xl p-4 mb-6">
               <Input
-                label="Email"
+                label={t('auth.email')}
                 placeholder="you@example.com"
                 value={email}
                 onChangeText={setEmail}
@@ -83,7 +86,7 @@ export function SignInScreen({ navigation }: Props) {
               />
 
               <Input
-                label="Password"
+                label={t('auth.password')}
                 placeholder="••••••••"
                 value={password}
                 onChangeText={setPassword}
@@ -112,7 +115,7 @@ export function SignInScreen({ navigation }: Props) {
                 disabled={!email || !password}
                 className="w-full mb-6"
               >
-                Sign In
+                {t('auth.signIn')}
               </Button>
 
               {error ? (
@@ -123,7 +126,7 @@ export function SignInScreen({ navigation }: Props) {
             <View className="flex-row items-center gap-4 mb-6">
               <View className="flex-1 h-px bg-surface-secondary" />
               <Text className="text-sm text-text-tertiary font-sans-medium">
-                or continue with
+                {t('auth.orContinueWith')}
               </Text>
               <View className="flex-1 h-px bg-surface-secondary" />
             </View>
@@ -138,9 +141,9 @@ export function SignInScreen({ navigation }: Props) {
               className="self-center py-2 active:opacity-70"
             >
               <Text className="text-base text-text-secondary">
-                Don't have an account?{' '}
+                {t('auth.noAccount')}{' '}
                 <Text className="text-primary-600 font-sans-semibold">
-                  Sign Up
+                  {t('auth.signUp')}
                 </Text>
               </Text>
             </Pressable>

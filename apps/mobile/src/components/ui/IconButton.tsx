@@ -33,11 +33,14 @@ export function IconButton({
   variant = 'surface',
   iconColor = '#0b1220',
   className = '',
+  accessibilityLabel,
   ...props
 }: IconButtonProps) {
   return (
     <Pressable
       className={`items-center justify-center rounded-full active:opacity-80 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? String(icon)}
       {...props}
     >
       <Ionicons name={icon} size={iconSizes[size]} color={iconColor} />

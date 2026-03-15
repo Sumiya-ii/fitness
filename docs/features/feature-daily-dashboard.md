@@ -1,6 +1,6 @@
 # Daily Dashboard
 
-Last updated: 2026-03-10
+Last updated: 2026-03-15
 
 ## Scope
 - Daily consumed/remaining calories and macros.
@@ -28,6 +28,8 @@ Last updated: 2026-03-10
 - Weekly day indicators use consumed/target calories from daily dashboard responses.
 - Pull-to-refresh reloads profile, selected date dashboard, and visible week indicator data.
 - Initial dashboard loading state uses structured skeleton placeholders (hero, ring, macros, cards) instead of spinner-only loading.
+- Home calendar and hero ring sizing are viewport-responsive (`useWindowDimensions`) instead of static `Dimensions.get(...)` snapshots.
+- Home quick actions and meal-state copy are localized via i18n keys.
 
 ## Current gaps / next improvements
 - No explicit caching layer for heavy-user scale yet.

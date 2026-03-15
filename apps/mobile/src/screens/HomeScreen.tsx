@@ -5,7 +5,7 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
@@ -32,16 +32,15 @@ import {
 } from '../stores/dashboard.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { themeColors } from '../theme';
 const WEEK_PAGE_COUNT = 53;
 const INITIAL_WEEK_PAGE = Math.floor(WEEK_PAGE_COUNT / 2);
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  dinner: 'Dinner',
-  snack: 'Snack',
+  breakfast: 'dashboard.breakfast',
+  lunch: 'dashboard.lunch',
+  dinner: 'dashboard.dinner',
+  snack: 'dashboard.snack',
 };
 
 const MEAL_TYPE_ICONS: Record<string, string> = {
@@ -52,10 +51,10 @@ const MEAL_TYPE_ICONS: Record<string, string> = {
 };
 
 const MEAL_TYPE_COLORS: Record<string, string> = {
-  breakfast: '#ea580c',
-  lunch: '#0f172a',
-  dinner: '#0e7490',
-  snack: '#64748b',
+  breakfast: themeColors.primary['600'],
+  lunch: themeColors.primary['500'],
+  dinner: themeColors.accent['700'],
+  snack: themeColors.text.secondary,
 };
 
 interface DayProgressSummary {
@@ -91,6 +90,7 @@ function addDays(date: Date, days: number): Date {
 
 export function HomeScreen() {
   const { t } = useLocale();
+  const { width } = useWindowDimensions();
   const navigation = useNavigation();
   const [displayName, setDisplayName] = useState<string>('there');
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
@@ -203,7 +203,7 @@ export function HomeScreen() {
   };
 
   const handleWeekMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const pageIndex = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    const pageIndex = Math.round(event.nativeEvent.contentOffset.x / width);
     if (pageIndex === activeWeekPage) return;
 
     setActiveWeekPage(pageIndex);
@@ -220,7 +220,7 @@ export function HomeScreen() {
     const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-      <View key={`week-${item}`} style={{ width: SCREEN_WIDTH }} className="px-4 pb-5 pt-2">
+      <View key={`week-${item}`} style={{ width }} className="px-4 pb-5 pt-2">
         <View className="flex-row justify-between">
           {weekdayLabels.map((weekday, dayIndex) => {
             const date = addDays(weekStart, dayIndex);
@@ -233,6 +233,8 @@ export function HomeScreen() {
                 key={dateKey}
                 onPress={() => handleDaySelect(dateKey)}
                 className={`w-11 items-center rounded-2xl py-2 ${isSelected ? 'bg-white/80' : ''}`}
+                accessibilityRole="button"
+                accessibilityLabel={date.toDateString()}
               >
                 <Text
                   className={`mb-1 text-xs font-sans-medium ${isSelected ? 'text-text' : 'text-text-secondary'}`}
@@ -289,7 +291,9 @@ export function HomeScreen() {
 
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack'];
   const isTodaySelected = selectedDateKey === toDateKey(new Date());
-  const mealsHeading = isTodaySelected ? t('dashboard.todaysMeals') : `Meals • ${selectedDateKey}`;
+  const mealsHeading = isTodaySelected
+    ? t('dashboard.todaysMeals')
+    : `${t('dashboard.meals')} • ${selectedDateKey}`;
 
   return (
     <View className="flex-1 bg-surface-app">
@@ -301,13 +305,17 @@ export function HomeScreen() {
           <RefreshControl
             refreshing={isLoading && !!data}
             onRefresh={onRefresh}
-            tintColor="#0f172a"
+            tintColor={themeColors.primary['500']}
           />
         }
       >
         {/* Hero Section with Gradient */}
         <LinearGradient
-          colors={['#e7eef8', '#dce6f5', '#e7eef8']}
+          colors={[
+            themeColors.surface.app,
+            themeColors.surface.tertiary,
+            themeColors.surface.app,
+          ]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -330,8 +338,14 @@ export function HomeScreen() {
                 <Pressable
                   onPress={handleWeeklySummary}
                   className="h-10 w-10 items-center justify-center rounded-full bg-white/80 border border-surface-border"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('dashboard.weeklySummary')}
                 >
-                  <Ionicons name="stats-chart" size={20} color="#0f172a" />
+                  <Ionicons
+                    name="stats-chart"
+                    size={20}
+                    color={themeColors.primary['500']}
+                  />
                 </Pressable>
               </View>
             </View>
@@ -340,7 +354,7 @@ export function HomeScreen() {
             <ScrollView
               horizontal
               pagingEnabled
-              contentOffset={{ x: SCREEN_WIDTH * INITIAL_WEEK_PAGE, y: 0 }}
+              contentOffset={{ x: width * INITIAL_WEEK_PAGE, y: 0 }}
               onMomentumScrollEnd={handleWeekMomentumEnd}
               showsHorizontalScrollIndicator={false}
             >
@@ -351,14 +365,14 @@ export function HomeScreen() {
             <View className="items-center pt-4 pb-2">
               <ProgressRing
                 progress={calorieProgress}
-                size={SCREEN_WIDTH * 0.52}
-                color="#0f172a"
-                gradientEnd="#1e293b"
-                backgroundColor="#c3cedf"
+                size={width * 0.52}
+                color={themeColors.primary['500']}
+                gradientEnd={themeColors.primary['700']}
+                backgroundColor={themeColors.surface.muted}
                 strokeWidth={14}
                 centerLabel={`${remaining}`}
-                centerSubLabel="remaining"
-                centerCaption={`${consumed.calories} eaten`}
+                centerSubLabel={t('dashboard.remaining')}
+                centerCaption={`${consumed.calories} ${t('dashboard.eaten')}`}
               />
             </View>
 
@@ -371,19 +385,19 @@ export function HomeScreen() {
                 label={t('dashboard.protein')}
                 current={consumed.protein}
                 target={targets.protein}
-                color="#0e7490"
+                color={themeColors.accent['700']}
               />
               <CircularMacro
                 label={t('dashboard.carbs')}
                 current={consumed.carbs}
                 target={targets.carbs}
-                color="#ea580c"
+                color={themeColors.primary['600']}
               />
               <CircularMacro
                 label={t('dashboard.fat')}
                 current={consumed.fat}
                 target={targets.fat}
-                color="#64748b"
+                color={themeColors.text.secondary}
               />
             </Animated.View>
           </SafeAreaView>
@@ -395,23 +409,31 @@ export function HomeScreen() {
             <Pressable
               onPress={handleLogMeal}
               className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-primary-500 px-4 py-3.5 shadow-lg shadow-primary-500/25"
+              accessibilityRole="button"
+              accessibilityLabel={t('logging.logMeal')}
             >
               <Ionicons name="add-circle" size={20} color="#ffffff" />
-              <Text className="font-sans-semibold text-text-inverse">Log Meal</Text>
+              <Text className="font-sans-semibold text-text-inverse">
+                {t('logging.logMeal')}
+              </Text>
             </Pressable>
             <Pressable
               onPress={handleQuickAdd}
               className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-default px-4 py-3.5 border border-surface-border"
+              accessibilityRole="button"
+              accessibilityLabel={t('logging.quickAdd')}
             >
-              <Ionicons name="flash" size={18} color="#ea580c" />
-              <Text className="font-sans-medium text-text">Quick</Text>
+              <Ionicons name="flash" size={18} color={themeColors.primary['600']} />
+              <Text className="font-sans-medium text-text">{t('logging.quickAdd')}</Text>
             </Pressable>
             <Pressable
               onPress={() => (navigation as { navigate: (s: string) => void }).navigate('Log')}
               className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-default px-4 py-3.5 border border-surface-border"
+              accessibilityRole="button"
+              accessibilityLabel={t('logging.scanBarcode')}
             >
-              <Ionicons name="barcode-outline" size={18} color="#0e7490" />
-              <Text className="font-sans-medium text-text">Scan</Text>
+              <Ionicons name="barcode-outline" size={18} color={themeColors.accent['700']} />
+              <Text className="font-sans-medium text-text">{t('logging.scanBarcode')}</Text>
             </Pressable>
           </View>
         </View>
@@ -443,20 +465,22 @@ export function HomeScreen() {
           ) : (
             <View className="rounded-2xl bg-surface-card border border-surface-border p-6 items-center">
               <View className="h-16 w-16 rounded-full bg-surface-secondary items-center justify-center mb-4">
-                <Ionicons name="nutrition-outline" size={32} color="#777985" />
+                <Ionicons name="nutrition-outline" size={32} color={themeColors.text.tertiary} />
               </View>
               <Text className="text-base font-sans-semibold text-text mb-1">
-                No meals logged yet
+                {t('dashboard.noMeals')}
               </Text>
               <Text className="text-sm text-text-secondary text-center mb-4">
-                Log your first meal to track your daily nutrition
+                {t('dashboard.noMealsDesc')}
               </Text>
               <Pressable
                 onPress={handleLogMeal}
                 className="rounded-full bg-primary-500 px-6 py-2.5"
+                accessibilityRole="button"
+                accessibilityLabel={t('logging.logMeal')}
               >
                 <Text className="font-sans-semibold text-text-inverse text-sm">
-                  Log Meal
+                  {t('logging.logMeal')}
                 </Text>
               </Pressable>
             </View>
@@ -490,7 +514,7 @@ export function HomeScreen() {
                     />
                   </View>
                   <Text className="text-xs text-text-secondary font-sans-medium mb-1">
-                    {MEAL_TYPE_LABELS[type]}
+                    {t(MEAL_TYPE_LABELS[type] ?? type)}
                   </Text>
                   <Text className="text-sm font-sans-bold text-text">
                     {mealCals}
@@ -570,9 +594,17 @@ function DayProgressCircle({
   const progress = targetCalories > 0 ? Math.min(consumedCalories / targetCalories, 1) : 0;
   const strokeDashoffset = circumference * (1 - progress);
 
-  const trackColor = isSelected ? '#b9bbc8' : '#cbccd8';
-  const progressColor = isSelected ? '#1f2028' : '#8f93a4';
-  const textColor = isSelected ? '#1f2028' : isToday ? '#2a2b35' : '#777985';
+  const trackColor = isSelected
+    ? themeColors.surface.border
+    : themeColors.surface.muted;
+  const progressColor = isSelected
+    ? themeColors.primary['500']
+    : themeColors.primary['400'];
+  const textColor = isSelected
+    ? themeColors.primary['500']
+    : isToday
+      ? themeColors.text.primary
+      : themeColors.text.tertiary;
 
   return (
     <View className="items-center justify-center">
@@ -617,6 +649,7 @@ interface MealCardProps {
 }
 
 function MealCard({ type, meals }: MealCardProps) {
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
   const totalProtein = meals.reduce((s, m) => s + m.totalProtein, 0);
@@ -645,7 +678,7 @@ function MealCard({ type, meals }: MealCardProps) {
     setExpanded((e) => !e);
   };
 
-  const color = MEAL_TYPE_COLORS[type] ?? '#1f2028';
+  const color = MEAL_TYPE_COLORS[type] ?? themeColors.primary['500'];
 
   return (
     <Pressable
@@ -665,13 +698,13 @@ function MealCard({ type, meals }: MealCardProps) {
         </View>
         <View className="flex-1">
           <Text className="font-sans-semibold text-text text-base">
-            {MEAL_TYPE_LABELS[type] ?? type}
+            {t(MEAL_TYPE_LABELS[type] ?? type)}
           </Text>
           <Text
             className="text-sm text-text-secondary mt-0.5"
             numberOfLines={expanded ? undefined : 1}
           >
-            {foodNames.join(', ') || 'Quick add'}
+            {foodNames.join(', ') || t('logging.quickAdd')}
           </Text>
         </View>
         <View className="items-end">
@@ -681,7 +714,7 @@ function MealCard({ type, meals }: MealCardProps) {
           <Text className="text-xs text-text-secondary">kcal</Text>
         </View>
         <Animated.View style={chevronStyle} className="ml-2">
-                  <Ionicons name="chevron-down" size={18} color="#7687a2" />
+          <Ionicons name="chevron-down" size={18} color={themeColors.text.tertiary} />
         </Animated.View>
       </View>
 
@@ -703,10 +736,10 @@ function MealCard({ type, meals }: MealCardProps) {
             ))
           )}
           <View className="flex-row items-center justify-between pt-2 mt-1 border-t border-surface-border/50">
-            <Text className="text-xs text-text-tertiary">Total protein</Text>
-                <Text className="text-sm font-sans-medium text-accent-700">
-                  {totalProtein}g
-                </Text>
+            <Text className="text-xs text-text-tertiary">{t('dashboard.totalProtein')}</Text>
+            <Text className="text-sm font-sans-medium text-accent-700">
+              {totalProtein}g
+            </Text>
           </View>
         </View>
       )}

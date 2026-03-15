@@ -28,6 +28,7 @@ Last updated: 2026-03-15
 - New users are provisioned with profile + free entitlement.
 - Auth stack uses native-stack transitions (`fade_from_bottom`) with full-screen swipe gestures enabled.
 - Sign-in and sign-up screens are keyboard-safe: form content is wrapped in `KeyboardAvoidingView` + scroll container to keep inputs and CTA reachable when the keyboard is open.
+- Core auth copy (headings, field labels, helper lines, account-switch prompts) is localized through i18n keys.
 
 ## Current gaps / next improvements
 - No dedicated server-side login telemetry for success/failure rates.

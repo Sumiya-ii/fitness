@@ -1,6 +1,6 @@
 # Barcode Logging & Submission
 
-Last updated: 2026-03-06
+Last updated: 2026-03-15
 
 ## Scope
 - Known barcode lookup.
@@ -24,6 +24,7 @@ Last updated: 2026-03-06
 ## Current logic/rules
 - Duplicate barcode submission returns `already_exists`.
 - Unknown submissions are stored as pending records for review.
+- Scan frame sizing is viewport-responsive, and key icon-only actions (back/increment/decrement) include explicit accessibility labels/roles.
 
 ## Current gaps / next improvements
 - Submission flow does not yet include full label-image storage pipeline.

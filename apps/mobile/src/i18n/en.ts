@@ -35,6 +35,13 @@ export const en = {
     noMeals: 'No meals logged yet',
     noMealsDesc: 'Start tracking your meals to see your daily progress',
     weeklySummary: 'Weekly Summary',
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    snack: 'Snack',
+    meals: 'Meals',
+    eaten: 'eaten',
+    totalProtein: 'Total protein',
   },
   logging: {
     logMeal: 'Log a Meal',
@@ -85,6 +92,15 @@ export const en = {
     weightTrend: 'Weight Trend',
     logWeight: 'Log Weight',
     history: 'History',
+    weekly: 'Weekly',
+    currentWeight: 'Current Weight',
+    logMoreWeights: 'Log more weights to see your trend',
+    period7Days: '7 Days',
+    period30Days: '30 Days',
+    period90Days: '90 Days',
+    latestEntries: 'Latest Entries',
+    noWeightEntries: 'No weight entries yet',
+    noWeightEntriesDesc: 'Start logging your weight to build a trend line',
   },
   onboarding: {
     trackNutrition: 'Track Your Nutrition',
@@ -94,6 +110,14 @@ export const en = {
     getStarted: 'Get Started',
     skip: 'Skip',
     next: 'Next',
+    trackNutritionSubtitle:
+      'Log meals quickly and easily. Stay on top of what you eat with our intuitive food logging.',
+    aiInsightsSubtitle:
+      'Use voice or photo to log meals. Our AI understands what you ate and helps you stay accurate.',
+    telegramCoachSubtitle:
+      'Get daily accountability through Telegram. Log meals on the go and stay motivated.',
+    reachGoalsSubtitle:
+      'Personalized calorie and macro targets based on your profile. Track progress and succeed.',
   },
   auth: {
     signIn: 'Sign In',
@@ -101,6 +125,18 @@ export const en = {
     email: 'Email',
     password: 'Password',
     forgotPassword: 'Forgot Password?',
+    welcomeBackDesc: 'Welcome back! Enter your credentials to continue.',
+    createAccountDesc: 'Join Coach and start your nutrition journey.',
+    orContinueWith: 'or continue with',
+    orSignUpWith: 'or sign up with',
+    noAccount: "Don't have an account?",
+    haveAccount: 'Already have an account?',
+    confirmPassword: 'Confirm Password',
+    passwordsDoNotMatch: 'Passwords do not match',
+    agreePrefix: 'I agree to the',
+    termsOfService: 'Terms of Service',
+    and: 'and',
+    privacyPolicy: 'Privacy Policy',
   },
   settings: {
     title: 'Settings',

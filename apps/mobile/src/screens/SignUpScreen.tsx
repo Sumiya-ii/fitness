@@ -14,10 +14,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { AuthProviderButton, Button, Card, IconButton, Input } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
+import { useLocale } from '../i18n';
+import { themeColors } from '../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SignUp'>;
 
 export function SignUpScreen({ navigation }: Props) {
+  const { t } = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -51,7 +54,7 @@ export function SignUpScreen({ navigation }: Props) {
   return (
     <SafeAreaView className="flex-1 bg-surface-app">
       <LinearGradient
-        colors={['#f4f7fb', '#e7eef8', '#f4f7fb']}
+        colors={[themeColors.surface.app, themeColors.surface.tertiary, themeColors.surface.app]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="absolute inset-0"
@@ -74,15 +77,15 @@ export function SignUpScreen({ navigation }: Props) {
               <IconButton icon="arrow-back" />
             </Pressable>
             <Text className="text-3xl font-sans-bold text-text mb-1 mt-10">
-              Create Account
+              {t('auth.signUp')}
             </Text>
             <Text className="text-base text-text-secondary mb-6">
-              Join Coach and start your nutrition journey.
+              {t('auth.createAccountDesc')}
             </Text>
 
             <Card className="rounded-3xl p-4 mb-6">
               <Input
-                label="Email"
+                label={t('auth.email')}
                 placeholder="you@example.com"
                 value={email}
                 onChangeText={setEmail}
@@ -93,7 +96,7 @@ export function SignUpScreen({ navigation }: Props) {
               />
 
               <Input
-                label="Password"
+                label={t('auth.password')}
                 placeholder="••••••••"
                 value={password}
                 onChangeText={setPassword}
@@ -116,13 +119,13 @@ export function SignUpScreen({ navigation }: Props) {
               />
 
               <Input
-                label="Confirm Password"
+                label={t('auth.confirmPassword')}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
-                error={confirmPassword && !passwordsMatch ? 'Passwords do not match' : undefined}
+                error={confirmPassword && !passwordsMatch ? t('auth.passwordsDoNotMatch') : undefined}
                 containerClassName="mb-4"
               />
 
@@ -138,10 +141,10 @@ export function SignUpScreen({ navigation }: Props) {
                   {acceptedTerms && <Ionicons name="checkmark" size={14} color="white" />}
                 </View>
                 <Text className="flex-1 text-sm text-text-secondary">
-                  I agree to the{' '}
-                  <Text className="text-primary-600">Terms of Service</Text>
-                  {' '}and{' '}
-                  <Text className="text-primary-600">Privacy Policy</Text>
+                  {t('auth.agreePrefix')}{' '}
+                  <Text className="text-primary-600">{t('auth.termsOfService')}</Text>
+                  {' '}{t('auth.and')}{' '}
+                  <Text className="text-primary-600">{t('auth.privacyPolicy')}</Text>
                 </Text>
               </Pressable>
 
@@ -152,7 +155,7 @@ export function SignUpScreen({ navigation }: Props) {
                 disabled={!isValid}
                 className="w-full mb-6"
               >
-                Create Account
+                {t('auth.signUp')}
               </Button>
 
               {error ? (
@@ -163,7 +166,7 @@ export function SignUpScreen({ navigation }: Props) {
             <View className="flex-row items-center gap-4 mb-6">
               <View className="flex-1 h-px bg-surface-secondary" />
               <Text className="text-sm text-text-tertiary font-sans-medium">
-                or sign up with
+                {t('auth.orSignUpWith')}
               </Text>
               <View className="flex-1 h-px bg-surface-secondary" />
             </View>
@@ -178,9 +181,9 @@ export function SignUpScreen({ navigation }: Props) {
               className="self-center py-2 active:opacity-70"
             >
               <Text className="text-base text-text-secondary">
-                Already have an account?{' '}
+                {t('auth.haveAccount')}{' '}
                 <Text className="text-primary-600 font-sans-semibold">
-                  Sign In
+                  {t('auth.signIn')}
                 </Text>
               </Text>
             </Pressable>

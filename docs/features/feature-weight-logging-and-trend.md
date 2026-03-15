@@ -1,6 +1,6 @@
 # Weight Logging & Trend
 
-Last updated: 2026-03-10
+Last updated: 2026-03-15
 
 ## Scope
 - Daily weight logging.
@@ -23,6 +23,8 @@ Last updated: 2026-03-10
 - Writes are normalized to date-only midnight.
 - Trend compares recent 7-day average vs previous 7-day average.
 - Progress screen initial loading uses structured skeleton placeholders (hero, period tabs, chart, stats) for consistent perceived performance.
+- Trend chart width is responsive to current viewport width (rotation/split-width safe) rather than a static window width snapshot.
+- Progress primary labels (title, weekly toggle, period chips, empty-state text) are localized via i18n.
 
 ## Current gaps / next improvements
 - No smoothing/advanced trend models yet.

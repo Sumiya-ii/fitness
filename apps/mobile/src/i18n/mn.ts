@@ -35,6 +35,13 @@ export const mn = {
     noMeals: 'Хоол бүртгэгдээгүй',
     noMealsDesc: 'Хоолоо бүртгэж өдрийн дэвшлээ харна уу',
     weeklySummary: 'Долоо хоногийн тойм',
+    breakfast: 'Өглөөний хоол',
+    lunch: 'Өдрийн хоол',
+    dinner: 'Оройн хоол',
+    snack: 'Зууш',
+    meals: 'Хоолнууд',
+    eaten: 'идсэн',
+    totalProtein: 'Нийт уураг',
   },
   logging: {
     logMeal: 'Хоол бүртгэх',
@@ -85,6 +92,15 @@ export const mn = {
     weightTrend: 'Жингийн өөрчлөлт',
     logWeight: 'Жин бүртгэх',
     history: 'Түүх',
+    weekly: '7 хоног',
+    currentWeight: 'Одоогийн жин',
+    logMoreWeights: 'Жингээ илүү олон удаа бүртгэвэл чиг хандлага харагдана',
+    period7Days: '7 хоног',
+    period30Days: '30 хоног',
+    period90Days: '90 хоног',
+    latestEntries: 'Сүүлийн бүртгэлүүд',
+    noWeightEntries: 'Жингийн бүртгэл алга',
+    noWeightEntriesDesc: 'Жингээ бүртгэж эхэлснээр чиг хандлага гарна',
   },
   onboarding: {
     trackNutrition: 'Хоолны дэглэмээ бүртгэ',
@@ -94,6 +110,14 @@ export const mn = {
     getStarted: 'Эхлэх',
     skip: 'Алгасах',
     next: 'Дараах',
+    trackNutritionSubtitle:
+      'Хоолоо хурдан, хялбар бүртгэж өдөр тутмын хэрэглээгээ хянаарай.',
+    aiInsightsSubtitle:
+      'Дуу эсвэл зургаар бүртгэж, AI-аар илүү зөв тооцоолол аваарай.',
+    telegramCoachSubtitle:
+      'Telegram-аар өдөр бүрийн хариуцлагаа хадгалж, замдаа тогтвортой байгаарай.',
+    reachGoalsSubtitle:
+      'Таны мэдээлэлд тохирсон калори, макро зорилгоор ахицаа тогтвортой хянаарай.',
   },
   auth: {
     signIn: 'Нэвтрэх',
@@ -101,6 +125,18 @@ export const mn = {
     email: 'Имэйл',
     password: 'Нууц үг',
     forgotPassword: 'Нууц үгээ мартсан уу?',
+    welcomeBackDesc: 'Тавтай морил. Үргэлжлүүлэхийн тулд мэдээллээ оруулна уу.',
+    createAccountDesc: 'Coach-д нэгдэж хоол тэжээлийн аяллаа эхлүүлээрэй.',
+    orContinueWith: 'эсвэл дараахаар үргэлжлүүлэх',
+    orSignUpWith: 'эсвэл дараахаар бүртгүүлэх',
+    noAccount: 'Бүртгэлгүй юу?',
+    haveAccount: 'Бүртгэлтэй юу?',
+    confirmPassword: 'Нууц үг давтах',
+    passwordsDoNotMatch: 'Нууц үг таарахгүй байна',
+    agreePrefix: 'Би',
+    termsOfService: 'Үйлчилгээний нөхцөл',
+    and: 'ба',
+    privacyPolicy: 'Нууцлалын бодлого',
   },
   settings: {
     title: 'Тохиргоо',
