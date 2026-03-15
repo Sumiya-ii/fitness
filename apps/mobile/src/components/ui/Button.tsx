@@ -37,7 +37,7 @@ const variantTextClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-4 py-2 min-h-[36px]',
+  sm: 'px-4 py-2.5 min-h-[44px]',
   md: 'px-6 py-3 min-h-[44px]',
   lg: 'px-8 py-4 min-h-[52px]',
 };
@@ -59,9 +59,9 @@ const disabledTextClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeTextClasses: Record<ButtonSize, string> = {
-  sm: 'text-sm',
-  md: 'text-base',
-  lg: 'text-lg',
+  sm: 'text-sm leading-5',
+  md: 'text-base leading-6',
+  lg: 'text-lg leading-7',
 };
 
 export interface ButtonProps extends Omit<PressableProps, 'children'> {
@@ -127,7 +127,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
           />
         ) : (
           <Text
-            className={`font-sans-semibold ${labelTextClass} ${sizeTextClasses[size]}`}
+            className={`font-sans-semibold text-center ${labelTextClass} ${sizeTextClasses[size]}`}
           >
             {children}
           </Text>

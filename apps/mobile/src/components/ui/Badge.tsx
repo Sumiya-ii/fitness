@@ -37,7 +37,7 @@ export function Badge({
         ${className}
       `}
     >
-      <Text className={`text-xs font-sans-medium ${variantTextClasses[variant]}`}>
+      <Text className={`text-xs leading-5 font-sans-medium ${variantTextClasses[variant]}`}>
         {children}
       </Text>
     </View>

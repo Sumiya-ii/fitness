@@ -28,7 +28,7 @@ export function AuthProviderButton({
       {...props}
     >
       <Ionicons name={icon} size={20} color="#0b1220" />
-      <Text className="ml-2 font-sans-medium text-text">{label}</Text>
+      <Text className="ml-2 text-base leading-6 font-sans-medium text-text">{label}</Text>
     </Pressable>
   );
 }

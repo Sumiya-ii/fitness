@@ -111,7 +111,7 @@ export function VoiceLogScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
-          <Pressable onPress={() => navigation.goBack()} className="p-1">
+          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
             <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
           </Pressable>
           <Text className="ml-4 text-lg font-sans-semibold text-text">

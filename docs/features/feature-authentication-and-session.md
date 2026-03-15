@@ -1,6 +1,6 @@
 # Authentication & Session
 
-Last updated: 2026-03-10
+Last updated: 2026-03-15
 
 ## Scope
 - Firebase token based authentication for API access.
@@ -27,6 +27,7 @@ Last updated: 2026-03-10
 - Existing users are loaded; no duplicate creation path.
 - New users are provisioned with profile + free entitlement.
 - Auth stack uses native-stack transitions (`fade_from_bottom`) with full-screen swipe gestures enabled.
+- Sign-in and sign-up screens are keyboard-safe: form content is wrapped in `KeyboardAvoidingView` + scroll container to keep inputs and CTA reachable when the keyboard is open.
 
 ## Current gaps / next improvements
 - No dedicated server-side login telemetry for success/failure rates.

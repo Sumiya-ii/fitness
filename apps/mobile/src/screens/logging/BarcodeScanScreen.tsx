@@ -101,7 +101,7 @@ export function BarcodeScanScreen() {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
         <View className="flex-row items-center border-b border-surface-border px-4 py-3">
-          <Pressable onPress={() => navigation.goBack()} className="p-1">
+          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
             <Ionicons name="arrow-back" size={24} color="#111218" />
           </Pressable>
           <Text className="ml-4 text-lg font-sans-semibold text-text">

@@ -5,8 +5,8 @@ type IconButtonSize = 'sm' | 'md';
 type IconButtonVariant = 'surface' | 'ghost';
 
 const sizeClasses: Record<IconButtonSize, string> = {
-  sm: 'h-9 w-9',
-  md: 'h-10 w-10',
+  sm: 'h-11 w-11',
+  md: 'h-11 w-11',
 };
 
 const iconSizes: Record<IconButtonSize, number> = {

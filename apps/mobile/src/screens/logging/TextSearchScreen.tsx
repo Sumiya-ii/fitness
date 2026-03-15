@@ -112,7 +112,7 @@ export function TextSearchScreen() {
       >
         {/* Header */}
         <View className="flex-row items-center gap-3 border-b border-surface-border px-4 py-3">
-          <Pressable onPress={() => navigation.goBack()} className="p-1">
+          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
             <Ionicons name="arrow-back" size={24} color="#111218" />
           </Pressable>
           <Input

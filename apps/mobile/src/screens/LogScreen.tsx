@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,8 +60,10 @@ const ACTION_ITEMS: ActionItem[] = [
 export function LogScreen() {
   const navigation = useNavigation<NavProp>();
   const { t } = useLocale();
+  const { width } = useWindowDimensions();
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const [loadingRecents, setLoadingRecents] = useState(true);
+  const recentCardWidth = Math.max(188, Math.min(244, Math.round(width * 0.58)));
 
   useFocusEffect(
     useCallback(() => {
@@ -184,7 +186,8 @@ export function LogScreen() {
                 Array.from({ length: 3 }).map((_, index) => (
                   <View
                     key={`recents-skeleton-${index}`}
-                    className="w-44 rounded-2xl bg-surface-card border border-surface-border p-4"
+                    className="rounded-2xl bg-surface-card border border-surface-border p-4"
+                    style={{ width: recentCardWidth }}
                   >
                     <SkeletonLoader variant="circle" width={32} />
                     <SkeletonLoader width="90%" height={14} className="mt-3" />
@@ -195,7 +198,8 @@ export function LogScreen() {
                 <Animated.View entering={FadeInRight.duration(400)}>
                   <Pressable
                     onPress={() => navigation.navigate('FavoritesRecents')}
-                    className="w-44 rounded-2xl bg-surface-card border border-surface-border p-4"
+                    className="rounded-2xl bg-surface-card border border-surface-border p-4"
+                    style={{ width: recentCardWidth }}
                   >
                     <View className="h-10 w-10 rounded-full bg-surface-secondary items-center justify-center mb-3">
                       <Ionicons name="time-outline" size={20} color="#9a9caa" />
@@ -216,15 +220,16 @@ export function LogScreen() {
                   >
                     <Pressable
                       onPress={() => navigation.navigate('TextSearch')}
-                      className="w-44 rounded-2xl bg-surface-card border border-surface-border p-4"
+                      className="rounded-2xl bg-surface-card border border-surface-border p-4"
+                      style={{ width: recentCardWidth }}
                     >
                       <View className="flex-row items-center justify-between mb-3">
                         <View className="h-8 w-8 rounded-full bg-primary-500/20 items-center justify-center">
                           <Ionicons name="nutrition" size={16} color="#1f2028" />
                         </View>
-                        <Pressable className="h-7 w-7 rounded-full bg-surface-secondary items-center justify-center">
+                        <View className="h-7 w-7 rounded-full bg-surface-secondary items-center justify-center">
                           <Ionicons name="add" size={16} color="#9a9caa" />
-                        </Pressable>
+                        </View>
                       </View>
                       <Text
                         className="font-sans-medium text-text mb-1"

@@ -13,19 +13,19 @@ export const themeColors = {
 
 const navigationFonts: Theme['fonts'] = {
   regular: {
-    fontFamily: 'System',
+    fontFamily: 'Inter',
     fontWeight: '400',
   },
   medium: {
-    fontFamily: 'System',
+    fontFamily: 'Inter-Medium',
     fontWeight: '500',
   },
   bold: {
-    fontFamily: 'System',
+    fontFamily: 'Inter-SemiBold',
     fontWeight: '700',
   },
   heavy: {
-    fontFamily: 'System',
+    fontFamily: 'Inter-Bold',
     fontWeight: '800',
   },
 };

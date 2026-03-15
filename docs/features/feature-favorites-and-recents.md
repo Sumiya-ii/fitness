@@ -1,6 +1,6 @@
 # Favorites & Recents
 
-Last updated: 2026-03-06
+Last updated: 2026-03-15
 
 ## Scope
 - Favorite foods management.
@@ -23,6 +23,7 @@ Last updated: 2026-03-06
 ## Current logic/rules
 - Favorite uniqueness enforced by `(userId, foodId)`.
 - Recents are deduplicated by `foodId` and ordered by last use.
+- Header back affordances in logging list/detail screens use expanded touch targets for more reliable tap behavior.
 
 ## Current gaps / next improvements
 - Meal templates are not persisted as a dedicated first-class entity.
