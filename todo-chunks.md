@@ -527,7 +527,7 @@ These items cannot be done by the AI and need to be completed by you.
 
 - [x] **Set up PostgreSQL locally** — Install PostgreSQL and create a `coach` database. Then copy `.env.example` to `.env` and fill in `DATABASE_URL` (e.g. `postgresql://coach:coach@localhost:5432/coach`).
 - [x] **Set up Redis locally** — Install Redis and ensure it runs on the default port. Fill in `REDIS_URL` in `.env` (e.g. `redis://localhost:6379`).
-- [ ] **Set up Firebase project** — Create a Firebase project in the Firebase Console. Enable Email/Phone OTP, Google, and Apple sign-in providers. Download the service account key and fill in `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` in `.env`.
+- [x] **Set up Firebase project** — Create a Firebase project in the Firebase Console. Enable Email/Phone OTP, Google, and Apple sign-in providers. Download the service account key and fill in `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` in `.env`.
 - [x] **Run the first database migration** — After setting up `.env`, run: `npm run db:migrate -w @coach/api` to create all tables.
 - [x] **Verify the API starts** — Run `npm run start:dev -w @coach/api` and visit `http://localhost:3000/api/v1/health` to confirm it returns `{ status: "ok" }`.
 - [ ] **Review the Prisma schema** — Check `apps/api/prisma/schema.prisma` and confirm all entities match your expectations from the PRD Section 9.
