@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm ci --prefix ../.. && npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api"
+buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api"
 
 [deploy]
 startCommand = "npm run db:migrate:deploy --workspace=apps/api && npm run start:prod --workspace=apps/api"
-healthcheckPath = "/health"
+healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
