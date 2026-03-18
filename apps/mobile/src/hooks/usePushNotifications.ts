@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { api } from '../api/client';
 
 Notifications.setNotificationHandler({
@@ -18,6 +19,9 @@ export function usePushNotifications() {
 }
 
 async function registerForPushNotifications() {
+  // Expo Go doesn't support push notification entitlements
+  if (Constants.appOwnership === 'expo') return;
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
 
   let finalStatus = existingStatus;
