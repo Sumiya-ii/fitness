@@ -11,7 +11,7 @@ export class FirebaseProvider implements OnModuleInit {
   onModuleInit() {
     const projectId = this.config.get('FIREBASE_PROJECT_ID');
     const clientEmail = this.config.get('FIREBASE_CLIENT_EMAIL');
-    const privateKey = this.config.get('FIREBASE_PRIVATE_KEY');
+    const privateKey = this.config.get('FIREBASE_PRIVATE_KEY')?.replace(/\\n/g, '\n');
 
     const credential =
       clientEmail && privateKey
