@@ -33,16 +33,20 @@ FROM node:20-alpine AS api
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package.json ./
+RUN apk add --no-cache wget
+
+COPY --from=build-api /app/node_modules ./node_modules
+COPY --from=build-api /app/package.json ./
 COPY --from=build-shared /app/packages/shared ./packages/shared
 COPY --from=build-api /app/apps/api ./apps/api
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD wget -qO- http://localhost:3000/api/v1/health || exit 1
 
-CMD ["node", "apps/api/dist/main.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
 
 # Worker production image
 FROM node:20-alpine AS worker
