@@ -11,6 +11,7 @@ services:
     plan: starter
     region: singapore
     maxmemoryPolicy: noeviction
+    ipAllowList: []
 
   - type: web
     name: coach-api
