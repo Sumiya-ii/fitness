@@ -14,7 +14,7 @@ RUN npm ci --ignore-scripts
 # Build shared package
 FROM deps AS build-shared
 COPY packages/shared/ packages/shared/
-COPY tsconfig.json ./
+COPY tsconfig.base.json ./
 RUN npm run build -w @coach/shared 2>/dev/null || true
 
 # Build API
