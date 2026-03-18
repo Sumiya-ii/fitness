@@ -15,8 +15,8 @@ type NavProp = NativeStackNavigationProp<LogStackParamList, 'LogHome'>;
 
 interface ActionItem {
   id: string;
-  title: string;
-  subtitle: string;
+  titleKey: string;
+  subtitleKey: string;
   icon: keyof typeof Ionicons.glyphMap;
   gradient: [string, string];
   route: keyof LogStackParamList;
@@ -25,32 +25,32 @@ interface ActionItem {
 const ACTION_ITEMS: ActionItem[] = [
   {
     id: 'text-search',
-    title: 'Search',
-    subtitle: 'Find foods',
+    titleKey: 'logging.textSearch',
+    subtitleKey: 'logging.findFoods',
     icon: 'search',
     gradient: ['#0f172a', '#1e293b'],
     route: 'TextSearch',
   },
   {
     id: 'barcode',
-    title: 'Barcode',
-    subtitle: 'Scan label',
+    titleKey: 'logging.scanBarcode',
+    subtitleKey: 'logging.scanLabel',
     icon: 'barcode-outline',
     gradient: ['#0369a1', '#0e7490'],
     route: 'BarcodeScan',
   },
   {
     id: 'voice',
-    title: 'Voice',
-    subtitle: 'Speak it',
+    titleKey: 'logging.voice',
+    subtitleKey: 'logging.speakIt',
     icon: 'mic',
     gradient: ['#0f766e', '#0e7490'],
     route: 'VoiceLog',
   },
   {
     id: 'quick-add',
-    title: 'Quick Add',
-    subtitle: 'Manual entry',
+    titleKey: 'logging.quickAdd',
+    subtitleKey: 'logging.manualEntry',
     icon: 'flash',
     gradient: ['#ea580c', '#f59e0b'],
     route: 'QuickAdd',
@@ -73,7 +73,7 @@ export function LogScreen() {
         .then((res) => setRecents(res.data))
         .catch(() => setRecents([]))
         .finally(() => setLoadingRecents(false));
-    }, [])
+    }, []),
   );
 
   return (
@@ -86,9 +86,7 @@ export function LogScreen() {
         >
           {/* Header */}
           <View className="px-5 pt-2 pb-4">
-            <Text className="text-2xl font-sans-bold text-text">
-              {t('logging.logMeal')}
-            </Text>
+            <Text className="text-2xl font-sans-bold text-text">{t('logging.logMeal')}</Text>
             <Text className="text-sm text-text-secondary font-sans-medium mt-1">
               {t('logging.chooseHow')}
             </Text>
@@ -113,14 +111,14 @@ export function LogScreen() {
                         <Ionicons name="sparkles" size={14} color="#ffffff" />
                       </View>
                       <Text className="text-xs font-sans-semibold text-white/80 uppercase tracking-wider">
-                        AI Powered
+                        {t('logging.aiPowered')}
                       </Text>
                     </View>
                     <Text className="text-xl font-sans-bold text-text-inverse mb-1">
-                      Snap & Track
+                      {t('logging.snapTrack')}
                     </Text>
                     <Text className="text-sm text-white/80 font-sans-medium">
-                      Take a photo and let AI estimate calories and macros instantly
+                      {t('logging.snapDesc')}
                     </Text>
                   </View>
                   <View className="h-16 w-16 rounded-2xl bg-white/15 items-center justify-center ml-4">
@@ -153,10 +151,10 @@ export function LogScreen() {
                       <Ionicons name={action.icon} size={22} color="#ffffff" />
                     </LinearGradient>
                     <Text className="font-sans-semibold text-text text-base">
-                      {action.title}
+                      {t(action.titleKey)}
                     </Text>
                     <Text className="text-xs text-text-secondary font-sans-medium mt-0.5">
-                      {action.subtitle}
+                      {t(action.subtitleKey)}
                     </Text>
                   </Pressable>
                 </Animated.View>
@@ -205,10 +203,10 @@ export function LogScreen() {
                       <Ionicons name="time-outline" size={20} color="#9a9caa" />
                     </View>
                     <Text className="font-sans-medium text-text mb-1">
-                      No recent meals
+                      {t('logging.noRecents')}
                     </Text>
                     <Text className="text-xs text-text-secondary">
-                      Your logged meals will appear here
+                      {t('logging.noRecentsDesc')}
                     </Text>
                   </Pressable>
                 </Animated.View>
@@ -231,10 +229,7 @@ export function LogScreen() {
                           <Ionicons name="add" size={16} color="#9a9caa" />
                         </View>
                       </View>
-                      <Text
-                        className="font-sans-medium text-text mb-1"
-                        numberOfLines={2}
-                      >
+                      <Text className="font-sans-medium text-text mb-1" numberOfLines={2}>
                         {item.name}
                       </Text>
                       <Text className="text-xs text-text-secondary font-sans-medium">

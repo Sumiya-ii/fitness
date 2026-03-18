@@ -20,11 +20,7 @@ import Animated, {
   withSpring,
   FadeInDown,
 } from 'react-native-reanimated';
-import {
-  ProgressRing,
-  CircularMacro,
-  SkeletonLoader,
-} from '../components/ui';
+import { ProgressRing, CircularMacro, SkeletonLoader } from '../components/ui';
 import {
   useDashboardStore,
   type DashboardData,
@@ -95,7 +91,9 @@ export function HomeScreen() {
   const [displayName, setDisplayName] = useState<string>('there');
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
   const [activeWeekPage, setActiveWeekPage] = useState(INITIAL_WEEK_PAGE);
-  const [weekProgressByDate, setWeekProgressByDate] = useState<Record<string, DayProgressSummary>>({});
+  const [weekProgressByDate, setWeekProgressByDate] = useState<Record<string, DayProgressSummary>>(
+    {},
+  );
   const weekProgressRef = useRef<Record<string, DayProgressSummary>>({});
   const { data, isLoading, fetchDashboard } = useDashboardStore();
 
@@ -140,7 +138,7 @@ export function HomeScreen() {
           targetCalories: dashboard.targets?.calories ?? 0,
           mealCount: dashboard.mealCount,
         };
-      })
+      }),
     );
 
     setWeekProgressByDate((current) => {
@@ -191,7 +189,9 @@ export function HomeScreen() {
   };
 
   const handleQuickAdd = () => {
-    (navigation as { navigate: (s: string) => void }).navigate('Log');
+    (navigation as { navigate: (s: string, p?: object) => void }).navigate('Log', {
+      screen: 'QuickAdd',
+    });
   };
 
   const handleWeeklySummary = () => {
@@ -275,9 +275,8 @@ export function HomeScreen() {
     fat: 0,
   };
   const remaining = Math.max(targets.calories - consumed.calories, 0);
-  const calorieProgress = targets.calories > 0
-    ? Math.min(consumed.calories / targets.calories, 1)
-    : 0;
+  const calorieProgress =
+    targets.calories > 0 ? Math.min(consumed.calories / targets.calories, 1) : 0;
 
   const mealsByType = (selectedDashboardData?.meals ?? []).reduce<Record<string, DashboardMeal[]>>(
     (acc, m) => {
@@ -286,7 +285,7 @@ export function HomeScreen() {
       acc[type].push(m);
       return acc;
     },
-    {}
+    {},
   );
 
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -311,11 +310,7 @@ export function HomeScreen() {
       >
         {/* Hero Section with Gradient */}
         <LinearGradient
-          colors={[
-            themeColors.surface.app,
-            themeColors.surface.tertiary,
-            themeColors.surface.app,
-          ]}
+          colors={[themeColors.surface.app, themeColors.surface.tertiary, themeColors.surface.app]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -331,9 +326,7 @@ export function HomeScreen() {
                         ? t('dashboard.greetingAfternoon')
                         : t('dashboard.greetingEvening')}
                   </Text>
-                  <Text className="text-2xl font-sans-bold text-text mt-0.5">
-                    {displayName}
-                  </Text>
+                  <Text className="text-2xl font-sans-bold text-text mt-0.5">{displayName}</Text>
                 </View>
                 <Pressable
                   onPress={handleWeeklySummary}
@@ -341,11 +334,7 @@ export function HomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={t('dashboard.weeklySummary')}
                 >
-                  <Ionicons
-                    name="stats-chart"
-                    size={20}
-                    color={themeColors.primary['500']}
-                  />
+                  <Ionicons name="stats-chart" size={20} color={themeColors.primary['500']} />
                 </Pressable>
               </View>
             </View>
@@ -413,9 +402,7 @@ export function HomeScreen() {
               accessibilityLabel={t('logging.logMeal')}
             >
               <Ionicons name="add-circle" size={20} color="#ffffff" />
-              <Text className="font-sans-semibold text-text-inverse">
-                {t('logging.logMeal')}
-              </Text>
+              <Text className="font-sans-semibold text-text-inverse">{t('logging.logMeal')}</Text>
             </Pressable>
             <Pressable
               onPress={handleQuickAdd}
@@ -427,7 +414,11 @@ export function HomeScreen() {
               <Text className="font-sans-medium text-text">{t('logging.quickAdd')}</Text>
             </Pressable>
             <Pressable
-              onPress={() => (navigation as { navigate: (s: string) => void }).navigate('Log')}
+              onPress={() =>
+                (navigation as { navigate: (s: string, p?: object) => void }).navigate('Log', {
+                  screen: 'BarcodeScan',
+                })
+              }
               className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-default px-4 py-3.5 border border-surface-border"
               accessibilityRole="button"
               accessibilityLabel={t('logging.scanBarcode')}
@@ -441,11 +432,9 @@ export function HomeScreen() {
         {/* Today's Meals */}
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-sans-semibold text-text">
-              {mealsHeading}
-            </Text>
+            <Text className="text-lg font-sans-semibold text-text">{mealsHeading}</Text>
             <Text className="text-sm text-text-secondary font-sans-medium">
-              {consumed.calories} kcal total
+              {consumed.calories} kcal {t('dashboard.eaten')}
             </Text>
           </View>
 
@@ -454,10 +443,7 @@ export function HomeScreen() {
               const meals = mealsByType[type] ?? [];
               if (meals.length === 0) return null;
               return (
-                <Animated.View
-                  key={type}
-                  entering={FadeInDown.delay(100 * index).duration(400)}
-                >
+                <Animated.View key={type} entering={FadeInDown.delay(100 * index).duration(400)}>
                   <MealCard type={type} meals={meals} />
                 </Animated.View>
               );
@@ -516,9 +502,7 @@ export function HomeScreen() {
                   <Text className="text-xs text-text-secondary font-sans-medium mb-1">
                     {t(MEAL_TYPE_LABELS[type] ?? type)}
                   </Text>
-                  <Text className="text-sm font-sans-bold text-text">
-                    {mealCals}
-                  </Text>
+                  <Text className="text-sm font-sans-bold text-text">{mealCals}</Text>
                   <View className="w-full h-1 rounded-full bg-surface-muted mt-2 overflow-hidden">
                     <View
                       className="h-full rounded-full"
@@ -594,12 +578,8 @@ function DayProgressCircle({
   const progress = targetCalories > 0 ? Math.min(consumedCalories / targetCalories, 1) : 0;
   const strokeDashoffset = circumference * (1 - progress);
 
-  const trackColor = isSelected
-    ? themeColors.surface.border
-    : themeColors.surface.muted;
-  const progressColor = isSelected
-    ? themeColors.primary['500']
-    : themeColors.primary['400'];
+  const trackColor = isSelected ? themeColors.surface.border : themeColors.surface.muted;
+  const progressColor = isSelected ? themeColors.primary['500'] : themeColors.primary['400'];
   const textColor = isSelected
     ? themeColors.primary['500']
     : isToday
@@ -653,9 +633,7 @@ function MealCard({ type, meals }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
   const totalProtein = meals.reduce((s, m) => s + m.totalProtein, 0);
-  const foodNames = meals
-    .flatMap((m) => m.items.map((i) => i.snapshotFoodName))
-    .filter(Boolean);
+  const foodNames = meals.flatMap((m) => m.items.map((i) => i.snapshotFoodName)).filter(Boolean);
 
   const iconScale = useSharedValue(1);
   const chevronRotation = useSharedValue(0);
@@ -708,9 +686,7 @@ function MealCard({ type, meals }: MealCardProps) {
           </Text>
         </View>
         <View className="items-end">
-          <Text className="text-base font-sans-bold text-text">
-            {totalCal}
-          </Text>
+          <Text className="text-base font-sans-bold text-text">{totalCal}</Text>
           <Text className="text-xs text-text-secondary">kcal</Text>
         </View>
         <Animated.View style={chevronStyle} className="ml-2">
@@ -733,13 +709,11 @@ function MealCard({ type, meals }: MealCardProps) {
                   {item.snapshotCalories} kcal
                 </Text>
               </View>
-            ))
+            )),
           )}
           <View className="flex-row items-center justify-between pt-2 mt-1 border-t border-surface-border/50">
             <Text className="text-xs text-text-tertiary">{t('dashboard.totalProtein')}</Text>
-            <Text className="text-sm font-sans-medium text-accent-700">
-              {totalProtein}g
-            </Text>
+            <Text className="text-sm font-sans-medium text-accent-700">{totalProtein}g</Text>
           </View>
         </View>
       )}

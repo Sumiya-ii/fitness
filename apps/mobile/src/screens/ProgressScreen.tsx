@@ -6,13 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle } from 'react-native-svg';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import {
-  Button,
-  BottomSheet,
-  Input,
-  Badge,
-  SkeletonLoader,
-} from '../components/ui';
+import { Button, BottomSheet, Input, Badge, SkeletonLoader } from '../components/ui';
 import { useWeightStore, type WeightLogEntry } from '../stores/weight.store';
 import { useLocale } from '../i18n';
 import { themeColors } from '../theme';
@@ -40,19 +34,17 @@ function WeightChart({
 
   if (data.length < 2) {
     return (
-        <View style={{ width: chartWidth, height }} className="items-center justify-center">
+      <View style={{ width: chartWidth, height }} className="items-center justify-center">
         <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-3">
           <Ionicons name="trending-up-outline" size={24} color={themeColors.text.tertiary} />
         </View>
-        <Text className="text-sm text-text-secondary font-sans-medium">
-          {trendHint}
-        </Text>
+        <Text className="text-sm text-text-secondary font-sans-medium">{trendHint}</Text>
       </View>
     );
   }
 
   const sorted = [...data].sort(
-    (a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime()
+    (a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime(),
   );
   const weights = sorted.map((d) => d.weightKg);
   const minW = Math.min(...weights) - 0.5;
@@ -159,13 +151,10 @@ export function ProgressScreen() {
   const [period, setPeriod] = useState<Period>('week');
   const [sheetVisible, setSheetVisible] = useState(false);
   const [weightInput, setWeightInput] = useState('');
-  const [dateInput, setDateInput] = useState(() =>
-    new Date().toISOString().split('T')[0]
-  );
+  const [dateInput, setDateInput] = useState(() => new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
 
-  const { history, trend, isLoading, fetchHistory, fetchTrend, logWeight } =
-    useWeightStore();
+  const { history, trend, isLoading, fetchHistory, fetchTrend, logWeight } = useWeightStore();
 
   const load = useCallback(() => {
     const days = PERIOD_DAYS[period];
@@ -212,13 +201,12 @@ export function ProgressScreen() {
           {/* Header */}
           <View className="px-5 pt-2 pb-4">
             <View className="flex-row items-center justify-between">
-              <Text className="text-2xl font-sans-bold text-text">
-                {t('progress.title')}
-              </Text>
+              <Text className="text-2xl font-sans-bold text-text">{t('progress.title')}</Text>
               <Pressable
                 onPress={() =>
-                  (navigation.getParent() as { navigate: (s: string) => void } | undefined)
-                    ?.navigate('WeeklySummary')
+                  (
+                    navigation.getParent() as { navigate: (s: string) => void } | undefined
+                  )?.navigate('WeeklySummary')
                 }
                 className="flex-row items-center gap-2 rounded-full bg-primary-500/15 px-4 py-2"
               >
@@ -243,12 +231,8 @@ export function ProgressScreen() {
                       {t('progress.currentWeight')}
                     </Text>
                     <View className="flex-row items-baseline">
-                      <Text className="text-5xl font-sans-bold text-text">
-                        {currentWeight}
-                      </Text>
-                      <Text className="text-xl font-sans-medium text-text-secondary ml-1">
-                        kg
-                      </Text>
+                      <Text className="text-5xl font-sans-bold text-text">{currentWeight}</Text>
+                      <Text className="text-xl font-sans-medium text-text-secondary ml-1">kg</Text>
                     </View>
                     <View className="flex-row gap-3 mt-3">
                       {weeklyDelta !== null && weeklyDelta !== undefined && (
@@ -273,11 +257,7 @@ export function ProgressScreen() {
                             }
                             size={14}
                             color={
-                              weeklyDelta < 0
-                                ? '#1f2028'
-                                : weeklyDelta > 0
-                                  ? '#8f93a4'
-                                  : '#9a9caa'
+                              weeklyDelta < 0 ? '#1f2028' : weeklyDelta > 0 ? '#8f93a4' : '#9a9caa'
                             }
                           />
                           <Text
@@ -350,10 +330,7 @@ export function ProgressScreen() {
           </View>
 
           {/* Chart */}
-          <Animated.View
-            entering={FadeInDown.delay(100).duration(400)}
-            className="px-4 mb-6"
-          >
+          <Animated.View entering={FadeInDown.delay(100).duration(400)} className="px-4 mb-6">
             <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
               <Text className="text-sm font-sans-semibold text-text-secondary mb-3">
                 {t('progress.weightTrend')}
@@ -375,7 +352,11 @@ export function ProgressScreen() {
               className="flex-row gap-3 px-4 mb-6"
             >
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
-                <Ionicons name="arrow-down-circle-outline" size={22} color={themeColors.primary["500"]} />
+                <Ionicons
+                  name="arrow-down-circle-outline"
+                  size={22}
+                  color={themeColors.primary['500']}
+                />
                 <Text className="text-lg font-sans-bold text-text mt-2">
                   {Math.min(...history.map((h) => h.weightKg))}
                 </Text>
@@ -384,7 +365,11 @@ export function ProgressScreen() {
                 </Text>
               </View>
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
-                <Ionicons name="arrow-up-circle-outline" size={22} color={themeColors.primary["400"]} />
+                <Ionicons
+                  name="arrow-up-circle-outline"
+                  size={22}
+                  color={themeColors.primary['400']}
+                />
                 <Text className="text-lg font-sans-bold text-text mt-2">
                   {Math.max(...history.map((h) => h.weightKg))}
                 </Text>
@@ -393,10 +378,8 @@ export function ProgressScreen() {
                 </Text>
               </View>
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
-                <Ionicons name="analytics-outline" size={22} color={themeColors.primary["400"]} />
-                <Text className="text-lg font-sans-bold text-text mt-2">
-                  {history.length}
-                </Text>
+                <Ionicons name="analytics-outline" size={22} color={themeColors.primary['400']} />
+                <Text className="text-lg font-sans-bold text-text mt-2">{history.length}</Text>
                 <Text className="text-xs text-text-secondary font-sans-medium">
                   {t('progress.entries')}
                 </Text>
@@ -413,18 +396,12 @@ export function ProgressScreen() {
             {history.length > 0 ? (
               <View className="gap-2">
                 {[...history]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.loggedAt).getTime() -
-                      new Date(a.loggedAt).getTime()
-                  )
+                  .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
                   .slice(0, 10)
                   .map((entry, idx, arr) => {
                     const prev = arr[idx + 1];
                     const delta =
-                      prev != null
-                        ? Number((entry.weightKg - prev.weightKg).toFixed(1))
-                        : null;
+                      prev != null ? Number((entry.weightKg - prev.weightKg).toFixed(1)) : null;
                     return (
                       <View
                         key={entry.id}
@@ -432,20 +409,23 @@ export function ProgressScreen() {
                       >
                         <View className="flex-row items-center gap-3">
                           <View className="h-10 w-10 rounded-full bg-surface-secondary items-center justify-center">
-                            <Ionicons name="scale-outline" size={18} color={themeColors.text.tertiary} />
+                            <Ionicons
+                              name="scale-outline"
+                              size={18}
+                              color={themeColors.text.tertiary}
+                            />
                           </View>
                           <Text className="font-sans-medium text-text-secondary">
-                            {new Date(entry.loggedAt + 'T12:00:00').toLocaleDateString(
-                              undefined,
-                              { weekday: 'short', month: 'short', day: 'numeric' }
-                            )}
+                            {new Date(entry.loggedAt + 'T12:00:00').toLocaleDateString(undefined, {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
                           </Text>
                         </View>
                         <View className="flex-row items-center gap-2">
                           {delta !== null && delta !== 0 && (
-                            <Badge
-                              variant={delta < 0 ? 'success' : 'warning'}
-                            >
+                            <Badge variant={delta < 0 ? 'success' : 'warning'}>
                               {delta > 0 ? '+' : ''}
                               {delta}
                             </Badge>
@@ -486,17 +466,10 @@ export function ProgressScreen() {
           </Pressable>
         </View>
 
-        <BottomSheet
-          visible={sheetVisible}
-          onClose={() => setSheetVisible(false)}
-        >
+        <BottomSheet visible={sheetVisible} onClose={() => setSheetVisible(false)}>
           <View className="px-1">
-            <Text className="mb-1 text-lg font-sans-bold text-text">
-              {t('progress.logWeight')}
-            </Text>
-            <Text className="mb-5 text-sm text-text-secondary">
-              {t('progress.logWeightDesc')}
-            </Text>
+            <Text className="mb-1 text-lg font-sans-bold text-text">{t('progress.logWeight')}</Text>
+            <Text className="mb-5 text-sm text-text-secondary">{t('progress.logWeightDesc')}</Text>
             <Input
               label={t('progress.weightKg')}
               placeholder={t('progress.weightPlaceholder')}
@@ -505,13 +478,41 @@ export function ProgressScreen() {
               keyboardType="decimal-pad"
               containerClassName="mb-4"
             />
-            <Input
-              label={t('progress.date')}
-              placeholder="YYYY-MM-DD"
-              value={dateInput}
-              onChangeText={setDateInput}
-              containerClassName="mb-6"
-            />
+            <View className="mb-6">
+              <Text className="mb-1.5 text-sm font-sans-medium text-text-secondary">
+                {t('progress.date')}
+              </Text>
+              <View className="flex-row gap-2 mb-2">
+                {[
+                  { label: 'Today', offset: 0 },
+                  { label: 'Yesterday', offset: -1 },
+                ].map(({ label, offset }) => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + offset);
+                  const key = d.toISOString().split('T')[0] ?? '';
+                  const isActive = dateInput === key;
+                  return (
+                    <Pressable
+                      key={label}
+                      onPress={() => setDateInput(key)}
+                      className={`rounded-full px-4 py-2 border ${isActive ? 'bg-primary-500 border-primary-500' : 'bg-surface-card border-surface-border'}`}
+                    >
+                      <Text
+                        className={`text-sm font-sans-medium ${isActive ? 'text-white' : 'text-text-secondary'}`}
+                      >
+                        {label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Input
+                placeholder="YYYY-MM-DD"
+                value={dateInput}
+                onChangeText={setDateInput}
+                containerClassName="mb-0"
+              />
+            </View>
             <Button
               variant="primary"
               onPress={handleLogWeight}
