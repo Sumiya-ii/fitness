@@ -1,8 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { APP_NAME } from '@coach/shared';
 import { Public } from '../auth';
+import { SkipThrottle } from '@nestjs/throttler';
 import { QueueHealthService, QueueHealthStatus } from '../queue';
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(private readonly queueHealth: QueueHealthService) {}

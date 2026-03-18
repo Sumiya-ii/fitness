@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import type { UpdatePreferencesDto } from './notifications.dto';
+import type { UpdatePreferencesDto, RegisterDeviceTokenDto } from './notifications.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -24,6 +24,22 @@ export class NotificationsService {
     }
 
     return this.formatPreferences(prefs);
+  }
+
+  async registerDeviceToken(userId: string, dto: RegisterDeviceTokenDto) {
+    await this.prisma.deviceToken.upsert({
+      where: { token: dto.token },
+      create: {
+        userId,
+        token: dto.token,
+        platform: dto.platform,
+      },
+      update: {
+        userId,
+        platform: dto.platform,
+        updatedAt: new Date(),
+      },
+    });
   }
 
   async updatePreferences(userId: string, dto: UpdatePreferencesDto) {

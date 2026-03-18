@@ -6,6 +6,7 @@ import { AuthStack } from './AuthStack';
 import { SetupStack } from './SetupStack';
 import { MainStack } from './MainStack';
 import { themeColors } from '../theme';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 function RootContent() {
   const profileSetupComplete = useOnboardingStore((s) => s.profileSetupComplete);
@@ -28,6 +29,8 @@ export function RootNavigator() {
   const syncProfileSetupStatus = useOnboardingStore((s) => s.syncProfileSetupStatus);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
+
+  usePushNotifications();
 
   useEffect(() => {
     loadOnboardingStatus();

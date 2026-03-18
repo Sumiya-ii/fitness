@@ -314,7 +314,7 @@ export function ProgressScreen() {
                       {t('progress.noWeightEntries')}
                     </Text>
                     <Text className="text-sm text-text-tertiary mt-1">
-                      Start tracking your weight journey
+                      {t('progress.startTracking')}
                     </Text>
                   </View>
                 )}
@@ -380,7 +380,7 @@ export function ProgressScreen() {
                   {Math.min(...history.map((h) => h.weightKg))}
                 </Text>
                 <Text className="text-xs text-text-secondary font-sans-medium">
-                  Lowest
+                  {t('progress.lowest')}
                 </Text>
               </View>
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
@@ -389,7 +389,7 @@ export function ProgressScreen() {
                   {Math.max(...history.map((h) => h.weightKg))}
                 </Text>
                 <Text className="text-xs text-text-secondary font-sans-medium">
-                  Highest
+                  {t('progress.highest')}
                 </Text>
               </View>
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
@@ -398,7 +398,7 @@ export function ProgressScreen() {
                   {history.length}
                 </Text>
                 <Text className="text-xs text-text-secondary font-sans-medium">
-                  Entries
+                  {t('progress.entries')}
                 </Text>
               </View>
             </Animated.View>
@@ -495,18 +495,18 @@ export function ProgressScreen() {
               {t('progress.logWeight')}
             </Text>
             <Text className="mb-5 text-sm text-text-secondary">
-              Track your daily weight measurement
+              {t('progress.logWeightDesc')}
             </Text>
             <Input
-              label="Weight (kg)"
-              placeholder="e.g. 72.5"
+              label={t('progress.weightKg')}
+              placeholder={t('progress.weightPlaceholder')}
               value={weightInput}
               onChangeText={setWeightInput}
               keyboardType="decimal-pad"
               containerClassName="mb-4"
             />
             <Input
-              label="Date"
+              label={t('progress.date')}
               placeholder="YYYY-MM-DD"
               value={dateInput}
               onChangeText={setDateInput}
@@ -518,7 +518,7 @@ export function ProgressScreen() {
               loading={saving}
               disabled={!weightInput.trim()}
             >
-              Save Weight
+              {t('progress.saveWeight')}
             </Button>
           </View>
         </BottomSheet>
