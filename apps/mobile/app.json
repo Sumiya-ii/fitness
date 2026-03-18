@@ -39,7 +39,12 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/YOUR_EAS_PROJECT_ID"
+      "url": "https://u.expo.dev/cf5c8344-d39a-4869-b00f-69b8720bfea8"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "cf5c8344-d39a-4869-b00f-69b8720bfea8"
+      }
     },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
