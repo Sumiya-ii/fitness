@@ -8,6 +8,7 @@ import {
   Req,
   BadRequestException,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { CurrentUser, AuthenticatedUser, Public } from '../auth';
 import { QPayService } from './qpay.service';
@@ -42,6 +43,7 @@ export class QPayController {
   }
 
   @Public()
+  @SkipThrottle()
   @Get('callback')
   async callback(@Query() query: unknown) {
     const parsed = qpayCallbackQuerySchema.safeParse(query);

@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser, AuthenticatedUser, Public } from '../auth';
 import { TelegramService } from './telegram.service';
 import { TelegramBotService } from './telegram-bot.service';
@@ -54,6 +55,7 @@ export class TelegramController {
 
   @Post('webhook')
   @Public()
+  @SkipThrottle()
   @HttpCode(HttpStatus.OK)
   async webhook(@Body() body: unknown) {
     if (!body || typeof body !== 'object') {

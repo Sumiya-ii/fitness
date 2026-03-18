@@ -1,7 +1,7 @@
-import { Controller, Get, Put, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, BadRequestException, HttpCode, HttpStatus } from '@nestjs/common';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { NotificationsService } from './notifications.service';
-import { updatePreferencesSchema } from './notifications.dto';
+import { updatePreferencesSchema, registerDeviceTokenSchema } from './notifications.dto';
 
 @Controller('notifications')
 export class NotificationsController {
@@ -12,6 +12,19 @@ export class NotificationsController {
     return {
       data: await this.notificationsService.getPreferences(user.id),
     };
+  }
+
+  @Post('device-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async registerDeviceToken(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+  ) {
+    const parsed = registerDeviceTokenSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues);
+    }
+    await this.notificationsService.registerDeviceToken(user.id, parsed.data);
   }
 
   @Put('preferences')

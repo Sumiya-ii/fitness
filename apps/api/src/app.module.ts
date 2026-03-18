@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule } from './config';
 import { PrismaModule } from './prisma';
 import { QueueModule } from './queue';
@@ -30,6 +32,18 @@ import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,
+        limit: 60,
+      },
+      {
+        name: 'burst',
+        ttl: 1_000,
+        limit: 10,
+      },
+    ]),
     ConfigModule,
     PrismaModule,
     QueueModule,
@@ -59,6 +73,11 @@ import { HealthController } from './health/health.controller';
     QPayModule,
   ],
   controllers: [HealthController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

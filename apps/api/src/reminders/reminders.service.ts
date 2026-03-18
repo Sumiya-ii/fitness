@@ -13,6 +13,7 @@ export interface ReminderJobData {
   channels: string[];
   chatId?: string;
   locale?: string;
+  pushTokens?: string[];
 }
 
 /**
@@ -80,9 +81,10 @@ export class RemindersService {
         continue;
       }
 
-      const [tgLink, profile] = await Promise.all([
+      const [tgLink, profile, deviceTokens] = await Promise.all([
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.deviceToken.findMany({ where: { userId: pref.userId }, select: { token: true } }),
       ]);
 
       await this.reminderQueue.add(
@@ -93,6 +95,7 @@ export class RemindersService {
           channels: pref.channels,
           chatId: tgLink?.active ? (tgLink.chatId ?? undefined) : undefined,
           locale: profile?.locale ?? undefined,
+          pushTokens: deviceTokens.map((d) => d.token),
         } satisfies ReminderJobData,
         { jobId: `morning-${pref.userId}-${Date.now()}` },
       );
@@ -134,9 +137,10 @@ export class RemindersService {
 
       if (mealCount > 0) continue;
 
-      const [tgLink, profile] = await Promise.all([
+      const [tgLink, profile, deviceTokens] = await Promise.all([
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.deviceToken.findMany({ where: { userId: pref.userId }, select: { token: true } }),
       ]);
 
       await this.reminderQueue.add(
@@ -147,6 +151,7 @@ export class RemindersService {
           channels: pref.channels,
           chatId: tgLink?.active ? (tgLink.chatId ?? undefined) : undefined,
           locale: profile?.locale ?? undefined,
+          pushTokens: deviceTokens.map((d) => d.token),
         } satisfies ReminderJobData,
         { jobId: `evening-${pref.userId}-${Date.now()}` },
       );
