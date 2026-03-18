@@ -38,3 +38,13 @@ apps/mobile/android/app/build/
 # Temporary
 tmp/
 temp/
+
+# Firebase / secrets
+GoogleService-Info.plist
+google-services.json
+*.p8
+*.p12
+*.mobileprovision
+
+# Claude Code
+.claude/
