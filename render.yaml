@@ -1,0 +1,94 @@
+databases:
+  - name: coach-postgres
+    databaseName: coach
+    user: coach
+    plan: starter
+    region: singapore
+
+services:
+  - type: redis
+    name: coach-redis
+    plan: starter
+    region: singapore
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: coach-api
+    runtime: node
+    region: singapore
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api
+    startCommand: npm run db:migrate:deploy --workspace=apps/api && npm run start:prod --workspace=apps/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coach-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: coach-redis
+          type: redis
+          property: connectionString
+      - key: PORT
+        value: 3000
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: QPAY_USERNAME
+        sync: false
+      - key: QPAY_PASSWORD
+        sync: false
+      - key: QPAY_INVOICE_CODE
+        sync: false
+      - key: STT_PROVIDER
+        value: google
+      - key: GOOGLE_STT_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+  - type: worker
+    name: coach-worker
+    runtime: node
+    region: singapore
+    plan: starter
+    rootDir: .
+    buildCommand: npm ci && npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/worker
+    startCommand: npm run start --workspace=apps/worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coach-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: coach-redis
+          type: redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: STT_PROVIDER
+        value: google
+      - key: GOOGLE_STT_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
