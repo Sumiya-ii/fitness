@@ -1,9 +1,14 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithCredential,
+  GoogleAuthProvider,
+  OAuthProvider,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import type { FirebaseError } from 'firebase/app';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { getFirebaseAuth } from '../lib/firebase';
 
 export interface FirebaseSessionUser {
@@ -79,6 +84,62 @@ export async function signUpWithEmailPassword(
     if (!session) throw new Error('Could not start session.');
     return session;
   } catch (error) {
+    throw toAuthError(error);
+  }
+}
+
+export function configureGoogleSignIn(): void {
+  GoogleSignin.configure({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  });
+}
+
+export async function signInWithGoogle(): Promise<FirebaseSession> {
+  try {
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    const signInResult = await GoogleSignin.signIn();
+    const idToken = signInResult.data?.idToken;
+    if (!idToken) throw new Error('Google Sign-In did not return an ID token.');
+
+    const auth = getFirebaseAuth();
+    const credential = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(auth, credential);
+
+    const session = await sessionFromCurrentUser(true);
+    if (!session) throw new Error('Could not start session.');
+    return session;
+  } catch (error) {
+    throw toAuthError(error);
+  }
+}
+
+export async function signInWithApple(): Promise<FirebaseSession> {
+  try {
+    const appleCredential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    });
+
+    const { identityToken } = appleCredential;
+    if (!identityToken) throw new Error('Apple Sign-In did not return an identity token.');
+
+    const auth = getFirebaseAuth();
+    const provider = new OAuthProvider('apple.com');
+    const credential = provider.credential({ idToken: identityToken });
+    await signInWithCredential(auth, credential);
+
+    const session = await sessionFromCurrentUser(true);
+    if (!session) throw new Error('Could not start session.');
+    return session;
+  } catch (error) {
+    // User cancelled — don't surface as an error
+    const appleError = error as { code?: string };
+    if (appleError?.code === 'ERR_REQUEST_CANCELED') {
+      throw new Error('CANCELLED');
+    }
     throw toAuthError(error);
   }
 }

@@ -6,10 +6,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { AuthProviderButton, Button, Card, IconButton, Input } from '../components/ui';
@@ -28,6 +30,41 @@ export function SignInScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const signIn = useAuthStore((s) => s.signIn);
+  const signInWithGoogleStore = useAuthStore((s) => s.signInWithGoogle);
+  const signInWithAppleStore = useAuthStore((s) => s.signInWithApple);
+  const [isAppleAvailable, setIsAppleAvailable] = useState<boolean | null>(null);
+
+  useState(() => {
+    AppleAuthentication.isAvailableAsync().then(setIsAppleAvailable);
+  });
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await signInWithGoogleStore();
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'CANCELLED') {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await signInWithAppleStore();
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'CANCELLED') {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignIn = async () => {
     setError(null);
@@ -60,18 +97,11 @@ export function SignInScreen({ navigation }: Props) {
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-1 px-6 pt-4">
-            <Pressable
-              onPress={() => navigation.goBack()}
-              className="absolute top-4 left-6 z-10"
-            >
+            <Pressable onPress={() => navigation.goBack()} className="absolute top-4 left-6 z-10">
               <IconButton icon="arrow-back" />
             </Pressable>
-            <Text className="text-3xl font-sans-bold text-text mb-1 mt-10">
-              {t('auth.signIn')}
-            </Text>
-            <Text className="text-base text-text-secondary mb-8">
-              {t('auth.welcomeBackDesc')}
-            </Text>
+            <Text className="text-3xl font-sans-bold text-text mb-1 mt-10">{t('auth.signIn')}</Text>
+            <Text className="text-base text-text-secondary mb-8">{t('auth.welcomeBackDesc')}</Text>
 
             <Card className="rounded-3xl p-4 mb-6">
               <Input
@@ -94,10 +124,7 @@ export function SignInScreen({ navigation }: Props) {
                 autoCapitalize="none"
                 autoComplete="password"
                 rightIcon={
-                  <Pressable
-                    onPress={() => setShowPassword(!showPassword)}
-                    hitSlop={12}
-                  >
+                  <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={12}>
                     <Ionicons
                       name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                       size={22}
@@ -118,9 +145,7 @@ export function SignInScreen({ navigation }: Props) {
                 {t('auth.signIn')}
               </Button>
 
-              {error ? (
-                <Text className="text-sm text-red-400 mb-4">{error}</Text>
-              ) : null}
+              {error ? <Text className="text-sm text-red-400 mb-4">{error}</Text> : null}
             </Card>
 
             <View className="flex-row items-center gap-4 mb-6">
@@ -132,8 +157,22 @@ export function SignInScreen({ navigation }: Props) {
             </View>
 
             <View className="flex-row gap-3 mb-8">
-              <AuthProviderButton icon="logo-google" label="Google" />
-              <AuthProviderButton icon="logo-apple" label="Apple" tone="muted" />
+              <AuthProviderButton
+                icon="logo-google"
+                label="Google"
+                onPress={handleGoogleSignIn}
+                disabled={loading}
+              />
+              {isAppleAvailable ? (
+                <AuthProviderButton
+                  icon="logo-apple"
+                  label="Apple"
+                  onPress={handleAppleSignIn}
+                  disabled={loading}
+                />
+              ) : (
+                <AuthProviderButton icon="logo-apple" label="Apple" tone="muted" disabled />
+              )}
             </View>
 
             <Pressable
@@ -142,9 +181,7 @@ export function SignInScreen({ navigation }: Props) {
             >
               <Text className="text-base text-text-secondary">
                 {t('auth.noAccount')}{' '}
-                <Text className="text-primary-600 font-sans-semibold">
-                  {t('auth.signUp')}
-                </Text>
+                <Text className="text-primary-600 font-sans-semibold">{t('auth.signUp')}</Text>
               </Text>
             </Pressable>
           </View>

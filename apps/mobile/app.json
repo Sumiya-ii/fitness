@@ -37,6 +37,13 @@
         {
           "handleMissingManifestError": false
         }
+      ],
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "PLACEHOLDER_REVERSED_IOS_CLIENT_ID"
+        }
       ]
     ],
     "slug": "coach-mobile",
@@ -64,6 +71,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.coach.mobile",
       "buildNumber": "1",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning and meal photo logging.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use your microphone for voice meal logging.",
