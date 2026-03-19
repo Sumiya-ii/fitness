@@ -115,8 +115,8 @@ export class ChatService implements OnModuleDestroy {
 
     const updatedHistory: ChatMessage[] = [
       ...history,
-      { role: 'user', content: userMessage, timestamp: userTimestamp },
-      { role: 'assistant', content: assistantContent, timestamp: assistantTimestamp },
+      { role: 'user' as const, content: userMessage, timestamp: userTimestamp },
+      { role: 'assistant' as const, content: assistantContent, timestamp: assistantTimestamp },
     ].slice(-MAX_HISTORY);
 
     await this.redis.setex(
