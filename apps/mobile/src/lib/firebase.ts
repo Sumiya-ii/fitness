@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import { initializeAuth, getReactNativePersistence, type Auth } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 type FirebaseConfig = {
   apiKey: string;
@@ -27,8 +28,7 @@ function getFirebaseConfig(): FirebaseConfig {
     appId,
     authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() || undefined,
     storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim() || undefined,
-    messagingSenderId:
-      process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim() || undefined,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim() || undefined,
   };
 }
 
@@ -38,7 +38,9 @@ export function getFirebaseAuth(): Auth {
   if (cachedAuth) return cachedAuth;
 
   const app = getApps().length > 0 ? getApp() : initializeApp(getFirebaseConfig());
-  cachedAuth = getAuth(app);
+  cachedAuth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  });
 
   return cachedAuth;
 }
