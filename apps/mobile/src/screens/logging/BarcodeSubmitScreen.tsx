@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Input, Button } from '../../components/ui';
+import { BackButton, Input, Button } from '../../components/ui';
 import { mealsApi } from '../../api/meals';
 import type { LogStackParamList } from '../../navigation/types';
 
@@ -96,22 +96,13 @@ export function BarcodeSubmitScreen() {
         className="flex-1"
       >
         <View className="flex-row items-center border-b border-surface-border px-4 py-3">
-          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
-            <Ionicons name="arrow-back" size={24} color="#111218" />
-          </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text">
-            Submit Product
-          </Text>
+          <BackButton />
+          <Text className="ml-3 text-lg font-sans-semibold text-text">Submit Product</Text>
         </View>
 
         <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
           <View className="p-4">
-            <Input
-              label="Barcode"
-              value={barcode}
-              editable={false}
-              className="mb-4"
-            />
+            <Input label="Barcode" value={barcode} editable={false} className="mb-4" />
             <Input
               label="Product name"
               value={productName}
@@ -177,15 +168,9 @@ export function BarcodeSubmitScreen() {
               </Text>
             </Pressable>
 
-            {error && (
-              <Text className="mb-4 text-center text-danger">{error}</Text>
-            )}
+            {error && <Text className="mb-4 text-center text-danger">{error}</Text>}
 
-            <Button
-              onPress={handleSubmit}
-              loading={submitting}
-              disabled={submitting}
-            >
+            <Button onPress={handleSubmit} loading={submitting} disabled={submitting}>
               Submit for Review
             </Button>
           </View>

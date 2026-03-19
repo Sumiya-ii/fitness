@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Button, Badge, LoadingScreen } from '../components/ui';
+import { BackButton, Button, Badge, LoadingScreen } from '../components/ui';
 import { api } from '../api';
 
 const TELEGRAM_BOT_USERNAME = (process.env.EXPO_PUBLIC_TELEGRAM_BOT_USERNAME ?? 'CoachBot').replace(
@@ -99,14 +99,8 @@ export function TelegramConnectScreen() {
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
         <View className="flex-row items-center px-4 py-3">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            className="h-10 w-10 rounded-full bg-surface-card items-center justify-center mr-3"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={20} color="#9a9caa" />
-          </Pressable>
-          <Text className="flex-1 text-xl font-sans-bold text-text">Telegram Coach</Text>
+          <BackButton />
+          <Text className="flex-1 ml-3 text-xl font-sans-bold text-text">Telegram Coach</Text>
         </View>
 
         <View className="flex-1 px-4 pt-6">

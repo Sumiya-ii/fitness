@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
+import { BackButton } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
@@ -175,10 +176,8 @@ export function VoiceLogScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
-          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
-            <Ionicons name="arrow-back" size={24} color="#9a9caa" />
-          </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text">Voice Log</Text>
+          <BackButton />
+          <Text className="ml-3 text-lg font-sans-semibold text-text">Voice Log</Text>
         </View>
 
         <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>

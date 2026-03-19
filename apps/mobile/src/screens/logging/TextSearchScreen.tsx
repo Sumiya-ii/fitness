@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Input, Button, Card, Badge } from '../../components/ui';
+import { BackButton, Input, Button, Card, Badge } from '../../components/ui';
 import { mealsApi, type FoodSearchResult } from '../../api/meals';
 import type { LogStackScreenProps, LogStackParamList } from '../../navigation/types';
 import type { RouteProp } from '@react-navigation/native';
@@ -112,9 +112,7 @@ export function TextSearchScreen() {
       >
         {/* Header */}
         <View className="flex-row items-center gap-3 border-b border-surface-border px-4 py-3">
-          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
-            <Ionicons name="arrow-back" size={24} color="#111218" />
-          </Pressable>
+          <BackButton />
           <Input
             value={query}
             onChangeText={setQuery}
@@ -147,19 +145,13 @@ export function TextSearchScreen() {
                 const cal = food.nutrients?.caloriesPer100g ?? 0;
                 return (
                   <Card key={food.id} className="mb-3">
-                    <Pressable
-                      onPress={() =>
-                        setExpandedId(isExpanded ? null : food.id)
-                      }
-                    >
+                    <Pressable onPress={() => setExpandedId(isExpanded ? null : food.id)}>
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1">
                           <Text className="font-sans-semibold text-text">
                             {food.normalizedName}
                           </Text>
-                          <Text className="text-sm text-text-secondary">
-                            {cal} cal / 100g
-                          </Text>
+                          <Text className="text-sm text-text-secondary">{cal} cal / 100g</Text>
                         </View>
                         <Badge variant="neutral">
                           {food.servings.length} serving{food.servings.length !== 1 ? 's' : ''}
@@ -183,12 +175,8 @@ export function TextSearchScreen() {
                             onPress={() => handleSelectServing(food, s.id)}
                             className="mb-2 flex-row items-center justify-between rounded-xl bg-surface-secondary py-2.5 px-3"
                           >
-                            <Text className="font-sans-medium text-text">
-                              {s.label}
-                            </Text>
-                            <Text className="text-sm text-text-tertiary">
-                              {s.gramsPerUnit}g
-                            </Text>
+                            <Text className="font-sans-medium text-text">{s.label}</Text>
+                            <Text className="text-sm text-text-tertiary">{s.gramsPerUnit}g</Text>
                           </Pressable>
                         ))}
                       </View>
@@ -208,9 +196,7 @@ export function TextSearchScreen() {
                 <Pressable
                   onPress={() =>
                     setSelectedFood((p) =>
-                      p && p.quantity > 0.5
-                        ? { ...p, quantity: p.quantity - 0.5 }
-                        : p
+                      p && p.quantity > 0.5 ? { ...p, quantity: p.quantity - 0.5 } : p,
                     )
                   }
                   className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
@@ -222,9 +208,7 @@ export function TextSearchScreen() {
                 </Text>
                 <Pressable
                   onPress={() =>
-                    setSelectedFood((p) =>
-                      p ? { ...p, quantity: p.quantity + 0.5 } : p
-                    )
+                    setSelectedFood((p) => (p ? { ...p, quantity: p.quantity + 0.5 } : p))
                   }
                   className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
                 >
@@ -236,25 +220,13 @@ export function TextSearchScreen() {
                   Calculated macros
                 </Text>
                 <View className="flex-row flex-wrap gap-4">
-                  <Text className="text-text">
-                    {calcCal} cal
-                  </Text>
-                  <Text className="text-text">
-                    P: {calcProtein}g
-                  </Text>
-                  <Text className="text-text">
-                    C: {calcCarbs}g
-                  </Text>
-                  <Text className="text-text">
-                    F: {calcFat}g
-                  </Text>
+                  <Text className="text-text">{calcCal} cal</Text>
+                  <Text className="text-text">P: {calcProtein}g</Text>
+                  <Text className="text-text">C: {calcCarbs}g</Text>
+                  <Text className="text-text">F: {calcFat}g</Text>
                 </View>
               </View>
-              <Button
-                onPress={handleAddToLog}
-                loading={saving}
-                disabled={saving}
-              >
+              <Button onPress={handleAddToLog} loading={saving} disabled={saving}>
                 Add to Log
               </Button>
             </View>
