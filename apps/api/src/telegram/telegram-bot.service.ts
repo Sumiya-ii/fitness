@@ -3,12 +3,9 @@ import { ConfigService } from '../config';
 import { TelegramService } from './telegram.service';
 import { IdempotencyService } from './idempotency.service';
 import { ChatService } from '../chat/chat.service';
-import { Telegraf } from 'telegraf';
-import type { NarrowedContext, Context, Types } from 'telegraf';
+import { Telegraf, Context } from 'telegraf';
 
 const IDEMPOTENCY_TTL_MINUTES = 24 * 60;
-
-type StartContext = NarrowedContext<Context, Types.Update.MessageUpdate>;
 
 @Injectable()
 export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
@@ -32,8 +29,8 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     this.bot = new Telegraf(token);
 
     // Deep-link entry: t.me/BOT?start=CODE — auto-links account
-    this.bot.start(async (ctx: StartContext) => {
-      const payload = (ctx as StartContext & { startPayload?: string }).startPayload?.trim();
+    this.bot.start(async (ctx) => {
+      const payload = (ctx as Context & { startPayload?: string }).startPayload?.trim();
       if (payload && /^\d{6}$/.test(payload)) {
         await this.handleStartWithCode(ctx, payload);
       } else {
