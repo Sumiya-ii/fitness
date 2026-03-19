@@ -154,8 +154,10 @@ export function CoachChatScreen() {
             <Ionicons name="arrow-back" size={20} color="#9a9caa" />
           </Pressable>
           <View className="flex-1">
-            <Text className="text-lg font-sans-bold text-text">AI Coach</Text>
-            <Text className="text-xs text-text-secondary">Powered by GPT-4o</Text>
+            <Text className="text-lg font-sans-bold text-text">Telegram Coach</Text>
+            <Text className="text-xs text-text-secondary">
+              Chat here or via Telegram — same conversation
+            </Text>
           </View>
           <Pressable
             onPress={handleClear}
@@ -189,10 +191,10 @@ export function CoachChatScreen() {
                     <Ionicons name="sparkles" size={28} color="#1f2028" />
                   </View>
                   <Text className="text-base font-sans-semibold text-text mb-2">
-                    Chat with your AI Coach
+                    Your Telegram Coach
                   </Text>
                   <Text className="text-sm text-text-secondary text-center px-8">
-                    Ask about your nutrition, get meal suggestions, or check your progress.
+                    Messages you send here or to your Telegram bot both appear in this conversation.
                   </Text>
                 </View>
               }

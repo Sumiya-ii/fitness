@@ -7,5 +7,6 @@ import { DashboardModule } from '../dashboard';
   imports: [DashboardModule],
   controllers: [ChatController],
   providers: [ChatService],
+  exports: [ChatService],
 })
 export class ChatModule {}
