@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { Button, Input } from '../components/ui';
-import { useAuthStore } from '../stores/auth.store';
+import { resetPassword } from '../services/firebase-auth.service';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
@@ -15,9 +15,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resetPassword = useAuthStore((s) => s.resetPassword);
-
-  const handleSend = async () => {
+  const handleSubmit = async () => {
     if (!email.trim()) return;
     setError(null);
     setLoading(true);
@@ -25,7 +23,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       await resetPassword(email.trim());
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send reset email.');
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
       setLoading(false);
     }
@@ -39,7 +37,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       >
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -48,36 +46,20 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               <Ionicons name="arrow-back" size={24} color="#0f172a" />
             </Pressable>
 
+            <Text className="text-3xl font-sans-bold text-text mb-1">Reset password</Text>
+            <Text className="text-base text-text-secondary mb-8">
+              Enter your email and we'll send you a link to reset your password.
+            </Text>
+
             {sent ? (
-              /* Success state */
-              <View className="flex-1 items-center justify-center pb-20">
-                <View className="h-20 w-20 rounded-full bg-green-100 items-center justify-center mb-6">
-                  <Ionicons name="mail-outline" size={36} color="#22c55e" />
-                </View>
-                <Text className="text-2xl font-sans-bold text-text mb-3 text-center">
-                  Check your email
+              <View className="flex-row items-start gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-4 mb-6">
+                <Ionicons name="checkmark-circle-outline" size={20} color="#22c55e" />
+                <Text className="text-sm text-green-700 flex-1 leading-5">
+                  Check your inbox. We sent a reset link to {email.trim()}.
                 </Text>
-                <Text className="text-base text-text-secondary text-center px-4 mb-8">
-                  We sent a password reset link to{' '}
-                  <Text className="font-sans-semibold text-text">{email}</Text>
-                </Text>
-                <Pressable
-                  onPress={() => navigation.navigate('SignIn')}
-                  className="active:opacity-70"
-                >
-                  <Text className="text-base text-primary-600 font-sans-semibold">
-                    Back to Sign In
-                  </Text>
-                </Pressable>
               </View>
             ) : (
-              /* Form state */
               <>
-                <Text className="text-3xl font-sans-bold text-text mb-2">Reset password</Text>
-                <Text className="text-base text-text-secondary mb-8">
-                  Enter your email and we'll send you a link to reset your password.
-                </Text>
-
                 <Input
                   label="Email"
                   placeholder="you@example.com"
@@ -86,10 +68,10 @@ export function ForgotPasswordScreen({ navigation }: Props) {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
-                  returnKeyType="go"
-                  onSubmitEditing={handleSend}
-                  containerClassName="mb-6"
+                  returnKeyType="send"
+                  onSubmitEditing={handleSubmit}
                   editable={!loading}
+                  containerClassName="mb-4"
                 />
 
                 {error ? (
@@ -100,15 +82,26 @@ export function ForgotPasswordScreen({ navigation }: Props) {
                 ) : null}
 
                 <Button
-                  onPress={handleSend}
+                  onPress={handleSubmit}
                   size="lg"
                   loading={loading}
                   disabled={!email.trim() || loading}
                   className="w-full"
                 >
-                  Send Reset Link
+                  Send reset link
                 </Button>
               </>
+            )}
+
+            {sent && (
+              <Button
+                onPress={() => navigation.navigate('SignIn')}
+                variant="outline"
+                size="lg"
+                className="w-full mt-4"
+              >
+                Back to sign in
+              </Button>
             )}
           </View>
         </ScrollView>

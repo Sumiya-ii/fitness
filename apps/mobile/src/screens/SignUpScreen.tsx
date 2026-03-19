@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
-import { Button, Input } from '../components/ui';
+import { BackButton, Button, Input } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
 import { useLocale } from '../i18n';
 
@@ -136,10 +136,8 @@ export function SignUpScreen({ navigation }: Props) {
         >
           <View className="flex-1 px-6 pt-4">
             {/* Header */}
-            <Pressable onPress={() => navigation.goBack()} hitSlop={12} className="mb-8 self-start">
-              <Ionicons name="arrow-back" size={24} color="#0f172a" />
-            </Pressable>
-            <Text className="text-3xl font-sans-bold text-text mb-1">{t('auth.signUp')}</Text>
+            <BackButton />
+            <Text className="text-3xl font-sans-bold text-text mb-1 mt-6">{t('auth.signUp')}</Text>
             <Text className="text-base text-text-secondary mb-8">
               {t('auth.createAccountDesc')}
             </Text>
