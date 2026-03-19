@@ -26,6 +26,7 @@ import { VoiceModule } from './voice';
 import { PhotosModule } from './photos';
 import { TelegramModule } from './telegram';
 import { RemindersModule } from './reminders';
+import { ChatModule } from './chat';
 import { OnboardingModule } from './onboarding';
 import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
@@ -71,6 +72,7 @@ import { HealthController } from './health/health.controller';
     TelegramModule,
     RemindersModule,
     QPayModule,
+    ChatModule,
   ],
   controllers: [HealthController],
   providers: [

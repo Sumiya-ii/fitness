@@ -4,6 +4,7 @@ import { MainTabs } from './MainTabs';
 import { WeeklySummaryScreen } from '../screens/WeeklySummaryScreen';
 import { TelegramConnectScreen } from '../screens/TelegramConnectScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
+import { CoachChatScreen } from '../screens/CoachChatScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -21,6 +22,7 @@ export function MainStack() {
       <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
       <Stack.Screen name="TelegramConnect" component={TelegramConnectScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="CoachChat" component={CoachChatScreen} />
     </Stack.Navigator>
   );
 }

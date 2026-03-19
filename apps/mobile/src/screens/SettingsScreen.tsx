@@ -1,13 +1,5 @@
 import { useCallback, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Switch,
-  Alert,
-  TextInput,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, Switch, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,38 +54,20 @@ function SettingsRow({
 }: SettingsRowProps) {
   return (
     <Pressable onPress={onPress} className="flex-row items-center py-3.5">
-      <View
-        className={`h-9 w-9 rounded-xl ${iconBg} items-center justify-center mr-3`}
-      >
+      <View className={`h-9 w-9 rounded-xl ${iconBg} items-center justify-center mr-3`}>
         <Ionicons name={icon} size={18} color={iconColor} />
       </View>
       <View className="flex-1">
-        <Text
-          className={`font-sans-medium ${danger ? 'text-red-400' : 'text-text'}`}
-        >
-          {label}
-        </Text>
+        <Text className={`font-sans-medium ${danger ? 'text-red-400' : 'text-text'}`}>{label}</Text>
       </View>
-      {value && (
-        <Text className="text-sm text-text-secondary font-sans-medium mr-2">
-          {value}
-        </Text>
-      )}
+      {value && <Text className="text-sm text-text-secondary font-sans-medium mr-2">{value}</Text>}
       {right}
-      {onPress && !right && (
-        <Ionicons name="chevron-forward" size={18} color="#777985" />
-      )}
+      {onPress && !right && <Ionicons name="chevron-forward" size={18} color="#777985" />}
     </Pressable>
   );
 }
 
-function SettingsSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function SettingsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="mb-6">
       <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2 px-1">
@@ -119,11 +93,8 @@ export function SettingsScreen() {
     morningReminder: true,
     eveningReminder: true,
   });
-  const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(
-    null,
-  );
-  const [subscription, setSubscription] =
-    useState<SubscriptionStatus | null>(null);
+  const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
@@ -153,10 +124,7 @@ export function SettingsScreen() {
     }, [loadData]),
   );
 
-  const updateNotifPref = async (
-    key: keyof NotificationPrefs,
-    value: boolean,
-  ) => {
+  const updateNotifPref = async (key: keyof NotificationPrefs, value: boolean) => {
     const prev = { ...notifPrefs };
     const next = { ...notifPrefs, [key]: value };
     setNotifPrefs(next);
@@ -293,10 +261,8 @@ export function SettingsScreen() {
   };
 
   const appVersion = Constants.expoConfig?.version ?? '0.0.1';
-  const languageLabel =
-    (profile?.locale ?? currentLocale) === 'mn' ? 'Монгол' : 'English';
-  const unitsLabel =
-    profile?.unitSystem === 'imperial' ? 'Imperial' : 'Metric';
+  const languageLabel = (profile?.locale ?? currentLocale) === 'mn' ? 'Монгол' : 'English';
+  const unitsLabel = profile?.unitSystem === 'imperial' ? 'Imperial' : 'Metric';
 
   return (
     <View className="flex-1 bg-surface-app">
@@ -352,9 +318,7 @@ export function SettingsScreen() {
                   onPress={handleEditProfile}
                   className="rounded-full bg-surface-secondary px-3 py-1.5"
                 >
-                  <Text className="text-xs font-sans-medium text-primary-400">
-                    Edit
-                  </Text>
+                  <Text className="text-xs font-sans-medium text-primary-400">Edit</Text>
                 </Pressable>
               )}
             </View>
@@ -385,9 +349,7 @@ export function SettingsScreen() {
               <View className="h-9 w-9 rounded-xl bg-amber-500/15 items-center justify-center mr-3">
                 <Ionicons name="sunny-outline" size={18} color="#8f93a4" />
               </View>
-              <Text className="flex-1 font-sans-medium text-text">
-                Morning reminder
-              </Text>
+              <Text className="flex-1 font-sans-medium text-text">Morning reminder</Text>
               <Switch
                 value={notifPrefs.morningReminder}
                 onValueChange={(v) => updateNotifPref('morningReminder', v)}
@@ -400,9 +362,7 @@ export function SettingsScreen() {
               <View className="h-9 w-9 rounded-xl bg-indigo-500/15 items-center justify-center mr-3">
                 <Ionicons name="moon-outline" size={18} color="#818cf8" />
               </View>
-              <Text className="flex-1 font-sans-medium text-text">
-                Evening reminder
-              </Text>
+              <Text className="flex-1 font-sans-medium text-text">Evening reminder</Text>
               <Switch
                 value={notifPrefs.eveningReminder}
                 onValueChange={(v) => updateNotifPref('eveningReminder', v)}
@@ -410,6 +370,21 @@ export function SettingsScreen() {
                 thumbColor="#ffffff"
               />
             </View>
+          </SettingsSection>
+
+          <SettingsSection title="AI Coach">
+            <SettingsRow
+              icon="sparkles"
+              iconColor="#1f2028"
+              iconBg="bg-primary-500/15"
+              label="Chat with Coach"
+              value="GPT-4o"
+              onPress={() =>
+                (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(
+                  'CoachChat',
+                )
+              }
+            />
           </SettingsSection>
 
           <SettingsSection title="Connected Accounts">
@@ -420,24 +395,16 @@ export function SettingsScreen() {
               label="Telegram"
               right={
                 <View className="flex-row items-center gap-2">
-                  <Badge
-                    variant={telegramStatus?.linked ? 'success' : 'warning'}
-                  >
+                  <Badge variant={telegramStatus?.linked ? 'success' : 'warning'}>
                     {telegramStatus?.linked ? 'Connected' : 'Not linked'}
                   </Badge>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color="#777985"
-                  />
+                  <Ionicons name="chevron-forward" size={18} color="#777985" />
                 </View>
               }
               onPress={() =>
-                (
-                  navigation.getParent() as
-                    | { navigate: (s: string) => void }
-                    | undefined
-                )?.navigate('TelegramConnect')
+                (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(
+                  'TelegramConnect',
+                )
               }
             />
           </SettingsSection>
@@ -450,26 +417,16 @@ export function SettingsScreen() {
               label="Current plan"
               right={
                 <View className="flex-row items-center gap-2">
-                  <Badge
-                    variant={
-                      subscription?.tier === 'pro' ? 'success' : 'neutral'
-                    }
-                  >
+                  <Badge variant={subscription?.tier === 'pro' ? 'success' : 'neutral'}>
                     {subscription?.tier === 'pro' ? 'Pro' : 'Free'}
                   </Badge>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color="#777985"
-                  />
+                  <Ionicons name="chevron-forward" size={18} color="#777985" />
                 </View>
               }
               onPress={() =>
-                (
-                  navigation.getParent() as
-                    | { navigate: (s: string) => void }
-                    | undefined
-                )?.navigate('Subscription')
+                (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(
+                  'Subscription',
+                )
               }
             />
           </SettingsSection>
@@ -489,10 +446,7 @@ export function SettingsScreen() {
               iconBg="bg-surface-secondary"
               label="Privacy Policy"
               onPress={() =>
-                Alert.alert(
-                  'Privacy Policy',
-                  'Privacy policy will be available at launch.',
-                )
+                Alert.alert('Privacy Policy', 'Privacy policy will be available at launch.')
               }
             />
             <SettingsDivider />
@@ -502,10 +456,7 @@ export function SettingsScreen() {
               iconBg="bg-surface-secondary"
               label="Terms of Service"
               onPress={() =>
-                Alert.alert(
-                  'Terms of Service',
-                  'Terms of service will be available at launch.',
-                )
+                Alert.alert('Terms of Service', 'Terms of service will be available at launch.')
               }
             />
             <SettingsDivider />

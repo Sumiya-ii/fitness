@@ -45,6 +45,7 @@ export type MainStackParamList = {
   WeeklySummary: undefined;
   TelegramConnect: undefined;
   Subscription: undefined;
+  CoachChat: undefined;
 };
 
 export type RootStackParamList = {
