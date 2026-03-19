@@ -1,12 +1,32 @@
 import { create } from 'zustand';
 import { api } from '../api';
 import {
+  configureGoogleSignIn,
+  resetPassword as firebaseResetPassword,
   restoreFirebaseSession,
+  signInWithApple,
   signInWithEmailPassword,
+  signInWithGoogle,
   signOutFirebase,
   signUpWithEmailPassword,
+  subscribeToTokenRefresh,
   type FirebaseSessionUser,
 } from '../services/firebase-auth.service';
+
+configureGoogleSignIn();
+
+// Keeps the stored token in sync when Firebase auto-refreshes it (every ~1 hr).
+let _tokenRefreshUnsub: (() => void) | null = null;
+
+function ensureTokenRefresh(getState: () => AuthState, setState: (s: Partial<AuthState>) => void) {
+  if (_tokenRefreshUnsub) return;
+  _tokenRefreshUnsub = subscribeToTokenRefresh(async (freshToken) => {
+    if (getState().isAuthenticated) {
+      await api.setToken(freshToken);
+      setState({ token: freshToken });
+    }
+  });
+}
 
 interface User {
   id: string;
@@ -21,11 +41,14 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithToken: (token: string, user?: FirebaseSessionUser) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   loadToken: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   user: null,
   isAuthenticated: false,
@@ -36,15 +59,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       token,
       isAuthenticated: true,
-      user: user
-        ? { id: user.id, email: user.email }
-        : { id: 'legacy-token-user', email: null },
+      user: user ? { id: user.id, email: user.email } : { id: 'legacy-token-user', email: null },
     });
   },
 
   signIn: async (email: string, password: string) => {
     const session = await signInWithEmailPassword(email, password);
     await api.setToken(session.token);
+    ensureTokenRefresh(get, set);
     set({
       token: session.token,
       isAuthenticated: true,
@@ -55,6 +77,29 @@ export const useAuthStore = create<AuthState>((set) => ({
   signUp: async (email: string, password: string) => {
     const session = await signUpWithEmailPassword(email, password);
     await api.setToken(session.token);
+    ensureTokenRefresh(get, set);
+    set({
+      token: session.token,
+      isAuthenticated: true,
+      user: { id: session.user.id, email: session.user.email },
+    });
+  },
+
+  signInWithGoogle: async () => {
+    const session = await signInWithGoogle();
+    await api.setToken(session.token);
+    ensureTokenRefresh(get, set);
+    set({
+      token: session.token,
+      isAuthenticated: true,
+      user: { id: session.user.id, email: session.user.email },
+    });
+  },
+
+  signInWithApple: async () => {
+    const session = await signInWithApple();
+    await api.setToken(session.token);
+    ensureTokenRefresh(get, set);
     set({
       token: session.token,
       isAuthenticated: true,
@@ -63,8 +108,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signOut: async () => {
+    _tokenRefreshUnsub?.();
+    _tokenRefreshUnsub = null;
     await Promise.allSettled([signOutFirebase(), api.clearToken()]);
     set({ token: null, user: null, isAuthenticated: false });
+  },
+
+  resetPassword: async (email: string) => {
+    await firebaseResetPassword(email);
   },
 
   loadToken: async () => {
@@ -73,6 +124,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const firebaseSession = await restoreFirebaseSession();
       if (firebaseSession) {
         await api.setToken(firebaseSession.token);
+        ensureTokenRefresh(get, set);
         set({
           token: firebaseSession.token,
           isAuthenticated: true,
