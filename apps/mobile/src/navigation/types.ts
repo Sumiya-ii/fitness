@@ -35,7 +35,6 @@ export type LogStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Log: undefined;
-  Search: undefined;
   Progress: undefined;
   Settings: undefined;
 };

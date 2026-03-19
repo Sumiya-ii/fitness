@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import type { MainTabParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LogStack } from './LogStack';
-import { SearchScreen } from '../screens/SearchScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useLocale } from '../i18n';
@@ -61,16 +60,6 @@ export function MainTabs() {
           tabBarLabel: t('tabs.log'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarLabel: t('tabs.search'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />
