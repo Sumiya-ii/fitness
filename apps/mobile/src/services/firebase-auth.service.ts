@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithCredential,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   OAuthProvider,
   signOut as firebaseSignOut,
@@ -161,4 +162,23 @@ export async function restoreFirebaseSession(): Promise<FirebaseSession | null> 
 export async function signOutFirebase(): Promise<void> {
   const auth = getFirebaseAuth();
   await firebaseSignOut(auth);
+}
+
+export async function resetPassword(email: string): Promise<void> {
+  try {
+    const auth = getFirebaseAuth();
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    throw toAuthError(error);
+  }
+}
+
+export function subscribeToTokenRefresh(onToken: (token: string) => void): () => void {
+  const auth = getFirebaseAuth();
+  return auth.onIdTokenChanged(async (user) => {
+    if (user) {
+      const token = await user.getIdToken();
+      onToken(token);
+    }
+  });
 }

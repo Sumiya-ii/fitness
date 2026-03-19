@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,18 +6,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
-import { AuthProviderButton, Button, Card, IconButton, Input } from '../components/ui';
+import { Button, Input } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
 import { useLocale } from '../i18n';
-import { themeColors } from '../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SignIn'>;
 
@@ -26,154 +25,189 @@ export function SignInScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<'email' | 'google' | 'apple' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAppleAvailable, setIsAppleAvailable] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   const signIn = useAuthStore((s) => s.signIn);
   const signInWithGoogleStore = useAuthStore((s) => s.signInWithGoogle);
   const signInWithAppleStore = useAuthStore((s) => s.signInWithApple);
-  const [isAppleAvailable, setIsAppleAvailable] = useState<boolean | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     AppleAuthentication.isAvailableAsync().then(setIsAppleAvailable);
-  });
+  }, []);
 
-  const handleGoogleSignIn = async () => {
+  const isLoading = loading !== null;
+
+  const handleGoogle = async () => {
     setError(null);
-    setLoading(true);
+    setLoading('google');
     try {
       await signInWithGoogleStore();
     } catch (err) {
-      if (err instanceof Error && err.message !== 'CANCELLED') {
-        setError(err.message);
-      }
+      if (err instanceof Error && err.message !== 'CANCELLED') setError(err.message);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
-  const handleAppleSignIn = async () => {
+  const handleApple = async () => {
     setError(null);
-    setLoading(true);
+    setLoading('apple');
     try {
       await signInWithAppleStore();
     } catch (err) {
-      if (err instanceof Error && err.message !== 'CANCELLED') {
-        setError(err.message);
-      }
+      if (err instanceof Error && err.message !== 'CANCELLED') setError(err.message);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
   const handleSignIn = async () => {
+    if (!email.trim() || !password) return;
     setError(null);
-    setLoading(true);
+    setLoading('email');
     try {
       await signIn(email.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not sign in.');
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
   return (
     <SafeAreaView className="flex-1 bg-surface-app">
-      <LinearGradient
-        colors={[themeColors.surface.app, themeColors.surface.tertiary, themeColors.surface.app]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="absolute inset-0"
-      />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-1 px-6 pt-4">
-            <Pressable onPress={() => navigation.goBack()} className="absolute top-4 left-6 z-10">
-              <IconButton icon="arrow-back" />
+            {/* Header */}
+            <Pressable onPress={() => navigation.goBack()} hitSlop={12} className="mb-8 self-start">
+              <Ionicons name="arrow-back" size={24} color="#0f172a" />
             </Pressable>
-            <Text className="text-3xl font-sans-bold text-text mb-1 mt-10">{t('auth.signIn')}</Text>
+            <Text className="text-3xl font-sans-bold text-text mb-1">{t('auth.signIn')}</Text>
             <Text className="text-base text-text-secondary mb-8">{t('auth.welcomeBackDesc')}</Text>
 
-            <Card className="rounded-3xl p-4 mb-6">
-              <Input
-                label={t('auth.email')}
-                placeholder="you@example.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                containerClassName="mb-4"
-              />
-
-              <Input
-                label={t('auth.password')}
-                placeholder="••••••••"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoComplete="password"
-                rightIcon={
-                  <Pressable onPress={() => setShowPassword(!showPassword)} hitSlop={12}>
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={22}
-                      color="#7687a2"
-                    />
-                  </Pressable>
-                }
-                containerClassName="mb-6"
-              />
-
-              <Button
-                onPress={handleSignIn}
-                size="lg"
-                loading={loading}
-                disabled={!email || !password}
-                className="w-full mb-6"
+            {/* Social buttons */}
+            <View className="gap-3 mb-6">
+              <Pressable
+                onPress={handleGoogle}
+                disabled={isLoading}
+                className="flex-row items-center justify-center bg-white border border-surface-border rounded-2xl py-4 active:opacity-80"
+                style={{ opacity: isLoading ? 0.7 : 1 }}
               >
-                {t('auth.signIn')}
-              </Button>
+                {loading === 'google' ? (
+                  <ActivityIndicator size="small" color="#0f172a" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-google" size={20} color="#0f172a" />
+                    <Text className="ml-3 text-base font-sans-semibold text-text">
+                      Continue with Google
+                    </Text>
+                  </>
+                )}
+              </Pressable>
 
-              {error ? <Text className="text-sm text-red-400 mb-4">{error}</Text> : null}
-            </Card>
-
-            <View className="flex-row items-center gap-4 mb-6">
-              <View className="flex-1 h-px bg-surface-secondary" />
-              <Text className="text-sm text-text-tertiary font-sans-medium">
-                {t('auth.orContinueWith')}
-              </Text>
-              <View className="flex-1 h-px bg-surface-secondary" />
-            </View>
-
-            <View className="flex-row gap-3 mb-8">
-              <AuthProviderButton
-                icon="logo-google"
-                label="Google"
-                onPress={handleGoogleSignIn}
-                disabled={loading}
-              />
-              {isAppleAvailable ? (
-                <AuthProviderButton
-                  icon="logo-apple"
-                  label="Apple"
-                  onPress={handleAppleSignIn}
-                  disabled={loading}
-                />
-              ) : (
-                <AuthProviderButton icon="logo-apple" label="Apple" tone="muted" disabled />
+              {isAppleAvailable && (
+                <Pressable
+                  onPress={handleApple}
+                  disabled={isLoading}
+                  className="flex-row items-center justify-center rounded-2xl py-4 active:opacity-80"
+                  style={{ backgroundColor: '#0f172a', opacity: isLoading ? 0.7 : 1 }}
+                >
+                  {loading === 'apple' ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <>
+                      <Ionicons name="logo-apple" size={20} color="#ffffff" />
+                      <Text className="ml-3 text-base font-sans-semibold text-white">
+                        Continue with Apple
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
               )}
             </View>
+
+            {/* Divider */}
+            <View className="flex-row items-center gap-4 mb-6">
+              <View className="flex-1 h-px bg-surface-secondary" />
+              <Text className="text-xs text-text-tertiary font-sans-medium">or with email</Text>
+              <View className="flex-1 h-px bg-surface-secondary" />
+            </View>
+
+            {/* Email form */}
+            <Input
+              label={t('auth.email')}
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              containerClassName="mb-4"
+              editable={!isLoading}
+            />
+
+            <Input
+              ref={passwordRef}
+              label={t('auth.password')}
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoComplete="password"
+              returnKeyType="go"
+              onSubmitEditing={handleSignIn}
+              editable={!isLoading}
+              rightIcon={
+                <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={12}>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={22}
+                    color="#7687a2"
+                  />
+                </Pressable>
+              }
+              containerClassName="mb-2"
+            />
+
+            <Pressable
+              onPress={() => navigation.navigate('ForgotPassword')}
+              className="self-end mb-6 py-1"
+              hitSlop={8}
+            >
+              <Text className="text-sm text-primary-600 font-sans-medium">Forgot password?</Text>
+            </Pressable>
+
+            {error ? (
+              <View className="flex-row items-center gap-2 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-4">
+                <Ionicons name="alert-circle-outline" size={16} color="#ef4444" />
+                <Text className="text-sm text-red-500 flex-1">{error}</Text>
+              </View>
+            ) : null}
+
+            <Button
+              onPress={handleSignIn}
+              size="lg"
+              loading={loading === 'email'}
+              disabled={!email.trim() || !password || isLoading}
+              className="w-full mb-6"
+            >
+              {t('auth.signIn')}
+            </Button>
 
             <Pressable
               onPress={() => navigation.navigate('SignUp')}
