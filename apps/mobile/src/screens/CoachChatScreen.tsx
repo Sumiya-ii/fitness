@@ -116,6 +116,7 @@ export function CoachChatScreen() {
       };
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (e) {
+      console.error('[CoachChat] sendMessage failed:', e);
       Alert.alert('Error', e instanceof Error ? e.message : 'Failed to send message');
     } finally {
       setSending(false);

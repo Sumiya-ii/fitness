@@ -101,6 +101,7 @@ export class ChatService implements OnModuleDestroy {
       { role: 'user', content: userMessage },
     ];
 
+    console.log('[Chat] Sending to OpenAI, history length:', history.length);
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o',
       messages,
