@@ -70,6 +70,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.coach.mobile",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "buildNumber": "1",
       "usesAppleSignIn": true,
       "infoPlist": {
