@@ -94,6 +94,20 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
     this.bot = new Telegraf(token);
 
+    // Deep-link entry point: t.me/BOT?start=<code>
+    // If payload is a 6-digit code, link the account automatically.
+    // If no payload, send a welcome/help message.
+    this.bot.start(async (ctx) => {
+      const payload = (ctx as unknown as { startPayload?: string }).startPayload?.trim();
+      if (payload && /^\d{6}$/.test(payload)) {
+        await this.handleStartWithCode(ctx, payload);
+      } else {
+        await ctx.reply(
+          'Welcome to Coach! 👋\n\nOpen the Coach app and tap "Connect with Telegram" to link your account.',
+        );
+      }
+    });
+
     this.bot.command('link', (ctx) => this.handleLinkCommand(ctx));
     this.bot.command('status', (ctx) => this.handleStatusCommand(ctx));
     this.bot.on('text', (ctx) => this.handleTextMessage(ctx));
@@ -118,6 +132,24 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     await this.bot.handleUpdate(update as never);
   }
 
+  private async handleStartWithCode(ctx: Context, code: string) {
+    const from = ctx.from;
+    const chat = ctx.chat;
+    if (!from || !chat) return;
+
+    try {
+      await this.telegramService.confirmLink(String(from.id), String(chat.id), code, from.username);
+      await ctx.reply(
+        '✅ Account linked! You can now log meals by sending me text messages.\n\nTry: "chicken 200g, rice 150g"',
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to link account';
+      await ctx.reply(
+        `❌ ${msg}\n\nThe code may have expired. Go back to the Coach app and tap "Connect with Telegram" again.`,
+      );
+    }
+  }
+
   private async handleLinkCommand(ctx: Context) {
     const text = (ctx.message as { text?: string })?.text ?? '';
     const code = text.replace(/^\/link\s*/i, '').trim();
@@ -133,13 +165,10 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     if (!from || !chat) return;
 
     try {
-      await this.telegramService.confirmLink(
-        String(from.id),
-        String(chat.id),
-        code,
-        from.username,
+      await this.telegramService.confirmLink(String(from.id), String(chat.id), code, from.username);
+      await ctx.reply(
+        'Account linked successfully! You can now log meals by sending text messages.',
       );
-      await ctx.reply('Account linked successfully! You can now log meals by sending text messages.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to link account';
       await ctx.reply(`Error: ${msg}`);
@@ -202,7 +231,9 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       const targets = dashboard.targets;
 
       if (!targets) {
-        await ctx.reply('You haven\'t set your nutrition targets yet. Complete onboarding in the app first.');
+        await ctx.reply(
+          "You haven't set your nutrition targets yet. Complete onboarding in the app first.",
+        );
         return;
       }
 
@@ -222,7 +253,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         lines.push(`💡 You have ${remaining.calories} cal left. Try logging a meal!`);
       } else if (remaining && remaining.calories <= 0) {
         lines.push('');
-        lines.push('✅ You\'ve hit your calorie target for today!');
+        lines.push("✅ You've hit your calorie target for today!");
       }
 
       await ctx.reply(lines.join('\n'));
@@ -290,9 +321,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (matchedItems.length > 0) {
-      const lines = matchedItems.map(
-        (m) => `• ${m.displayName} (${m.calories} cal)`,
-      );
+      const lines = matchedItems.map((m) => `• ${m.displayName} (${m.calories} cal)`);
 
       if (unmatchedItems.length > 0) {
         lines.push('');
