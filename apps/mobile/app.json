@@ -4,6 +4,12 @@
     "plugins": [
       "expo-secure-store",
       [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone for voice meal logging."
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos so you can attach meal images.",
@@ -77,7 +83,8 @@
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
