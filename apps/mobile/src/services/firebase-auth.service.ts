@@ -84,6 +84,16 @@ export async function signUpWithEmailPassword(
 }
 
 export async function restoreFirebaseSession(): Promise<FirebaseSession | null> {
+  const auth = getFirebaseAuth();
+
+  // Wait for Firebase to finish restoring persisted auth state before reading currentUser.
+  await new Promise<void>((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(() => {
+      unsubscribe();
+      resolve();
+    });
+  });
+
   return sessionFromCurrentUser(true);
 }
 
