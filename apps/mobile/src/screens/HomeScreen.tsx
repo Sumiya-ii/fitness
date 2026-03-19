@@ -1,36 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  RefreshControl,
-  Pressable,
-  useWindowDimensions,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-} from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
-  useAnimatedStyle,
+  useAnimatedProps,
   useSharedValue,
   withSpring,
   FadeInDown,
 } from 'react-native-reanimated';
-import { ProgressRing, CircularMacro, SkeletonLoader } from '../components/ui';
-import {
-  useDashboardStore,
-  type DashboardData,
-  type DashboardMeal,
-} from '../stores/dashboard.store';
+import { SkeletonLoader } from '../components/ui';
+import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
-import { themeColors } from '../theme';
-const WEEK_PAGE_COUNT = 53;
-const INITIAL_WEEK_PAGE = Math.floor(WEEK_PAGE_COUNT / 2);
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: 'dashboard.breakfast',
@@ -39,43 +24,21 @@ const MEAL_TYPE_LABELS: Record<string, string> = {
   snack: 'dashboard.snack',
 };
 
-const MEAL_TYPE_ICONS: Record<string, string> = {
+const MEAL_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   breakfast: 'sunny-outline',
   lunch: 'restaurant-outline',
   dinner: 'moon-outline',
   snack: 'cafe-outline',
 };
 
-const MEAL_TYPE_COLORS: Record<string, string> = {
-  breakfast: themeColors.primary['600'],
-  lunch: themeColors.primary['500'],
-  dinner: themeColors.accent['700'],
-  snack: themeColors.text.secondary,
-};
-
-interface DayProgressSummary {
-  consumedCalories: number;
-  targetCalories: number;
-  mealCount: number;
-}
+const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_CELL_W = 52;
 
 function toDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function fromDateKey(key: string): Date {
-  const [year, month, day] = key.split('-').map(Number);
-  return new Date(year, (month || 1) - 1, day || 1);
-}
-
-function startOfWeek(date: Date): Date {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  copy.setDate(copy.getDate() - copy.getDay());
-  return copy;
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, '0');
+  const d = `${date.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function addDays(date: Date, days: number): Date {
@@ -84,81 +47,189 @@ function addDays(date: Date, days: number): Date {
   return copy;
 }
 
-export function HomeScreen() {
-  const { t } = useLocale();
-  const { width } = useWindowDimensions();
-  const navigation = useNavigation();
-  const [displayName, setDisplayName] = useState<string>('there');
-  const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
-  const [activeWeekPage, setActiveWeekPage] = useState(INITIAL_WEEK_PAGE);
-  const [weekProgressByDate, setWeekProgressByDate] = useState<Record<string, DayProgressSummary>>(
-    {},
-  );
-  const weekProgressRef = useRef<Record<string, DayProgressSummary>>({});
-  const { data, isLoading, fetchDashboard } = useDashboardStore();
+// Animated progress arc that accepts children rendered in center
+function ProgressArc({
+  progress,
+  size,
+  strokeWidth,
+  color,
+  trackColor = '#e8eef5',
+  children,
+}: {
+  progress: number;
+  size: number;
+  strokeWidth: number;
+  color: string;
+  trackColor?: string;
+  children?: React.ReactNode;
+}) {
+  const anim = useSharedValue(0);
+  const radius = (size - strokeWidth) / 2;
+  const circ = 2 * Math.PI * radius;
 
   useEffect(() => {
-    weekProgressRef.current = weekProgressByDate;
-  }, [weekProgressByDate]);
+    anim.value = withSpring(Math.min(Math.max(progress, 0), 1), {
+      damping: 15,
+      stiffness: 100,
+    });
+  }, [progress, anim]);
 
-  const weekPages = useMemo(() => Array.from({ length: WEEK_PAGE_COUNT }, (_, index) => index), []);
-  const selectedDate = useMemo(() => fromDateKey(selectedDateKey), [selectedDateKey]);
-  const selectedWeekday = selectedDate.getDay();
-  const activeWeekStart = useMemo(() => {
-    const todayWeekStart = startOfWeek(new Date());
-    return addDays(todayWeekStart, (activeWeekPage - INITIAL_WEEK_PAGE) * 7);
-  }, [activeWeekPage]);
+  const animProps = useAnimatedProps(() => ({
+    strokeDashoffset: circ * (1 - anim.value),
+  }));
+
+  return (
+    <View style={{ width: size, height: size }} className="items-center justify-center">
+      <Svg
+        width={size}
+        height={size}
+        style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}
+      >
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={trackColor}
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        <AnimatedCircle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={circ}
+          strokeLinecap="round"
+          animatedProps={animProps}
+        />
+      </Svg>
+      {children}
+    </View>
+  );
+}
+
+interface MacroCardProps {
+  label: string;
+  leftAmount: number;
+  unit: string;
+  progress: number;
+  color: string;
+  icon: string;
+}
+
+function MacroCard({ label, leftAmount, unit, progress, color, icon }: MacroCardProps) {
+  return (
+    <View
+      className="flex-1 bg-white rounded-3xl p-4"
+      style={{
+        shadowColor: '#0b1220',
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 2,
+      }}
+    >
+      <Text className="text-xl font-sans-bold text-[#0b1220] leading-tight">
+        {leftAmount}
+        {unit}
+      </Text>
+      <Text className="text-xs text-[#7687a2] font-sans-medium mb-3" numberOfLines={1}>
+        {label} left
+      </Text>
+      <ProgressArc progress={progress} size={52} strokeWidth={5} color={color}>
+        <Text style={{ fontSize: 18 }}>{icon}</Text>
+      </ProgressArc>
+    </View>
+  );
+}
+
+interface MealSectionProps {
+  type: string;
+  meals: DashboardMeal[];
+  typeLabel: string;
+}
+
+function MealSection({ type, meals, typeLabel }: MealSectionProps) {
+  const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
+  const items = meals.flatMap((m) => m.items);
+
+  return (
+    <View
+      className="bg-white rounded-3xl p-4 mb-3"
+      style={{
+        shadowColor: '#0b1220',
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+      }}
+    >
+      <View className="flex-row items-center mb-2">
+        <Ionicons name={MEAL_TYPE_ICONS[type] ?? 'cafe-outline'} size={14} color="#9aabbf" />
+        <Text className="ml-2 text-xs font-sans-semibold text-[#9aabbf] uppercase tracking-widest">
+          {typeLabel}
+        </Text>
+      </View>
+      {items.map((item, idx) => (
+        <View
+          key={item.id}
+          className="flex-row items-center justify-between py-2.5"
+          style={idx > 0 ? { borderTopWidth: 1, borderTopColor: '#f0f4f9' } : undefined}
+        >
+          <View className="flex-row items-center gap-3 flex-1 mr-3">
+            <View className="h-9 w-9 rounded-xl bg-[#f4f7fb] items-center justify-center">
+              <Text style={{ fontSize: 18 }}>🍽️</Text>
+            </View>
+            <Text className="text-sm font-sans-medium text-[#0b1220] flex-1" numberOfLines={1}>
+              {item.snapshotFoodName}
+            </Text>
+          </View>
+          <Text className="text-sm font-sans-bold text-[#0b1220]">
+            {item.snapshotCalories} kcal
+          </Text>
+        </View>
+      ))}
+      {items.length > 1 && (
+        <View
+          className="flex-row justify-between pt-2 mt-1"
+          style={{ borderTopWidth: 1, borderTopColor: '#f0f4f9' }}
+        >
+          <Text className="text-xs text-[#9aabbf]">Total</Text>
+          <Text className="text-xs font-sans-semibold text-[#0b1220]">{totalCal} kcal</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+export function HomeScreen() {
+  const { t } = useLocale();
+  const navigation = useNavigation();
+  const todayKey = useMemo(() => toDateKey(new Date()), []);
+  const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
+  const [displayName, setDisplayName] = useState('');
+  const dayScrollRef = useRef<ScrollView>(null);
+  const { data, isLoading, fetchDashboard } = useDashboardStore();
+
+  // 21 days: 10 past, today, 10 future
+  const days = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: 21 }, (_, i) => {
+      const d = addDays(today, i - 10);
+      return { date: d, key: toDateKey(d) };
+    });
+  }, []);
 
   const loadProfile = useCallback(async () => {
     try {
       const res = await api.get<{ data: { displayName: string | null } }>('/profile');
-      setDisplayName(res.data.displayName || 'there');
+      setDisplayName(res.data.displayName ?? '');
     } catch {
-      setDisplayName('there');
+      setDisplayName('');
     }
   }, []);
-
-  const prefetchWeek = useCallback(async (weekStartDate: Date) => {
-    const missingDateKeys: string[] = [];
-    for (let i = 0; i < 7; i += 1) {
-      const dateKey = toDateKey(addDays(weekStartDate, i));
-      if (!weekProgressRef.current[dateKey]) {
-        missingDateKeys.push(dateKey);
-      }
-    }
-    if (missingDateKeys.length === 0) return;
-
-    const responses = await Promise.all(
-      missingDateKeys.map(async (dateKey) => {
-        const response = await api.get<{ data: DashboardData }>(`/dashboard?date=${dateKey}`);
-        const dashboard = response.data;
-        return {
-          dateKey,
-          consumedCalories: dashboard.consumed.calories,
-          targetCalories: dashboard.targets?.calories ?? 0,
-          mealCount: dashboard.mealCount,
-        };
-      }),
-    );
-
-    setWeekProgressByDate((current) => {
-      const next = { ...current };
-      for (const entry of responses) {
-        next[entry.dateKey] = {
-          consumedCalories: entry.consumedCalories,
-          targetCalories: entry.targetCalories,
-          mealCount: entry.mealCount,
-        };
-      }
-      return next;
-    });
-  }, []);
-
-  const onRefresh = useCallback(() => {
-    loadProfile();
-    fetchDashboard(selectedDateKey);
-    prefetchWeek(activeWeekStart).catch(() => undefined);
-  }, [activeWeekStart, fetchDashboard, loadProfile, prefetchWeek, selectedDateKey]);
 
   useEffect(() => {
     loadProfile();
@@ -168,354 +239,288 @@ export function HomeScreen() {
     fetchDashboard(selectedDateKey);
   }, [fetchDashboard, selectedDateKey]);
 
+  // Scroll to today on mount
   useEffect(() => {
-    prefetchWeek(activeWeekStart).catch(() => undefined);
-  }, [activeWeekStart, prefetchWeek]);
+    const timer = setTimeout(() => {
+      dayScrollRef.current?.scrollTo({ x: 10 * DAY_CELL_W - 20, animated: false });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, []);
 
-  useEffect(() => {
-    if (!data) return;
-    setWeekProgressByDate((current) => ({
-      ...current,
-      [data.date]: {
-        consumedCalories: data.consumed.calories,
-        targetCalories: data.targets?.calories ?? 0,
-        mealCount: data.mealCount,
-      },
-    }));
-  }, [data]);
+  const onRefresh = useCallback(() => {
+    loadProfile();
+    fetchDashboard(selectedDateKey);
+  }, [loadProfile, fetchDashboard, selectedDateKey]);
 
   const handleLogMeal = () => {
     (navigation as { navigate: (s: string) => void }).navigate('Log');
-  };
-
-  const handleQuickAdd = () => {
-    (navigation as { navigate: (s: string, p?: object) => void }).navigate('Log', {
-      screen: 'QuickAdd',
-    });
-  };
-
-  const handleWeeklySummary = () => {
-    (navigation as { navigate: (s: string) => void }).navigate('WeeklySummary');
-  };
-
-  const handleDaySelect = (dateKey: string) => {
-    setSelectedDateKey(dateKey);
-  };
-
-  const handleWeekMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const pageIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-    if (pageIndex === activeWeekPage) return;
-
-    setActiveWeekPage(pageIndex);
-    const todayWeekStart = startOfWeek(new Date());
-    const weekStart = addDays(todayWeekStart, (pageIndex - INITIAL_WEEK_PAGE) * 7);
-    const nextSelectedDate = toDateKey(addDays(weekStart, selectedWeekday));
-    setSelectedDateKey(nextSelectedDate);
-  };
-
-  const renderWeekPage = (item: number) => {
-    const todayWeekStart = startOfWeek(new Date());
-    const weekStart = addDays(todayWeekStart, (item - INITIAL_WEEK_PAGE) * 7);
-    const todayKey = toDateKey(new Date());
-    const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    return (
-      <View key={`week-${item}`} style={{ width }} className="px-4 pb-5 pt-2">
-        <View className="flex-row justify-between">
-          {weekdayLabels.map((weekday, dayIndex) => {
-            const date = addDays(weekStart, dayIndex);
-            const dateKey = toDateKey(date);
-            const isSelected = selectedDateKey === dateKey;
-            const isToday = todayKey === dateKey;
-            const summary = weekProgressByDate[dateKey];
-            return (
-              <Pressable
-                key={dateKey}
-                onPress={() => handleDaySelect(dateKey)}
-                className={`w-11 items-center rounded-2xl py-2 ${isSelected ? 'bg-white/80' : ''}`}
-                accessibilityRole="button"
-                accessibilityLabel={date.toDateString()}
-              >
-                <Text
-                  className={`mb-1 text-xs font-sans-medium ${isSelected ? 'text-text' : 'text-text-secondary'}`}
-                >
-                  {weekday}
-                </Text>
-                <DayProgressCircle
-                  dayNumber={date.getDate()}
-                  consumedCalories={summary?.consumedCalories ?? 0}
-                  targetCalories={summary?.targetCalories ?? 0}
-                  hasMeals={(summary?.mealCount ?? 0) > 0}
-                  isSelected={isSelected}
-                  isToday={isToday}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-    );
   };
 
   if (isLoading && !data) {
     return <HomeSkeleton />;
   }
 
-  const selectedDashboardData = data;
-  const targets = selectedDashboardData?.targets ?? {
-    calories: 2000,
-    protein: 150,
-    carbs: 200,
-    fat: 65,
-  };
-  const consumed = selectedDashboardData?.consumed ?? {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-  };
+  const targets = data?.targets ?? { calories: 2000, protein: 150, carbs: 200, fat: 65 };
+  const consumed = data?.consumed ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
   const remaining = Math.max(targets.calories - consumed.calories, 0);
-  const calorieProgress =
-    targets.calories > 0 ? Math.min(consumed.calories / targets.calories, 1) : 0;
+  const calProg = targets.calories > 0 ? Math.min(consumed.calories / targets.calories, 1) : 0;
+  const proteinLeft = Math.max(Math.round(targets.protein - consumed.protein), 0);
+  const carbsLeft = Math.max(Math.round(targets.carbs - consumed.carbs), 0);
+  const fatLeft = Math.max(Math.round(targets.fat - consumed.fat), 0);
+  const proteinProg = targets.protein > 0 ? Math.min(consumed.protein / targets.protein, 1) : 0;
+  const carbsProg = targets.carbs > 0 ? Math.min(consumed.carbs / targets.carbs, 1) : 0;
+  const fatProg = targets.fat > 0 ? Math.min(consumed.fat / targets.fat, 1) : 0;
 
-  const mealsByType = (selectedDashboardData?.meals ?? []).reduce<Record<string, DashboardMeal[]>>(
-    (acc, m) => {
-      const type = m.mealType || 'snack';
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(m);
-      return acc;
-    },
-    {},
-  );
-
+  const mealsByType = (data?.meals ?? []).reduce<Record<string, DashboardMeal[]>>((acc, m) => {
+    const type = m.mealType || 'snack';
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(m);
+    return acc;
+  }, {});
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'snack'];
-  const isTodaySelected = selectedDateKey === toDateKey(new Date());
-  const mealsHeading = isTodaySelected
-    ? t('dashboard.todaysMeals')
-    : `${t('dashboard.meals')} • ${selectedDateKey}`;
+  const hasMeals = mealOrder.some((t) => (mealsByType[t]?.length ?? 0) > 0);
+  const isTodaySelected = selectedDateKey === todayKey;
 
   return (
-    <View className="flex-1 bg-surface-app">
+    <View className="flex-1 bg-[#f4f7fb]">
+      <SafeAreaView edges={['top']}>
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-5 pt-3 pb-1">
+          <View className="flex-row items-center gap-2.5">
+            <View className="h-9 w-9 rounded-2xl bg-[#0f172a] items-center justify-center">
+              <Ionicons name="nutrition" size={20} color="#ffffff" />
+            </View>
+            <Text className="text-2xl font-sans-bold text-[#0b1220]">
+              {displayName ? displayName : 'Coach'}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() =>
+              (navigation as { navigate: (s: string) => void }).navigate('WeeklySummary')
+            }
+            className="flex-row items-center gap-1.5 bg-white rounded-full px-4 py-2"
+            style={{
+              shadowColor: '#0b1220',
+              shadowOpacity: 0.06,
+              shadowRadius: 6,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 2,
+            }}
+          >
+            <Text style={{ fontSize: 15 }}>🔥</Text>
+            <Text className="font-sans-bold text-[#0b1220] text-sm">{data?.mealCount ?? 0}</Text>
+          </Pressable>
+        </View>
+
+        {/* Day Strip */}
+        <ScrollView
+          ref={dayScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 6 }}
+        >
+          {days.map(({ date, key }) => {
+            const isSelected = selectedDateKey === key;
+            const isToday = todayKey === key;
+            const isPast = key < todayKey;
+
+            return (
+              <Pressable
+                key={key}
+                onPress={() => setSelectedDateKey(key)}
+                style={{ width: DAY_CELL_W }}
+                className="items-center py-1"
+              >
+                <Text
+                  className="text-xs font-sans-medium mb-1.5"
+                  style={{ color: isSelected ? '#0b1220' : '#9aabbf' }}
+                >
+                  {WEEKDAY_LABELS[date.getDay()]}
+                </Text>
+                <View
+                  className="h-11 w-11 rounded-full items-center justify-center"
+                  style={
+                    isSelected
+                      ? { backgroundColor: '#0f172a' }
+                      : isToday
+                        ? {
+                            backgroundColor: '#ffffff',
+                            borderWidth: 1.5,
+                            borderColor: '#0f172a',
+                          }
+                        : isPast
+                          ? {
+                              borderWidth: 1,
+                              borderColor: '#c3cedf',
+                              borderStyle: 'dashed',
+                            }
+                          : { backgroundColor: 'transparent' }
+                  }
+                >
+                  <Text
+                    className="font-sans-semibold text-sm"
+                    style={{
+                      color: isSelected ? '#ffffff' : isToday ? '#0f172a' : '#9aabbf',
+                    }}
+                  >
+                    {date.getDate()}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </SafeAreaView>
+
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100, paddingTop: 8 }}
         refreshControl={
           <RefreshControl
             refreshing={isLoading && !!data}
             onRefresh={onRefresh}
-            tintColor={themeColors.primary['500']}
+            tintColor="#0f172a"
           />
         }
       >
-        {/* Hero Section with Gradient */}
-        <LinearGradient
-          colors={[themeColors.surface.app, themeColors.surface.tertiary, themeColors.surface.app]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <SafeAreaView edges={['top']}>
-            {/* Header */}
-            <View className="px-5 pt-2 pb-1">
-              <View className="flex-row items-center justify-between">
-                <View>
-                  <Text className="text-base text-text-secondary font-sans-medium">
-                    {new Date().getHours() < 12
-                      ? t('dashboard.greeting')
-                      : new Date().getHours() < 18
-                        ? t('dashboard.greetingAfternoon')
-                        : t('dashboard.greetingEvening')}
-                  </Text>
-                  <Text className="text-2xl font-sans-bold text-text mt-0.5">{displayName}</Text>
+        {/* Calorie Card */}
+        <Animated.View entering={FadeInDown.duration(350)} className="mx-4 mb-3">
+          <Pressable
+            onPress={handleLogMeal}
+            className="bg-white rounded-3xl p-5"
+            style={{
+              shadowColor: '#0b1220',
+              shadowOpacity: 0.07,
+              shadowRadius: 14,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 3,
+            }}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-6xl font-sans-bold text-[#0b1220] leading-none">
+                  {remaining}
+                </Text>
+                <Text className="text-base text-[#7687a2] font-sans-medium mt-2">
+                  {t('dashboard.caloriesLeft')}
+                </Text>
+                <View className="flex-row items-center gap-4 mt-3">
+                  <View className="flex-row items-center gap-1.5">
+                    <View className="h-2 w-2 rounded-full bg-[#f97316]" />
+                    <Text className="text-xs text-[#9aabbf] font-sans-medium">
+                      {consumed.calories} {t('dashboard.eaten')}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center gap-1.5">
+                    <View className="h-2 w-2 rounded-full bg-[#dde5f0]" />
+                    <Text className="text-xs text-[#9aabbf] font-sans-medium">
+                      {targets.calories} goal
+                    </Text>
+                  </View>
                 </View>
-                <Pressable
-                  onPress={handleWeeklySummary}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-white/80 border border-surface-border"
-                  accessibilityRole="button"
-                  accessibilityLabel={t('dashboard.weeklySummary')}
-                >
-                  <Ionicons name="stats-chart" size={20} color={themeColors.primary['500']} />
-                </Pressable>
               </View>
+              <ProgressArc progress={calProg} size={90} strokeWidth={8} color="#0f172a">
+                <Text style={{ fontSize: 30 }}>🔥</Text>
+              </ProgressArc>
             </View>
+          </Pressable>
+        </Animated.View>
 
-            {/* Weekly Progress Calendar */}
-            <ScrollView
-              horizontal
-              pagingEnabled
-              contentOffset={{ x: width * INITIAL_WEEK_PAGE, y: 0 }}
-              onMomentumScrollEnd={handleWeekMomentumEnd}
-              showsHorizontalScrollIndicator={false}
-            >
-              {weekPages.map(renderWeekPage)}
-            </ScrollView>
+        {/* Macro Cards */}
+        <Animated.View
+          entering={FadeInDown.delay(80).duration(350)}
+          className="flex-row mx-4 gap-3 mb-5"
+        >
+          <MacroCard
+            label={t('dashboard.protein')}
+            leftAmount={proteinLeft}
+            unit="g"
+            progress={proteinProg}
+            color="#f97316"
+            icon="🍗"
+          />
+          <MacroCard
+            label={t('dashboard.carbs')}
+            leftAmount={carbsLeft}
+            unit="g"
+            progress={carbsProg}
+            color="#f59e0b"
+            icon="🌾"
+          />
+          <MacroCard
+            label={t('dashboard.fat')}
+            leftAmount={fatLeft}
+            unit="g"
+            progress={fatProg}
+            color="#3b82f6"
+            icon="🫐"
+          />
+        </Animated.View>
 
-            {/* Calorie Ring */}
-            <View className="items-center pt-4 pb-2">
-              <ProgressRing
-                progress={calorieProgress}
-                size={width * 0.52}
-                color={themeColors.primary['500']}
-                gradientEnd={themeColors.primary['700']}
-                backgroundColor={themeColors.surface.muted}
-                strokeWidth={14}
-                centerLabel={`${remaining}`}
-                centerSubLabel={t('dashboard.remaining')}
-                centerCaption={`${consumed.calories} ${t('dashboard.eaten')}`}
-              />
-            </View>
-
-            {/* Macro Circles Row */}
-            <Animated.View
-              entering={FadeInDown.delay(200).duration(400)}
-              className="flex-row justify-evenly px-4 pt-4 pb-6"
-            >
-              <CircularMacro
-                label={t('dashboard.protein')}
-                current={consumed.protein}
-                target={targets.protein}
-                color={themeColors.accent['700']}
-              />
-              <CircularMacro
-                label={t('dashboard.carbs')}
-                current={consumed.carbs}
-                target={targets.carbs}
-                color={themeColors.primary['600']}
-              />
-              <CircularMacro
-                label={t('dashboard.fat')}
-                current={consumed.fat}
-                target={targets.fat}
-                color={themeColors.text.secondary}
-              />
-            </Animated.View>
-          </SafeAreaView>
-        </LinearGradient>
-
-        {/* Quick Actions */}
-        <View className="px-4 -mt-3">
-          <View className="flex-row gap-2">
+        {/* Recently Logged */}
+        <View className="px-4">
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-xl font-sans-bold text-[#0b1220]">
+              {isTodaySelected ? t('dashboard.todaysMeals') : t('dashboard.meals')}
+            </Text>
             <Pressable
               onPress={handleLogMeal}
-              className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-primary-500 px-4 py-3.5 shadow-lg shadow-primary-500/25"
-              accessibilityRole="button"
-              accessibilityLabel={t('logging.logMeal')}
+              className="h-8 w-8 rounded-full bg-[#0f172a] items-center justify-center"
             >
-              <Ionicons name="add-circle" size={20} color="#ffffff" />
-              <Text className="font-sans-semibold text-text-inverse">{t('logging.logMeal')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={handleQuickAdd}
-              className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-default px-4 py-3.5 border border-surface-border"
-              accessibilityRole="button"
-              accessibilityLabel={t('logging.quickAdd')}
-            >
-              <Ionicons name="flash" size={18} color={themeColors.primary['600']} />
-              <Text className="font-sans-medium text-text">{t('logging.quickAdd')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() =>
-                (navigation as { navigate: (s: string, p?: object) => void }).navigate('Log', {
-                  screen: 'BarcodeScan',
-                })
-              }
-              className="flex-row items-center justify-center gap-2 rounded-2xl bg-surface-default px-4 py-3.5 border border-surface-border"
-              accessibilityRole="button"
-              accessibilityLabel={t('logging.scanBarcode')}
-            >
-              <Ionicons name="barcode-outline" size={18} color={themeColors.accent['700']} />
-              <Text className="font-sans-medium text-text">{t('logging.scanBarcode')}</Text>
+              <Ionicons name="add" size={18} color="#ffffff" />
             </Pressable>
           </View>
-        </View>
 
-        {/* Today's Meals */}
-        <View className="px-4 pt-6">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-sans-semibold text-text">{mealsHeading}</Text>
-            <Text className="text-sm text-text-secondary font-sans-medium">
-              {consumed.calories} kcal {t('dashboard.eaten')}
-            </Text>
-          </View>
-
-          {mealOrder.some((t) => mealsByType[t]?.length) ? (
+          {!hasMeals ? (
+            <Animated.View entering={FadeInDown.delay(160).duration(350)}>
+              <Pressable
+                onPress={handleLogMeal}
+                className="bg-white rounded-3xl overflow-hidden"
+                style={{
+                  shadowColor: '#0b1220',
+                  shadowOpacity: 0.04,
+                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
+                }}
+              >
+                {/* Placeholder meal row (decorative, like Cal AI) */}
+                <View className="px-5 pt-5 pb-2">
+                  <View className="flex-row items-center gap-3 bg-[#f4f7fb] rounded-2xl p-4 mb-2">
+                    <Text style={{ fontSize: 28 }}>🥗</Text>
+                    <View className="flex-1 gap-2">
+                      <View className="h-3 rounded-full bg-[#dde5f0] w-3/4" />
+                      <View className="h-2.5 rounded-full bg-[#e8eef5] w-1/2" />
+                    </View>
+                  </View>
+                </View>
+                <View className="px-5 pb-5">
+                  <Text className="text-sm text-[#9aabbf] text-center font-sans-medium">
+                    {isTodaySelected
+                      ? 'Tap + to add your first meal of the day'
+                      : t('dashboard.noMeals')}
+                  </Text>
+                </View>
+              </Pressable>
+            </Animated.View>
+          ) : (
             mealOrder.map((type, index) => {
-              const meals = mealsByType[type] ?? [];
-              if (meals.length === 0) return null;
+              const meals = mealsByType[type];
+              if (!meals || meals.length === 0) return null;
               return (
-                <Animated.View key={type} entering={FadeInDown.delay(100 * index).duration(400)}>
-                  <MealCard type={type} meals={meals} />
+                <Animated.View
+                  key={type}
+                  entering={FadeInDown.delay(100 + 60 * index).duration(350)}
+                >
+                  <MealSection
+                    type={type}
+                    meals={meals}
+                    typeLabel={t(MEAL_TYPE_LABELS[type] ?? type)}
+                  />
                 </Animated.View>
               );
             })
-          ) : (
-            <View className="rounded-2xl bg-surface-card border border-surface-border p-6 items-center">
-              <View className="h-16 w-16 rounded-full bg-surface-secondary items-center justify-center mb-4">
-                <Ionicons name="nutrition-outline" size={32} color={themeColors.text.tertiary} />
-              </View>
-              <Text className="text-base font-sans-semibold text-text mb-1">
-                {t('dashboard.noMeals')}
-              </Text>
-              <Text className="text-sm text-text-secondary text-center mb-4">
-                {t('dashboard.noMealsDesc')}
-              </Text>
-              <Pressable
-                onPress={handleLogMeal}
-                className="rounded-full bg-primary-500 px-6 py-2.5"
-                accessibilityRole="button"
-                accessibilityLabel={t('logging.logMeal')}
-              >
-                <Text className="font-sans-semibold text-text-inverse text-sm">
-                  {t('logging.logMeal')}
-                </Text>
-              </Pressable>
-            </View>
           )}
-        </View>
-
-        {/* Calorie Budget by Meal (CalAI-style targets) */}
-        <View className="px-4 pt-6">
-          <Text className="text-lg font-sans-semibold text-text mb-3">
-            {t('dashboard.caloriesBudget')}
-          </Text>
-          <View className="flex-row gap-2">
-            {mealOrder.map((type) => {
-              const meals = mealsByType[type] ?? [];
-              const mealCals = meals.reduce((s, m) => s + m.totalCalories, 0);
-              const budgetPerMeal = Math.round(targets.calories * (type === 'snack' ? 0.1 : 0.3));
-              const used = budgetPerMeal > 0 ? Math.min(mealCals / budgetPerMeal, 1) : 0;
-              return (
-                <View
-                  key={type}
-                  className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-3 items-center"
-                >
-                  <View
-                    className="h-9 w-9 rounded-full items-center justify-center mb-2"
-                    style={{ backgroundColor: `${MEAL_TYPE_COLORS[type]}20` }}
-                  >
-                    <Ionicons
-                      name={MEAL_TYPE_ICONS[type] as keyof typeof Ionicons.glyphMap}
-                      size={18}
-                      color={MEAL_TYPE_COLORS[type]}
-                    />
-                  </View>
-                  <Text className="text-xs text-text-secondary font-sans-medium mb-1">
-                    {t(MEAL_TYPE_LABELS[type] ?? type)}
-                  </Text>
-                  <Text className="text-sm font-sans-bold text-text">{mealCals}</Text>
-                  <View className="w-full h-1 rounded-full bg-surface-muted mt-2 overflow-hidden">
-                    <View
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${used * 100}%`,
-                        backgroundColor: MEAL_TYPE_COLORS[type],
-                      }}
-                    />
-                  </View>
-                </View>
-              );
-            })}
-          </View>
         </View>
       </ScrollView>
     </View>
@@ -524,199 +529,31 @@ export function HomeScreen() {
 
 function HomeSkeleton() {
   return (
-    <View className="flex-1 bg-surface-app">
+    <View className="flex-1 bg-[#f4f7fb]">
       <SafeAreaView edges={['top']}>
-        <View className="px-5 pt-3">
-          <SkeletonLoader width={120} height={14} borderRadius={8} />
-          <SkeletonLoader width={180} height={30} borderRadius={10} className="mt-2" />
+        <View className="flex-row items-center justify-between px-5 pt-3 pb-3">
+          <SkeletonLoader width={130} height={36} borderRadius={12} />
+          <SkeletonLoader width={60} height={34} borderRadius={20} />
         </View>
-        <View className="px-4 pt-5">
-          <SkeletonLoader height={84} borderRadius={20} />
+        <View className="px-3 py-2">
+          <SkeletonLoader height={62} borderRadius={16} />
         </View>
       </SafeAreaView>
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="items-center pt-5">
-          <SkeletonLoader variant="circle" width={220} />
-        </View>
-        <View className="flex-row justify-evenly pt-6 px-4">
-          <SkeletonLoader variant="circle" width={72} />
-          <SkeletonLoader variant="circle" width={72} />
-          <SkeletonLoader variant="circle" width={72} />
-        </View>
-        <View className="px-4 pt-6">
-          <SkeletonLoader height={56} borderRadius={16} />
-          <SkeletonLoader height={96} borderRadius={18} className="mt-4" />
-          <SkeletonLoader height={96} borderRadius={18} className="mt-3" />
-          <SkeletonLoader height={96} borderRadius={18} className="mt-3" />
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
-interface DayProgressCircleProps {
-  dayNumber: number;
-  consumedCalories: number;
-  targetCalories: number;
-  hasMeals: boolean;
-  isSelected: boolean;
-  isToday: boolean;
-}
-
-function DayProgressCircle({
-  dayNumber,
-  consumedCalories,
-  targetCalories,
-  hasMeals,
-  isSelected,
-  isToday,
-}: DayProgressCircleProps) {
-  const size = 42;
-  const stroke = 3;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = targetCalories > 0 ? Math.min(consumedCalories / targetCalories, 1) : 0;
-  const strokeDashoffset = circumference * (1 - progress);
-
-  const trackColor = isSelected ? themeColors.surface.border : themeColors.surface.muted;
-  const progressColor = isSelected ? themeColors.primary['500'] : themeColors.primary['400'];
-  const textColor = isSelected
-    ? themeColors.primary['500']
-    : isToday
-      ? themeColors.text.primary
-      : themeColors.text.tertiary;
-
-  return (
-    <View className="items-center justify-center">
-      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={trackColor}
-          strokeWidth={stroke}
-          fill="none"
-          strokeDasharray={hasMeals ? undefined : '5 4'}
-          opacity={0.8}
-        />
-        {hasMeals ? (
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={progressColor}
-            strokeWidth={stroke}
-            fill="none"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-          />
-        ) : null}
-      </Svg>
-      <Text
-        style={{ position: 'absolute', color: textColor }}
-        className="font-sans-semibold text-base"
-      >
-        {dayNumber}
-      </Text>
-    </View>
-  );
-}
-
-interface MealCardProps {
-  type: string;
-  meals: DashboardMeal[];
-}
-
-function MealCard({ type, meals }: MealCardProps) {
-  const { t } = useLocale();
-  const [expanded, setExpanded] = useState(false);
-  const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
-  const totalProtein = meals.reduce((s, m) => s + m.totalProtein, 0);
-  const foodNames = meals.flatMap((m) => m.items.map((i) => i.snapshotFoodName)).filter(Boolean);
-
-  const iconScale = useSharedValue(1);
-  const chevronRotation = useSharedValue(0);
-
-  useEffect(() => {
-    chevronRotation.value = withSpring(expanded ? 180 : 0, {
-      damping: 15,
-      stiffness: 200,
-    });
-  }, [expanded, chevronRotation]);
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${chevronRotation.value}deg` }],
-  }));
-
-  const handlePress = () => {
-    iconScale.value = withSpring(1.1, {}, () => {
-      iconScale.value = withSpring(1);
-    });
-    setExpanded((e) => !e);
-  };
-
-  const color = MEAL_TYPE_COLORS[type] ?? themeColors.primary['500'];
-
-  return (
-    <Pressable
-      onPress={handlePress}
-      className="rounded-2xl bg-surface-card border border-surface-border p-4 mb-3"
-    >
-      <View className="flex-row items-center">
-        <View
-          className="h-10 w-10 rounded-full items-center justify-center mr-3"
-          style={{ backgroundColor: `${color}20` }}
-        >
-          <Ionicons
-            name={MEAL_TYPE_ICONS[type] as keyof typeof Ionicons.glyphMap}
-            size={20}
-            color={color}
-          />
-        </View>
-        <View className="flex-1">
-          <Text className="font-sans-semibold text-text text-base">
-            {t(MEAL_TYPE_LABELS[type] ?? type)}
-          </Text>
-          <Text
-            className="text-sm text-text-secondary mt-0.5"
-            numberOfLines={expanded ? undefined : 1}
-          >
-            {foodNames.join(', ') || t('logging.quickAdd')}
-          </Text>
-        </View>
-        <View className="items-end">
-          <Text className="text-base font-sans-bold text-text">{totalCal}</Text>
-          <Text className="text-xs text-text-secondary">kcal</Text>
-        </View>
-        <Animated.View style={chevronStyle} className="ml-2">
-          <Ionicons name="chevron-down" size={18} color={themeColors.text.tertiary} />
-        </Animated.View>
-      </View>
-
-      {expanded && (
-        <View className="mt-3 pt-3 border-t border-surface-border">
-          {meals.flatMap((m) =>
-            m.items.map((item) => (
-              <View key={item.id} className="flex-row items-center justify-between py-2">
-                <View className="flex-row items-center flex-1 mr-4">
-                  <View className="h-2 w-2 rounded-full mr-3" style={{ backgroundColor: color }} />
-                  <Text className="text-sm text-text-secondary flex-1" numberOfLines={1}>
-                    {item.snapshotFoodName}
-                  </Text>
-                </View>
-                <Text className="text-sm font-sans-medium text-text">
-                  {item.snapshotCalories} kcal
-                </Text>
-              </View>
-            )),
-          )}
-          <View className="flex-row items-center justify-between pt-2 mt-1 border-t border-surface-border/50">
-            <Text className="text-xs text-text-tertiary">{t('dashboard.totalProtein')}</Text>
-            <Text className="text-sm font-sans-medium text-accent-700">{totalProtein}g</Text>
+      <View className="px-4 pt-2 gap-3">
+        <SkeletonLoader height={140} borderRadius={24} />
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <SkeletonLoader height={130} borderRadius={24} />
+          </View>
+          <View className="flex-1">
+            <SkeletonLoader height={130} borderRadius={24} />
+          </View>
+          <View className="flex-1">
+            <SkeletonLoader height={130} borderRadius={24} />
           </View>
         </View>
-      )}
-    </Pressable>
+        <SkeletonLoader height={140} borderRadius={24} />
+      </View>
+    </View>
   );
 }
