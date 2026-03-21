@@ -51,7 +51,13 @@ export const envSchema = z.object({
   GOOGLE_STT_API_KEY: z.string().optional(),
   CHIMEGE_API_KEY: z.string().optional(),
 
-  // OpenAI (Vision + general AI)
+  // Vision provider for food photo analysis
+  // 'gemini' uses Gemini 2.0 Flash (primary, cheaper); 'openai' forces GPT-4o only
+  // When set to 'gemini', GPT-4o is used as automatic fallback if Gemini fails
+  VISION_PROVIDER: z.enum(['gemini', 'openai']).default('gemini'),
+  GEMINI_API_KEY: z.string().optional(),
+
+  // OpenAI (Vision fallback + general AI)
   OPENAI_API_KEY: z.string().optional(),
 
   // Observability

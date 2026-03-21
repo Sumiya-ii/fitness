@@ -1,5 +1,6 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface PhotoJobData {
   userId: string;
@@ -66,58 +67,11 @@ Estimation rules:
 - sodium is in milligrams
 - Never return empty items array — always make your best estimate`;
 
-export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoParseResult> {
-  const { photoBuffer } = job.data;
-  const apiKey = process.env.OPENAI_API_KEY;
+const USER_PROMPT =
+  'Analyze this food photo. Identify every item, estimate serving weights, and calculate precise nutritional values.';
 
-  if (!apiKey) {
-    console.warn('[Photo] OPENAI_API_KEY not set, returning empty result');
-    return {
-      mealName: 'Meal',
-      items: [],
-      totalCalories: 0,
-      totalProtein: 0,
-      totalCarbs: 0,
-      totalFat: 0,
-      totalFiber: 0,
-    };
-  }
-
-  const client = new OpenAI({ apiKey });
-
-  const response = await client.chat.completions.create({
-    model: 'gpt-4o',
-    response_format: { type: 'json_object' },
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:image/jpeg;base64,${photoBuffer}`,
-              detail: 'high',
-            },
-          },
-          {
-            type: 'text',
-            text: 'Analyze this food photo. Identify every item, estimate serving weights, and calculate precise nutritional values.',
-          },
-        ],
-      },
-    ],
-    max_tokens: 2000,
-    temperature: 0.2,
-  });
-
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error('No response from OpenAI');
-  }
-
-  const parsed = JSON.parse(content) as { mealName?: string; items?: ParsedFoodItem[] };
-  const items = (parsed.items ?? []).map((item) => ({
+function normalizeItems(raw: { mealName?: string; items?: ParsedFoodItem[] }): PhotoParseResult {
+  const items = (raw.items ?? []).map((item) => ({
     name: item.name ?? 'Unknown food',
     calories: Number(item.calories) || 0,
     protein: Number(item.protein) || 0,
@@ -129,14 +83,101 @@ export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoPars
     servingGrams: Number(item.servingGrams) || 0,
     confidence: Math.min(1, Math.max(0, Number(item.confidence) || 0)),
   }));
-
   return {
-    mealName: parsed.mealName ?? 'Meal',
+    mealName: raw.mealName ?? 'Meal',
     items,
     totalCalories: items.reduce((s, i) => s + i.calories, 0),
     totalProtein: items.reduce((s, i) => s + i.protein, 0),
     totalCarbs: items.reduce((s, i) => s + i.carbs, 0),
     totalFat: items.reduce((s, i) => s + i.fat, 0),
     totalFiber: items.reduce((s, i) => s + i.fiber, 0),
+  };
+}
+
+async function parseWithGemini(imageBase64: string, apiKey: string): Promise<PhotoParseResult> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    systemInstruction: SYSTEM_PROMPT,
+  });
+
+  const result = await model.generateContent({
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: USER_PROMPT },
+          { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
+        ],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.2,
+      maxOutputTokens: 2000,
+    },
+  });
+
+  const content = result.response.text();
+  return normalizeItems(JSON.parse(content) as { mealName?: string; items?: ParsedFoodItem[] });
+}
+
+async function parseWithOpenAI(imageBase64: string, apiKey: string): Promise<PhotoParseResult> {
+  const client = new OpenAI({ apiKey });
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o',
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/jpeg;base64,${imageBase64}`, detail: 'high' },
+          },
+          { type: 'text', text: USER_PROMPT },
+        ],
+      },
+    ],
+    max_tokens: 2000,
+    temperature: 0.2,
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error('No response from OpenAI');
+  return normalizeItems(JSON.parse(content) as { mealName?: string; items?: ParsedFoodItem[] });
+}
+
+export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoParseResult> {
+  const { photoBuffer } = job.data;
+  const provider = process.env.VISION_PROVIDER ?? 'gemini';
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  if (provider === 'gemini' && geminiKey) {
+    try {
+      return await parseWithGemini(photoBuffer, geminiKey);
+    } catch (err) {
+      console.warn('[Photo] Gemini failed, falling back to GPT-4o:', err);
+      if (openaiKey) {
+        return await parseWithOpenAI(photoBuffer, openaiKey);
+      }
+    }
+  }
+
+  if (openaiKey) {
+    return await parseWithOpenAI(photoBuffer, openaiKey);
+  }
+
+  console.warn('[Photo] No vision API key configured');
+  return {
+    mealName: 'Meal',
+    items: [],
+    totalCalories: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFat: 0,
+    totalFiber: 0,
   };
 }
