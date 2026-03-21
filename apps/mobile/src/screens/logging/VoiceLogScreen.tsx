@@ -1,9 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
+import {
+  useAudioRecorder,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+} from 'expo-audio';
 import { BackButton } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
@@ -31,7 +49,9 @@ interface VoiceDraft {
 }
 
 type ScreenState = 'idle' | 'recording' | 'uploading' | 'processing' | 'results' | 'saving';
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
+const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 30;
 const MAX_RECORDING_SECONDS = 60;
@@ -46,16 +66,118 @@ function getDeviceLocale(): 'mn' | 'en' {
   }
 }
 
+function getProcessingMessage(
+  screenState: ScreenState,
+  draftWorkerStatus: 'waiting' | 'active' | null,
+): string {
+  if (screenState === 'uploading') return 'Uploading audio...';
+  if (draftWorkerStatus === 'active') return 'Analyzing nutrition...';
+  return 'Transcribing your voice...';
+}
+
+// ── Edit Item Modal ──────────────────────────────────────────────────────────
+
+interface EditItemModalProps {
+  item: ParsedFoodItem;
+  onSave: (updated: ParsedFoodItem) => void;
+  onClose: () => void;
+}
+
+function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
+  const [name, setName] = useState(item.name);
+  const [calories, setCalories] = useState(String(Math.round(item.calories)));
+  const [protein, setProtein] = useState(String(item.protein));
+  const [carbs, setCarbs] = useState(String(item.carbs));
+  const [fat, setFat] = useState(String(item.fat));
+
+  const handleSave = () => {
+    const cal = parseFloat(calories);
+    if (isNaN(cal) || cal < 0) {
+      Alert.alert('Invalid', 'Enter valid calories');
+      return;
+    }
+    onSave({
+      name: name.trim() || item.name,
+      calories: Math.round(cal),
+      protein: parseFloat(protein) || 0,
+      carbs: parseFloat(carbs) || 0,
+      fat: parseFloat(fat) || 0,
+    });
+  };
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
+      >
+        <Pressable className="flex-1 bg-black/40" onPress={onClose} />
+        <View className="bg-surface-card rounded-t-3xl px-5 pt-5 pb-8">
+          <View className="flex-row items-center justify-between mb-5">
+            <Text className="text-text font-sans-semibold text-lg">Edit food item</Text>
+            <Pressable onPress={onClose} hitSlop={12}>
+              <Ionicons name="close" size={22} color="#9a9caa" />
+            </Pressable>
+          </View>
+
+          <Text className="text-xs text-text-secondary mb-1">Name</Text>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            className="bg-surface-secondary rounded-xl px-4 py-3 text-text mb-4"
+            placeholderTextColor="#9a9caa"
+          />
+
+          <View className="flex-row gap-3 mb-5">
+            {(
+              [
+                { label: 'Calories', value: calories, set: setCalories },
+                { label: 'Protein (g)', value: protein, set: setProtein },
+                { label: 'Carbs (g)', value: carbs, set: setCarbs },
+                { label: 'Fat (g)', value: fat, set: setFat },
+              ] as const
+            ).map(({ label, value, set }) => (
+              <View key={label} className="flex-1">
+                <Text className="text-xs text-text-secondary mb-1">{label}</Text>
+                <TextInput
+                  value={value}
+                  onChangeText={set as (v: string) => void}
+                  keyboardType="decimal-pad"
+                  className="bg-surface-secondary rounded-xl px-2 py-3 text-text text-center"
+                  placeholderTextColor="#9a9caa"
+                />
+              </View>
+            ))}
+          </View>
+
+          <Pressable onPress={handleSave} className="rounded-2xl bg-primary-500 py-4 items-center">
+            <Text className="font-sans-semibold text-text-inverse text-base">Save</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ── Main Screen ──────────────────────────────────────────────────────────────
+
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+
   const [screenState, setScreenState] = useState<ScreenState>('idle');
   const [elapsed, setElapsed] = useState(0);
   const [draftItems, setDraftItems] = useState<ParsedFoodItem[]>([]);
   const [transcription, setTranscription] = useState('');
+  const [mealType, setMealType] = useState<MealType>('lunch');
+  const [draftWorkerStatus, setDraftWorkerStatus] = useState<'waiting' | 'active' | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
     return () => {
@@ -63,6 +185,22 @@ export function VoiceLogScreen() {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     };
   }, []);
+
+  // Pulse animation when recording
+  useEffect(() => {
+    if (screenState === 'recording') {
+      pulseLoop.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.18, duration: 650, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 650, useNativeDriver: true }),
+        ]),
+      );
+      pulseLoop.current.start();
+    } else {
+      pulseLoop.current?.stop();
+      pulseAnim.setValue(1);
+    }
+  }, [screenState, pulseAnim]);
 
   const formatElapsed = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -79,14 +217,16 @@ export function VoiceLogScreen() {
       Alert.alert('Permission needed', 'Microphone access is required for voice logging.');
       return;
     }
+    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    await recorder.prepareToRecordAsync();
     recorder.record();
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setScreenState('recording');
     setElapsed(0);
     timerRef.current = setInterval(() => {
       setElapsed((e) => {
         const next = e + 1;
         if (next >= MAX_RECORDING_SECONDS) {
-          // Auto-stop at 60s
           stopRecording();
         }
         return next;
@@ -99,6 +239,7 @@ export function VoiceLogScreen() {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await recorder.stop();
     const uri = recorder.uri;
     if (!uri) {
@@ -111,6 +252,7 @@ export function VoiceLogScreen() {
 
   const uploadAudio = async (uri: string) => {
     setScreenState('uploading');
+    setDraftWorkerStatus(null);
     try {
       const formData = new FormData();
       formData.append('audio', {
@@ -138,7 +280,11 @@ export function VoiceLogScreen() {
       const res = await api.get<{ data: VoiceDraft }>(`/voice/drafts/${draftId}`);
       const d = res.data;
 
+      if (d.status === 'active') setDraftWorkerStatus('active');
+      else if (d.status === 'waiting') setDraftWorkerStatus('waiting');
+
       if (d.status === 'completed') {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setTranscription(d.transcription ?? '');
         setDraftItems(d.items ?? []);
         setScreenState('results');
@@ -158,6 +304,16 @@ export function VoiceLogScreen() {
     }
   };
 
+  const handleDeleteItem = (index: number) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDraftItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEditSave = (index: number, updated: ParsedFoodItem) => {
+    setDraftItems((prev) => prev.map((item, i) => (i === index ? updated : item)));
+    setEditingIndex(null);
+  };
+
   const handleSave = async () => {
     if (draftItems.length === 0) return;
     setScreenState('saving');
@@ -170,6 +326,7 @@ export function VoiceLogScreen() {
       const note = `Voice: ${draftItems.map((i) => i.name).join(', ')}`;
 
       await mealsApi.quickAdd({
+        mealType,
         calories: Math.round(totalCalories),
         proteinGrams: Math.round(totalProtein * 10) / 10,
         carbsGrams: Math.round(totalCarbs * 10) / 10,
@@ -178,6 +335,7 @@ export function VoiceLogScreen() {
         source: 'voice',
       });
 
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
@@ -191,19 +349,30 @@ export function VoiceLogScreen() {
     setTranscription('');
     setError(null);
     setElapsed(0);
+    setDraftWorkerStatus(null);
   };
 
   const timerColor = elapsed >= WARN_RECORDING_SECONDS ? 'text-amber-400' : 'text-text';
+  const totalCalories = Math.round(draftItems.reduce((s, i) => s + i.calories, 0));
+  const totalProtein = Math.round(draftItems.reduce((s, i) => s + i.protein, 0));
+  const totalCarbs = Math.round(draftItems.reduce((s, i) => s + i.carbs, 0));
+  const totalFat = Math.round(draftItems.reduce((s, i) => s + i.fat, 0));
+
+  // Processing step index (0=uploading, 1=transcribing, 2=analyzing)
+  const processingStepIndex =
+    screenState === 'uploading' ? 0 : draftWorkerStatus === 'active' ? 2 : 1;
 
   return (
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
+        {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
           <BackButton />
           <Text className="ml-3 text-lg font-sans-semibold text-text">Voice Log</Text>
         </View>
 
         <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
+          {/* ── IDLE ── */}
           {screenState === 'idle' && (
             <View className="flex-1 items-center justify-center px-8 py-16">
               <Text className="text-text-secondary text-center mb-10 text-base leading-6">
@@ -220,6 +389,7 @@ export function VoiceLogScreen() {
             </View>
           )}
 
+          {/* ── RECORDING ── */}
           {screenState === 'recording' && (
             <View className="flex-1 items-center justify-center px-8 py-16">
               <Text className="text-text-secondary text-center mb-6 text-base">
@@ -231,27 +401,50 @@ export function VoiceLogScreen() {
               <Text className="text-xs text-text-secondary mb-10">
                 / {formatElapsed(MAX_RECORDING_SECONDS)} max
               </Text>
-              <Pressable
-                onPress={stopRecording}
-                className="h-28 w-28 rounded-full bg-red-500 items-center justify-center"
-              >
-                <Ionicons name="stop" size={46} color="#ffffff" />
-              </Pressable>
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <Pressable
+                  onPress={stopRecording}
+                  className="h-28 w-28 rounded-full bg-red-500 items-center justify-center"
+                >
+                  <Ionicons name="stop" size={46} color="#ffffff" />
+                </Pressable>
+              </Animated.View>
               <Text className="mt-5 text-text-secondary text-sm">Tap to stop</Text>
             </View>
           )}
 
+          {/* ── UPLOADING / PROCESSING ── */}
           {(screenState === 'uploading' || screenState === 'processing') && (
             <View className="flex-1 items-center justify-center px-8 py-16">
               <ActivityIndicator size="large" color="#1f2028" />
-              <Text className="mt-5 text-text-secondary text-base">
-                {screenState === 'uploading' ? 'Uploading audio...' : 'Analyzing your meal...'}
+              <Text className="mt-5 text-text text-base font-sans-medium">
+                {getProcessingMessage(screenState, draftWorkerStatus)}
+              </Text>
+              {/* Step progress pills */}
+              <View className="flex-row gap-2 mt-5">
+                {[0, 1, 2].map((i) => (
+                  <View
+                    key={i}
+                    className={`h-2 rounded-full ${
+                      i <= processingStepIndex ? 'bg-primary-500 w-8' : 'bg-surface-border w-2'
+                    }`}
+                  />
+                ))}
+              </View>
+              <Text className="mt-3 text-xs text-text-secondary">
+                {processingStepIndex === 0
+                  ? 'Uploading · Transcribing · Analyzing'
+                  : processingStepIndex === 1
+                    ? 'Uploading ✓ · Transcribing · Analyzing'
+                    : 'Uploading ✓ · Transcribing ✓ · Analyzing'}
               </Text>
             </View>
           )}
 
+          {/* ── RESULTS / SAVING ── */}
           {(screenState === 'results' || screenState === 'saving') && (
             <View className="px-4 py-5">
+              {/* Transcription */}
               {transcription.length > 0 && (
                 <View className="rounded-xl bg-surface-card border border-surface-border p-4 mb-4">
                   <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-2">
@@ -261,6 +454,31 @@ export function VoiceLogScreen() {
                 </View>
               )}
 
+              {/* Meal type chips */}
+              <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-2">
+                Meal type
+              </Text>
+              <View className="flex-row gap-2 mb-5">
+                {MEAL_TYPES.map((type) => (
+                  <Pressable
+                    key={type}
+                    onPress={() => setMealType(type)}
+                    className={`rounded-full px-4 py-2 ${
+                      mealType === type ? 'bg-primary-500' : 'bg-surface-secondary'
+                    }`}
+                  >
+                    <Text
+                      className={`font-sans-medium capitalize text-sm ${
+                        mealType === type ? 'text-text-inverse' : 'text-text-secondary'
+                      }`}
+                    >
+                      {type}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Food items with edit + delete */}
               {draftItems.length > 0 && (
                 <>
                   <Text className="font-sans-semibold text-text mb-3">Identified foods</Text>
@@ -269,43 +487,62 @@ export function VoiceLogScreen() {
                       key={`${item.name}-${index}`}
                       className="rounded-xl bg-surface-card border border-surface-border p-4 mb-3"
                     >
-                      <View className="flex-row items-center justify-between">
-                        <View className="flex-1 mr-3">
+                      <View className="flex-row items-center">
+                        <View className="flex-1 mr-2">
                           <Text className="font-sans-semibold text-text">{item.name}</Text>
                           <Text className="text-xs text-text-secondary mt-1">
                             P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F:{' '}
                             {Math.round(item.fat)}g
                           </Text>
                         </View>
-                        <Text className="font-sans-bold text-text text-base">
+                        <Text className="font-sans-bold text-text text-base mr-3">
                           {Math.round(item.calories)} cal
                         </Text>
+                        <Pressable
+                          onPress={() => setEditingIndex(index)}
+                          hitSlop={8}
+                          className="mr-3"
+                        >
+                          <Ionicons name="pencil-outline" size={18} color="#9a9caa" />
+                        </Pressable>
+                        <Pressable onPress={() => handleDeleteItem(index)} hitSlop={8}>
+                          <Ionicons name="trash-outline" size={18} color="#f87171" />
+                        </Pressable>
                       </View>
                     </View>
                   ))}
 
+                  {/* Total */}
                   <View className="rounded-xl bg-surface-secondary border border-surface-border p-4 mb-6">
                     <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-1">
                       Total
                     </Text>
-                    <Text className="text-text font-sans-bold text-2xl">
-                      {Math.round(draftItems.reduce((s, i) => s + i.calories, 0))} cal
-                    </Text>
+                    <Text className="text-text font-sans-bold text-2xl">{totalCalories} cal</Text>
                     <Text className="text-xs text-text-secondary mt-1">
-                      P: {Math.round(draftItems.reduce((s, i) => s + i.protein, 0))}g · C:{' '}
-                      {Math.round(draftItems.reduce((s, i) => s + i.carbs, 0))}g · F:{' '}
-                      {Math.round(draftItems.reduce((s, i) => s + i.fat, 0))}g
+                      P: {totalProtein}g · C: {totalCarbs}g · F: {totalFat}g
                     </Text>
                   </View>
                 </>
               )}
 
+              {/* Zero items fallback */}
               {draftItems.length === 0 && (
                 <View className="items-center py-10">
                   <Ionicons name="alert-circle-outline" size={40} color="#9a9caa" />
-                  <Text className="text-text-secondary mt-3 text-base">
+                  <Text className="text-text-secondary mt-3 text-base text-center">
                     No food items could be identified.
                   </Text>
+                  <Text className="text-text-secondary mt-1 text-sm text-center">
+                    You can add it manually or try again.
+                  </Text>
+                  <Pressable
+                    onPress={() => navigation.navigate('QuickAdd')}
+                    className="mt-5 rounded-2xl bg-surface-secondary border border-surface-border px-6 py-3"
+                  >
+                    <Text className="font-sans-semibold text-text-secondary text-sm">
+                      Add entry manually
+                    </Text>
+                  </Pressable>
                 </View>
               )}
 
@@ -340,6 +577,15 @@ export function VoiceLogScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      {/* Edit item modal */}
+      {editingIndex !== null && draftItems[editingIndex] !== undefined && (
+        <EditItemModal
+          item={draftItems[editingIndex]}
+          onSave={(updated) => handleEditSave(editingIndex, updated)}
+          onClose={() => setEditingIndex(null)}
+        />
+      )}
     </View>
   );
 }

@@ -23,19 +23,19 @@ type Props = {
 };
 
 export function ProfileSetupScreen({ navigation }: Props) {
-  const profile = useProfileStore((s) => s);
   const setGenderValue = useProfileStore((s) => s.setGender);
   const setBirthDate = useProfileStore((s) => s.setBirthDate);
   const setHeightCmValue = useProfileStore((s) => s.setHeightCm);
   const setWeightKgValue = useProfileStore((s) => s.setWeightKg);
   const setActivityLevelValue = useProfileStore((s) => s.setActivityLevel);
 
-  const [gender, setGender] = useState<Gender | null>(profile.gender ?? null);
+  const initProfile = useProfileStore.getState();
+  const [gender, setGender] = useState<Gender | null>(initProfile.gender ?? null);
   const [dateOfBirth, setDateOfBirth] = useState('');
-  const [heightCm, setHeightCm] = useState(profile.heightCm?.toString() ?? '');
-  const [weightKg, setWeightKg] = useState(profile.weightKg?.toString() ?? '');
+  const [heightCm, setHeightCm] = useState(initProfile.heightCm?.toString() ?? '');
+  const [weightKg, setWeightKg] = useState(initProfile.weightKg?.toString() ?? '');
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | null>(
-    profile.activityLevel ?? null
+    initProfile.activityLevel ?? null,
   );
 
   const parseDate = (str: string): Date | null => {
@@ -75,39 +75,32 @@ export function ProfileSetupScreen({ navigation }: Props) {
     <SafeAreaView className="flex-1 bg-surface-app" edges={['top']}>
       <View className="relative">
         <LinearGradient
-        colors={['#8b8fa0', '#767b8f']}
-        className="pt-8 pb-12 px-6"
-        style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
-      >
-        <Text className="text-2xl font-sans-bold text-text mb-1">Your Profile</Text>
-        <Text className="text-base text-text-secondary">
-          We need a few details to calculate your targets
-        </Text>
-      </LinearGradient>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          className="absolute top-4 left-6 p-2 -m-2"
+          colors={['#8b8fa0', '#767b8f']}
+          className="pt-8 pb-12 px-6"
+          style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
         >
+          <Text className="text-2xl font-sans-bold text-text mb-1">Your Profile</Text>
+          <Text className="text-base text-text-secondary">
+            We need a few details to calculate your targets
+          </Text>
+        </LinearGradient>
+        <Pressable onPress={() => navigation.goBack()} className="absolute top-4 left-6 p-2 -m-2">
           <Ionicons name="arrow-back" size={24} color="white" />
         </Pressable>
       </View>
 
       <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-        <Text className="text-sm font-sans-medium text-text mb-2">
-          Gender
-        </Text>
+        <Text className="text-sm font-sans-medium text-text mb-2">Gender</Text>
         <View className="flex-row gap-3 mb-6">
           <Pressable
             onPress={() => setGender('male')}
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-              gender === 'male' ? 'border-primary-500 bg-primary-500/10' : 'border-surface-border bg-surface-card'
+              gender === 'male'
+                ? 'border-primary-500 bg-primary-500/10'
+                : 'border-surface-border bg-surface-card'
             }`}
           >
-            <Ionicons
-              name="male"
-              size={20}
-              color={gender === 'male' ? '#1f2028' : '#9a9caa'}
-            />
+            <Ionicons name="male" size={20} color={gender === 'male' ? '#1f2028' : '#9a9caa'} />
             <Text
               className={`ml-2 font-sans-medium ${
                 gender === 'male' ? 'text-primary-500' : 'text-text-secondary'
@@ -119,14 +112,12 @@ export function ProfileSetupScreen({ navigation }: Props) {
           <Pressable
             onPress={() => setGender('female')}
             className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-              gender === 'female' ? 'border-primary-500 bg-primary-500/10' : 'border-surface-border bg-surface-card'
+              gender === 'female'
+                ? 'border-primary-500 bg-primary-500/10'
+                : 'border-surface-border bg-surface-card'
             }`}
           >
-            <Ionicons
-              name="female"
-              size={20}
-              color={gender === 'female' ? '#1f2028' : '#9a9caa'}
-            />
+            <Ionicons name="female" size={20} color={gender === 'female' ? '#1f2028' : '#9a9caa'} />
             <Text
               className={`ml-2 font-sans-medium ${
                 gender === 'female' ? 'text-primary-500' : 'text-text-secondary'
@@ -167,14 +158,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <Text className="text-sm font-sans-medium text-text mb-2">
-          Activity Level
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mb-6 -mx-6 px-6"
-        >
+        <Text className="text-sm font-sans-medium text-text mb-2">Activity Level</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 -mx-6 px-6">
           {ACTIVITY_LEVELS.map((level) => {
             const isSelected = activityLevel === level.id;
             return (
@@ -199,12 +184,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
       </ScrollView>
 
       <View className="px-6 pb-8 pt-4">
-        <Button
-          onPress={handleCalculate}
-          size="lg"
-          disabled={!isValid}
-          className="w-full"
-        >
+        <Button onPress={handleCalculate} size="lg" disabled={!isValid} className="w-full">
           Calculate My Targets
         </Button>
       </View>

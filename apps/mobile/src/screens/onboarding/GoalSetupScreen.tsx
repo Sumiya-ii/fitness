@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -56,41 +56,35 @@ export function GoalSetupScreen({ navigation }: Props) {
       onContinue={() => navigation.navigate('DesiredWeight')}
       continueDisabled={!goalType}
     >
-      <View className="gap-4">
-        {GOAL_OPTIONS.map((option) => {
-          const selected = goalType === option.id;
-          return (
-            <Pressable
-              key={option.id}
-              onPress={() => setGoalType(option.id)}
-              className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
-                selected
-                  ? 'border-primary-500'
-                  : 'border-surface-border'
-              }`}
-            >
-              <LinearGradient
-                colors={option.gradient}
-                className="w-14 h-14 rounded-xl items-center justify-center mr-4"
-                style={{ borderRadius: 12 }}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+        <View className="gap-4">
+          {GOAL_OPTIONS.map((option) => {
+            const selected = goalType === option.id;
+            return (
+              <Pressable
+                key={option.id}
+                onPress={() => setGoalType(option.id)}
+                className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
+                  selected ? 'border-primary-500' : 'border-surface-border'
+                }`}
               >
-                <Ionicons name={option.icon} size={28} color="white" />
-              </LinearGradient>
-              <View className="flex-1">
-                <Text className="text-lg font-sans-semibold text-text">
-                  {option.title}
-                </Text>
-                <Text className="text-sm text-text-secondary mt-0.5">
-                  {option.description}
-                </Text>
-              </View>
-              {selected && (
-                <Ionicons name="checkmark-circle" size={24} color="#1f2028" />
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
+                <LinearGradient
+                  colors={option.gradient}
+                  className="w-14 h-14 rounded-xl items-center justify-center mr-4"
+                  style={{ borderRadius: 12 }}
+                >
+                  <Ionicons name={option.icon} size={28} color="white" />
+                </LinearGradient>
+                <View className="flex-1">
+                  <Text className="text-lg font-sans-semibold text-text">{option.title}</Text>
+                  <Text className="text-sm text-text-secondary mt-0.5">{option.description}</Text>
+                </View>
+                {selected && <Ionicons name="checkmark-circle" size={24} color="#1f2028" />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </OnboardingLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
@@ -85,52 +85,42 @@ export function WeeklyRateScreen({ navigation }: Props) {
       onContinue={handleContinue}
       continueDisabled={selected === null}
     >
-      <View className="gap-3">
-        {rates.map((rate) => {
-          const isSelected = selected === rate.value;
-          const isRecommended = rate.value === 0.5;
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+        <View className="gap-3">
+          {rates.map((rate) => {
+            const isSelected = selected === rate.value;
+            const isRecommended = rate.value === 0.5;
 
-          return (
-            <Pressable
-              key={rate.value}
-              onPress={() => setSelected(rate.value)}
-              className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
-                isSelected
-                  ? 'border-primary-500'
-                  : 'border-surface-border'
-              }`}
-            >
-              <View className="w-10 h-10 rounded-full bg-surface-secondary items-center justify-center mr-3">
-                <Ionicons
-                  name={rate.icon}
-                  size={20}
-                  color={isSelected ? '#1f2028' : '#9a9caa'}
-                />
-              </View>
-              <View className="flex-1">
-                <View className="flex-row items-center">
-                  <Text className="text-base font-sans-semibold text-text">
-                    {rate.label}
-                  </Text>
-                  {isRecommended && (
-                    <View className="ml-2 px-2 py-0.5 bg-primary-500/15 rounded-full">
-                      <Text className="text-xs font-sans-medium text-primary-600">
-                        Recommended
-                      </Text>
-                    </View>
-                  )}
+            return (
+              <Pressable
+                key={rate.value}
+                onPress={() => setSelected(rate.value)}
+                className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
+                  isSelected ? 'border-primary-500' : 'border-surface-border'
+                }`}
+              >
+                <View className="w-10 h-10 rounded-full bg-surface-secondary items-center justify-center mr-3">
+                  <Ionicons name={rate.icon} size={20} color={isSelected ? '#1f2028' : '#9a9caa'} />
                 </View>
-                <Text className="text-sm text-text-secondary">
-                  {rate.description}
-                </Text>
-              </View>
-              {isSelected && (
-                <Ionicons name="checkmark-circle" size={22} color="#1f2028" />
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
+                <View className="flex-1">
+                  <View className="flex-row items-center">
+                    <Text className="text-base font-sans-semibold text-text">{rate.label}</Text>
+                    {isRecommended && (
+                      <View className="ml-2 px-2 py-0.5 bg-primary-500/15 rounded-full">
+                        <Text className="text-xs font-sans-medium text-primary-600">
+                          Recommended
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-sm text-text-secondary">{rate.description}</Text>
+                </View>
+                {isSelected && <Ionicons name="checkmark-circle" size={22} color="#1f2028" />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </OnboardingLayout>
   );
 }

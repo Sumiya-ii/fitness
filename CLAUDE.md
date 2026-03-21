@@ -34,42 +34,19 @@ packages/
 | Observability | Sentry, OpenTelemetry |
 | Infra | Docker Compose (local), GitHub Actions CI |
 
-## Running the stack locally
-
-```bash
-# Start infrastructure (Postgres, Redis, Typesense)
-docker compose up postgres redis typesense
-
-# API (in another terminal)
-npm run start:dev --workspace=apps/api
-
-# Worker (in another terminal)
-npm run start:dev --workspace=apps/worker
-
-# Mobile
-npm run start --workspace=apps/mobile
-# Then press i (iOS) or a (Android)
-```
-
 ## Key commands
 
 ```bash
-# Across all workspaces
-npm run lint
-npm run typecheck
-npm run test
-npm run build
-npm run format         # prettier --write
-npm run format:check   # prettier --check
-
-# Per workspace (append --workspace=apps/api etc.)
+# Per workspace: append --workspace=apps/api | apps/mobile | apps/worker
 npm run lint --workspace=apps/api
-npm run test --workspace=apps/mobile
+npm run typecheck --workspace=apps/api
+npm run test --workspace=apps/api
+npm run build --workspace=apps/api
+npm run format         # prettier --write (all)
 
 # Database (API workspace)
 npm run db:migrate --workspace=apps/api    # run pending migrations
 npm run db:generate --workspace=apps/api   # regenerate Prisma client
-npm run db:studio --workspace=apps/api     # open Prisma Studio
 npm run db:seed --workspace=apps/api       # seed dev data
 
 # Mobile
