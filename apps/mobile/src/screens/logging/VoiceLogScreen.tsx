@@ -85,6 +85,7 @@ export function VoiceLogScreen() {
       return;
     }
     await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    await recorder.prepareToRecordAsync();
     recorder.record();
     setScreenState('recording');
     setElapsed(0);
