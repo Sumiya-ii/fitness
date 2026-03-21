@@ -1,5 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  Pressable,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,7 +39,6 @@ const MEAL_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DAY_CELL_W = 52;
 
 function toDateKey(date: Date): string {
   const y = date.getFullYear();
@@ -207,20 +213,22 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
 export function HomeScreen() {
   const { t } = useLocale();
   const navigation = useNavigation();
+  const { width: screenWidth } = useWindowDimensions();
   const todayKey = useMemo(() => toDateKey(new Date()), []);
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
   const [displayName, setDisplayName] = useState('');
-  const dayScrollRef = useRef<ScrollView>(null);
   const { data, isLoading, fetchDashboard } = useDashboardStore();
 
-  // 21 days: 10 past, today, 10 future
-  const days = useMemo(() => {
+  // 7 days: 5 past, today (6th), 1 future
+  const weekDays = useMemo(() => {
     const today = new Date();
-    return Array.from({ length: 21 }, (_, i) => {
-      const d = addDays(today, i - 10);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(today, i - 5);
       return { date: d, key: toDateKey(d) };
     });
   }, []);
+
+  const cellSize = Math.floor((screenWidth - 32) / 7);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -238,14 +246,6 @@ export function HomeScreen() {
   useEffect(() => {
     fetchDashboard(selectedDateKey);
   }, [fetchDashboard, selectedDateKey]);
-
-  // Scroll to today on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      dayScrollRef.current?.scrollTo({ x: 10 * DAY_CELL_W - 20, animated: false });
-    }, 80);
-    return () => clearTimeout(timer);
-  }, []);
 
   const onRefresh = useCallback(() => {
     loadProfile();
@@ -312,64 +312,104 @@ export function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Day Strip */}
-        <ScrollView
-          ref={dayScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 6 }}
-        >
-          {days.map(({ date, key }) => {
-            const isSelected = selectedDateKey === key;
-            const isToday = todayKey === key;
-            const isPast = key < todayKey;
+        {/* Week Calendar Strip */}
+        <View className="px-4 pb-2 pt-1">
+          <Text
+            style={{
+              fontSize: 11,
+              fontFamily: 'Inter-SemiBold',
+              color: '#9aabbf',
+              letterSpacing: 0.8,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
+            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </Text>
+          <View style={{ flexDirection: 'row' }}>
+            {weekDays.map(({ date, key }) => {
+              const isSelected = selectedDateKey === key;
+              const isToday = todayKey === key;
+              const isPast = key < todayKey;
+              const circleSize = Math.min(cellSize - 8, 40);
 
-            return (
-              <Pressable
-                key={key}
-                onPress={() => setSelectedDateKey(key)}
-                style={{ width: DAY_CELL_W }}
-                className="items-center py-1"
-              >
-                <Text
-                  className="text-xs font-sans-medium mb-1.5"
-                  style={{ color: isSelected ? '#0b1220' : '#9aabbf' }}
-                >
-                  {WEEKDAY_LABELS[date.getDay()]}
-                </Text>
-                <View
-                  className="h-11 w-11 rounded-full items-center justify-center"
-                  style={
-                    isSelected
-                      ? { backgroundColor: '#0f172a' }
-                      : isToday
-                        ? {
-                            backgroundColor: '#ffffff',
-                            borderWidth: 1.5,
-                            borderColor: '#0f172a',
-                          }
-                        : isPast
-                          ? {
-                              borderWidth: 1,
-                              borderColor: '#c3cedf',
-                              borderStyle: 'dashed',
-                            }
-                          : { backgroundColor: 'transparent' }
-                  }
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => setSelectedDateKey(key)}
+                  style={{ width: cellSize, alignItems: 'center', paddingVertical: 2 }}
                 >
                   <Text
-                    className="font-sans-semibold text-sm"
                     style={{
-                      color: isSelected ? '#ffffff' : isToday ? '#0f172a' : '#9aabbf',
+                      fontSize: 10,
+                      fontFamily: 'Inter-Medium',
+                      color: isSelected || isToday ? '#0b1220' : isPast ? '#b0bec5' : '#d1dae6',
+                      marginBottom: 6,
+                      letterSpacing: 0.3,
                     }}
                   >
-                    {date.getDate()}
+                    {WEEKDAY_LABELS[date.getDay()]}
                   </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+                  <View
+                    style={{
+                      width: circleSize,
+                      height: circleSize,
+                      borderRadius: circleSize / 2,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      ...(isSelected
+                        ? { backgroundColor: '#0f172a' }
+                        : isToday
+                          ? {
+                              backgroundColor: '#ffffff',
+                              borderWidth: 2,
+                              borderColor: '#0f172a',
+                              shadowColor: '#0f172a',
+                              shadowOpacity: 0.15,
+                              shadowRadius: 6,
+                              shadowOffset: { width: 0, height: 2 },
+                            }
+                          : isPast
+                            ? { backgroundColor: '#f0f4f9' }
+                            : {}),
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
+                        color: isSelected
+                          ? '#ffffff'
+                          : isToday
+                            ? '#0f172a'
+                            : isPast
+                              ? '#7687a2'
+                              : '#c3cedf',
+                      }}
+                    >
+                      {date.getDate()}
+                    </Text>
+                  </View>
+                  {/* Progress dot */}
+                  <View
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: 2,
+                      marginTop: 5,
+                      backgroundColor:
+                        isToday && (data?.consumed?.calories ?? 0) > 0
+                          ? '#22c55e'
+                          : isSelected && !isToday
+                            ? '#0f172a'
+                            : 'transparent',
+                    }}
+                  />
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
       </SafeAreaView>
 
       <ScrollView
