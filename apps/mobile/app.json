@@ -44,9 +44,17 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.885740405893-dkqgaqcdtcgh1hdvijtrce9vmg691l2t"
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "nexus-kairos"
+        }
       ]
     ],
-    "slug": "coach-mobile",
+    "slug": "coach",
     "version": "1.0.0",
     "runtimeVersion": {
       "policy": "appVersion"
