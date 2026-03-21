@@ -111,6 +111,13 @@ export async function signInWithGoogle(): Promise<FirebaseSession> {
     if (!session) throw new Error('Could not start session.');
     return session;
   } catch (error) {
+    const firebaseError = error as FirebaseError;
+    console.error(
+      '[GoogleSignIn] error code:',
+      firebaseError?.code,
+      'message:',
+      firebaseError?.message,
+    );
     throw toAuthError(error);
   }
 }
