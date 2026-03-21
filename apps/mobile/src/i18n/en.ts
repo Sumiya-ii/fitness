@@ -48,6 +48,13 @@ export const en = {
     waterOf: 'of',
     addWater: 'Add water',
     waterUndone: 'Removed',
+    waterCups: 'cups',
+    mlPerCup: 'ml / cup',
+    healthScore: 'Health Score',
+    fiber: 'Fiber',
+    sugar: 'Sugar',
+    sodium: 'Sodium',
+    comingSoon: 'Soon',
   },
   logging: {
     logMeal: 'Log a Meal',

@@ -48,6 +48,13 @@ export const mn = {
     waterOf: '/',
     addWater: 'Ус нэмэх',
     waterUndone: 'Устгагдлаа',
+    waterCups: 'аяга',
+    mlPerCup: 'мл / аяга',
+    healthScore: 'Эрүүл мэндийн оноо',
+    fiber: 'Эслэг',
+    sugar: 'Сахар',
+    sodium: 'Натри',
+    comingSoon: 'Удахгүй',
   },
   logging: {
     logMeal: 'Хоол бүртгэх',

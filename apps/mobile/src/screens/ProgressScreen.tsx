@@ -48,6 +48,17 @@ const C = {
   waterLight: '#cffafe',
 };
 
+// ─── Ghost bar helpers ────────────────────────────────────────────────────────
+// Natural-looking height variations for preview bars shown to new users.
+// Based on what premium apps (MyFitnessPal, Cronometer) use to show chart
+// structure before any real data exists.
+
+const GHOST_FRACTIONS = [0.78, 0.88, 0.7, 0.92, 0.82, 0.87, 0.74, 0.8, 0.68, 0.9, 0.75, 0.85, 0.72];
+
+function ghostFrac(i: number): number {
+  return GHOST_FRACTIONS[i % GHOST_FRACTIONS.length]!;
+}
+
 // ─── Data aggregation ─────────────────────────────────────────────────────────
 
 interface ChartPoint {
@@ -170,7 +181,7 @@ function SummaryCards({
         </Text>
       </View>
 
-      {/* Streak — meaningful only for 7-day view */}
+      {/* Streak */}
       <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-3 items-center">
         <Text className="text-[10px] text-text-tertiary font-sans-medium mb-1" numberOfLines={1}>
           Streak
@@ -179,8 +190,11 @@ function SummaryCards({
           {streak > 0 && <Text style={{ fontSize: 14 }}>🔥</Text>}
           <Text className="text-lg font-sans-bold text-text">{streak}</Text>
         </View>
-        <Text className="text-[10px] text-text-tertiary font-sans-medium mt-0.5">
-          {streak === 1 ? 'day' : 'days'}
+        <Text
+          className="text-[10px] font-sans-medium mt-0.5"
+          style={{ color: streak === 0 ? themeColors.status.warning : themeColors.text.tertiary }}
+        >
+          {streak === 0 ? 'Start today!' : streak === 1 ? 'day' : 'days'}
         </Text>
       </View>
     </View>
@@ -206,21 +220,17 @@ function CalorieBarChart({
   const gap = count > 8 ? 3 : 6;
   const barW = Math.max(4, (chartWidth - gap * (count - 1)) / count);
 
-  const maxVal = Math.max(...points.map((p) => p.calories), targetCalories ?? 0, 500);
+  const allEmpty = points.every((p) => !p.hasData);
+  // When no data exists, use goal (or 2000 kcal default) as the reference scale
+  const ghostBase = targetCalories ?? 2000;
+  const maxVal = allEmpty
+    ? ghostBase * 1.05
+    : Math.max(...points.map((p) => p.calories), targetCalories ?? 0, 500);
   const scale = (v: number) => (v / (maxVal * 1.1)) * plotH;
 
-  const goalY = targetCalories ? PAD.top + plotH - scale(targetCalories) : null;
-
-  if (points.every((p) => !p.hasData)) {
-    return (
-      <View style={{ height: CHART_H + 24 }} className="items-center justify-center gap-2">
-        <Ionicons name="bar-chart-outline" size={28} color={themeColors.text.tertiary} />
-        <Text className="text-xs text-text-tertiary font-sans-medium text-center">
-          Start logging meals to see your calorie trend
-        </Text>
-      </View>
-    );
-  }
+  // Always show the goal line — even for new users it anchors expectations
+  const effectiveGoal = targetCalories ?? (allEmpty ? ghostBase : null);
+  const goalY = effectiveGoal ? PAD.top + plotH - scale(effectiveGoal) : null;
 
   return (
     <View>
@@ -234,7 +244,26 @@ function CalorieBarChart({
 
         {points.map((p, i) => {
           const x = i * (barW + gap);
-          const h = p.hasData ? Math.max(3, scale(p.calories)) : 3;
+          let h: number;
+          let fill: string;
+          let opacity: number;
+
+          if (allEmpty) {
+            // Ghost preview: realistic-looking bars so new users see chart shape
+            h = Math.max(4, scale(ghostBase * ghostFrac(i)));
+            fill = C.calories;
+            opacity = 0.13;
+          } else if (p.hasData) {
+            h = Math.max(3, scale(p.calories));
+            fill = 'url(#calBar)';
+            opacity = 1;
+          } else {
+            // Empty day within a partially-filled period
+            h = 5;
+            fill = C.caloriesLight;
+            opacity = 0.55;
+          }
+
           const y = PAD.top + plotH - h;
           const rx = barW > 10 ? Math.min(6, barW / 3) : 2;
           return (
@@ -245,7 +274,8 @@ function CalorieBarChart({
               width={barW}
               height={h}
               rx={rx}
-              fill={p.hasData ? 'url(#calBar)' : C.caloriesLight}
+              fill={fill}
+              fillOpacity={opacity}
             />
           );
         })}
@@ -266,7 +296,7 @@ function CalorieBarChart({
       </Svg>
 
       {/* Goal label */}
-      {goalY !== null && targetCalories && (
+      {goalY !== null && effectiveGoal && (
         <View
           style={{
             position: 'absolute',
@@ -279,8 +309,49 @@ function CalorieBarChart({
           }}
         >
           <Text style={{ fontSize: 9, color: C.goal, fontFamily: 'Inter-SemiBold' }}>
-            {targetCalories.toLocaleString()} goal
+            {effectiveGoal.toLocaleString()} goal
           </Text>
+        </View>
+      )}
+
+      {/* Ghost overlay pill — floats over ghost bars when no real data yet */}
+      {allEmpty && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: PAD.bottom,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          pointerEvents="none"
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+              backgroundColor: 'rgba(255,255,255,0.92)',
+              borderRadius: 20,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderWidth: 1,
+              borderColor: 'rgba(15,23,42,0.08)',
+            }}
+          >
+            <Ionicons name="sparkles-outline" size={12} color={themeColors.text.secondary} />
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: 'Inter-SemiBold',
+                color: themeColors.text.secondary,
+              }}
+            >
+              Log meals to see your trends
+            </Text>
+          </View>
         </View>
       )}
 
@@ -320,7 +391,9 @@ function MacroStackedChart({ points, chartWidth }: { points: ChartPoint[]; chart
   const maxKcal = Math.max(...points.map(toKcal), 500);
   const scale = (v: number) => (v / (maxKcal * 1.1)) * plotH;
 
+  const allEmpty = points.every((p) => !p.hasData);
   const logged = points.filter((p) => p.hasData);
+
   const avgProtein =
     logged.length > 0
       ? Number((logged.reduce((s, p) => s + p.protein, 0) / logged.length).toFixed(0))
@@ -334,30 +407,53 @@ function MacroStackedChart({ points, chartWidth }: { points: ChartPoint[]; chart
       ? Number((logged.reduce((s, p) => s + p.fat, 0) / logged.length).toFixed(0))
       : 0;
 
-  if (points.every((p) => !p.hasData)) {
-    return (
-      <View style={{ height: CHART_H }} className="items-center justify-center">
-        <Text className="text-xs text-text-tertiary">No data yet</Text>
-      </View>
-    );
-  }
+  // Ghost defaults: 30% protein / 45% carbs / 25% fat kcal split
+  const ghostProteinG = 37.5;
+  const ghostCarbsG = 112.5;
+  const ghostFatG = 27.8;
+  const ghostKcal = ghostProteinG * 4 + ghostCarbsG * 4 + ghostFatG * 9;
+  const effectiveMaxKcal = allEmpty ? ghostKcal * 1.1 : maxKcal;
+  const effectiveScale = (v: number) => (v / (effectiveMaxKcal * 1.1)) * plotH;
 
   return (
     <View>
       <Svg width={chartWidth} height={CHART_H}>
         {points.map((p, i) => {
-          if (!p.hasData) return null;
           const x = i * (barW + gap);
-          const fatH = scale(p.fat * 9);
-          const carbsH = scale(p.carbs * 4);
-          const proteinH = scale(p.protein * 4);
-          const totalH = fatH + carbsH + proteinH;
           const baseY = PAD.top + plotH;
           const rx = barW > 10 ? Math.min(4, barW / 3) : 2;
+          const frac = ghostFrac(i);
 
+          let fatH: number, carbsH: number, proteinH: number, opacity: number;
+
+          if (allEmpty) {
+            fatH = effectiveScale(ghostFatG * 9 * frac);
+            carbsH = effectiveScale(ghostCarbsG * 4 * frac);
+            proteinH = effectiveScale(ghostProteinG * 4 * frac);
+            opacity = 0.15;
+          } else if (p.hasData) {
+            fatH = effectiveScale(p.fat * 9);
+            carbsH = effectiveScale(p.carbs * 4);
+            proteinH = effectiveScale(p.protein * 4);
+            opacity = 0.85;
+          } else {
+            return (
+              <Rect
+                key={i}
+                x={x}
+                y={baseY - 5}
+                width={barW}
+                height={5}
+                rx={rx}
+                fill={C.caloriesLight}
+                fillOpacity={0.4}
+              />
+            );
+          }
+
+          const totalH = fatH + carbsH + proteinH;
           return (
             <G key={i}>
-              {/* Protein — bottom */}
               <Rect
                 x={x}
                 y={baseY - proteinH}
@@ -365,18 +461,16 @@ function MacroStackedChart({ points, chartWidth }: { points: ChartPoint[]; chart
                 height={proteinH}
                 rx={rx}
                 fill={C.protein}
-                fillOpacity={0.85}
+                fillOpacity={opacity}
               />
-              {/* Carbs — middle */}
               <Rect
                 x={x}
                 y={baseY - proteinH - carbsH}
                 width={barW}
                 height={carbsH}
                 fill={C.carbs}
-                fillOpacity={0.85}
+                fillOpacity={opacity}
               />
-              {/* Fat — top */}
               <Rect
                 x={x}
                 y={baseY - totalH}
@@ -384,24 +478,34 @@ function MacroStackedChart({ points, chartWidth }: { points: ChartPoint[]; chart
                 height={fatH}
                 rx={rx}
                 fill={C.fat}
-                fillOpacity={0.85}
+                fillOpacity={opacity}
               />
             </G>
           );
         })}
       </Svg>
 
-      {/* Legend + averages */}
+      {/* Legend + averages (dimmed when no data) */}
       <View className="flex-row justify-around mt-3">
         {[
-          { label: 'Protein', color: C.protein, value: avgProtein },
-          { label: 'Carbs', color: C.carbs, value: avgCarbs },
-          { label: 'Fat', color: C.fat, value: avgFat },
+          { label: 'Protein', color: C.protein, value: allEmpty ? '–' : `${avgProtein}g` },
+          { label: 'Carbs', color: C.carbs, value: allEmpty ? '–' : `${avgCarbs}g` },
+          { label: 'Fat', color: C.fat, value: allEmpty ? '–' : `${avgFat}g` },
         ].map(({ label, color, value }) => (
           <View key={label} className="flex-row items-center gap-1.5">
-            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color }} />
-            <Text className="text-xs text-text-secondary font-sans-medium">
-              {label}: {value}g
+            <View
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 2,
+                backgroundColor: color,
+                opacity: allEmpty ? 0.3 : 1,
+              }}
+            />
+            <Text
+              className={`text-xs font-sans-medium ${allEmpty ? 'text-text-tertiary' : 'text-text-secondary'}`}
+            >
+              {label}: {value}
             </Text>
           </View>
         ))}
@@ -422,26 +526,35 @@ function WaterBarChart({ points, chartWidth }: { points: ChartPoint[]; chartWidt
   const gap = count > 8 ? 3 : 6;
   const barW = Math.max(4, (chartWidth - gap * (count - 1)) / count);
 
+  const allEmpty = points.every((p) => p.waterMl === 0);
   const maxWater = Math.max(...points.map((p) => p.waterMl), GOAL_ML) * 1.1;
   const scale = (v: number) => (v / maxWater) * plotH;
   const goalY = PAD.top + plotH - scale(GOAL_ML);
-
-  if (points.every((p) => p.waterMl === 0)) {
-    return (
-      <View style={{ height: CHART_H }} className="items-center justify-center">
-        <Text className="text-xs text-text-tertiary">No water logged yet</Text>
-      </View>
-    );
-  }
 
   return (
     <View>
       <Svg width={chartWidth} height={CHART_H}>
         {points.map((p, i) => {
           const x = i * (barW + gap);
-          const h = p.waterMl > 0 ? Math.max(3, scale(p.waterMl)) : 3;
-          const y = PAD.top + plotH - h;
           const rx = barW > 10 ? Math.min(4, barW / 3) : 2;
+          let h: number, fill: string, opacity: number;
+
+          if (allEmpty) {
+            // Ghost preview bars around the 2L goal line with natural variation
+            h = Math.max(3, scale(GOAL_ML * ghostFrac(i)));
+            fill = C.water;
+            opacity = 0.18;
+          } else if (p.waterMl > 0) {
+            h = Math.max(3, scale(p.waterMl));
+            fill = C.water;
+            opacity = p.waterMl >= GOAL_ML ? 1 : 0.75;
+          } else {
+            h = 5;
+            fill = C.waterLight;
+            opacity = 0.5;
+          }
+
+          const y = PAD.top + plotH - h;
           return (
             <Rect
               key={i}
@@ -450,11 +563,13 @@ function WaterBarChart({ points, chartWidth }: { points: ChartPoint[]; chartWidt
               width={barW}
               height={h}
               rx={rx}
-              fill={p.waterMl > 0 ? C.water : C.waterLight}
-              fillOpacity={p.waterMl >= GOAL_ML ? 1 : 0.75}
+              fill={fill}
+              fillOpacity={opacity}
             />
           );
         })}
+
+        {/* Goal line — always visible so context is clear even before any data */}
         <Line
           x1={0}
           y1={goalY}
@@ -463,7 +578,7 @@ function WaterBarChart({ points, chartWidth }: { points: ChartPoint[]; chartWidt
           stroke={C.water}
           strokeWidth={1}
           strokeDasharray="4,4"
-          strokeOpacity={0.6}
+          strokeOpacity={allEmpty ? 0.4 : 0.6}
         />
       </Svg>
     </View>
@@ -483,6 +598,7 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
   const historyData = data[period];
   const points = historyData ? toChartPoints(historyData.history, period) : [];
   const target = historyData?.target ?? null;
+  const hasAnyData = points.some((p) => p.hasData);
 
   const periodLabel = (p: HistoryPeriod) => (p === 7 ? '7D' : p === 30 ? '30D' : '90D');
 
@@ -492,6 +608,33 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
 
   return (
     <View>
+      {/* Welcome banner — shown only when no data exists for this period */}
+      {!hasAnyData && (
+        <Animated.View entering={FadeInDown.duration(400)} className="mb-4">
+          <LinearGradient
+            colors={['#f0f4fb', '#eaf0f8']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ borderRadius: 20, borderWidth: 1, borderColor: themeColors.surface.border }}
+          >
+            <View className="p-4 flex-row items-center gap-3">
+              <View
+                className="h-11 w-11 rounded-2xl items-center justify-center"
+                style={{ backgroundColor: 'rgba(15,23,42,0.07)' }}
+              >
+                <Ionicons name="nutrition" size={22} color={themeColors.primary['500']} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-sans-bold text-text">Your trends start here</Text>
+                <Text className="text-xs text-text-secondary mt-0.5 leading-4">
+                  Log your first meal and this chart will come alive with your real data.
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+      )}
+
       {/* Period selector */}
       <View className="flex-row rounded-2xl bg-surface-card border border-surface-border p-1 mb-4">
         {HISTORY_PERIODS.map((p) => (

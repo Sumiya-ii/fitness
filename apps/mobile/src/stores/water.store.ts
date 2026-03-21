@@ -7,6 +7,7 @@ interface WaterState {
   isLoading: boolean;
   error: string | null;
   addWater: (amountMl: number, date?: string) => Promise<void>;
+  removeCup: (cupMl: number) => Promise<void>;
   undoLast: () => Promise<void>;
   fetchDaily: (date?: string) => Promise<void>;
 }
@@ -38,6 +39,19 @@ export const useWaterStore = create<WaterState>((set, get) => ({
       await waterApi.add(amountMl, loggedAt);
     } catch (_e) {
       // Silently ignore — optimistic state stays; server will correct on next fetch
+    }
+  },
+
+  removeCup: async (cupMl: number) => {
+    if (get().consumed <= 0) return;
+    set((s) => ({ consumed: Math.max(0, s.consumed - cupMl) }));
+    try {
+      const res = await waterApi.deleteLast();
+      if (res.data.deleted) {
+        await get().fetchDaily();
+      }
+    } catch (_e) {
+      // Silently keep optimistic state
     }
   },
 

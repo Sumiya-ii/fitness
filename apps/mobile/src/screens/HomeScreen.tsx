@@ -25,6 +25,9 @@ import { useLocale } from '../i18n';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+// 1 cup ≈ 237 ml (rounded from 236.588)
+const CUP_ML = 237;
+
 const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: 'dashboard.breakfast',
   lunch: 'dashboard.lunch',
@@ -54,7 +57,23 @@ function addDays(date: Date, days: number): Date {
   return copy;
 }
 
-// Animated progress arc that accepts children rendered in center
+const cardShadow = {
+  shadowColor: '#0b1220',
+  shadowOpacity: 0.06,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 2,
+};
+
+const cardShadowStrong = {
+  shadowColor: '#0b1220',
+  shadowOpacity: 0.07,
+  shadowRadius: 14,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 3,
+};
+
+// Animated progress arc
 function ProgressArc({
   progress,
   size,
@@ -128,16 +147,7 @@ interface MacroCardProps {
 
 function MacroCard({ label, leftAmount, unit, progress, color, icon }: MacroCardProps) {
   return (
-    <View
-      className="flex-1 bg-white rounded-3xl p-4"
-      style={{
-        shadowColor: '#0b1220',
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 3 },
-        elevation: 2,
-      }}
-    >
+    <View className="flex-1 bg-white rounded-3xl p-4" style={cardShadow}>
       <Text className="text-xl font-sans-bold text-[#0b1220] leading-tight">
         {leftAmount}
         {unit}
@@ -148,6 +158,39 @@ function MacroCard({ label, leftAmount, unit, progress, color, icon }: MacroCard
       <ProgressArc progress={progress} size={52} strokeWidth={5} color={color}>
         <Text style={{ fontSize: 18 }}>{icon}</Text>
       </ProgressArc>
+    </View>
+  );
+}
+
+interface NutrientMiniCardProps {
+  label: string;
+  value: string;
+  unit: string;
+  color: string;
+  icon: string;
+  sublabel?: string;
+}
+
+function NutrientMiniCard({ label, value, unit, color, icon, sublabel }: NutrientMiniCardProps) {
+  return (
+    <View className="flex-1 bg-white rounded-3xl p-4" style={cardShadow}>
+      <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: '#0b1220', lineHeight: 24 }}>
+        {value}
+      </Text>
+      <Text style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>{unit}</Text>
+      <View className="flex-row items-center gap-1.5 mt-3">
+        <Text style={{ fontSize: 16 }}>{icon}</Text>
+        <View>
+          <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color }} numberOfLines={1}>
+            {label}
+          </Text>
+          {sublabel ? (
+            <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#b0bec5' }}>
+              {sublabel}
+            </Text>
+          ) : null}
+        </View>
+      </View>
     </View>
   );
 }
@@ -218,12 +261,13 @@ export function HomeScreen() {
   const todayKey = useMemo(() => toDateKey(new Date()), []);
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
   const [displayName, setDisplayName] = useState('');
+  const [carouselPage, setCarouselPage] = useState(0);
   const { data, isLoading, fetchDashboard } = useDashboardStore();
   const {
     consumed: waterConsumed,
     target: waterTarget,
     addWater,
-    undoLast,
+    removeCup,
     fetchDaily: fetchWater,
   } = useWaterStore();
 
@@ -299,12 +343,55 @@ export function HomeScreen() {
   const effectiveWaterTarget = data?.waterTarget ?? waterTarget;
   const waterProgress =
     effectiveWaterTarget > 0 ? Math.min(effectiveWaterConsumed / effectiveWaterTarget, 1) : 0;
-  const waterGlassesCount = Math.round(effectiveWaterConsumed / 250);
-  const totalGlasses = Math.round(effectiveWaterTarget / 250);
-  const waterLabel =
+  const waterCupsConsumed = effectiveWaterConsumed / CUP_ML;
+  const waterCupsTarget = Math.round(effectiveWaterTarget / CUP_ML);
+  const waterMlLabel =
     effectiveWaterConsumed >= 1000
-      ? `${(effectiveWaterConsumed / 1000).toFixed(1)}L`
-      : `${effectiveWaterConsumed}ml`;
+      ? `${(effectiveWaterConsumed / 1000).toFixed(1)} L`
+      : `${effectiveWaterConsumed} ml`;
+
+  // Health score: calorie adherence (40 pts) + protein adherence (35 pts) + hydration (25 pts)
+  const healthScore = (() => {
+    if (!data?.targets || targets.calories === 0) return null;
+    const calRatio = consumed.calories > 0 ? consumed.calories / targets.calories : 0;
+    const calScore =
+      calRatio === 0
+        ? 0
+        : calRatio <= 1.05
+          ? Math.round(Math.min(calRatio, 1) * 40)
+          : calRatio <= 1.15
+            ? 35
+            : calRatio <= 1.3
+              ? 20
+              : 10;
+    const proteinRatio = targets.protein > 0 ? consumed.protein / targets.protein : 0;
+    const proteinScore = Math.min(35, Math.round(proteinRatio * 35));
+    const waterRatio = effectiveWaterTarget > 0 ? effectiveWaterConsumed / effectiveWaterTarget : 0;
+    const waterScore = Math.min(25, Math.round(waterRatio * 25));
+    return Math.min(100, Math.round(calScore + proteinScore + waterScore));
+  })();
+
+  const healthGrade =
+    healthScore === null
+      ? '–'
+      : healthScore >= 90
+        ? 'A'
+        : healthScore >= 75
+          ? 'B'
+          : healthScore >= 60
+            ? 'C'
+            : healthScore >= 45
+              ? 'D'
+              : 'F';
+
+  const healthColor =
+    healthScore === null
+      ? '#9aabbf'
+      : healthScore >= 75
+        ? '#22c55e'
+        : healthScore >= 50
+          ? '#f59e0b'
+          : '#ef4444';
 
   return (
     <View className="flex-1 bg-[#f4f7fb]">
@@ -448,128 +535,286 @@ export function HomeScreen() {
           />
         }
       >
-        {/* Calorie + Water Row */}
-        <Animated.View entering={FadeInDown.duration(350)} className="flex-row mx-4 mb-3 gap-3">
-          {/* Calorie Card (2/3) */}
-          <Pressable
-            onPress={handleLogMeal}
-            className="flex-[2] bg-white rounded-3xl p-4"
-            style={{
-              shadowColor: '#0b1220',
-              shadowOpacity: 0.07,
-              shadowRadius: 14,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 3,
+        {/* ── Nutrition Carousel ── */}
+        <Animated.View entering={FadeInDown.duration(350)} className="mb-1">
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onMomentumScrollEnd={(e) => {
+              const newPage = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+              setCarouselPage(newPage);
             }}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1 mr-2">
-                <Text className="text-5xl font-sans-bold text-[#0b1220] leading-none">
-                  {remaining}
-                </Text>
-                <Text className="text-sm text-[#7687a2] font-sans-medium mt-1.5">
-                  {t('dashboard.caloriesLeft')}
-                </Text>
-                <View className="flex-row items-center gap-3 mt-2.5">
-                  <View className="flex-row items-center gap-1.5">
-                    <View className="h-2 w-2 rounded-full bg-[#f97316]" />
-                    <Text className="text-xs text-[#9aabbf] font-sans-medium">
-                      {consumed.calories} {t('dashboard.eaten')}
+            {/* ── Page 0: Calories + Macros ── */}
+            <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
+              {/* Calorie Card */}
+              <Pressable
+                onPress={handleLogMeal}
+                className="bg-white rounded-3xl p-4 mb-3"
+                style={cardShadowStrong}
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1 mr-2">
+                    <Text className="text-5xl font-sans-bold text-[#0b1220] leading-none">
+                      {remaining}
                     </Text>
+                    <Text className="text-sm text-[#7687a2] font-sans-medium mt-1.5">
+                      {t('dashboard.caloriesLeft')}
+                    </Text>
+                    <View className="flex-row items-center gap-3 mt-2.5">
+                      <View className="flex-row items-center gap-1.5">
+                        <View className="h-2 w-2 rounded-full bg-[#f97316]" />
+                        <Text className="text-xs text-[#9aabbf] font-sans-medium">
+                          {consumed.calories} {t('dashboard.eaten')}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center gap-1.5">
+                        <View className="h-2 w-2 rounded-full bg-[#dde5f0]" />
+                        <Text className="text-xs text-[#9aabbf] font-sans-medium">
+                          {targets.calories} goal
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <View className="flex-row items-center gap-1.5">
-                    <View className="h-2 w-2 rounded-full bg-[#dde5f0]" />
-                    <Text className="text-xs text-[#9aabbf] font-sans-medium">
-                      {targets.calories} goal
-                    </Text>
+                  <ProgressArc progress={calProg} size={80} strokeWidth={7} color="#0f172a">
+                    <Text style={{ fontSize: 26 }}>🔥</Text>
+                  </ProgressArc>
+                </View>
+              </Pressable>
+
+              {/* Macro Cards */}
+              <View className="flex-row gap-3">
+                <MacroCard
+                  label={t('dashboard.protein')}
+                  leftAmount={proteinLeft}
+                  unit="g"
+                  progress={proteinProg}
+                  color="#f97316"
+                  icon="🍗"
+                />
+                <MacroCard
+                  label={t('dashboard.carbs')}
+                  leftAmount={carbsLeft}
+                  unit="g"
+                  progress={carbsProg}
+                  color="#f59e0b"
+                  icon="🌾"
+                />
+                <MacroCard
+                  label={t('dashboard.fat')}
+                  leftAmount={fatLeft}
+                  unit="g"
+                  progress={fatProg}
+                  color="#3b82f6"
+                  icon="🫐"
+                />
+              </View>
+            </View>
+
+            {/* ── Page 1: Health Score + Water + Nutrients ── */}
+            <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
+              {/* Row 1: Health Score card (flex-[2]) + Water quick-info (flex-1) */}
+              <View className="flex-row gap-3 mb-3">
+                {/* Health Score */}
+                <View className="flex-[2] bg-white rounded-3xl p-4" style={cardShadowStrong}>
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1 mr-2">
+                      <Text
+                        style={{
+                          fontSize: 44,
+                          fontFamily: 'Inter-Bold',
+                          color: healthColor,
+                          lineHeight: 48,
+                        }}
+                      >
+                        {healthScore ?? '–'}
+                      </Text>
+                      <Text className="text-sm text-[#7687a2] font-sans-medium mt-1">
+                        {t('dashboard.healthScore')}
+                      </Text>
+                      <View className="flex-row items-center gap-2 mt-2.5">
+                        <View
+                          className="px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: healthColor + '20' }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontFamily: 'Inter-Bold',
+                              color: healthColor,
+                            }}
+                          >
+                            {healthGrade}
+                          </Text>
+                        </View>
+                        <Text className="text-xs text-[#9aabbf] font-sans-medium">/ 100</Text>
+                      </View>
+                    </View>
+                    <ProgressArc
+                      progress={healthScore !== null ? healthScore / 100 : 0}
+                      size={80}
+                      strokeWidth={7}
+                      color={healthColor}
+                      trackColor={healthColor + '20'}
+                    >
+                      <Text style={{ fontSize: 26 }}>💪</Text>
+                    </ProgressArc>
                   </View>
                 </View>
+
+                {/* Water Summary */}
+                <View
+                  className="flex-1 bg-white rounded-3xl p-4 justify-between"
+                  style={cardShadowStrong}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontFamily: 'Inter-SemiBold',
+                      color: '#7687a2',
+                      letterSpacing: 0.8,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {t('dashboard.water')}
+                  </Text>
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        fontFamily: 'Inter-Bold',
+                        color: '#0b1220',
+                        lineHeight: 24,
+                      }}
+                    >
+                      {waterCupsConsumed.toFixed(1)}
+                    </Text>
+                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                      {t('dashboard.waterCups')}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 9,
+                        fontFamily: 'Inter-Medium',
+                        color: '#b0bec5',
+                        marginTop: 2,
+                      }}
+                    >
+                      {waterMlLabel}
+                    </Text>
+                  </View>
+                  <ProgressArc
+                    progress={waterProgress}
+                    size={48}
+                    strokeWidth={5}
+                    color="#0ea5e9"
+                    trackColor="#e0f2fe"
+                  >
+                    <Text style={{ fontSize: 14 }}>💧</Text>
+                  </ProgressArc>
+                </View>
               </View>
-              <ProgressArc progress={calProg} size={80} strokeWidth={7} color="#0f172a">
-                <Text style={{ fontSize: 26 }}>🔥</Text>
-              </ProgressArc>
-            </View>
-          </Pressable>
 
-          {/* Water Card (1/3) — tap = +250ml, long-press = undo */}
-          <Pressable
-            onPress={() => addWater(250)}
-            onLongPress={undoLast}
-            className="flex-1 bg-white rounded-3xl p-4 justify-between"
-            style={{
-              shadowColor: '#0b1220',
-              shadowOpacity: 0.07,
-              shadowRadius: 14,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 3,
-            }}
-          >
-            <Text
+              {/* Row 2: Water cup +/- controls */}
+              <View className="bg-white rounded-3xl p-4 mb-3" style={cardShadow}>
+                <View className="flex-row items-center justify-between mb-3">
+                  <View>
+                    <Text className="text-sm font-sans-semibold text-[#0b1220]">
+                      {t('dashboard.water')}
+                    </Text>
+                    <Text style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                      {waterCupsConsumed.toFixed(1)} / {waterCupsTarget} {t('dashboard.waterCups')}{' '}
+                      · {waterMlLabel}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#b0bec5' }}>
+                    {CUP_ML} {t('dashboard.mlPerCup')}
+                  </Text>
+                </View>
+                <View className="flex-row items-center gap-3">
+                  <Pressable
+                    onPress={() => removeCup(CUP_ML)}
+                    disabled={effectiveWaterConsumed <= 0}
+                    className="flex-1 h-12 rounded-2xl bg-[#f0f4f9] items-center justify-center"
+                  >
+                    <Ionicons
+                      name="remove"
+                      size={22}
+                      color={effectiveWaterConsumed <= 0 ? '#c3cedf' : '#0b1220'}
+                    />
+                  </Pressable>
+                  <View className="flex-1 items-center">
+                    <Text style={{ fontSize: 22, fontFamily: 'Inter-Bold', color: '#0ea5e9' }}>
+                      {waterCupsConsumed.toFixed(1)}
+                    </Text>
+                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                      {t('dashboard.waterCups')}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => addWater(CUP_ML)}
+                    className="flex-1 h-12 rounded-2xl bg-[#0ea5e9] items-center justify-center"
+                  >
+                    <Ionicons name="add" size={22} color="#ffffff" />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Row 3: Fiber / Sugar / Sodium (coming soon) */}
+              <View className="flex-row gap-3">
+                <NutrientMiniCard
+                  label={t('dashboard.fiber')}
+                  value="–"
+                  unit="g"
+                  color="#22c55e"
+                  icon="🥦"
+                  sublabel={t('dashboard.comingSoon')}
+                />
+                <NutrientMiniCard
+                  label={t('dashboard.sugar')}
+                  value="–"
+                  unit="g"
+                  color="#ec4899"
+                  icon="🍬"
+                  sublabel={t('dashboard.comingSoon')}
+                />
+                <NutrientMiniCard
+                  label={t('dashboard.sodium')}
+                  value="–"
+                  unit="mg"
+                  color="#8b5cf6"
+                  icon="🧂"
+                  sublabel={t('dashboard.comingSoon')}
+                />
+              </View>
+            </View>
+          </ScrollView>
+
+          {/* Pagination dots */}
+          <View className="flex-row justify-center items-center gap-2 mt-3 mb-1">
+            <View
               style={{
-                fontSize: 10,
-                fontFamily: 'Inter-SemiBold',
-                color: '#7687a2',
-                letterSpacing: 0.8,
-                textTransform: 'uppercase',
+                width: carouselPage === 0 ? 18 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: carouselPage === 0 ? '#0f172a' : '#dde5f0',
               }}
-            >
-              {t('dashboard.water')}
-            </Text>
-            <View>
-              <Text
-                style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: '#0b1220', lineHeight: 24 }}
-              >
-                {waterLabel}
-              </Text>
-              <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
-                {waterGlassesCount}/{totalGlasses} {t('dashboard.waterGlasses')}
-              </Text>
-            </View>
-            <ProgressArc
-              progress={waterProgress}
-              size={54}
-              strokeWidth={5}
-              color="#0ea5e9"
-              trackColor="#e0f2fe"
-            >
-              <Text style={{ fontSize: 16 }}>💧</Text>
-            </ProgressArc>
-          </Pressable>
-        </Animated.View>
-
-        {/* Macro Cards */}
-        <Animated.View
-          entering={FadeInDown.delay(80).duration(350)}
-          className="flex-row mx-4 gap-3 mb-3"
-        >
-          <MacroCard
-            label={t('dashboard.protein')}
-            leftAmount={proteinLeft}
-            unit="g"
-            progress={proteinProg}
-            color="#f97316"
-            icon="🍗"
-          />
-          <MacroCard
-            label={t('dashboard.carbs')}
-            leftAmount={carbsLeft}
-            unit="g"
-            progress={carbsProg}
-            color="#f59e0b"
-            icon="🌾"
-          />
-          <MacroCard
-            label={t('dashboard.fat')}
-            leftAmount={fatLeft}
-            unit="g"
-            progress={fatProg}
-            color="#3b82f6"
-            icon="🫐"
-          />
+            />
+            <View
+              style={{
+                width: carouselPage === 1 ? 18 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: carouselPage === 1 ? '#0f172a' : '#dde5f0',
+              }}
+            />
+          </View>
         </Animated.View>
 
         {/* Recently Logged */}
-        <View className="px-4">
+        <View className="px-4 mt-2">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-xl font-sans-bold text-[#0b1220]">
               {isTodaySelected ? t('dashboard.todaysMeals') : t('dashboard.meals')}
@@ -595,7 +840,7 @@ export function HomeScreen() {
                   elevation: 2,
                 }}
               >
-                {/* Placeholder meal row (decorative, like Cal AI) */}
+                {/* Placeholder meal row (decorative) */}
                 <View className="px-5 pt-5 pb-2">
                   <View className="flex-row items-center gap-3 bg-[#f4f7fb] rounded-2xl p-4 mb-2">
                     <Text style={{ fontSize: 28 }}>🥗</Text>
