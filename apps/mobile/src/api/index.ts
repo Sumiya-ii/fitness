@@ -1,4 +1,6 @@
 export { api } from './client';
+export { dashboardApi } from './dashboard';
+export type * from './dashboard';
 export { mealsApi } from './meals';
 export type * from './meals';
 export { chatApi } from './chat';
