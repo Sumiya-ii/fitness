@@ -6,6 +6,7 @@ import { ChatService } from '../chat/chat.service';
 import { TelegramFoodParserService } from './telegram-food-parser.service';
 import { MealLogsService } from '../meal-logs/meal-logs.service';
 import { Telegraf, Context } from 'telegraf';
+import type { Message } from 'telegraf/types';
 
 const IDEMPOTENCY_TTL_MINUTES = 24 * 60;
 
@@ -59,6 +60,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
     this.bot.command('link', (ctx) => this.handleLinkCommand(ctx));
     this.bot.on('text', (ctx) => this.handleTextMessage(ctx));
+    this.bot.on('voice', (ctx) => this.handleVoiceMessage(ctx));
 
     // Inline keyboard callbacks for meal log confirmation
     this.bot.action('log_confirm', (ctx) => this.handleLogConfirm(ctx));
@@ -197,6 +199,134 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         err instanceof Error ? err.message : String(err),
       );
       await ctx.reply('Sorry, I had trouble responding. Please try again.');
+    }
+  }
+
+  private async handleVoiceMessage(ctx: Context) {
+    const msg = ctx.message as Message.VoiceMessage | undefined;
+    if (!msg?.voice) return;
+
+    const telegramUserId = ctx.from?.id;
+    if (!telegramUserId) return;
+
+    // Idempotency — use Telegram's stable file_unique_id
+    const idempotencyKey = `tg:voice:${msg.voice.file_unique_id}`;
+    const cached = await this.idempotencyService.check(idempotencyKey);
+    if (cached.exists && cached.response) {
+      await ctx.reply(cached.response.body as string);
+      return;
+    }
+
+    const userId = await this.telegramService.findUserByTelegram(String(telegramUserId));
+    if (!userId) {
+      await ctx.reply(
+        'Your account is not linked yet.\n\nOpen the Coach app → Settings → Telegram to connect.',
+      );
+      return;
+    }
+
+    // Immediate feedback — user knows processing started
+    const processingMsg = await ctx.reply('🎙️ Сонсож байна...');
+
+    try {
+      // Download audio from Telegram
+      const token = this.config.get('TELEGRAM_BOT_TOKEN')!;
+      const file = await ctx.telegram.getFile(msg.voice.file_id);
+      if (!file.file_path) throw new Error('Telegram file_path missing');
+
+      const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error(`Audio download failed: ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = Buffer.from(arrayBuffer);
+
+      // Transcribe with Whisper
+      const transcription = await this.foodParserService.transcribeVoice(audioBuffer);
+
+      if (!transcription) {
+        const errMsg = 'Дуу тодорхойгүй байна. Дахин илгээнэ үү.';
+        await ctx.telegram.editMessageText(
+          ctx.chat!.id,
+          processingMsg.message_id,
+          undefined,
+          errMsg,
+        );
+        await this.idempotencyService.store(
+          idempotencyKey,
+          { status: 200, body: errMsg },
+          IDEMPOTENCY_TTL_MINUTES,
+        );
+        return;
+      }
+
+      // Parse intent from transcription
+      const parsed = await this.foodParserService.parse(transcription);
+
+      if (parsed.isFoodLog && parsed.items.length > 0) {
+        await this.foodParserService.saveDraft(telegramUserId, {
+          ...parsed,
+          originalText: transcription,
+        });
+
+        const itemLines = parsed.items
+          .map((i) => `• ${i.quantity > 1 ? `${i.quantity} ` : ''}${i.name} — ${i.calories} ккал`)
+          .join('\n');
+        const replyText =
+          `🎙️ "${transcription}"\n\n` +
+          `🍽️ Дараах хоолыг бүртгэх үү?\n\n${itemLines}\n\n` +
+          `Нийт: ${parsed.totalCalories} ккал | 🥩 ${parsed.totalProtein}г | 🍞 ${parsed.totalCarbs}г | 🧈 ${parsed.totalFat}г`;
+
+        await ctx.telegram.editMessageText(
+          ctx.chat!.id,
+          processingMsg.message_id,
+          undefined,
+          replyText,
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  { text: '✅ Тийм, бүртгэх', callback_data: 'log_confirm' },
+                  { text: '❌ Болих', callback_data: 'log_cancel' },
+                ],
+              ],
+            },
+          },
+        );
+
+        await this.idempotencyService.store(
+          idempotencyKey,
+          { status: 200, body: replyText },
+          IDEMPOTENCY_TTL_MINUTES,
+        );
+      } else {
+        // Coaching question via voice — route through ChatService
+        const result = await this.chatService.sendMessage(userId, transcription);
+        const replyText = `🎙️ "${transcription}"\n\n${result.message}`;
+
+        await ctx.telegram.editMessageText(
+          ctx.chat!.id,
+          processingMsg.message_id,
+          undefined,
+          replyText,
+        );
+
+        await this.idempotencyService.store(
+          idempotencyKey,
+          { status: 200, body: replyText },
+          IDEMPOTENCY_TTL_MINUTES,
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        'Failed to process voice message',
+        err instanceof Error ? err.message : String(err),
+      );
+      await ctx.telegram.editMessageText(
+        ctx.chat!.id,
+        processingMsg.message_id,
+        undefined,
+        'Алдаа гарлаа. Дахин оролдоно уу.',
+      );
     }
   }
 

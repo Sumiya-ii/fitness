@@ -12,11 +12,21 @@ jest.mock('ioredis', () => {
   }));
 });
 
+// Mock openai/uploads
+jest.mock('openai/uploads', () => ({
+  toFile: jest.fn().mockResolvedValue('mock-audio-file'),
+}));
+
 // Mock openai
 jest.mock('openai', () => {
   return jest.fn().mockImplementation(() => ({
     chat: {
       completions: {
+        create: jest.fn(),
+      },
+    },
+    audio: {
+      transcriptions: {
         create: jest.fn(),
       },
     },
@@ -34,6 +44,7 @@ const mockConfigService = {
 describe('TelegramFoodParserService', () => {
   let service: TelegramFoodParserService;
   let openaiCreateMock: jest.Mock;
+  let openaiTranscribeMock: jest.Mock;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -48,6 +59,8 @@ describe('TelegramFoodParserService', () => {
     // Access the openai mock through the service instance
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     openaiCreateMock = (service as any).openai?.chat?.completions?.create;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    openaiTranscribeMock = (service as any).openai?.audio?.transcriptions?.create;
   });
 
   afterEach(() => {
@@ -343,6 +356,58 @@ describe('TelegramFoodParserService', () => {
       await service.deleteDraft(123456);
 
       expect(redisMock.del).toHaveBeenCalledWith('tg:draft:123456');
+    });
+  });
+
+  describe('transcribeVoice()', () => {
+    it('returns transcribed text from Whisper', async () => {
+      openaiTranscribeMock.mockResolvedValueOnce({ text: '  3 буузт идлээ  ' });
+
+      const result = await service.transcribeVoice(Buffer.from('fake-audio'));
+
+      expect(result).toBe('3 буузт идлээ');
+      expect(openaiTranscribeMock).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'whisper-1' }),
+      );
+    });
+
+    it('returns empty string when Whisper fails', async () => {
+      openaiTranscribeMock.mockRejectedValueOnce(new Error('Whisper API error'));
+
+      const result = await service.transcribeVoice(Buffer.from('fake-audio'));
+
+      expect(result).toBe('');
+    });
+
+    it('returns trimmed text (removes leading/trailing whitespace)', async () => {
+      openaiTranscribeMock.mockResolvedValueOnce({ text: '\n  I ate pizza  \n' });
+
+      const result = await service.transcribeVoice(Buffer.from('fake-audio'));
+
+      expect(result).toBe('I ate pizza');
+    });
+
+    it('returns empty string when OpenAI is not configured', async () => {
+      const moduleNoKey: TestingModule = await Test.createTestingModule({
+        providers: [
+          TelegramFoodParserService,
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((key: string) => {
+                if (key === 'OPENAI_API_KEY') return undefined; // no key
+                if (key === 'REDIS_URL') return 'redis://localhost:6379';
+                return undefined;
+              }),
+            },
+          },
+        ],
+      }).compile();
+
+      const serviceNoKey = moduleNoKey.get<TelegramFoodParserService>(TelegramFoodParserService);
+      const result = await serviceNoKey.transcribeVoice(Buffer.from('fake-audio'));
+
+      expect(result).toBe('');
     });
   });
 });

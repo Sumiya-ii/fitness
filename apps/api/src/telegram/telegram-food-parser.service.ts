@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '../config';
 import OpenAI from 'openai';
+import { toFile } from 'openai/uploads';
 import Redis from 'ioredis';
 
 export interface ParsedFoodItem {
@@ -226,6 +227,35 @@ export class TelegramFoodParserService implements OnModuleDestroy {
         err instanceof Error ? err.message : String(err),
       );
       return empty;
+    }
+  }
+
+  /**
+   * Transcribe a voice audio buffer using OpenAI Whisper.
+   * Supports Mongolian and English — Whisper auto-detects language.
+   * Returns the transcribed text, or empty string if transcription fails.
+   */
+  async transcribeVoice(audioBuffer: Buffer): Promise<string> {
+    if (!this.openai) {
+      this.logger.warn('OPENAI_API_KEY not set — voice transcription disabled');
+      return '';
+    }
+
+    try {
+      // Telegram voice messages are OGG/Opus (.oga)
+      const audioFile = await toFile(audioBuffer, 'voice.oga', { type: 'audio/ogg' });
+      const transcription = await this.openai.audio.transcriptions.create({
+        file: audioFile,
+        model: 'whisper-1',
+        // No language hint — Whisper auto-detects MN/EN reliably
+      });
+      return transcription.text.trim();
+    } catch (err) {
+      this.logger.error(
+        'Voice transcription failed',
+        err instanceof Error ? err.message : String(err),
+      );
+      return '';
     }
   }
 
