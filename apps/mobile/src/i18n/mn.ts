@@ -42,6 +42,12 @@ export const mn = {
     meals: 'Хоолнууд',
     eaten: 'идсэн',
     totalProtein: 'Нийт уураг',
+    water: 'Ус',
+    waterGoal: 'өдрийн норм',
+    waterGlasses: 'аяга',
+    waterOf: '/',
+    addWater: 'Ус нэмэх',
+    waterUndone: 'Устгагдлаа',
   },
   logging: {
     logMeal: 'Хоол бүртгэх',
@@ -119,10 +125,8 @@ export const mn = {
     getStarted: 'Эхлэх',
     skip: 'Алгасах',
     next: 'Дараах',
-    trackNutritionSubtitle:
-      'Хоолоо хурдан, хялбар бүртгэж өдөр тутмын хэрэглээгээ хянаарай.',
-    aiInsightsSubtitle:
-      'Дуу эсвэл зургаар бүртгэж, AI-аар илүү зөв тооцоолол аваарай.',
+    trackNutritionSubtitle: 'Хоолоо хурдан, хялбар бүртгэж өдөр тутмын хэрэглээгээ хянаарай.',
+    aiInsightsSubtitle: 'Дуу эсвэл зургаар бүртгэж, AI-аар илүү зөв тооцоолол аваарай.',
     telegramCoachSubtitle:
       'Telegram-аар өдөр бүрийн хариуцлагаа хадгалж, замдаа тогтвортой байгаарай.',
     reachGoalsSubtitle:

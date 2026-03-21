@@ -26,6 +26,8 @@ export interface DashboardData {
   proteinProgress: { current: number; target: number; percentage: number } | null;
   mealCount: number;
   meals: DashboardMeal[];
+  waterConsumed: number;
+  waterTarget: number;
 }
 
 interface DashboardState {

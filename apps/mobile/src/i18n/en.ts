@@ -42,6 +42,12 @@ export const en = {
     meals: 'Meals',
     eaten: 'eaten',
     totalProtein: 'Total protein',
+    water: 'Water',
+    waterGoal: 'daily goal',
+    waterGlasses: 'glasses',
+    waterOf: 'of',
+    addWater: 'Add water',
+    waterUndone: 'Removed',
   },
   logging: {
     logMeal: 'Log a Meal',

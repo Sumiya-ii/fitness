@@ -20,6 +20,9 @@ describe('DashboardService', () => {
       target: {
         findFirst: jest.fn().mockResolvedValue(mockTarget),
       },
+      waterLog: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
     };
     service = new DashboardService(prisma as unknown as PrismaService);
   });
@@ -33,8 +36,28 @@ describe('DashboardService', () => {
 
   it('should sum meal log totals', async () => {
     prisma.mealLog.findMany.mockResolvedValue([
-      { id: '1', mealType: 'lunch', source: 'text', loggedAt: new Date('2026-03-04T12:00:00Z'), totalCalories: 500, totalProtein: 30, totalCarbs: 60, totalFat: 15, items: [] },
-      { id: '2', mealType: 'dinner', source: 'text', loggedAt: new Date('2026-03-04T18:00:00Z'), totalCalories: 800, totalProtein: 50, totalCarbs: 80, totalFat: 25, items: [] },
+      {
+        id: '1',
+        mealType: 'lunch',
+        source: 'text',
+        loggedAt: new Date('2026-03-04T12:00:00Z'),
+        totalCalories: 500,
+        totalProtein: 30,
+        totalCarbs: 60,
+        totalFat: 15,
+        items: [],
+      },
+      {
+        id: '2',
+        mealType: 'dinner',
+        source: 'text',
+        loggedAt: new Date('2026-03-04T18:00:00Z'),
+        totalCalories: 800,
+        totalProtein: 50,
+        totalCarbs: 80,
+        totalFat: 25,
+        items: [],
+      },
     ]);
 
     const result = await service.getDailyDashboard('user-uuid');
@@ -46,7 +69,17 @@ describe('DashboardService', () => {
 
   it('should calculate protein progress percentage', async () => {
     prisma.mealLog.findMany.mockResolvedValue([
-      { id: '1', mealType: 'lunch', source: 'text', loggedAt: new Date('2026-03-04T12:00:00Z'), totalCalories: 500, totalProtein: 75, totalCarbs: 50, totalFat: 15, items: [] },
+      {
+        id: '1',
+        mealType: 'lunch',
+        source: 'text',
+        loggedAt: new Date('2026-03-04T12:00:00Z'),
+        totalCalories: 500,
+        totalProtein: 75,
+        totalCarbs: 50,
+        totalFat: 15,
+        items: [],
+      },
     ]);
 
     const result = await service.getDailyDashboard('user-uuid');

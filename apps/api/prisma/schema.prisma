@@ -32,6 +32,7 @@ model User {
   aiParseResults       AiParseResult[]
   qpayInvoices         QPayInvoice[]
   voiceDrafts          VoiceDraft[]
+  waterLogs            WaterLog[]
 
   @@map("users")
 }
@@ -224,6 +225,21 @@ model MealLogItem {
 
   @@index([mealLogId, createdAt])
   @@map("meal_log_items")
+}
+
+// ─── Water Logging ──────────────────────────────────────────────
+
+model WaterLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  amountMl  Int      @map("amount_ml")
+  loggedAt  DateTime @map("logged_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, loggedAt(sort: Desc)])
+  @@map("water_logs")
 }
 
 // ─── Weight & Workout Logging ───────────────────────────────────

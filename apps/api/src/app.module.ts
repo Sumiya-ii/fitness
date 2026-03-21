@@ -13,6 +13,7 @@ import { FavoritesModule } from './favorites';
 import { BarcodesModule } from './barcodes';
 import { DashboardModule } from './dashboard';
 import { WeightLogsModule } from './weight-logs';
+import { WaterLogsModule } from './water-logs';
 import { WeeklySummaryModule } from './weekly-summary';
 import { SearchModule } from './search';
 import { SubscriptionsModule } from './subscriptions';
@@ -59,6 +60,7 @@ import { HealthController } from './health/health.controller';
     BarcodesModule,
     DashboardModule,
     WeightLogsModule,
+    WaterLogsModule,
     WeeklySummaryModule,
     SearchModule,
     SubscriptionsModule,

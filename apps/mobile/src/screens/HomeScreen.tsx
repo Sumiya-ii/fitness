@@ -19,6 +19,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SkeletonLoader } from '../components/ui';
 import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
+import { useWaterStore } from '../stores/water.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 
@@ -151,6 +152,80 @@ function MacroCard({ label, leftAmount, unit, progress, color, icon }: MacroCard
   );
 }
 
+interface WaterWidgetProps {
+  consumed: number;
+  target: number;
+  onAdd: (amount: number) => void;
+  onUndo: () => void;
+}
+
+function WaterWidget({ consumed, target, onAdd, onUndo }: WaterWidgetProps) {
+  const { t } = useLocale();
+  const progress = target > 0 ? Math.min(consumed / target, 1) : 0;
+  const glasses = Math.round(consumed / 250);
+  const totalGlasses = Math.round(target / 250);
+
+  return (
+    <View
+      className="bg-white rounded-3xl p-5 mx-4 mb-3"
+      style={{
+        shadowColor: '#0b1220',
+        shadowOpacity: 0.07,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 3,
+      }}
+    >
+      <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-1">
+          <View className="flex-row items-center gap-2 mb-1">
+            <Text style={{ fontSize: 18 }}>💧</Text>
+            <Text className="text-sm font-sans-semibold text-[#7687a2] uppercase tracking-widest">
+              {t('dashboard.water')}
+            </Text>
+          </View>
+          <Text className="text-4xl font-sans-bold text-[#0b1220] leading-none">
+            {consumed >= 1000 ? `${(consumed / 1000).toFixed(1)}L` : `${consumed}ml`}
+          </Text>
+          <Text className="text-xs text-[#9aabbf] font-sans-medium mt-1">
+            {glasses} {t('dashboard.waterOf')} {totalGlasses} {t('dashboard.waterGlasses')} ·{' '}
+            {t('dashboard.waterGoal')}
+          </Text>
+        </View>
+        <ProgressArc
+          progress={progress}
+          size={80}
+          strokeWidth={7}
+          color="#0ea5e9"
+          trackColor="#e0f2fe"
+        >
+          <Text style={{ fontSize: 22 }}>💧</Text>
+        </ProgressArc>
+      </View>
+      {/* Quick-add buttons */}
+      <View className="flex-row gap-2">
+        {[100, 250, 500].map((amount) => (
+          <Pressable
+            key={amount}
+            onPress={() => onAdd(amount)}
+            className="flex-1 bg-[#f0f9ff] rounded-2xl py-2.5 items-center"
+            style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
+          >
+            <Text className="text-sm font-sans-semibold text-[#0ea5e9]">+{amount}ml</Text>
+          </Pressable>
+        ))}
+        <Pressable
+          onPress={onUndo}
+          className="bg-[#f4f7fb] rounded-2xl py-2.5 px-3 items-center justify-center"
+          style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
+        >
+          <Ionicons name="arrow-undo-outline" size={16} color="#9aabbf" />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 interface MealSectionProps {
   type: string;
   meals: DashboardMeal[];
@@ -218,6 +293,7 @@ export function HomeScreen() {
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
   const [displayName, setDisplayName] = useState('');
   const { data, isLoading, fetchDashboard } = useDashboardStore();
+  const { consumed: waterConsumed, target: waterTarget, addWater, undoLast } = useWaterStore();
 
   // 7 days: 5 past, today (6th), 1 future
   const weekDays = useMemo(() => {
@@ -243,14 +319,22 @@ export function HomeScreen() {
     loadProfile();
   }, [loadProfile]);
 
+  const { fetchDaily: fetchWater } = useWaterStore();
+
   useEffect(() => {
     fetchDashboard(selectedDateKey);
-  }, [fetchDashboard, selectedDateKey]);
+    if (selectedDateKey === todayKey) {
+      fetchWater();
+    }
+  }, [fetchDashboard, fetchWater, selectedDateKey, todayKey]);
 
   const onRefresh = useCallback(() => {
     loadProfile();
     fetchDashboard(selectedDateKey);
-  }, [loadProfile, fetchDashboard, selectedDateKey]);
+    if (selectedDateKey === todayKey) {
+      fetchWater();
+    }
+  }, [loadProfile, fetchDashboard, fetchWater, selectedDateKey, todayKey]);
 
   const handleLogMeal = () => {
     (navigation as { navigate: (s: string) => void }).navigate('Log');
@@ -494,6 +578,16 @@ export function HomeScreen() {
             progress={fatProg}
             color="#3b82f6"
             icon="🫐"
+          />
+        </Animated.View>
+
+        {/* Water Widget */}
+        <Animated.View entering={FadeInDown.delay(120).duration(350)}>
+          <WaterWidget
+            consumed={isTodaySelected ? waterConsumed : (data?.waterConsumed ?? 0)}
+            target={data?.waterTarget ?? waterTarget}
+            onAdd={(amount) => addWater(amount)}
+            onUndo={undoLast}
           />
         </Animated.View>
 

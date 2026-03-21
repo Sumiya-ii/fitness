@@ -12,7 +12,7 @@ export class DashboardService {
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
 
-    const [mealLogs, target] = await Promise.all([
+    const [mealLogs, target, waterLogs] = await Promise.all([
       this.prisma.mealLog.findMany({
         where: {
           userId,
@@ -24,7 +24,13 @@ export class DashboardService {
         where: { userId, effectiveTo: null },
         orderBy: { effectiveFrom: 'desc' },
       }),
+      this.prisma.waterLog.findMany({
+        where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
+        select: { amountMl: true },
+      }),
     ]);
+
+    const waterConsumed = waterLogs.reduce((sum, l) => sum + l.amountMl, 0);
 
     const consumed = {
       calories: 0,
@@ -66,9 +72,7 @@ export class DashboardService {
       ? {
           current: consumed.protein,
           target: targets.protein,
-          percentage: Number(
-            Math.min(100, (consumed.protein / targets.protein) * 100).toFixed(1),
-          ),
+          percentage: Number(Math.min(100, (consumed.protein / targets.protein) * 100).toFixed(1)),
         }
       : null;
 
@@ -95,6 +99,8 @@ export class DashboardService {
       proteinProgress,
       mealCount: mealLogs.length,
       meals,
+      waterConsumed,
+      waterTarget: 2000,
     };
   }
 }

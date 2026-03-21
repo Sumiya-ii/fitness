@@ -3,3 +3,5 @@ export { mealsApi } from './meals';
 export type * from './meals';
 export { chatApi } from './chat';
 export type * from './chat';
+export { waterApi } from './water';
+export type * from './water';
