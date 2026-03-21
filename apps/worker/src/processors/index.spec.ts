@@ -8,17 +8,20 @@
 jest.mock('./stt.processor', () => ({ processSttJob: jest.fn() }));
 jest.mock('./photo.processor', () => ({ processPhotoJob: jest.fn() }));
 jest.mock('./reminders.processor', () => ({ processReminderJob: jest.fn() }));
+jest.mock('./coach.processor', () => ({ processCoachMessageJob: jest.fn() }));
 
 import { processJob } from './index';
 import { processSttJob } from './stt.processor';
 import { processPhotoJob } from './photo.processor';
 import { processReminderJob } from './reminders.processor';
+import { processCoachMessageJob } from './coach.processor';
 import { QUEUE_NAMES } from '@coach/shared';
 import type { Job } from 'bullmq';
 
 const mockStt = processSttJob as jest.MockedFunction<typeof processSttJob>;
 const mockPhoto = processPhotoJob as jest.MockedFunction<typeof processPhotoJob>;
 const mockReminder = processReminderJob as jest.MockedFunction<typeof processReminderJob>;
+const mockCoach = processCoachMessageJob as jest.MockedFunction<typeof processCoachMessageJob>;
 
 const fakeJob = { id: 'job-1', name: 'test-job', data: {} } as unknown as Job;
 
@@ -68,6 +71,13 @@ describe('processJob routing', () => {
     mockReminder.mockResolvedValue(undefined);
     await processJob(QUEUE_NAMES.REMINDERS, fakeJob);
     expect(mockReminder).toHaveBeenCalledWith(fakeJob);
+    expect(mockStt).not.toHaveBeenCalled();
+  });
+
+  it('routes coach-messages to processCoachMessageJob', async () => {
+    mockCoach.mockResolvedValue(undefined);
+    await processJob(QUEUE_NAMES.COACH_MESSAGES, fakeJob);
+    expect(mockCoach).toHaveBeenCalledWith(fakeJob);
     expect(mockStt).not.toHaveBeenCalled();
   });
 

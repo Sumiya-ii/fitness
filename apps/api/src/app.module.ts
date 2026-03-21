@@ -29,6 +29,7 @@ import { PhotosModule } from './photos';
 import { TelegramModule } from './telegram';
 import { RemindersModule } from './reminders';
 import { ChatModule } from './chat';
+import { CoachModule } from './coach/coach.module';
 import { OnboardingModule } from './onboarding';
 import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
@@ -77,6 +78,7 @@ import { HealthController } from './health/health.controller';
     RemindersModule,
     QPayModule,
     ChatModule,
+    CoachModule,
   ],
   controllers: [HealthController],
   providers: [

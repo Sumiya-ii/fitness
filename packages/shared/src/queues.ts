@@ -3,6 +3,7 @@ export const QUEUE_NAMES = {
   PHOTO_PARSING: 'photo-parsing',
   FOOD_INDEX_SYNC: 'food-index-sync',
   REMINDERS: 'reminders',
+  COACH_MESSAGES: 'coach-messages',
   WEBHOOK_RETRY: 'webhook-retry',
   DATA_EXPORT: 'data-export',
   ANALYTICS: 'analytics',

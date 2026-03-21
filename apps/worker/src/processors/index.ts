@@ -3,6 +3,7 @@ import { QueueName, QUEUE_NAMES } from '@coach/shared';
 import { processSttJob } from './stt.processor';
 import { processPhotoJob } from './photo.processor';
 import { processReminderJob } from './reminders.processor';
+import { processCoachMessageJob } from './coach.processor';
 
 export async function processJob(queueName: QueueName, job: Job): Promise<unknown> {
   switch (queueName) {
@@ -14,6 +15,9 @@ export async function processJob(queueName: QueueName, job: Job): Promise<unknow
 
     case QUEUE_NAMES.REMINDERS:
       return processReminderJob(job);
+
+    case QUEUE_NAMES.COACH_MESSAGES:
+      return processCoachMessageJob(job);
 
     case QUEUE_NAMES.FOOD_INDEX_SYNC:
       // TODO: Call Typesense reindex when Typesense is configured

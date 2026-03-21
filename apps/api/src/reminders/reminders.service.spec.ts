@@ -11,6 +11,7 @@ describe('RemindersService', () => {
     mealLog: { count: jest.Mock };
     telegramLink: { findUnique: jest.Mock };
     profile: { findUnique: jest.Mock };
+    deviceToken: { findMany: jest.Mock };
   };
   let reminderQueue: { add: jest.Mock };
 
@@ -21,6 +22,7 @@ describe('RemindersService', () => {
       mealLog: { count: jest.fn() },
       telegramLink: { findUnique: jest.fn().mockResolvedValue(null) },
       profile: { findUnique: jest.fn().mockResolvedValue({ locale: 'mn' }) },
+      deviceToken: { findMany: jest.fn().mockResolvedValue([]) },
     };
 
     const module: TestingModule = await Test.createTestingModule({
