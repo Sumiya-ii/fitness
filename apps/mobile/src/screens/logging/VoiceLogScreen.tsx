@@ -31,10 +31,14 @@ type Props = LogStackScreenProps<'VoiceLog'>;
 
 interface ParsedFoodItem {
   name: string;
+  quantity: number;
+  unit: string;
+  grams: number;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
+  confidence: number; // 0.0–1.0
 }
 
 interface VoiceDraft {
@@ -97,11 +101,13 @@ function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
       return;
     }
     onSave({
+      ...item,
       name: name.trim() || item.name,
       calories: Math.round(cal),
       protein: parseFloat(protein) || 0,
       carbs: parseFloat(carbs) || 0,
       fat: parseFloat(fat) || 0,
+      confidence: 1.0, // user edited = fully confident
     });
   };
 
@@ -482,35 +488,56 @@ export function VoiceLogScreen() {
               {draftItems.length > 0 && (
                 <>
                   <Text className="font-sans-semibold text-text mb-3">Identified foods</Text>
-                  {draftItems.map((item, index) => (
-                    <View
-                      key={`${item.name}-${index}`}
-                      className="rounded-xl bg-surface-card border border-surface-border p-4 mb-3"
-                    >
-                      <View className="flex-row items-center">
-                        <View className="flex-1 mr-2">
-                          <Text className="font-sans-semibold text-text">{item.name}</Text>
-                          <Text className="text-xs text-text-secondary mt-1">
-                            P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F:{' '}
-                            {Math.round(item.fat)}g
+                  {draftItems.map((item, index) => {
+                    const isLowConfidence = item.confidence < 0.7;
+                    const portionLabel =
+                      item.grams > 0
+                        ? `${item.quantity} ${item.unit} · ~${item.grams}g`
+                        : `${item.quantity} ${item.unit}`;
+                    return (
+                      <View
+                        key={`${item.name}-${index}`}
+                        className="rounded-xl bg-surface-card border border-surface-border p-4 mb-3"
+                      >
+                        <View className="flex-row items-center">
+                          <View className="flex-1 mr-2">
+                            <View className="flex-row items-center gap-2">
+                              <Text className="font-sans-semibold text-text flex-shrink">
+                                {item.name}
+                              </Text>
+                              {isLowConfidence && (
+                                <View className="rounded-full bg-amber-100 px-2 py-0.5">
+                                  <Text className="text-xs text-amber-700 font-sans-medium">
+                                    Estimated
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text className="text-xs text-text-secondary mt-0.5">
+                              {portionLabel}
+                            </Text>
+                            <Text className="text-xs text-text-secondary mt-0.5">
+                              P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F:{' '}
+                              {Math.round(item.fat)}g
+                            </Text>
+                          </View>
+                          <Text className="font-sans-bold text-text text-base mr-3">
+                            {Math.round(item.calories)} cal
                           </Text>
+                          <Pressable
+                            onPress={() => setEditingIndex(index)}
+                            hitSlop={8}
+                            className="mr-3"
+                          >
+                            <Ionicons name="pencil-outline" size={18} color="#9a9caa" />
+                          </Pressable>
+                          <Pressable onPress={() => handleDeleteItem(index)} hitSlop={8}>
+                            <Ionicons name="trash-outline" size={18} color="#f87171" />
+                          </Pressable>
                         </View>
-                        <Text className="font-sans-bold text-text text-base mr-3">
-                          {Math.round(item.calories)} cal
-                        </Text>
-                        <Pressable
-                          onPress={() => setEditingIndex(index)}
-                          hitSlop={8}
-                          className="mr-3"
-                        >
-                          <Ionicons name="pencil-outline" size={18} color="#9a9caa" />
-                        </Pressable>
-                        <Pressable onPress={() => handleDeleteItem(index)} hitSlop={8}>
-                          <Ionicons name="trash-outline" size={18} color="#f87171" />
-                        </Pressable>
                       </View>
-                    </View>
-                  ))}
+                    );
+                  })}
 
                   {/* Total */}
                   <View className="rounded-xl bg-surface-secondary border border-surface-border p-4 mb-6">
