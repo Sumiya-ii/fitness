@@ -3,7 +3,12 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator, Alert } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
+import {
+  useAudioRecorder,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+} from 'expo-audio';
 import { BackButton } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
@@ -79,6 +84,7 @@ export function VoiceLogScreen() {
       Alert.alert('Permission needed', 'Microphone access is required for voice logging.');
       return;
     }
+    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     recorder.record();
     setScreenState('recording');
     setElapsed(0);
