@@ -16,8 +16,13 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^nativewind/jsx-runtime$': 'react/jsx-runtime',
+    // Stub native Expo modules that cannot run in Node
+    '^expo-notifications$': '<rootDir>/src/__mocks__/expo-notifications.js',
+    '^expo-constants$': '<rootDir>/src/__mocks__/expo-constants.js',
+    '^expo-secure-store$': '<rootDir>/src/__mocks__/expo-secure-store.js',
   },
+  // Transform expo-* packages (they ship ESM) in addition to react-native/*
   transformIgnorePatterns: [
-    'node_modules/(?!(@react-native|react-native|react-native-svg|@react-navigation|expo)/)',
+    'node_modules/(?!(@react-native|react-native|react-native-svg|@react-navigation|expo|expo-[a-z-]+|@expo)/)',
   ],
 };

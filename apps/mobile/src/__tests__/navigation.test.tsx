@@ -7,6 +7,7 @@
 jest.mock('react-native', () => ({
   View: ({ children }: { children?: unknown }) => children,
   ActivityIndicator: () => null,
+  Platform: { OS: 'ios' },
 }));
 
 // Mock stores

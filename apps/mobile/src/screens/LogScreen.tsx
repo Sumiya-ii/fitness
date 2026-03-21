@@ -143,7 +143,7 @@ export function LogScreen() {
                 </Text>
               </Pressable>
 
-              {/* Voice (coming soon) */}
+              {/* Voice */}
               <Pressable
                 onPress={() => navigation.navigate('VoiceLog')}
                 className="flex-1 bg-white rounded-3xl items-center py-5"
@@ -159,11 +159,7 @@ export function LogScreen() {
                   <Ionicons name="mic" size={26} color="#ea580c" />
                 </View>
                 <Text className="text-sm font-sans-bold text-[#0b1220]">{t('logging.voice')}</Text>
-                <View className="mt-1 rounded-full bg-amber-100 px-2 py-0.5">
-                  <Text className="text-[10px] font-sans-semibold text-amber-600 uppercase tracking-wider">
-                    Soon
-                  </Text>
-                </View>
+                <Text className="text-xs text-[#9aabbf] font-sans-medium mt-0.5">Speak to log</Text>
               </Pressable>
             </View>
           </Animated.View>

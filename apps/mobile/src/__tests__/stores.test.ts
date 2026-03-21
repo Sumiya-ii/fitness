@@ -15,6 +15,8 @@ jest.mock('../services/firebase-auth.service', () => ({
   signUpWithEmailPassword: jest.fn(),
   restoreFirebaseSession: jest.fn(),
   signOutFirebase: jest.fn(),
+  configureGoogleSignIn: jest.fn(),
+  subscribeToTokenRefresh: jest.fn(() => jest.fn()), // returns an unsubscribe fn
 }));
 
 import { api } from '../api';
