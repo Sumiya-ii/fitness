@@ -8,18 +8,18 @@ export interface PhotoDraftStatus {
   id: string;
   status: 'waiting' | 'active' | 'completed' | 'failed';
   reference?: string;
+  mealName?: string;
   items?: ParsedFoodItem[];
   totalCalories?: number;
   totalProtein?: number;
   totalCarbs?: number;
   totalFat?: number;
+  totalFiber?: number;
 }
 
 @Injectable()
 export class PhotosService {
-  constructor(
-    @InjectQueue(QUEUE_NAMES.PHOTO_PARSING) private readonly photoQueue: Queue,
-  ) {}
+  constructor(@InjectQueue(QUEUE_NAMES.PHOTO_PARSING) private readonly photoQueue: Queue) {}
 
   async uploadPhoto(
     userId: string,
@@ -56,17 +56,21 @@ export class PhotosService {
 
     if (state === 'completed' && job.returnvalue) {
       const parsed = job.returnvalue as {
+        mealName?: string;
         items?: ParsedFoodItem[];
         totalCalories?: number;
         totalProtein?: number;
         totalCarbs?: number;
         totalFat?: number;
+        totalFiber?: number;
       };
+      result.mealName = parsed.mealName;
       result.items = parsed.items;
       result.totalCalories = parsed.totalCalories;
       result.totalProtein = parsed.totalProtein;
       result.totalCarbs = parsed.totalCarbs;
       result.totalFat = parsed.totalFat;
+      result.totalFiber = parsed.totalFiber;
     }
 
     return result;

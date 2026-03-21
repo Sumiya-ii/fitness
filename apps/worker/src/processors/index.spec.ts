@@ -50,11 +50,13 @@ describe('processJob routing', () => {
 
   it('routes photo-parsing to processPhotoJob', async () => {
     mockPhoto.mockResolvedValue({
+      mealName: 'Meal',
       items: [],
       totalCalories: 0,
       totalProtein: 0,
       totalCarbs: 0,
       totalFat: 0,
+      totalFiber: 0,
     });
     await processJob(QUEUE_NAMES.PHOTO_PARSING, fakeJob);
     expect(mockPhoto).toHaveBeenCalledWith(fakeJob);

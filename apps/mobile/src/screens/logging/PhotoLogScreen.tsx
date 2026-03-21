@@ -1,5 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, Alert } from 'react-native';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Image,
+  ActivityIndicator,
+  Alert,
+  Animated,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +19,7 @@ import { mealsApi } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'PhotoLog'>;
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 interface ParsedFoodItem {
   name: string;
@@ -17,30 +27,94 @@ interface ParsedFoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
+  sugar: number;
+  sodium: number;
+  servingGrams: number;
   confidence: number;
 }
 
 interface PhotoDraft {
   id: string;
   status: 'waiting' | 'active' | 'completed' | 'failed';
+  mealName?: string;
   items?: ParsedFoodItem[];
   totalCalories?: number;
   totalProtein?: number;
   totalCarbs?: number;
   totalFat?: number;
+  totalFiber?: number;
 }
 
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 30;
+const MULTIPLIER_OPTIONS = [0.5, 1, 1.5, 2] as const;
+const MEAL_TYPE_LABELS: Record<MealType, string> = {
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  snack: 'Snack',
+};
+
+function autoDetectMealType(): MealType {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return 'breakfast';
+  if (hour >= 11 && hour < 15) return 'lunch';
+  if (hour >= 15 && hour < 18) return 'snack';
+  if (hour >= 18 && hour < 22) return 'dinner';
+  return 'snack';
+}
+
+function ScanningAnimation() {
+  const scanLine = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const scanAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanLine, { toValue: 1, duration: 1800, useNativeDriver: true }),
+        Animated.timing(scanLine, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ]),
+    );
+    const pulseAnim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.08, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    scanAnim.start();
+    pulseAnim.start();
+    return () => {
+      scanAnim.stop();
+      pulseAnim.stop();
+    };
+  }, [scanLine, pulse]);
+
+  return (
+    <View className="items-center py-12 px-8">
+      <Animated.View style={{ transform: [{ scale: pulse }] }}>
+        <View className="h-20 w-20 rounded-full bg-surface-secondary items-center justify-center mb-5">
+          <Ionicons name="scan" size={40} color="#1f2028" />
+        </View>
+      </Animated.View>
+      <Text className="text-text font-sans-semibold text-lg mb-1">Analyzing your meal...</Text>
+      <Text className="text-text-secondary text-sm text-center">
+        AI is identifying food items and calculating nutrition
+      </Text>
+    </View>
+  );
+}
 
 export function PhotoLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
   const [analyzing, setAnalyzing] = useState(false);
   const [draft, setDraft] = useState<PhotoDraft | null>(null);
-  const [draftItems, setDraftItems] = useState<ParsedFoodItem[]>([]);
+  const [baseItems, setBaseItems] = useState<ParsedFoodItem[]>([]);
+  const [multipliers, setMultipliers] = useState<number[]>([]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mealType, setMealType] = useState<MealType>(autoDetectMealType);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -49,7 +123,31 @@ export function PhotoLogScreen() {
     };
   }, []);
 
-  const pollDraft = async (draftId: string, attempt = 0) => {
+  const getEffectiveItem = useCallback(
+    (item: ParsedFoodItem, index: number): ParsedFoodItem => {
+      const m = multipliers[index] ?? 1;
+      return {
+        ...item,
+        calories: Math.round(item.calories * m),
+        protein: Math.round(item.protein * m * 10) / 10,
+        carbs: Math.round(item.carbs * m * 10) / 10,
+        fat: Math.round(item.fat * m * 10) / 10,
+        fiber: Math.round(item.fiber * m * 10) / 10,
+        servingGrams: Math.round(item.servingGrams * m),
+      };
+    },
+    [multipliers],
+  );
+
+  const effectiveItems = baseItems.map((item, i) => getEffectiveItem(item, i));
+
+  const totalCalories = effectiveItems.reduce((s, i) => s + i.calories, 0);
+  const totalProtein = effectiveItems.reduce((s, i) => s + i.protein, 0);
+  const totalCarbs = effectiveItems.reduce((s, i) => s + i.carbs, 0);
+  const totalFat = effectiveItems.reduce((s, i) => s + i.fat, 0);
+  const totalFiber = effectiveItems.reduce((s, i) => s + i.fiber, 0);
+
+  const pollDraft = useCallback(async (draftId: string, attempt = 0) => {
     if (attempt >= MAX_POLL_ATTEMPTS) {
       setError('Analysis timed out. Please try again.');
       setAnalyzing(false);
@@ -62,7 +160,9 @@ export function PhotoLogScreen() {
 
       if (d.status === 'completed') {
         setDraft(d);
-        setDraftItems(d.items ?? []);
+        const items = d.items ?? [];
+        setBaseItems(items);
+        setMultipliers(items.map(() => 1));
         setAnalyzing(false);
         return;
       }
@@ -78,13 +178,14 @@ export function PhotoLogScreen() {
       setError('Failed to check analysis status.');
       setAnalyzing(false);
     }
-  };
+  }, []);
 
   const uploadAndAnalyze = async (uri: string) => {
     setAnalyzing(true);
     setError(null);
     setDraft(null);
-    setDraftItems([]);
+    setBaseItems([]);
+    setMultipliers([]);
 
     try {
       const formData = new FormData();
@@ -111,7 +212,7 @@ export function PhotoLogScreen() {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
-      quality: 0.8,
+      quality: 0.7,
     });
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
@@ -128,7 +229,7 @@ export function PhotoLogScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
-      quality: 0.8,
+      quality: 0.7,
     });
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
@@ -136,25 +237,41 @@ export function PhotoLogScreen() {
     }
   };
 
+  const handleRetake = () => {
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    setPhotoUri(null);
+    setDraft(null);
+    setBaseItems([]);
+    setMultipliers([]);
+    setAnalyzing(false);
+    setError(null);
+  };
+
+  const handleDeleteItem = (index: number) => {
+    setBaseItems((prev) => prev.filter((_, i) => i !== index));
+    setMultipliers((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSetMultiplier = (index: number, value: number) => {
+    setMultipliers((prev) => prev.map((m, i) => (i === index ? value : m)));
+  };
+
   const handleConfirmSave = async () => {
-    if (draftItems.length === 0) return;
+    if (effectiveItems.length === 0) return;
     setSaving(true);
     setError(null);
 
     try {
-      const totalCalories = draftItems.reduce((s, i) => s + i.calories, 0);
-      const totalProtein = draftItems.reduce((s, i) => s + i.protein, 0);
-      const totalCarbs = draftItems.reduce((s, i) => s + i.carbs, 0);
-      const totalFat = draftItems.reduce((s, i) => s + i.fat, 0);
-      const note = draftItems.map((i) => i.name).join(', ');
+      const note = `Photo: ${baseItems.map((i) => i.name).join(', ')}`;
 
       await mealsApi.quickAdd({
         calories: Math.round(totalCalories),
-        proteinGrams: Math.round(totalProtein),
-        carbsGrams: Math.round(totalCarbs),
-        fatGrams: Math.round(totalFat),
-        note: `Photo: ${note}`,
+        proteinGrams: Math.round(totalProtein * 10) / 10,
+        carbsGrams: Math.round(totalCarbs * 10) / 10,
+        fatGrams: Math.round(totalFat * 10) / 10,
+        note,
         source: 'photo',
+        mealType,
       });
 
       navigation.goBack();
@@ -165,141 +282,272 @@ export function PhotoLogScreen() {
     }
   };
 
-  const updateItemCalories = (index: number, delta: number) => {
-    setDraftItems((prev) =>
-      prev.map((item, i) =>
-        i === index
-          ? {
-              ...item,
-              calories: Math.max(0, item.calories + delta),
-            }
-          : item,
-      ),
-    );
-  };
+  const hasResults = draft !== null && !analyzing;
+  const hasItems = effectiveItems.length > 0;
 
   return (
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
+        {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
           <BackButton />
-          <Text className="ml-3 text-lg font-sans-semibold text-text">Photo Log</Text>
+          <Text className="ml-3 text-lg font-sans-semibold text-text flex-1">Photo Log</Text>
+          {hasResults && hasItems && (
+            <Pressable onPress={handleRetake}>
+              <Text className="text-sm text-text-secondary font-sans-medium">Retake</Text>
+            </Pressable>
+          )}
         </View>
 
-        <ScrollView className="flex-1">
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
+          {/* Initial state: camera / gallery picker */}
           {!photoUri && !analyzing && (
-            <View className="flex-1 items-center justify-center px-8 py-16">
-              <View className="mb-6 flex-row gap-4">
+            <View className="flex-1 items-center justify-center px-6 pt-16 pb-8">
+              <View className="h-16 w-16 rounded-2xl bg-surface-secondary items-center justify-center mb-5">
+                <Ionicons name="camera" size={32} color="#1f2028" />
+              </View>
+              <Text className="text-xl font-sans-semibold text-text mb-1">Log with Photo</Text>
+              <Text className="text-text-secondary text-sm text-center mb-8">
+                Take a photo of your meal and AI will calculate the calories and macros
+              </Text>
+              <View className="w-full flex-row gap-3 mb-6">
                 <Pressable
                   onPress={handleCapture}
-                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-8"
+                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
                 >
-                  <Ionicons name="camera" size={48} color="#1f2028" />
-                  <Text className="mt-2 font-sans-medium text-text">Camera</Text>
+                  <Ionicons name="camera-outline" size={32} color="#1f2028" />
+                  <Text className="mt-2 font-sans-medium text-text text-sm">Camera</Text>
                 </Pressable>
                 <Pressable
                   onPress={handlePickFromGallery}
-                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-8"
+                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
                 >
-                  <Ionicons name="images" size={48} color="#1f2028" />
-                  <Text className="mt-2 font-sans-medium text-text">Gallery</Text>
+                  <Ionicons name="images-outline" size={32} color="#1f2028" />
+                  <Text className="mt-2 font-sans-medium text-text text-sm">Gallery</Text>
                 </Pressable>
               </View>
+              {error && <Text className="text-center text-red-400 text-sm">{error}</Text>}
             </View>
           )}
 
+          {/* Analyzing state */}
           {analyzing && (
-            <View className="items-center py-16">
-              <ActivityIndicator size="large" color="#1f2028" />
-              <Text className="mt-4 text-text-secondary">Analyzing your food...</Text>
+            <View className="px-4">
+              {photoUri && (
+                <Image
+                  source={{ uri: photoUri }}
+                  className="mt-4 mb-2 h-52 w-full rounded-2xl bg-surface-secondary"
+                  resizeMode="cover"
+                />
+              )}
+              <ScanningAnimation />
             </View>
           )}
 
-          {photoUri && !analyzing && (
-            <View className="p-4">
+          {/* Results state */}
+          {photoUri && hasResults && (
+            <View className="px-4 pt-4">
               <Image
                 source={{ uri: photoUri }}
-                className="mb-6 h-48 w-full rounded-2xl bg-surface-secondary"
+                className="mb-4 h-52 w-full rounded-2xl bg-surface-secondary"
                 resizeMode="cover"
               />
-              {draftItems.length > 0 && (
-                <>
-                  <Text className="mb-3 font-sans-semibold text-text">Identified foods</Text>
-                  {draftItems.map((item, index) => (
-                    <Card key={`${item.name}-${index}`} className="mb-3">
-                      <View className="flex-row items-center justify-between">
-                        <View className="flex-1">
-                          <Text className="font-sans-semibold text-text">{item.name}</Text>
-                          <Text className="text-xs text-text-secondary mt-0.5">
-                            P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F:{' '}
-                            {Math.round(item.fat)}g
-                          </Text>
-                          <Badge
-                            variant={item.confidence >= 0.8 ? 'success' : 'warning'}
-                            className="mt-1"
-                          >
-                            {Math.round(item.confidence * 100)}% confidence
-                          </Badge>
-                        </View>
-                        <View className="flex-row items-center gap-2">
-                          <Pressable
-                            onPress={() => updateItemCalories(index, -25)}
-                            className="h-9 w-9 items-center justify-center rounded-full bg-surface-secondary"
-                          >
-                            <Ionicons name="remove" size={18} color="#9a9caa" />
-                          </Pressable>
-                          <Text className="min-w-[50px] text-center font-sans-medium text-text">
-                            {item.calories} cal
-                          </Text>
-                          <Pressable
-                            onPress={() => updateItemCalories(index, 25)}
-                            className="h-9 w-9 items-center justify-center rounded-full bg-surface-secondary"
-                          >
-                            <Ionicons name="add" size={18} color="#9a9caa" />
-                          </Pressable>
-                        </View>
-                      </View>
-                    </Card>
-                  ))}
 
-                  <View className="rounded-xl bg-surface-card border border-surface-border p-3 mb-4">
-                    <Text className="text-sm text-text-secondary font-sans-medium mb-1">Total</Text>
-                    <Text className="text-text font-sans-semibold">
-                      {draftItems.reduce((s, i) => s + i.calories, 0)} cal · P:{' '}
-                      {Math.round(draftItems.reduce((s, i) => s + i.protein, 0))}g · C:{' '}
-                      {Math.round(draftItems.reduce((s, i) => s + i.carbs, 0))}g · F:{' '}
-                      {Math.round(draftItems.reduce((s, i) => s + i.fat, 0))}g
+              {hasItems ? (
+                <>
+                  {/* Meal type selector */}
+                  <View className="mb-4">
+                    <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
+                      Meal Type
+                    </Text>
+                    <View className="flex-row gap-2">
+                      {(Object.keys(MEAL_TYPE_LABELS) as MealType[]).map((type) => (
+                        <Pressable
+                          key={type}
+                          onPress={() => setMealType(type)}
+                          className={`flex-1 items-center py-2 rounded-xl border ${
+                            mealType === type
+                              ? 'bg-text border-text'
+                              : 'bg-surface-card border-surface-border'
+                          }`}
+                        >
+                          <Text
+                            className={`text-xs font-sans-medium ${
+                              mealType === type ? 'text-white' : 'text-text-secondary'
+                            }`}
+                          >
+                            {MEAL_TYPE_LABELS[type]}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Meal name + item count */}
+                  <View className="flex-row items-center justify-between mb-3">
+                    <Text className="font-sans-semibold text-text text-base">
+                      {draft?.mealName ?? 'Identified foods'}
+                    </Text>
+                    <Text className="text-xs text-text-secondary font-sans-medium">
+                      {effectiveItems.length} item{effectiveItems.length !== 1 ? 's' : ''}
                     </Text>
                   </View>
 
-                  {error && <Text className="mb-4 text-center text-red-400">{error}</Text>}
+                  {/* Food item cards */}
+                  {baseItems.map((item, index) => {
+                    const effective = getEffectiveItem(item, index);
+                    const currentMultiplier = multipliers[index] ?? 1;
+                    return (
+                      <Card key={`${item.name}-${index}`} className="mb-3">
+                        {/* Item header row */}
+                        <View className="flex-row items-start justify-between mb-2">
+                          <View className="flex-1 pr-2">
+                            <Text className="font-sans-semibold text-text">{item.name}</Text>
+                            <Text className="text-xs text-text-secondary mt-0.5">
+                              {item.servingGrams > 0
+                                ? `~${Math.round(item.servingGrams * currentMultiplier)}g`
+                                : 'Estimated serving'}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center gap-2">
+                            <Badge variant={item.confidence >= 0.8 ? 'success' : 'warning'}>
+                              {Math.round(item.confidence * 100)}%
+                            </Badge>
+                            <Pressable
+                              onPress={() => handleDeleteItem(index)}
+                              className="h-7 w-7 items-center justify-center rounded-full bg-surface-secondary active:opacity-60"
+                            >
+                              <Ionicons name="close" size={14} color="#9a9caa" />
+                            </Pressable>
+                          </View>
+                        </View>
+
+                        {/* Calories large display */}
+                        <Text className="text-2xl font-sans-semibold text-text mb-1">
+                          {effective.calories}
+                          <Text className="text-sm font-sans-regular text-text-secondary">
+                            {' '}
+                            cal
+                          </Text>
+                        </Text>
+
+                        {/* Macros row */}
+                        <View className="flex-row gap-3 mb-3">
+                          <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
+                            <Text className="text-xs text-text-secondary">Protein</Text>
+                            <Text className="text-sm font-sans-semibold text-text">
+                              {effective.protein}g
+                            </Text>
+                          </View>
+                          <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
+                            <Text className="text-xs text-text-secondary">Carbs</Text>
+                            <Text className="text-sm font-sans-semibold text-text">
+                              {effective.carbs}g
+                            </Text>
+                          </View>
+                          <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
+                            <Text className="text-xs text-text-secondary">Fat</Text>
+                            <Text className="text-sm font-sans-semibold text-text">
+                              {effective.fat}g
+                            </Text>
+                          </View>
+                          {item.fiber > 0 && (
+                            <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
+                              <Text className="text-xs text-text-secondary">Fiber</Text>
+                              <Text className="text-sm font-sans-semibold text-text">
+                                {effective.fiber}g
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+
+                        {/* Serving multiplier */}
+                        <View>
+                          <Text className="text-xs text-text-secondary mb-1.5">Serving size</Text>
+                          <View className="flex-row gap-1.5">
+                            {MULTIPLIER_OPTIONS.map((opt) => (
+                              <Pressable
+                                key={opt}
+                                onPress={() => handleSetMultiplier(index, opt)}
+                                className={`flex-1 items-center py-1.5 rounded-lg border ${
+                                  currentMultiplier === opt
+                                    ? 'bg-text border-text'
+                                    : 'bg-surface-secondary border-surface-border'
+                                }`}
+                              >
+                                <Text
+                                  className={`text-xs font-sans-semibold ${
+                                    currentMultiplier === opt ? 'text-white' : 'text-text-secondary'
+                                  }`}
+                                >
+                                  {opt}×
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        </View>
+                      </Card>
+                    );
+                  })}
+
+                  {/* Totals summary */}
+                  <View className="rounded-xl bg-surface-card border border-surface-border p-4 mb-4">
+                    <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
+                      Total
+                    </Text>
+                    <Text className="text-3xl font-sans-semibold text-text mb-1">
+                      {totalCalories}
+                      <Text className="text-base font-sans-regular text-text-secondary"> cal</Text>
+                    </Text>
+                    <View className="flex-row gap-4">
+                      <Text className="text-sm text-text-secondary">
+                        P{' '}
+                        <Text className="text-text font-sans-medium">
+                          {Math.round(totalProtein)}g
+                        </Text>
+                      </Text>
+                      <Text className="text-sm text-text-secondary">
+                        C{' '}
+                        <Text className="text-text font-sans-medium">
+                          {Math.round(totalCarbs)}g
+                        </Text>
+                      </Text>
+                      <Text className="text-sm text-text-secondary">
+                        F{' '}
+                        <Text className="text-text font-sans-medium">{Math.round(totalFat)}g</Text>
+                      </Text>
+                      {totalFiber > 0 && (
+                        <Text className="text-sm text-text-secondary">
+                          Fiber{' '}
+                          <Text className="text-text font-sans-medium">
+                            {Math.round(totalFiber)}g
+                          </Text>
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+
+                  {error && <Text className="mb-4 text-center text-red-400 text-sm">{error}</Text>}
+
                   <Button onPress={handleConfirmSave} loading={saving} disabled={saving}>
-                    Confirm & Save
+                    Log {MEAL_TYPE_LABELS[mealType]}
                   </Button>
                 </>
-              )}
-
-              {draft && draftItems.length === 0 && (
-                <View className="items-center py-8">
-                  <Text className="text-text-secondary">No food items could be identified.</Text>
-                  <Button
-                    variant="outline"
-                    onPress={() => {
-                      setPhotoUri(null);
-                      setDraft(null);
-                    }}
-                    className="mt-4"
-                  >
+              ) : (
+                /* No items found */
+                <View className="items-center py-10">
+                  <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-4">
+                    <Ionicons name="search" size={28} color="#9a9caa" />
+                  </View>
+                  <Text className="font-sans-semibold text-text mb-1">No food detected</Text>
+                  <Text className="text-text-secondary text-sm text-center mb-5">
+                    Try a clearer photo with better lighting, or use manual entry
+                  </Text>
+                  <Button variant="outline" onPress={handleRetake}>
                     Try another photo
                   </Button>
                 </View>
               )}
-            </View>
-          )}
-
-          {error && !photoUri && !analyzing && (
-            <View className="items-center py-8 px-4">
-              <Text className="text-center text-red-400">{error}</Text>
             </View>
           )}
         </ScrollView>
