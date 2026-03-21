@@ -444,6 +444,7 @@ model VoiceDraft {
   locale        String?   @db.VarChar(5)
   transcription String?
   parsedItems   Json?     @map("parsed_items")
+  mealType      String?   @map("meal_type") @db.VarChar(20)
   totalCalories Int?      @map("total_calories")
   totalProtein  Float?    @map("total_protein")
   totalCarbs    Float?    @map("total_carbs")

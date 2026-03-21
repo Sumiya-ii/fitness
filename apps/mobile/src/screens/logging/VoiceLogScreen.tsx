@@ -46,6 +46,7 @@ interface VoiceDraft {
   id: string;
   status: 'waiting' | 'active' | 'completed' | 'failed';
   transcription?: string;
+  mealType?: string | null;
   items?: ParsedFoodItem[];
   totalCalories?: number;
   totalProtein?: number;
@@ -68,6 +69,15 @@ const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 30;
 const MAX_RECORDING_SECONDS = 60;
 const WARN_RECORDING_SECONDS = 45;
+
+function autoDetectMealType(): MealType {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return 'breakfast';
+  if (hour >= 11 && hour < 15) return 'lunch';
+  if (hour >= 15 && hour < 18) return 'snack';
+  if (hour >= 18 && hour < 22) return 'dinner';
+  return 'snack';
+}
 
 function getDeviceLocale(): 'mn' | 'en' {
   try {
@@ -183,7 +193,7 @@ export function VoiceLogScreen() {
   const [elapsed, setElapsed] = useState(0);
   const [draftItems, setDraftItems] = useState<ParsedFoodItem[]>([]);
   const [transcription, setTranscription] = useState('');
-  const [mealType, setMealType] = useState<MealType>('lunch');
+  const [mealType, setMealType] = useState<MealType>(autoDetectMealType);
   const [draftWorkerStatus, setDraftWorkerStatus] = useState<'waiting' | 'active' | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -304,6 +314,9 @@ export function VoiceLogScreen() {
         const items = d.items ?? [];
         setTranscription(d.transcription ?? '');
         setDraftItems(items);
+        if (d.mealType && MEAL_TYPES.includes(d.mealType as MealType)) {
+          setMealType(d.mealType as MealType);
+        }
         setScreenState('results');
         void trackEvent(EVENTS.VOICE_LOG_PROCESSED, {
           itemCount: items.length,
@@ -391,6 +404,7 @@ export function VoiceLogScreen() {
     setScreenState('idle');
     setDraftItems([]);
     setTranscription('');
+    setMealType(autoDetectMealType());
     setError(null);
     setElapsed(0);
     setDraftWorkerStatus(null);

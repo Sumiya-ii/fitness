@@ -12,6 +12,7 @@ function getPool(): Pool {
 interface VoiceDraftUpdateCompleted {
   transcription: string;
   parsedItems: unknown[];
+  mealType: string | null;
   totalCalories: number;
   totalProtein: number;
   totalCarbs: number;
@@ -31,15 +32,17 @@ export async function setVoiceDraftCompleted(
      SET status = 'completed',
          transcription = $2,
          parsed_items = $3,
-         total_calories = $4,
-         total_protein = $5,
-         total_carbs = $6,
-         total_fat = $7
+         meal_type = $4,
+         total_calories = $5,
+         total_protein = $6,
+         total_carbs = $7,
+         total_fat = $8
      WHERE id = $1`,
     [
       draftId,
       data.transcription,
       JSON.stringify(data.parsedItems),
+      data.mealType,
       data.totalCalories,
       data.totalProtein,
       data.totalCarbs,

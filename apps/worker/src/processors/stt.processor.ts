@@ -27,6 +27,7 @@ interface ParsedFoodItem {
 interface SttResult {
   text: string;
   locale?: string;
+  mealType: string | null;
   items: ParsedFoodItem[];
   totalCalories: number;
   totalProtein: number;
@@ -38,6 +39,7 @@ const NUTRITION_SYSTEM_PROMPT = `You are a nutrition expert specializing in Mong
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):
 {
+  "mealType": "breakfast" | "lunch" | "dinner" | "snack" | null,
   "items": [
     {
       "name": "Food name (keep Mongolian script if spoken in Mongolian)",
@@ -52,6 +54,13 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
     }
   ]
 }
+
+mealType rules:
+- "breakfast": user mentions breakfast or morning context ("өглөөний хоол", "breakfast", "өглөө", "morning")
+- "lunch": user mentions lunch or midday context ("өдрийн хоол", "lunch", "өдөр", "midday")
+- "dinner": user mentions dinner or evening context ("оройн хоол", "dinner", "орой", "evening", "supper")
+- "snack": user mentions snack context ("зууш", "snack", "нэмэлт")
+- null: no meal type is mentioned or clearly inferable from context
 
 Field rules:
 - name: use the name as the user said it; keep Mongolian script for Mongolian food names
@@ -156,6 +165,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     return {
       text: '',
       locale,
+      mealType: null,
       items: [],
       totalCalories: 0,
       totalProtein: 0,
@@ -207,6 +217,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     const emptyResult: SttResult = {
       text: '',
       locale,
+      mealType: null,
       items: [],
       totalCalories: 0,
       totalProtein: 0,
@@ -217,6 +228,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
       await setVoiceDraftCompleted(draftId, {
         transcription: '',
         parsedItems: [],
+        mealType: null,
         totalCalories: 0,
         totalProtein: 0,
         totalCarbs: 0,
@@ -229,6 +241,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
 
   // Step 2: Parse nutrition with GPT-4o-mini
   let items: ParsedFoodItem[] = [];
+  let detectedMealType: string | null = null;
   try {
     const nutritionResponse = await client.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -241,7 +254,8 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
       response_format: { type: 'json_object' },
     });
     const content = nutritionResponse.choices[0]?.message?.content ?? '{}';
-    const parsed = JSON.parse(content) as { items?: ParsedFoodItem[] };
+    const parsed = JSON.parse(content) as { mealType?: string | null; items?: ParsedFoodItem[] };
+    detectedMealType = parsed.mealType ?? null;
     items = (parsed.items ?? []).map((item) => ({
       ...item,
       quantity: item.quantity ?? 1,
@@ -257,6 +271,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
   const result: SttResult = {
     text,
     locale,
+    mealType: detectedMealType,
     items,
     totalCalories: Math.round(items.reduce((s, i) => s + i.calories, 0)),
     totalProtein: Number(items.reduce((s, i) => s + i.protein, 0).toFixed(2)),
@@ -269,6 +284,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     await setVoiceDraftCompleted(draftId, {
       transcription: text,
       parsedItems: items,
+      mealType: result.mealType,
       totalCalories: result.totalCalories,
       totalProtein: result.totalProtein,
       totalCarbs: result.totalCarbs,

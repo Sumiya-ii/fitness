@@ -36,6 +36,7 @@ describe('processJob routing', () => {
   it('routes stt-processing to processSttJob', async () => {
     mockStt.mockResolvedValue({
       text: 'hello',
+      mealType: null,
       items: [],
       totalCalories: 0,
       totalProtein: 0,

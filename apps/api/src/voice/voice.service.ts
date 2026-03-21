@@ -17,6 +17,7 @@ export interface VoiceDraftStatus {
   id: string;
   status: 'waiting' | 'active' | 'completed' | 'failed';
   transcription?: string;
+  mealType?: string | null;
   items?: ParsedFoodItem[];
   totalCalories?: number;
   totalProtein?: number;
@@ -95,6 +96,7 @@ export class VoiceService {
         id: draft.id,
         status: 'completed',
         transcription: draft.transcription ?? undefined,
+        mealType: draft.mealType ?? null,
         items: (draft.parsedItems as ParsedFoodItem[] | null) ?? undefined,
         totalCalories: draft.totalCalories ?? undefined,
         totalProtein: draft.totalProtein ?? undefined,
