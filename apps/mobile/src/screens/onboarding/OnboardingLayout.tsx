@@ -1,8 +1,7 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { BackButton } from '../../components/ui/BackButton';
 import { Button } from '../../components/ui/Button';
-import { themeColors } from '../../theme';
 
 interface OnboardingLayoutProps {
   step: number;
@@ -35,18 +34,7 @@ export function OnboardingLayout({
     <SafeAreaView className="flex-1 bg-surface-app">
       <View className="px-6 pt-4">
         <View className="flex-row items-center mb-6">
-          {onBack ? (
-            <Pressable
-              onPress={onBack}
-              className="w-12 h-12 items-center justify-center rounded-full bg-surface-secondary active:opacity-70"
-              accessibilityLabel="Go back"
-              accessibilityRole="button"
-            >
-              <Ionicons name="arrow-back" size={22} color={themeColors.text.primary} />
-            </Pressable>
-          ) : (
-            <View className="w-12" />
-          )}
+          {onBack ? <BackButton onPress={onBack} /> : <View className="w-12" />}
 
           <View className="flex-1 mx-4">
             <View className="h-1.5 bg-surface-border rounded-full overflow-hidden">
@@ -64,14 +52,8 @@ export function OnboardingLayout({
       </View>
 
       <View className="px-6 mb-6">
-        <Text className="text-2xl font-sans-bold text-text mb-2">
-          {title}
-        </Text>
-        {subtitle && (
-          <Text className="text-base text-text-secondary leading-6">
-            {subtitle}
-          </Text>
-        )}
+        <Text className="text-2xl font-sans-bold text-text mb-2">{title}</Text>
+        {subtitle && <Text className="text-base text-text-secondary leading-6">{subtitle}</Text>}
       </View>
 
       <View className="flex-1 px-6">{children}</View>

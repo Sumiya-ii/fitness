@@ -1,16 +1,9 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Input, Button, Card } from '../../components/ui';
+import { BackButton, Input, Button, Card } from '../../components/ui';
 import { mealsApi } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 
@@ -20,7 +13,7 @@ const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
 export function QuickAddScreen() {
   const navigation = useNavigation<Props['navigation']>();
-  const [mealType, setMealType] = useState<typeof MEAL_TYPES[number]>('lunch');
+  const [mealType, setMealType] = useState<(typeof MEAL_TYPES)[number]>('lunch');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
@@ -63,36 +56,26 @@ export function QuickAddScreen() {
       >
         {/* Header */}
         <View className="flex-row items-center border-b border-surface-border px-4 py-3">
-          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
-            <Ionicons name="arrow-back" size={24} color="#111218" />
-          </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text">
-            Quick Add
-          </Text>
+          <BackButton />
+          <Text className="ml-3 text-lg font-sans-semibold text-text">Quick Add</Text>
         </View>
 
         <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
           <View className="p-4">
             {/* Meal type chips */}
-            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
-              Meal type
-            </Text>
+            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">Meal type</Text>
             <View className="mb-6 flex-row flex-wrap gap-2">
               {MEAL_TYPES.map((type) => (
                 <Pressable
                   key={type}
                   onPress={() => setMealType(type)}
                   className={`rounded-full px-4 py-2 ${
-                    mealType === type
-                      ? 'bg-primary-500'
-                      : 'bg-surface-secondary'
+                    mealType === type ? 'bg-primary-500' : 'bg-surface-secondary'
                   }`}
                 >
                   <Text
                     className={`font-sans-medium capitalize ${
-                      mealType === type
-                        ? 'text-text-inverse'
-                        : 'text-text-secondary'
+                      mealType === type ? 'text-text-inverse' : 'text-text-secondary'
                     }`}
                   >
                     {type}
@@ -102,9 +85,7 @@ export function QuickAddScreen() {
             </View>
 
             {/* Calorie input */}
-            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
-              Calories
-            </Text>
+            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">Calories</Text>
             <Input
               value={calories}
               onChangeText={setCalories}
@@ -164,9 +145,7 @@ export function QuickAddScreen() {
               className="mb-6"
             />
 
-            {error && (
-              <Text className="mb-4 text-center text-danger">{error}</Text>
-            )}
+            {error && <Text className="mb-4 text-center text-danger">{error}</Text>}
 
             <Button onPress={handleSave} loading={saving} disabled={saving}>
               Save

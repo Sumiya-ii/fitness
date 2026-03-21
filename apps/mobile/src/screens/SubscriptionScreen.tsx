@@ -1,19 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  Linking,
-  ScrollView,
-  Image,
-  Alert,
-} from 'react-native';
+import { View, Text, Pressable, Linking, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Button, Badge } from '../components/ui';
+import { BackButton, Button, Badge } from '../components/ui';
 import { api } from '../api/client';
 
 const FEATURES_PRO = [
@@ -100,10 +92,7 @@ export function SubscriptionScreen() {
         stopPolling();
         await api.get('/subscriptions/status').catch(() => undefined);
         setPaymentSuccess(true);
-      } else if (
-        res.data.status === 'expired'
-        || res.data.status === 'canceled'
-      ) {
+      } else if (res.data.status === 'expired' || res.data.status === 'canceled') {
         stopPolling();
       }
     },
@@ -124,9 +113,7 @@ export function SubscriptionScreen() {
         const startedAt = pollStartRef.current;
         if (startedAt && Date.now() - startedAt >= POLL_TIMEOUT_MS) {
           stopPolling();
-          setStatusError(
-            'Төлбөрийн баталгаажуулалт удааширлаа. Дараа дахин шалгана уу.',
-          );
+          setStatusError('Төлбөрийн баталгаажуулалт удааширлаа. Дараа дахин шалгана уу.');
           return;
         }
 
@@ -136,9 +123,7 @@ export function SubscriptionScreen() {
           setStatusError(null);
         } catch (err: unknown) {
           const message =
-            err instanceof Error
-              ? err.message
-              : 'Төлбөрийн статус шалгахад алдаа гарлаа.';
+            err instanceof Error ? err.message : 'Төлбөрийн статус шалгахад алдаа гарлаа.';
           setStatusError(message);
         } finally {
           statusRequestInFlightRef.current = false;
@@ -172,10 +157,7 @@ export function SubscriptionScreen() {
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert(
-          'App not installed',
-          'This banking app is not installed on your device.',
-        );
+        Alert.alert('App not installed', 'This banking app is not installed on your device.');
       }
     } catch {
       Alert.alert('Error', 'Could not open the banking app.');
@@ -189,9 +171,7 @@ export function SubscriptionScreen() {
       await checkPaymentStatus(invoice.invoiceId);
     } catch (err: unknown) {
       const message =
-        err instanceof Error
-          ? err.message
-          : 'Төлбөрийн статус шалгахад алдаа гарлаа.';
+        err instanceof Error ? err.message : 'Төлбөрийн статус шалгахад алдаа гарлаа.';
       setStatusError(message);
     }
   };
@@ -226,9 +206,7 @@ export function SubscriptionScreen() {
           <View className="h-24 w-24 rounded-full bg-primary-500/20 items-center justify-center mb-6">
             <Ionicons name="checkmark-circle" size={64} color="#1f2028" />
           </View>
-          <Text className="text-2xl font-sans-bold text-text text-center mb-2">
-            Амжилттай!
-          </Text>
+          <Text className="text-2xl font-sans-bold text-text text-center mb-2">Амжилттай!</Text>
           <Text className="text-base text-text-secondary text-center mb-8">
             Coach Pro эрхийг амжилттай идэвхжүүллээ. Бүх Pro боломжуудыг ашиглах боломжтой боллоо.
           </Text>
@@ -245,19 +223,13 @@ export function SubscriptionScreen() {
       <View className="flex-1 bg-surface-app">
         <SafeAreaView edges={['top']} className="flex-1">
           <View className="flex-row items-center px-4 py-3">
-            <Pressable
+            <BackButton
               onPress={() => {
                 stopPolling();
                 setInvoice(null);
               }}
-              className="h-10 w-10 rounded-full bg-surface-card items-center justify-center mr-3"
-              accessibilityLabel="Go back"
-            >
-              <Ionicons name="arrow-back" size={20} color="#9a9caa" />
-            </Pressable>
-            <Text className="flex-1 text-xl font-sans-bold text-text">
-              Төлбөр төлөх
-            </Text>
+            />
+            <Text className="flex-1 ml-3 text-xl font-sans-bold text-text">Төлбөр төлөх</Text>
           </View>
 
           <ScrollView
@@ -268,9 +240,7 @@ export function SubscriptionScreen() {
             {/* QR Code */}
             <Animated.View entering={FadeInDown.duration(400)} className="px-4 mt-2">
               <View className="rounded-2xl bg-surface-card border border-surface-border p-6 items-center">
-                <Text className="text-lg font-sans-semibold text-text mb-1">
-                  QR кодоор төлөх
-                </Text>
+                <Text className="text-lg font-sans-semibold text-text mb-1">QR кодоор төлөх</Text>
                 <Text className="text-sm text-text-secondary mb-4 text-center">
                   Банкны аппаараа QR кодыг уншуулна уу
                 </Text>
@@ -286,9 +256,7 @@ export function SubscriptionScreen() {
                 {paymentStatus === 'pending' && (
                   <View className="flex-row items-center gap-2">
                     <View className="h-2 w-2 rounded-full bg-primary-500 animate-pulse" />
-                    <Text className="text-sm text-text-secondary">
-                      Төлбөр хүлээж байна...
-                    </Text>
+                    <Text className="text-sm text-text-secondary">Төлбөр хүлээж байна...</Text>
                   </View>
                 )}
                 {paymentStatus === 'expired' && (
@@ -302,9 +270,7 @@ export function SubscriptionScreen() {
                   </Text>
                 )}
                 {statusError && (
-                  <Text className="text-xs text-red-400 text-center mt-2">
-                    {statusError}
-                  </Text>
+                  <Text className="text-xs text-red-400 text-center mt-2">{statusError}</Text>
                 )}
 
                 <View className="mt-3 px-4 py-2 rounded-xl bg-surface-secondary">
@@ -314,11 +280,7 @@ export function SubscriptionScreen() {
                 </View>
 
                 <View className="mt-4 w-full">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={handleManualStatusCheck}
-                  >
+                  <Button variant="secondary" size="sm" onPress={handleManualStatusCheck}>
                     Статус шалгах
                   </Button>
                 </View>
@@ -326,10 +288,7 @@ export function SubscriptionScreen() {
             </Animated.View>
 
             {/* Bank App Buttons */}
-            <Animated.View
-              entering={FadeInDown.delay(100).duration(400)}
-              className="px-4 mt-6"
-            >
+            <Animated.View entering={FadeInDown.delay(100).duration(400)} className="px-4 mt-6">
               <Text className="text-lg font-sans-semibold text-text mb-3">
                 Банкны апп-аар төлөх
               </Text>
@@ -352,12 +311,8 @@ export function SubscriptionScreen() {
                       />
                     </View>
                     <View className="flex-1">
-                      <Text className="font-sans-medium text-text">
-                        {bank.name}
-                      </Text>
-                      <Text className="text-xs text-text-tertiary">
-                        {bank.description}
-                      </Text>
+                      <Text className="font-sans-medium text-text">{bank.name}</Text>
+                      <Text className="text-xs text-text-tertiary">{bank.description}</Text>
                     </View>
                     <Ionicons name="open-outline" size={18} color="#9a9caa" />
                   </Pressable>
@@ -387,16 +342,8 @@ export function SubscriptionScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <View className="flex-row items-center px-4 py-3">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            className="h-10 w-10 rounded-full bg-surface-card items-center justify-center mr-3"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="arrow-back" size={20} color="#9a9caa" />
-          </Pressable>
-          <Text className="flex-1 text-xl font-sans-bold text-text">
-            Coach Pro
-          </Text>
+          <BackButton />
+          <Text className="flex-1 ml-3 text-xl font-sans-bold text-text">Coach Pro</Text>
         </View>
 
         <ScrollView
@@ -415,9 +362,7 @@ export function SubscriptionScreen() {
               <View className="h-16 w-16 rounded-2xl bg-white/20 items-center justify-center mb-3">
                 <Ionicons name="diamond" size={32} color="#ffffff" />
               </View>
-              <Text className="text-2xl font-sans-bold text-text">
-                Coach Pro
-              </Text>
+              <Text className="text-2xl font-sans-bold text-text">Coach Pro</Text>
               <Text className="mt-1 text-center text-text-secondary text-sm">
                 Coach-ийн бүрэн боломжуудыг нээх
               </Text>
@@ -425,13 +370,8 @@ export function SubscriptionScreen() {
           </Animated.View>
 
           {/* Pro Features */}
-          <Animated.View
-            entering={FadeInDown.delay(100).duration(400)}
-            className="px-4 mt-6"
-          >
-            <Text className="text-lg font-sans-semibold text-text mb-3">
-              Pro боломжууд
-            </Text>
+          <Animated.View entering={FadeInDown.delay(100).duration(400)} className="px-4 mt-6">
+            <Text className="text-lg font-sans-semibold text-text mb-3">Pro боломжууд</Text>
             <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
               {FEATURES_PRO.map((f, i) => (
                 <View key={f.label}>
@@ -439,27 +379,18 @@ export function SubscriptionScreen() {
                     <View className="h-9 w-9 rounded-xl bg-primary-500/15 items-center justify-center">
                       <Ionicons name={f.icon} size={18} color="#1f2028" />
                     </View>
-                    <Text className="flex-1 font-sans-medium text-text">
-                      {f.label}
-                    </Text>
+                    <Text className="flex-1 font-sans-medium text-text">{f.label}</Text>
                     <Ionicons name="checkmark-circle" size={20} color="#1f2028" />
                   </View>
-                  {i < FEATURES_PRO.length - 1 && (
-                    <View className="h-px bg-surface-secondary" />
-                  )}
+                  {i < FEATURES_PRO.length - 1 && <View className="h-px bg-surface-secondary" />}
                 </View>
               ))}
             </View>
           </Animated.View>
 
           {/* Plans */}
-          <Animated.View
-            entering={FadeInDown.delay(200).duration(400)}
-            className="px-4 mt-6"
-          >
-            <Text className="text-lg font-sans-semibold text-text mb-3">
-              Төлөвлөгөө сонгох
-            </Text>
+          <Animated.View entering={FadeInDown.delay(200).duration(400)} className="px-4 mt-6">
+            <Text className="text-lg font-sans-semibold text-text mb-3">Төлөвлөгөө сонгох</Text>
             <View className="gap-3">
               <Pressable
                 onPress={() => setSelectedPlan('yearly')}
@@ -472,9 +403,7 @@ export function SubscriptionScreen() {
                 <View className="flex-row items-center justify-between">
                   <View>
                     <View className="flex-row items-center gap-2">
-                      <Text className="font-sans-semibold text-text text-base">
-                        Жилийн
-                      </Text>
+                      <Text className="font-sans-semibold text-text text-base">Жилийн</Text>
                       <Badge variant="success">37% хэмнэлт</Badge>
                     </View>
                     <Text className="text-sm text-text-secondary mt-1">
@@ -500,18 +429,16 @@ export function SubscriptionScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <View>
-                    <Text className="font-sans-semibold text-text text-base">
-                      Сарын
-                    </Text>
-                    <Text className="text-sm text-text-secondary mt-1">
-                      Сар бүр нэхэмжлэгдэнэ
-                    </Text>
+                    <Text className="font-sans-semibold text-text text-base">Сарын</Text>
+                    <Text className="text-sm text-text-secondary mt-1">Сар бүр нэхэмжлэгдэнэ</Text>
                   </View>
                   <View className="items-end">
                     <Text className="text-lg font-sans-bold text-text">
                       {PLAN_PRICES.monthly.amount}
                     </Text>
-                    <Text className="text-xs text-text-secondary">{PLAN_PRICES.monthly.period}</Text>
+                    <Text className="text-xs text-text-secondary">
+                      {PLAN_PRICES.monthly.period}
+                    </Text>
                   </View>
                 </View>
               </Pressable>
@@ -520,12 +447,7 @@ export function SubscriptionScreen() {
 
           {/* CTA */}
           <View className="px-4 mt-6">
-            <Button
-              variant="primary"
-              size="lg"
-              loading={loading}
-              onPress={handleSubscribe}
-            >
+            <Button variant="primary" size="lg" loading={loading} onPress={handleSubscribe}>
               QPay-ээр төлөх
             </Button>
 

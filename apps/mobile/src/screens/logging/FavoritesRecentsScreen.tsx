@@ -1,16 +1,9 @@
 import { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, EmptyState } from '../../components/ui';
+import { BackButton, Card, EmptyState } from '../../components/ui';
 import { mealsApi, type FavoriteItem, type RecentItem } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 
@@ -47,7 +40,7 @@ export function FavoritesRecentsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [loadData])
+    }, [loadData]),
   );
 
   const onRefresh = useCallback(() => {
@@ -103,17 +96,10 @@ export function FavoritesRecentsScreen() {
       className="mb-3 flex-row items-center justify-between"
     >
       <View className="flex-1">
-        <Text className="font-sans-semibold text-text">
-          {item.name}
-        </Text>
-        <Text className="text-sm text-text-secondary">
-          {item.caloriesPer100g} cal / 100g
-        </Text>
+        <Text className="font-sans-semibold text-text">{item.name}</Text>
+        <Text className="text-sm text-text-secondary">{item.caloriesPer100g} cal / 100g</Text>
       </View>
-      <Pressable
-        onPress={() => toggleFavorite(item.foodId)}
-        className="p-2"
-      >
+      <Pressable onPress={() => toggleFavorite(item.foodId)} className="p-2">
         <Ionicons
           name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
           size={24}
@@ -130,17 +116,10 @@ export function FavoritesRecentsScreen() {
       className="mb-3 flex-row items-center justify-between"
     >
       <View className="flex-1">
-        <Text className="font-sans-semibold text-text">
-          {item.name}
-        </Text>
-        <Text className="text-sm text-text-secondary">
-          Last: {item.lastCalories} cal
-        </Text>
+        <Text className="font-sans-semibold text-text">{item.name}</Text>
+        <Text className="text-sm text-text-secondary">Last: {item.lastCalories} cal</Text>
       </View>
-      <Pressable
-        onPress={() => toggleFavorite(item.foodId)}
-        className="p-2"
-      >
+      <Pressable onPress={() => toggleFavorite(item.foodId)} className="p-2">
         <Ionicons
           name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
           size={24}
@@ -156,12 +135,8 @@ export function FavoritesRecentsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center border-b border-surface-border px-4 py-3">
-        <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
-          <Ionicons name="arrow-back" size={24} color="#111218" />
-        </Pressable>
-        <Text className="ml-4 text-lg font-sans-semibold text-text">
-          Favorites & Recents
-        </Text>
+        <BackButton />
+        <Text className="ml-3 text-lg font-sans-semibold text-text">Favorites & Recents</Text>
       </View>
 
       {/* Tabs */}
@@ -169,16 +144,12 @@ export function FavoritesRecentsScreen() {
         <Pressable
           onPress={() => setTab('favorites')}
           className={`border-b-2 py-3 px-4 ${
-            tab === 'favorites'
-              ? 'border-primary-500'
-              : 'border-transparent'
+            tab === 'favorites' ? 'border-primary-500' : 'border-transparent'
           }`}
         >
           <Text
             className={`font-sans-medium ${
-              tab === 'favorites'
-                ? 'text-primary-600'
-                : 'text-text-secondary'
+              tab === 'favorites' ? 'text-primary-600' : 'text-text-secondary'
             }`}
           >
             Favorites
@@ -192,9 +163,7 @@ export function FavoritesRecentsScreen() {
         >
           <Text
             className={`font-sans-medium ${
-              tab === 'recents'
-                ? 'text-primary-600'
-                : 'text-text-secondary'
+              tab === 'recents' ? 'text-primary-600' : 'text-text-secondary'
             }`}
           >
             Recents
@@ -227,11 +196,7 @@ export function FavoritesRecentsScreen() {
           }
           contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#1f2028"
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1f2028" />
           }
         />
       )}

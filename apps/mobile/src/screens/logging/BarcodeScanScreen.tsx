@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Button, BottomSheet } from '../../components/ui';
+import { BackButton, Button, BottomSheet } from '../../components/ui';
 import { mealsApi, type BarcodeLookupResult } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 import { useLocale } from '../../i18n';
@@ -34,26 +34,23 @@ export function BarcodeScanScreen() {
   const [saving, setSaving] = useState(false);
   const scannedCodeRef = useRef<string | null>(null);
 
-  const handleBarCodeScanned = useCallback(
-    async ({ data }: { type: string; data: string }) => {
-      if (scannedCodeRef.current === data) return;
-      scannedCodeRef.current = data;
-      setScannedCode(data);
-      setScanned(true);
-      setLoading(true);
-      setResult(null);
-      setNotFound(false);
-      try {
-        const res = await mealsApi.barcodeLookup(data);
-        setResult(res.data);
-      } catch {
-        setNotFound(true);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const handleBarCodeScanned = useCallback(async ({ data }: { type: string; data: string }) => {
+    if (scannedCodeRef.current === data) return;
+    scannedCodeRef.current = data;
+    setScannedCode(data);
+    setScanned(true);
+    setLoading(true);
+    setResult(null);
+    setNotFound(false);
+    try {
+      const res = await mealsApi.barcodeLookup(data);
+      setResult(res.data);
+    } catch {
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const resetScan = useCallback(() => {
     scannedCodeRef.current = null;
@@ -103,15 +100,8 @@ export function BarcodeScanScreen() {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
         <View className="flex-row items-center border-b border-surface-border px-4 py-3">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            className="p-3 -m-3"
-            accessibilityRole="button"
-            accessibilityLabel={t('common.back')}
-          >
-            <Ionicons name="arrow-back" size={24} color="#111218" />
-          </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text">
+          <BackButton />
+          <Text className="ml-3 text-lg font-sans-semibold text-text">
             {t('logging.scanBarcode')}
           </Text>
         </View>
@@ -139,20 +129,9 @@ export function BarcodeScanScreen() {
         <View style={[styles.frame, { width: scanFrameSize, height: scanFrameSize }]} />
       </View>
 
-      <SafeAreaView
-        style={StyleSheet.absoluteFill}
-        edges={['top']}
-        className="justify-between"
-      >
+      <SafeAreaView style={StyleSheet.absoluteFill} edges={['top']} className="justify-between">
         <View className="flex-row items-center px-4 py-3">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            className="rounded-full bg-black/50 p-2"
-            accessibilityRole="button"
-            accessibilityLabel={t('common.back')}
-          >
-            <Ionicons name="arrow-back" size={24} color="#ffffff" />
-          </Pressable>
+          <BackButton variant="overlay" />
           <Text className="ml-4 text-lg font-sans-semibold text-text">
             {t('logging.scanBarcode')}
           </Text>
@@ -184,9 +163,7 @@ export function BarcodeScanScreen() {
       >
         {result && (
           <View>
-            <Text className="mb-2 text-lg font-sans-semibold text-text">
-              {result.food.name}
-            </Text>
+            <Text className="mb-2 text-lg font-sans-semibold text-text">{result.food.name}</Text>
             {result.food.nutrients && (
               <Text className="mb-4 text-sm text-text-secondary">
                 {result.food.nutrients.caloriesPer100g} cal / 100g
@@ -235,9 +212,7 @@ export function BarcodeScanScreen() {
           <Text className="mb-6 text-center text-text-secondary">
             This barcode is not in our database. You can submit it for review.
           </Text>
-          <Button onPress={handleSubmitProduct}>
-            Submit Product
-          </Button>
+          <Button onPress={handleSubmitProduct}>Submit Product</Button>
         </View>
       </BottomSheet>
     </View>

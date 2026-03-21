@@ -3,39 +3,49 @@ import {
   Post,
   Get,
   Param,
+  Body,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { VoiceService } from './voice.service';
+
+const ALLOWED_MIME_TYPES = ['audio/m4a', 'audio/x-m4a', 'audio/mp4', 'audio/mpeg', 'audio/wav'];
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
 
 @Controller('voice')
 export class VoiceController {
   constructor(private readonly voiceService: VoiceService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('audio'))
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseInterceptors(
+    FileInterceptor('audio', {
+      limits: { fileSize: MAX_FILE_SIZE_BYTES },
+    }),
+  )
   async upload(
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFile() file: Express.Multer.File | undefined,
+    @Body('locale') locale?: string,
   ) {
     if (!file?.buffer) {
       throw new BadRequestException('Audio file is required');
     }
-    const { draftId } = await this.voiceService.uploadAudio(
-      user.id,
-      file.buffer,
-    );
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(`Unsupported audio format: ${file.mimetype}`);
+    }
+
+    const safeLocale = locale === 'en' ? 'en' : 'mn';
+    const { draftId } = await this.voiceService.uploadAudio(user.id, file.buffer, safeLocale);
     return { data: { draftId } };
   }
 
   @Get('drafts/:id')
-  async getDraft(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  async getDraft(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return {
       data: await this.voiceService.getDraft(id, user.id),
     };

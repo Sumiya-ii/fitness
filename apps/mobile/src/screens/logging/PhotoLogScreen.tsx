@@ -1,18 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Image,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Button, Card, Badge } from '../../components/ui';
+import { BackButton, Button, Card, Badge } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
@@ -190,12 +182,8 @@ export function PhotoLogScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
-          <Pressable onPress={() => navigation.goBack()} className="p-3 -m-3">
-            <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
-          </Pressable>
-          <Text className="ml-4 text-lg font-sans-semibold text-text">
-            Photo Log
-          </Text>
+          <BackButton />
+          <Text className="ml-3 text-lg font-sans-semibold text-text">Photo Log</Text>
         </View>
 
         <ScrollView className="flex-1">
@@ -207,18 +195,14 @@ export function PhotoLogScreen() {
                   className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-8"
                 >
                   <Ionicons name="camera" size={48} color="#1f2028" />
-                  <Text className="mt-2 font-sans-medium text-text">
-                    Camera
-                  </Text>
+                  <Text className="mt-2 font-sans-medium text-text">Camera</Text>
                 </Pressable>
                 <Pressable
                   onPress={handlePickFromGallery}
                   className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-8"
                 >
                   <Ionicons name="images" size={48} color="#1f2028" />
-                  <Text className="mt-2 font-sans-medium text-text">
-                    Gallery
-                  </Text>
+                  <Text className="mt-2 font-sans-medium text-text">Gallery</Text>
                 </Pressable>
               </View>
             </View>
@@ -227,9 +211,7 @@ export function PhotoLogScreen() {
           {analyzing && (
             <View className="items-center py-16">
               <ActivityIndicator size="large" color="#1f2028" />
-              <Text className="mt-4 text-text-secondary">
-                Analyzing your food...
-              </Text>
+              <Text className="mt-4 text-text-secondary">Analyzing your food...</Text>
             </View>
           )}
 
@@ -242,18 +224,15 @@ export function PhotoLogScreen() {
               />
               {draftItems.length > 0 && (
                 <>
-                  <Text className="mb-3 font-sans-semibold text-text">
-                    Identified foods
-                  </Text>
+                  <Text className="mb-3 font-sans-semibold text-text">Identified foods</Text>
                   {draftItems.map((item, index) => (
                     <Card key={`${item.name}-${index}`} className="mb-3">
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1">
-                          <Text className="font-sans-semibold text-text">
-                            {item.name}
-                          </Text>
+                          <Text className="font-sans-semibold text-text">{item.name}</Text>
                           <Text className="text-xs text-text-secondary mt-0.5">
-                            P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F: {Math.round(item.fat)}g
+                            P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F:{' '}
+                            {Math.round(item.fat)}g
                           </Text>
                           <Badge
                             variant={item.confidence >= 0.8 ? 'success' : 'warning'}
@@ -286,21 +265,15 @@ export function PhotoLogScreen() {
                   <View className="rounded-xl bg-surface-card border border-surface-border p-3 mb-4">
                     <Text className="text-sm text-text-secondary font-sans-medium mb-1">Total</Text>
                     <Text className="text-text font-sans-semibold">
-                      {draftItems.reduce((s, i) => s + i.calories, 0)} cal ·{' '}
-                      P: {Math.round(draftItems.reduce((s, i) => s + i.protein, 0))}g ·{' '}
-                      C: {Math.round(draftItems.reduce((s, i) => s + i.carbs, 0))}g ·{' '}
-                      F: {Math.round(draftItems.reduce((s, i) => s + i.fat, 0))}g
+                      {draftItems.reduce((s, i) => s + i.calories, 0)} cal · P:{' '}
+                      {Math.round(draftItems.reduce((s, i) => s + i.protein, 0))}g · C:{' '}
+                      {Math.round(draftItems.reduce((s, i) => s + i.carbs, 0))}g · F:{' '}
+                      {Math.round(draftItems.reduce((s, i) => s + i.fat, 0))}g
                     </Text>
                   </View>
 
-                  {error && (
-                    <Text className="mb-4 text-center text-red-400">{error}</Text>
-                  )}
-                  <Button
-                    onPress={handleConfirmSave}
-                    loading={saving}
-                    disabled={saving}
-                  >
+                  {error && <Text className="mb-4 text-center text-red-400">{error}</Text>}
+                  <Button onPress={handleConfirmSave} loading={saving} disabled={saving}>
                     Confirm & Save
                   </Button>
                 </>

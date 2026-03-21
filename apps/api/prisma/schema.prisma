@@ -31,6 +31,7 @@ model User {
   favorites            Favorite[]
   aiParseResults       AiParseResult[]
   qpayInvoices         QPayInvoice[]
+  voiceDrafts          VoiceDraft[]
 
   @@map("users")
 }
@@ -430,6 +431,32 @@ model IdempotencyKey {
 
   @@unique([externalSystem, externalEventId])
   @@map("idempotency_keys")
+}
+
+// ─── Voice Drafts ───────────────────────────────────────────────
+
+model VoiceDraft {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  jobId         String?   @map("job_id")
+  s3Key         String?   @map("s3_key")
+  status        String    @default("waiting") @db.VarChar(20) // waiting|active|completed|failed
+  locale        String?   @db.VarChar(5)
+  transcription String?
+  parsedItems   Json?     @map("parsed_items")
+  totalCalories Int?      @map("total_calories")
+  totalProtein  Float?    @map("total_protein")
+  totalCarbs    Float?    @map("total_carbs")
+  totalFat      Float?    @map("total_fat")
+  errorMessage  String?   @map("error_message")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  expiresAt     DateTime  @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("voice_drafts")
 }
 
 // ─── AI Parse ───────────────────────────────────────────────────
