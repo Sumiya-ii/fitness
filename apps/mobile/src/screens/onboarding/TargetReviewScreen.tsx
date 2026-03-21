@@ -9,7 +9,6 @@ import { ProgressRing } from '../../components/ui/ProgressRing';
 import { MacroBar } from '../../components/ui/MacroBar';
 import { Button } from '../../components/ui/Button';
 import { useProfileStore, calculateTargets } from '../../stores/profile.store';
-import { useOnboardingStore } from '../../stores/onboarding.store';
 import { api } from '../../api/client';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -30,7 +29,6 @@ export function TargetReviewScreen({ navigation }: Props) {
     })),
   );
   const targets = calculateTargets(data);
-  const setProfileSetupComplete = useOnboardingStore((s) => s.setProfileSetupComplete);
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -62,14 +60,12 @@ export function TargetReviewScreen({ navigation }: Props) {
         activityLevel: data.activityLevel,
         dietPreference: data.dietPreference,
       });
-
-      await setProfileSetupComplete();
     } catch {
-      // If API call fails, still complete onboarding locally
-      // Backend sync can happen later when connection is available
-      await setProfileSetupComplete();
+      // Best-effort API call — proceed to notification primer regardless
     } finally {
       setLoading(false);
+      // Always navigate to the notification primer; it calls setProfileSetupComplete
+      navigation.navigate('NotificationPermission');
     }
   };
 

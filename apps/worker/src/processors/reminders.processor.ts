@@ -1,5 +1,6 @@
 import { Job } from 'bullmq';
 import { Telegraf } from 'telegraf';
+import { sendExpoPush } from '../expo-push';
 
 interface ReminderJobData {
   userId: string;
@@ -32,43 +33,12 @@ const EVENING_MESSAGES: Record<string, { title: string; body: string }> = {
   },
 };
 
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
-
-async function sendExpoPushNotifications(
-  tokens: string[],
-  title: string,
-  body: string,
-): Promise<void> {
-  if (tokens.length === 0) return;
-
-  const messages = tokens.map((to) => ({
-    to,
-    title,
-    body,
-    sound: 'default' as const,
-    data: { type: 'reminder' },
-  }));
-
-  const response = await fetch(EXPO_PUSH_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(messages),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Expo Push API error: ${response.status}`);
-  }
-}
-
 export async function processReminderJob(job: Job<ReminderJobData>): Promise<void> {
   const { userId, type, channels, chatId, locale, pushTokens = [] } = job.data;
 
   const lang = locale ?? 'mn';
   const messageMap = type === 'morning' ? MORNING_MESSAGES : EVENING_MESSAGES;
-  const message = messageMap[lang] ?? messageMap.en;
+  const message = messageMap[lang] ?? messageMap['en']!;
 
   const hasTelegram = channels.includes('telegram') && Boolean(chatId);
   const hasPush = channels.includes('push') && pushTokens.length > 0;
@@ -80,7 +50,9 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
 
   const results = await Promise.allSettled([
     hasTelegram ? sendTelegramReminder(userId, chatId!, message.body) : Promise.resolve(),
-    hasPush ? sendExpoPushNotifications(pushTokens, message.title, message.body) : Promise.resolve(),
+    hasPush
+      ? sendExpoPush(pushTokens, message.title, message.body, { type: 'reminder' })
+      : Promise.resolve(),
   ]);
 
   for (const result of results) {
@@ -89,14 +61,12 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
     }
   }
 
-  console.log(`[Reminders] Sent ${type} reminder to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`);
+  console.log(
+    `[Reminders] Sent ${type} reminder to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`,
+  );
 }
 
-async function sendTelegramReminder(
-  userId: string,
-  chatId: string,
-  text: string,
-): Promise<void> {
+async function sendTelegramReminder(userId: string, chatId: string, text: string): Promise<void> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) {
     console.warn('[Reminders] TELEGRAM_BOT_TOKEN not set, skipping Telegram delivery');

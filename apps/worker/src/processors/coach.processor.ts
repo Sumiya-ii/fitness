@@ -2,6 +2,7 @@ import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
 import Redis from 'ioredis';
+import { sendExpoPush } from '../expo-push';
 
 // ── Types (mirrors api/src/coach/coach.types.ts) ─────────────────────────────
 
@@ -126,8 +127,6 @@ User data snapshot at ${localTime}:
 
 // ── Delivery helpers ──────────────────────────────────────────────────────────
 
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
-
 const PUSH_TITLES: Record<CoachMessageType, Record<string, string>> = {
   morning_greeting: { mn: 'Өглөөний мэнд! 🌅', en: 'Good morning! 🌅' },
   water_reminder: { mn: 'Ус уухаа бүү мартаарай 💧', en: "Don't forget to hydrate 💧" },
@@ -137,23 +136,6 @@ const PUSH_TITLES: Record<CoachMessageType, Record<string, string>> = {
   weekly_summary: { mn: '7 хоногийн тойм 🗓', en: 'Weekly summary 🗓' },
   streak_celebration: { mn: 'Та гайхалтай! 🔥', en: "You're on fire! 🔥" },
 };
-
-async function sendExpoPush(tokens: string[], title: string, body: string): Promise<void> {
-  if (tokens.length === 0) return;
-  const messages = tokens.map((to) => ({
-    to,
-    title,
-    body,
-    sound: 'default' as const,
-    data: { type: 'coach_message', screen: 'CoachChat' },
-  }));
-  const res = await fetch(EXPO_PUSH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(messages),
-  });
-  if (!res.ok) throw new Error(`Expo Push API error: ${res.status}`);
-}
 
 async function sendTelegram(chatId: string, text: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -260,7 +242,12 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
 
   const results = await Promise.allSettled([
     hasTelegram ? sendTelegram(chatId!, coachMessage) : Promise.resolve(),
-    hasPush ? sendExpoPush(pushTokens, title, coachMessage) : Promise.resolve(),
+    hasPush
+      ? sendExpoPush(pushTokens, title, coachMessage, {
+          type: 'coach_message',
+          screen: 'CoachChat',
+        })
+      : Promise.resolve(),
   ]);
 
   for (const result of results) {

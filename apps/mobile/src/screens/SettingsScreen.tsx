@@ -1,15 +1,17 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Switch, Alert, TextInput } from 'react-native';
+import { View, Text, ScrollView, Pressable, Switch, Alert, TextInput, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
 import { Badge } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
 import { api } from '../api';
 import { useLocale, type Locale } from '../i18n';
+import { requestAndRegisterPushToken } from '../hooks/usePushNotifications';
 
 interface ProfileData {
   displayName: string | null;
@@ -144,6 +146,9 @@ export function SettingsScreen() {
     morningReminder: true,
     eveningReminder: true,
   });
+  const [osPermission, setOsPermission] = useState<'granted' | 'denied' | 'undetermined'>(
+    'undetermined',
+  );
   const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [editingName, setEditingName] = useState(false);
@@ -151,16 +156,24 @@ export function SettingsScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const [profileRes, notifRes, telegramRes, subRes] = await Promise.all([
+      const [profileRes, notifRes, telegramRes, subRes, permResult] = await Promise.all([
         api.get<{ data: ProfileData }>('/profile'),
         api.get<{ data: NotificationPrefs }>('/notifications/preferences'),
         api.get<TelegramStatus>('/telegram/status'),
         api.get<{ data: SubscriptionStatus }>('/subscriptions/status'),
+        Notifications.getPermissionsAsync(),
       ]);
       setProfile(profileRes.data);
       setNotifPrefs(notifRes.data);
       setTelegramStatus(telegramRes);
       setSubscription(subRes.data);
+      setOsPermission(
+        permResult.status === 'granted'
+          ? 'granted'
+          : permResult.status === 'denied'
+            ? 'denied'
+            : 'undetermined',
+      );
     } catch {
       setProfile(null);
       setNotifPrefs({ morningReminder: true, eveningReminder: true });
@@ -518,47 +531,104 @@ export function SettingsScreen() {
 
           {/* ── Notifications ── */}
           <SettingsSection title="Notifications">
-            <View className="flex-row items-center py-4">
-              <View className="h-9 w-9 rounded-xl bg-amber-500/15 items-center justify-center mr-3">
-                <Ionicons name="sunny-outline" size={18} color="#f59e0b" />
+            {osPermission === 'denied' ? (
+              /* OS-level permission is blocked — show banner + deep-link to Settings */
+              <View className="py-4">
+                <View className="flex-row items-start mb-3">
+                  <View className="h-9 w-9 rounded-xl bg-red-500/15 items-center justify-center mr-3 mt-0.5">
+                    <Ionicons name="notifications-off-outline" size={18} color="#ef4444" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-sans-medium text-text">Notifications blocked</Text>
+                    <Text className="text-xs text-text-tertiary mt-0.5 leading-4">
+                      Notifications are disabled in your device settings. Open Settings to allow
+                      Coach to send you reminders.
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    Linking.openSettings();
+                  }}
+                  className="rounded-xl bg-primary-500 py-3 items-center"
+                >
+                  <Text className="text-sm font-sans-semibold text-white">Open Settings</Text>
+                </Pressable>
               </View>
-              <View className="flex-1 mr-3">
-                <Text className="font-sans-medium text-text">Morning reminder</Text>
-                <Text className="text-xs text-text-tertiary mt-0.5">
-                  Start the day with a nutrition check-in
-                </Text>
+            ) : osPermission === 'undetermined' ? (
+              /* Permission never asked — offer to enable */
+              <View className="py-4">
+                <View className="flex-row items-start mb-3">
+                  <View className="h-9 w-9 rounded-xl bg-amber-500/15 items-center justify-center mr-3 mt-0.5">
+                    <Ionicons name="notifications-outline" size={18} color="#f59e0b" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-sans-medium text-text">Enable notifications</Text>
+                    <Text className="text-xs text-text-tertiary mt-0.5 leading-4">
+                      Get meal reminders, water nudges, and daily progress updates from your Coach.
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={async () => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    const granted = await requestAndRegisterPushToken();
+                    setOsPermission(granted ? 'granted' : 'denied');
+                  }}
+                  className="rounded-xl bg-primary-500 py-3 items-center"
+                >
+                  <Text className="text-sm font-sans-semibold text-white">
+                    Turn On Notifications
+                  </Text>
+                </Pressable>
               </View>
-              <Switch
-                value={notifPrefs.morningReminder}
-                onValueChange={(v) => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  updateNotifPref('morningReminder', v);
-                }}
-                trackColor={{ false: '#dde5f0', true: '#0f172a' }}
-                thumbColor="#ffffff"
-              />
-            </View>
-            <SettingsDivider />
-            <View className="flex-row items-center py-4">
-              <View className="h-9 w-9 rounded-xl bg-indigo-500/15 items-center justify-center mr-3">
-                <Ionicons name="moon-outline" size={18} color="#818cf8" />
-              </View>
-              <View className="flex-1 mr-3">
-                <Text className="font-sans-medium text-text">Evening reminder</Text>
-                <Text className="text-xs text-text-tertiary mt-0.5">
-                  Review your day and log dinner
-                </Text>
-              </View>
-              <Switch
-                value={notifPrefs.eveningReminder}
-                onValueChange={(v) => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  updateNotifPref('eveningReminder', v);
-                }}
-                trackColor={{ false: '#dde5f0', true: '#0f172a' }}
-                thumbColor="#ffffff"
-              />
-            </View>
+            ) : (
+              /* Permission granted — show reminder toggles */
+              <>
+                <View className="flex-row items-center py-4">
+                  <View className="h-9 w-9 rounded-xl bg-amber-500/15 items-center justify-center mr-3">
+                    <Ionicons name="sunny-outline" size={18} color="#f59e0b" />
+                  </View>
+                  <View className="flex-1 mr-3">
+                    <Text className="font-sans-medium text-text">Morning reminder</Text>
+                    <Text className="text-xs text-text-tertiary mt-0.5">
+                      Start the day with a nutrition check-in
+                    </Text>
+                  </View>
+                  <Switch
+                    value={notifPrefs.morningReminder}
+                    onValueChange={(v) => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      updateNotifPref('morningReminder', v);
+                    }}
+                    trackColor={{ false: '#dde5f0', true: '#0f172a' }}
+                    thumbColor="#ffffff"
+                  />
+                </View>
+                <SettingsDivider />
+                <View className="flex-row items-center py-4">
+                  <View className="h-9 w-9 rounded-xl bg-indigo-500/15 items-center justify-center mr-3">
+                    <Ionicons name="moon-outline" size={18} color="#818cf8" />
+                  </View>
+                  <View className="flex-1 mr-3">
+                    <Text className="font-sans-medium text-text">Evening reminder</Text>
+                    <Text className="text-xs text-text-tertiary mt-0.5">
+                      Review your day and log dinner
+                    </Text>
+                  </View>
+                  <Switch
+                    value={notifPrefs.eveningReminder}
+                    onValueChange={(v) => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      updateNotifPref('eveningReminder', v);
+                    }}
+                    trackColor={{ false: '#dde5f0', true: '#0f172a' }}
+                    thumbColor="#ffffff"
+                  />
+                </View>
+              </>
+            )}
           </SettingsSection>
 
           {/* ── Integrations ── */}

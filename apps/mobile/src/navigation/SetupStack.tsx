@@ -12,6 +12,7 @@ import {
   DietPreferenceSelectScreen,
   MotivationScreen,
   TargetReviewScreen,
+  NotificationPermissionScreen,
 } from '../screens/onboarding';
 
 const Stack = createNativeStackNavigator<SetupStackParamList>();
@@ -35,6 +36,11 @@ export function SetupStack() {
       <Stack.Screen name="DietPreferenceSelect" component={DietPreferenceSelectScreen} />
       <Stack.Screen name="Motivation" component={MotivationScreen} />
       <Stack.Screen name="TargetReview" component={TargetReviewScreen} />
+      <Stack.Screen
+        name="NotificationPermission"
+        component={NotificationPermissionScreen}
+        options={{ gestureEnabled: false }}
+      />
     </Stack.Navigator>
   );
 }

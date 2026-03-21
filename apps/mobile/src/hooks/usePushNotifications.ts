@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { api } from '../api/client';
@@ -14,37 +14,72 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export function usePushNotifications() {
-  useEffect(() => {
-    registerForPushNotifications();
-  }, []);
-}
-
-async function registerForPushNotifications() {
-  // Expo Go doesn't support push notification entitlements
+/**
+ * Silently refresh the push token if the user has already granted permission.
+ * Does NOT request permission — that is the primer screen's job.
+ */
+async function refreshTokenIfGranted(): Promise<void> {
   if (Constants.appOwnership === 'expo') return;
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') return;
 
-  let finalStatus = existingStatus;
-  if (existingStatus !== 'granted') {
+  try {
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    await api.post('/notifications/device-token', {
+      token: tokenData.data,
+      platform: Platform.OS,
+    });
+  } catch {
+    // Non-fatal: best-effort token refresh
+  }
+}
+
+/**
+ * Request permission (shows the OS dialog) then registers the token.
+ * Called explicitly from the onboarding notification primer screen.
+ */
+export async function requestAndRegisterPushToken(): Promise<boolean> {
+  if (Constants.appOwnership === 'expo') return false;
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  let finalStatus = existing;
+
+  if (existing !== 'granted') {
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
 
-  if (finalStatus !== 'granted') {
-    return;
-  }
+  if (finalStatus !== 'granted') return false;
 
-  const tokenData = await Notifications.getExpoPushTokenAsync();
-  const token = tokenData.data;
-
-  await api
-    .post('/notifications/device-token', {
-      token,
+  try {
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    await api.post('/notifications/device-token', {
+      token: tokenData.data,
       platform: Platform.OS,
-    })
-    .catch(() => {
-      // Non-fatal: best-effort registration
     });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Hook used in RootNavigator. Silently refreshes the push token on mount
+ * and whenever the app returns to the foreground — no permission prompt.
+ */
+export function usePushNotifications() {
+  useEffect(() => {
+    // Refresh on cold start (only if permission already granted)
+    refreshTokenIfGranted();
+
+    // Refresh whenever the app comes back to foreground
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        refreshTokenIfGranted();
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 }

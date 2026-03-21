@@ -57,3 +57,15 @@ export async function setVoiceDraftFailed(draftId: string, errorMessage: string)
     [draftId, errorMessage],
   );
 }
+
+/**
+ * Mark push tokens as inactive after Expo returns DeviceNotRegistered.
+ * Prevents repeated sends to stale/uninstalled devices.
+ */
+export async function deactivateExpiredTokens(tokens: string[]): Promise<void> {
+  if (tokens.length === 0) return;
+  await getPool().query(
+    `UPDATE device_tokens SET active = false, updated_at = NOW() WHERE token = ANY($1::text[])`,
+    [tokens],
+  );
+}
