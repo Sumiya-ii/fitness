@@ -8,18 +8,29 @@ import type { SetupStackParamList } from '../../navigation/types';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { MacroBar } from '../../components/ui/MacroBar';
 import { Button } from '../../components/ui/Button';
-import { useProfileStore } from '../../stores/profile.store';
+import { useProfileStore, calculateTargets } from '../../stores/profile.store';
 import { useOnboardingStore } from '../../stores/onboarding.store';
 import { api } from '../../api/client';
+import { useShallow } from 'zustand/react/shallow';
 
 type Props = NativeStackScreenProps<SetupStackParamList, 'TargetReview'>;
 
 export function TargetReviewScreen({ navigation }: Props) {
-  const targets = useProfileStore((s) => s.getTargets());
-  const data = useProfileStore((s) => s.getOnboardingData());
-  const setProfileSetupComplete = useOnboardingStore(
-    (s) => s.setProfileSetupComplete,
+  const data = useProfileStore(
+    useShallow((s) => ({
+      goalType: s.goalType,
+      goalWeightKg: s.goalWeightKg,
+      weeklyRateKg: s.weeklyRateKg,
+      gender: s.gender,
+      birthDate: s.birthDate,
+      heightCm: s.heightCm,
+      weightKg: s.weightKg,
+      activityLevel: s.activityLevel,
+      dietPreference: s.dietPreference,
+    })),
   );
+  const targets = calculateTargets(data);
+  const setProfileSetupComplete = useOnboardingStore((s) => s.setProfileSetupComplete);
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -92,12 +103,8 @@ export function TargetReviewScreen({ navigation }: Props) {
           className="pt-8 pb-12 px-6"
           style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
         >
-          <Text className="text-2xl font-sans-bold text-text mb-1">
-            Your Personalized Plan
-          </Text>
-          <Text className="text-base text-text-secondary">
-            Based on your profile and goals
-          </Text>
+          <Text className="text-2xl font-sans-bold text-text mb-1">Your Personalized Plan</Text>
+          <Text className="text-base text-text-secondary">Based on your profile and goals</Text>
         </LinearGradient>
 
         <View className="px-6 -mt-6">
@@ -128,19 +135,12 @@ export function TargetReviewScreen({ navigation }: Props) {
                 target={targets.carbs}
                 color="#8b8fa0"
               />
-              <MacroBar
-                label="Fat"
-                current={targets.fat}
-                target={targets.fat}
-                color="#8f93a4"
-              />
+              <MacroBar label="Fat" current={targets.fat} target={targets.fat} color="#8f93a4" />
             </View>
           </View>
 
           <View className="bg-surface-card rounded-2xl p-4 mb-6">
-            <Text className="text-sm font-sans-semibold text-text mb-3">
-              Your Profile Summary
-            </Text>
+            <Text className="text-sm font-sans-semibold text-text mb-3">Your Profile Summary</Text>
             <View className="gap-2">
               <SummaryRow label="Goal" value={formatGoalType(data.goalType)} />
               <SummaryRow
@@ -149,11 +149,7 @@ export function TargetReviewScreen({ navigation }: Props) {
               />
               <SummaryRow
                 label="Weekly Rate"
-                value={
-                  data.weeklyRateKg === 0
-                    ? 'Maintain'
-                    : `${data.weeklyRateKg} kg/week`
-                }
+                value={data.weeklyRateKg === 0 ? 'Maintain' : `${data.weeklyRateKg} kg/week`}
               />
               <SummaryRow label="Diet Style" value={formatDietPref(data.dietPreference)} />
             </View>
@@ -167,20 +163,15 @@ export function TargetReviewScreen({ navigation }: Props) {
               style={{ marginTop: 1 }}
             />
             <Text className="text-xs text-text-secondary ml-2 flex-1 leading-5">
-              These targets are AI-generated recommendations. You can always
-              adjust them later in Settings.
+              These targets are AI-generated recommendations. You can always adjust them later in
+              Settings.
             </Text>
           </View>
         </View>
       </ScrollView>
 
       <View className="px-6 pb-8 pt-4 gap-3">
-        <Button
-          onPress={handleConfirm}
-          size="lg"
-          loading={loading}
-          className="w-full"
-        >
+        <Button onPress={handleConfirm} size="lg" loading={loading} className="w-full">
           Looks Good — Let's Go!
         </Button>
         <Button
@@ -201,9 +192,7 @@ function SummaryRow({ label, value }: { label: string; value: string | null | un
   return (
     <View className="flex-row justify-between py-1">
       <Text className="text-xs text-text-secondary">{label}</Text>
-      <Text className="text-xs font-sans-medium text-text">
-        {value ?? '—'}
-      </Text>
+      <Text className="text-xs font-sans-medium text-text">{value ?? '—'}</Text>
     </View>
   );
 }
