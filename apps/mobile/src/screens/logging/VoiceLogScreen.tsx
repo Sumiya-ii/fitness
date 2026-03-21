@@ -34,6 +34,17 @@ type ScreenState = 'idle' | 'recording' | 'uploading' | 'processing' | 'results'
 
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 30;
+const MAX_RECORDING_SECONDS = 60;
+const WARN_RECORDING_SECONDS = 45;
+
+function getDeviceLocale(): 'mn' | 'en' {
+  try {
+    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+    return locale.startsWith('mn') ? 'mn' : 'en';
+  } catch {
+    return 'mn';
+  }
+}
 
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
@@ -71,7 +82,16 @@ export function VoiceLogScreen() {
     recorder.record();
     setScreenState('recording');
     setElapsed(0);
-    timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+    timerRef.current = setInterval(() => {
+      setElapsed((e) => {
+        const next = e + 1;
+        if (next >= MAX_RECORDING_SECONDS) {
+          // Auto-stop at 60s
+          stopRecording();
+        }
+        return next;
+      });
+    }, 1000);
   };
 
   const stopRecording = async () => {
@@ -98,6 +118,7 @@ export function VoiceLogScreen() {
         type: 'audio/m4a',
         name: 'recording.m4a',
       } as unknown as Blob);
+      formData.append('locale', getDeviceLocale());
       const res = await api.upload<{ data: { draftId: string } }>('/voice/upload', formData);
       setScreenState('processing');
       pollDraft(res.data.draftId);
@@ -172,6 +193,8 @@ export function VoiceLogScreen() {
     setElapsed(0);
   };
 
+  const timerColor = elapsed >= WARN_RECORDING_SECONDS ? 'text-amber-400' : 'text-text';
+
   return (
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
@@ -202,8 +225,11 @@ export function VoiceLogScreen() {
               <Text className="text-text-secondary text-center mb-6 text-base">
                 Listening... speak clearly.
               </Text>
-              <Text className="text-text font-sans-bold text-5xl mb-10 tabular-nums">
+              <Text className={`font-sans-bold text-5xl mb-1 tabular-nums ${timerColor}`}>
                 {formatElapsed(elapsed)}
+              </Text>
+              <Text className="text-xs text-text-secondary mb-10">
+                / {formatElapsed(MAX_RECORDING_SECONDS)} max
               </Text>
               <Pressable
                 onPress={stopRecording}

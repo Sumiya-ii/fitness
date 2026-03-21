@@ -22,6 +22,7 @@ import { NotificationsModule } from './notifications';
 import { AnalyticsModule } from './analytics';
 import { ObservabilityModule } from './observability';
 import { SttModule } from './stt';
+import { StorageModule } from './storage';
 import { VoiceModule } from './voice';
 import { PhotosModule } from './photos';
 import { TelegramModule } from './telegram';
@@ -67,6 +68,7 @@ import { HealthController } from './health/health.controller';
     AnalyticsModule,
     ObservabilityModule,
     SttModule,
+    StorageModule,
     VoiceModule,
     PhotosModule,
     TelegramModule,
