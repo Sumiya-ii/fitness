@@ -15,6 +15,10 @@
       "channel": "preview",
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "SENTRY_ORG": "nexus-kairos",
+        "SENTRY_PROJECT": "react-native"
       }
     },
     "production": {
@@ -25,6 +29,10 @@
       },
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "SENTRY_ORG": "nexus-kairos",
+        "SENTRY_PROJECT": "react-native"
       }
     }
   },
