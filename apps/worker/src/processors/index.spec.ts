@@ -34,7 +34,14 @@ afterEach(() => {
 
 describe('processJob routing', () => {
   it('routes stt-processing to processSttJob', async () => {
-    mockStt.mockResolvedValue({ text: 'hello' });
+    mockStt.mockResolvedValue({
+      text: 'hello',
+      items: [],
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+    });
     await processJob(QUEUE_NAMES.STT_PROCESSING, fakeJob);
     expect(mockStt).toHaveBeenCalledWith(fakeJob);
     expect(mockPhoto).not.toHaveBeenCalled();
@@ -42,7 +49,13 @@ describe('processJob routing', () => {
   });
 
   it('routes photo-parsing to processPhotoJob', async () => {
-    mockPhoto.mockResolvedValue({ items: [] });
+    mockPhoto.mockResolvedValue({
+      items: [],
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+    });
     await processJob(QUEUE_NAMES.PHOTO_PARSING, fakeJob);
     expect(mockPhoto).toHaveBeenCalledWith(fakeJob);
     expect(mockStt).not.toHaveBeenCalled();

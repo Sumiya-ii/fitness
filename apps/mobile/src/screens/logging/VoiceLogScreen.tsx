@@ -25,6 +25,7 @@ import {
 import { BackButton } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
+import { trackEvent, EVENTS } from '../../utils/analytics';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'VoiceLog'>;
@@ -52,7 +53,14 @@ interface VoiceDraft {
   totalFat?: number;
 }
 
-type ScreenState = 'idle' | 'recording' | 'uploading' | 'processing' | 'results' | 'saving';
+type ScreenState =
+  | 'idle'
+  | 'recording'
+  | 'uploading'
+  | 'processing'
+  | 'results'
+  | 'saving'
+  | 'success';
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -184,6 +192,8 @@ export function VoiceLogScreen() {
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
+  const successScale = useRef(new Animated.Value(0)).current;
+  const successOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     return () => {
@@ -291,9 +301,16 @@ export function VoiceLogScreen() {
 
       if (d.status === 'completed') {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        const items = d.items ?? [];
         setTranscription(d.transcription ?? '');
-        setDraftItems(d.items ?? []);
+        setDraftItems(items);
         setScreenState('results');
+        void trackEvent(EVENTS.VOICE_LOG_PROCESSED, {
+          itemCount: items.length,
+          totalCalories: d.totalCalories ?? 0,
+          hasLowConfidenceItems: items.some((it) => it.confidence < 0.7),
+          locale: getDeviceLocale(),
+        });
         return;
       }
 
@@ -341,8 +358,29 @@ export function VoiceLogScreen() {
         source: 'voice',
       });
 
+      void trackEvent(EVENTS.MEAL_LOG_SAVED, {
+        source: 'voice',
+        mealType,
+        calories: Math.round(totalCalories),
+        itemCount: draftItems.length,
+      });
+
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.goBack();
+
+      // Show success animation then go back
+      setScreenState('success');
+      successScale.setValue(0);
+      successOpacity.setValue(1);
+      Animated.sequence([
+        Animated.spring(successScale, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 120,
+          friction: 8,
+        }),
+        Animated.delay(700),
+        Animated.timing(successOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start(() => navigation.goBack());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
       setScreenState('results');
@@ -612,6 +650,22 @@ export function VoiceLogScreen() {
           onSave={(updated) => handleEditSave(editingIndex, updated)}
           onClose={() => setEditingIndex(null)}
         />
+      )}
+
+      {/* Success overlay */}
+      {screenState === 'success' && (
+        <Animated.View
+          style={{ opacity: successOpacity }}
+          className="absolute inset-0 items-center justify-center bg-black/40"
+        >
+          <Animated.View
+            style={{ transform: [{ scale: successScale }] }}
+            className="h-28 w-28 rounded-full bg-green-500 items-center justify-center"
+          >
+            <Ionicons name="checkmark" size={60} color="#ffffff" />
+          </Animated.View>
+          <Text className="mt-5 text-white font-sans-semibold text-lg">Meal logged!</Text>
+        </Animated.View>
       )}
     </View>
   );
