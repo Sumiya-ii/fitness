@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  HeadBucketCommand,
+} from '@aws-sdk/client-s3';
 import { ConfigService } from '../config';
 
 @Injectable()
@@ -47,6 +52,22 @@ export class S3Service {
         ContentType: contentType,
       }),
     );
+  }
+
+  async ping(): Promise<{ ok: boolean; bucket: string | undefined; error?: string }> {
+    if (!this.client || !this.bucket) {
+      return {
+        ok: false,
+        bucket: this.bucket,
+        error: 'S3 not configured (missing S3_BUCKET or S3_REGION)',
+      };
+    }
+    try {
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      return { ok: true, bucket: this.bucket };
+    } catch (err) {
+      return { ok: false, bucket: this.bucket, error: String(err) };
+    }
   }
 
   async delete(key: string): Promise<void> {
