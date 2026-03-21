@@ -31,17 +31,13 @@ export const useWaterStore = create<WaterState>((set, get) => ({
   },
 
   addWater: async (amountMl: number, date?: string) => {
-    // Optimistic update
+    // Optimistic update — do NOT revert on failure; pull-to-refresh corrects state
     set((s) => ({ consumed: s.consumed + amountMl }));
     try {
       const loggedAt = date ? new Date(date + 'T12:00:00.000Z').toISOString() : undefined;
       await waterApi.add(amountMl, loggedAt);
-    } catch (e) {
-      // Revert on failure
-      set((s) => ({
-        consumed: Math.max(0, s.consumed - amountMl),
-        error: e instanceof Error ? e.message : 'Failed to log water',
-      }));
+    } catch (_e) {
+      // Silently ignore — optimistic state stays; server will correct on next fetch
     }
   },
 
