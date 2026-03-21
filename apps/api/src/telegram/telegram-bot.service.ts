@@ -3,9 +3,24 @@ import { ConfigService } from '../config';
 import { TelegramService } from './telegram.service';
 import { IdempotencyService } from './idempotency.service';
 import { ChatService } from '../chat/chat.service';
+import { TelegramFoodParserService } from './telegram-food-parser.service';
+import { MealLogsService } from '../meal-logs/meal-logs.service';
 import { Telegraf, Context } from 'telegraf';
 
 const IDEMPOTENCY_TTL_MINUTES = 24 * 60;
+
+// Mongolia is UTC+8
+const MONGOLIA_UTC_OFFSET_HOURS = 8;
+
+function inferMealTypeFromTime(): 'breakfast' | 'lunch' | 'dinner' | 'snack' | null {
+  const now = new Date();
+  const mongoliaHour = (now.getUTCHours() + MONGOLIA_UTC_OFFSET_HOURS) % 24;
+  if (mongoliaHour >= 5 && mongoliaHour < 11) return 'breakfast';
+  if (mongoliaHour >= 11 && mongoliaHour < 15) return 'lunch';
+  if (mongoliaHour >= 15 && mongoliaHour < 18) return 'snack';
+  if (mongoliaHour >= 18 && mongoliaHour < 23) return 'dinner';
+  return null;
+}
 
 @Injectable()
 export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
@@ -17,6 +32,8 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     private readonly telegramService: TelegramService,
     private readonly idempotencyService: IdempotencyService,
     private readonly chatService: ChatService,
+    private readonly foodParserService: TelegramFoodParserService,
+    private readonly mealLogsService: MealLogsService,
   ) {}
 
   onModuleInit() {
@@ -42,6 +59,10 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
     this.bot.command('link', (ctx) => this.handleLinkCommand(ctx));
     this.bot.on('text', (ctx) => this.handleTextMessage(ctx));
+
+    // Inline keyboard callbacks for meal log confirmation
+    this.bot.action('log_confirm', (ctx) => this.handleLogConfirm(ctx));
+    this.bot.action('log_cancel', (ctx) => this.handleLogCancel(ctx));
 
     this.bot.catch((err) => {
       this.logger.error('Telegram bot error', err instanceof Error ? err.message : String(err));
@@ -128,22 +149,115 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     if (!text) return;
 
     try {
-      // Route every message through GPT — response is stored in shared chat history
-      const result = await this.chatService.sendMessage(userId, text);
+      const parsed = await this.foodParserService.parse(text);
 
-      await this.idempotencyService.store(
-        idempotencyKey,
-        { status: 200, body: result.message },
-        IDEMPOTENCY_TTL_MINUTES,
-      );
+      if (parsed.isFoodLog && parsed.items.length > 0) {
+        // Store draft for confirmation
+        await this.foodParserService.saveDraft(telegramUserId, { ...parsed, originalText: text });
 
-      await ctx.reply(result.message);
+        // Build confirmation message
+        const itemLines = parsed.items
+          .map((i) => `• ${i.quantity > 1 ? `${i.quantity} ` : ''}${i.name} — ${i.calories} ккал`)
+          .join('\n');
+        const replyText =
+          `🍽️ Дараах хоолыг бүртгэх үү?\n\n${itemLines}\n\n` +
+          `Нийт: ${parsed.totalCalories} ккал | 🥩 ${parsed.totalProtein}г | 🍞 ${parsed.totalCarbs}г | 🧈 ${parsed.totalFat}г`;
+
+        await ctx.reply(replyText, {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: '✅ Тийм, бүртгэх', callback_data: 'log_confirm' },
+                { text: '❌ Болих', callback_data: 'log_cancel' },
+              ],
+            ],
+          },
+        });
+
+        await this.idempotencyService.store(
+          idempotencyKey,
+          { status: 200, body: replyText },
+          IDEMPOTENCY_TTL_MINUTES,
+        );
+      } else {
+        // Not a food log — route to AI coaching as before
+        const result = await this.chatService.sendMessage(userId, text);
+
+        await this.idempotencyService.store(
+          idempotencyKey,
+          { status: 200, body: result.message },
+          IDEMPOTENCY_TTL_MINUTES,
+        );
+
+        await ctx.reply(result.message);
+      }
     } catch (err) {
       this.logger.error(
-        'Failed to get AI response',
+        'Failed to process message',
         err instanceof Error ? err.message : String(err),
       );
       await ctx.reply('Sorry, I had trouble responding. Please try again.');
     }
+  }
+
+  private async handleLogConfirm(ctx: Context) {
+    const telegramUserId = ctx.from?.id;
+    if (!telegramUserId) {
+      await ctx.answerCbQuery();
+      return;
+    }
+
+    const draft = await this.foodParserService.getDraft(telegramUserId);
+    if (!draft) {
+      await ctx.answerCbQuery();
+      await ctx.editMessageText('⏱️ Хугацаа дуусчээ. Хоолоо дахин бичнэ үү.');
+      return;
+    }
+
+    const userId = await this.telegramService.findUserByTelegram(String(telegramUserId));
+    if (!userId) {
+      await ctx.answerCbQuery();
+      return;
+    }
+
+    try {
+      const mealType = draft.mealType ?? inferMealTypeFromTime();
+      const note = draft.items
+        .map((i) => `${i.quantity > 1 ? `${i.quantity}x ` : ''}${i.name}`)
+        .join(', ');
+
+      await this.mealLogsService.quickAdd(userId, {
+        calories: draft.totalCalories,
+        proteinGrams: draft.totalProtein,
+        carbsGrams: draft.totalCarbs,
+        fatGrams: draft.totalFat,
+        source: 'telegram',
+        mealType: mealType ?? undefined,
+        note,
+      });
+
+      await this.foodParserService.deleteDraft(telegramUserId);
+
+      await ctx.answerCbQuery('Бүртгэгдлээ!');
+      await ctx.editMessageText(
+        `✅ Бүртгэгдлээ!\n\n${note}\n\n${draft.totalCalories} ккал нэмэгдлээ.`,
+      );
+    } catch (err) {
+      this.logger.error(
+        'Failed to create meal log from Telegram',
+        err instanceof Error ? err.message : String(err),
+      );
+      await ctx.answerCbQuery();
+      await ctx.editMessageText('Алдаа гарлаа. Дахин оролдоно уу.');
+    }
+  }
+
+  private async handleLogCancel(ctx: Context) {
+    const telegramUserId = ctx.from?.id;
+    if (telegramUserId) {
+      await this.foodParserService.deleteDraft(telegramUserId);
+    }
+    await ctx.answerCbQuery();
+    await ctx.editMessageText('Болиулагдлаа.');
   }
 }
