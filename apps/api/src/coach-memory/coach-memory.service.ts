@@ -47,19 +47,25 @@ export class CoachMemoryService {
 
     let enqueued = 0;
     for (const user of users) {
-      const jobData: CoachMemoryJobData = {
-        userId: user.id,
-        locale: user.profile?.locale ?? 'mn',
-      };
-      // jobId is stable per user so a second cron fire in the same week is a no-op
-      await this.queue.add('refresh', jobData, {
-        jobId: `coach-memory-${user.id}`,
-        // Override removeOnComplete so the next weekly run can re-enqueue
-        removeOnComplete: { age: 60 * 60 * 24 * 7 },
-      });
+      await this.enqueueForUser(user.id, user.profile?.locale ?? 'mn');
       enqueued++;
     }
 
     return enqueued;
+  }
+
+  /**
+   * Enqueues a memory-refresh job for a single user.
+   * Pass delayMs to schedule it in the future (e.g. 7 days after onboarding).
+   * The stable jobId ensures Sunday cron + onboarding trigger never duplicate.
+   */
+  async enqueueForUser(userId: string, locale: string, delayMs?: number): Promise<void> {
+    const jobData: CoachMemoryJobData = { userId, locale };
+    await this.queue.add('refresh', jobData, {
+      jobId: `coach-memory-${userId}`,
+      delay: delayMs,
+      // Keep completed job for 7 days so the next weekly run can re-enqueue
+      removeOnComplete: { age: 60 * 60 * 24 * 7 },
+    });
   }
 }

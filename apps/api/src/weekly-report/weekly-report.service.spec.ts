@@ -5,6 +5,7 @@ import { QUEUE_NAMES } from '@coach/shared';
 import { WeeklyReportService } from './weekly-report.service';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
+import { CoachMemoryService } from '../coach-memory/coach-memory.service';
 
 jest.mock('ioredis', () => {
   const store = new Map<string, string>();
@@ -47,6 +48,10 @@ describe('WeeklyReportService.buildReport', () => {
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
+        },
+        {
+          provide: CoachMemoryService,
+          useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
         },
         { provide: getQueueToken(QUEUE_NAMES.WEEKLY_REPORT), useValue: weeklyReportQueue },
       ],
@@ -200,6 +205,10 @@ describe('WeeklyReportService.scheduleWeeklyReports', () => {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
         },
+        {
+          provide: CoachMemoryService,
+          useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
+        },
         { provide: getQueueToken(QUEUE_NAMES.WEEKLY_REPORT), useValue: weeklyReportQueue },
       ],
     }).compile();
@@ -252,6 +261,10 @@ describe('WeeklyReportService.scheduleWeeklyReports', () => {
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
+        },
+        {
+          provide: CoachMemoryService,
+          useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
         },
         { provide: getQueueToken(QUEUE_NAMES.WEEKLY_REPORT), useValue: weeklyReportQueue },
       ],

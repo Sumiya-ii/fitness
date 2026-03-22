@@ -6,6 +6,7 @@ import { CoachContextService } from './coach-context.service';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
 import { CoachContext } from './coach.types';
+import { CoachMemoryService } from '../coach-memory/coach-memory.service';
 
 // Mock ioredis
 jest.mock('ioredis', () => {
@@ -75,6 +76,10 @@ describe('CoachService', () => {
           useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
         },
         { provide: CoachContextService, useValue: contextService },
+        {
+          provide: CoachMemoryService,
+          useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
+        },
         { provide: getQueueToken(QUEUE_NAMES.COACH_MESSAGES), useValue: coachQueue },
       ],
     }).compile();
@@ -146,6 +151,10 @@ describe('CoachService', () => {
             useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
           },
           { provide: CoachContextService, useValue: contextService },
+          {
+            provide: CoachMemoryService,
+            useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
+          },
           { provide: getQueueToken(QUEUE_NAMES.COACH_MESSAGES), useValue: coachQueue },
         ],
       }).compile();
@@ -197,6 +206,10 @@ describe('CoachService', () => {
             useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
           },
           { provide: CoachContextService, useValue: contextService },
+          {
+            provide: CoachMemoryService,
+            useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
+          },
           { provide: getQueueToken(QUEUE_NAMES.COACH_MESSAGES), useValue: coachQueue },
         ],
       }).compile();
@@ -240,6 +253,10 @@ describe('CoachService', () => {
             useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
           },
           { provide: CoachContextService, useValue: contextService },
+          {
+            provide: CoachMemoryService,
+            useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
+          },
           { provide: getQueueToken(QUEUE_NAMES.COACH_MESSAGES), useValue: coachQueue },
         ],
       }).compile();
@@ -291,6 +308,10 @@ describe('CoachService', () => {
             useValue: { get: jest.fn().mockReturnValue('redis://localhost') },
           },
           { provide: CoachContextService, useValue: contextService },
+          {
+            provide: CoachMemoryService,
+            useValue: { getMemoryBlock: jest.fn().mockResolvedValue(null) },
+          },
           { provide: getQueueToken(QUEUE_NAMES.COACH_MESSAGES), useValue: coachQueue },
         ],
       }).compile();

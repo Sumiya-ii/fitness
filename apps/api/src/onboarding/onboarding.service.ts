@@ -2,10 +2,16 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { calculateTargets } from '../targets/target-calculator';
 import { CompleteOnboardingDto } from './onboarding.dto';
+import { CoachMemoryService } from '../coach-memory/coach-memory.service';
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class OnboardingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly coachMemory: CoachMemoryService,
+  ) {}
 
   async completeOnboarding(userId: string, dto: CompleteOnboardingDto) {
     const profile = await this.prisma.profile.findUnique({
@@ -62,6 +68,12 @@ export class OnboardingService {
       }),
     ]);
 
+    // Schedule first memory generation 7 days after onboarding so the worker
+    // has a full week of data to summarise. The stable jobId means the Sunday
+    // cron won't double-enqueue if it fires before the delay expires.
+    const locale = profile.locale ?? 'mn';
+    await this.coachMemory.enqueueForUser(userId, locale, SEVEN_DAYS_MS).catch(() => undefined);
+
     return {
       profile: {
         id: updatedProfile.id,
@@ -69,9 +81,7 @@ export class OnboardingService {
         birthDate: updatedProfile.birthDate?.toISOString().split('T')[0] ?? null,
         heightCm: updatedProfile.heightCm ? Number(updatedProfile.heightCm) : null,
         weightKg: updatedProfile.weightKg ? Number(updatedProfile.weightKg) : null,
-        goalWeightKg: updatedProfile.goalWeightKg
-          ? Number(updatedProfile.goalWeightKg)
-          : null,
+        goalWeightKg: updatedProfile.goalWeightKg ? Number(updatedProfile.goalWeightKg) : null,
         activityLevel: updatedProfile.activityLevel,
         dietPreference: updatedProfile.dietPreference,
       },
