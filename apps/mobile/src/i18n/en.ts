@@ -61,6 +61,13 @@ export const en = {
     connectHealth: 'Connect Apple Health',
     trackSteps: 'Track your steps',
     connect: 'Connect',
+    streak: 'Day Streak',
+    streakLongest: 'Best',
+    streakWeek: '7-day consistency',
+    streakMonth: '30-day consistency',
+    streakToday: "Today's logged",
+    streakCalendarTitle: 'Your Streak Calendar',
+    streakDays: 'days',
   },
   logging: {
     logMeal: 'Log a Meal',

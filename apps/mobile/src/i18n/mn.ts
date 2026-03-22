@@ -61,6 +61,13 @@ export const mn = {
     connectHealth: 'Apple Health холбох',
     trackSteps: 'Алхамаа хянаарай',
     connect: 'Холбох',
+    streak: 'Өдрийн дараалал',
+    streakLongest: 'Хамгийн урт',
+    streakWeek: '7 хоногийн тогтмол байдал',
+    streakMonth: '30 хоногийн тогтмол байдал',
+    streakToday: 'Өнөөдөр бүртгэсэн',
+    streakCalendarTitle: 'Таны дараалал',
+    streakDays: 'өдөр',
   },
   logging: {
     logMeal: 'Хоол бүртгэх',

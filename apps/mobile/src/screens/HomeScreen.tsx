@@ -6,6 +6,7 @@ import {
   RefreshControl,
   Pressable,
   useWindowDimensions,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import { SkeletonLoader } from '../components/ui';
 import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
 import { useWaterStore } from '../stores/water.store';
 import { useStepsStore, STEPS_GOAL, KCAL_PER_STEP } from '../stores/steps.store';
+import { useStreakStore } from '../stores/streak.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 
@@ -255,6 +257,263 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
   );
 }
 
+const MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+interface StreakCalendarModalProps {
+  visible: boolean;
+  onClose: () => void;
+  currentStreak: number;
+  longestStreak: number;
+  weekConsistency: number;
+  monthConsistency: number;
+  calendar: { date: string; logged: boolean }[];
+}
+
+function StreakCalendarModal({
+  visible,
+  onClose,
+  currentStreak,
+  longestStreak,
+  weekConsistency,
+  monthConsistency,
+  calendar,
+}: StreakCalendarModalProps) {
+  const { t } = useLocale();
+
+  // Group calendar days by month for labelled sections
+  const monthGroups: {
+    label: string;
+    days: { date: string; logged: boolean; dayNum: number }[];
+  }[] = [];
+  for (const day of calendar) {
+    const d = new Date(day.date + 'T00:00:00');
+    const label = `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`;
+    let group = monthGroups.find((g) => g.label === label);
+    if (!group) {
+      group = { label, days: [] };
+      monthGroups.push(group);
+    }
+    group.days.push({ date: day.date, logged: day.logged, dayNum: d.getDate() });
+  }
+
+  const shadowCard = {
+    shadowColor: '#0b1220',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 bg-[#f4f7fb]">
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-5 pt-5 pb-4">
+          <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: '#0b1220' }}>
+            {t('dashboard.streakCalendarTitle')}
+          </Text>
+          <Pressable
+            onPress={onClose}
+            className="h-9 w-9 rounded-full bg-white items-center justify-center"
+            style={shadowCard}
+          >
+            <Ionicons name="close" size={18} color="#0b1220" />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          {/* Current streak + Longest streak */}
+          <View className="flex-row gap-3 px-5 mb-5">
+            <View className="flex-1 bg-white rounded-3xl p-4 items-center" style={shadowCard}>
+              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: '#f97316' }}>
+                {currentStreak}
+              </Text>
+              <Text style={{ fontSize: 16 }}>🔥</Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: 'Inter-Medium',
+                  color: '#9aabbf',
+                  marginTop: 2,
+                  textAlign: 'center',
+                }}
+              >
+                {t('dashboard.streak')}
+              </Text>
+            </View>
+            <View className="flex-1 bg-white rounded-3xl p-4 items-center" style={shadowCard}>
+              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: '#0b1220' }}>
+                {longestStreak}
+              </Text>
+              <Text style={{ fontSize: 16 }}>🏆</Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontFamily: 'Inter-Medium',
+                  color: '#9aabbf',
+                  marginTop: 2,
+                  textAlign: 'center',
+                }}
+              >
+                {t('dashboard.streakLongest')}
+              </Text>
+            </View>
+          </View>
+
+          {/* Consistency bars */}
+          <View className="mx-5 bg-white rounded-3xl p-4 mb-5" style={shadowCard}>
+            <View className="mb-4">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#0b1220' }}>
+                  {t('dashboard.streakWeek')}
+                </Text>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: '#0b1220' }}>
+                  {weekConsistency}%
+                </Text>
+              </View>
+              <View className="h-2.5 rounded-full bg-[#f0f4f9] overflow-hidden">
+                <View
+                  style={{
+                    height: '100%',
+                    width: `${weekConsistency}%`,
+                    backgroundColor:
+                      weekConsistency >= 80
+                        ? '#22c55e'
+                        : weekConsistency >= 50
+                          ? '#f59e0b'
+                          : '#ef4444',
+                    borderRadius: 5,
+                  }}
+                />
+              </View>
+            </View>
+            <View>
+              <View className="flex-row items-center justify-between mb-2">
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#0b1220' }}>
+                  {t('dashboard.streakMonth')}
+                </Text>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: '#0b1220' }}>
+                  {monthConsistency}%
+                </Text>
+              </View>
+              <View className="h-2.5 rounded-full bg-[#f0f4f9] overflow-hidden">
+                <View
+                  style={{
+                    height: '100%',
+                    width: `${monthConsistency}%`,
+                    backgroundColor:
+                      monthConsistency >= 80
+                        ? '#22c55e'
+                        : monthConsistency >= 50
+                          ? '#f59e0b'
+                          : '#ef4444',
+                    borderRadius: 5,
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Calendar groups by month */}
+          {monthGroups.map((group) => (
+            <View key={group.label} className="mx-5 mb-4">
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'Inter-SemiBold',
+                  color: '#9aabbf',
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                  marginBottom: 8,
+                }}
+              >
+                {group.label}
+              </Text>
+              <View
+                className="bg-white rounded-3xl p-4"
+                style={{
+                  shadowColor: '#0b1220',
+                  shadowOpacity: 0.04,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
+                }}
+              >
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {group.days.map((day) => (
+                    <View
+                      key={day.date}
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 8,
+                        backgroundColor: day.logged ? '#22c55e' : '#f0f4f9',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontFamily: 'Inter-SemiBold',
+                          color: day.logged ? '#ffffff' : '#b0bec5',
+                        }}
+                      >
+                        {day.dayNum}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          ))}
+
+          {/* Legend */}
+          <View className="flex-row items-center justify-center gap-5 mt-2">
+            <View className="flex-row items-center gap-2">
+              <View
+                style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: '#22c55e' }}
+              />
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: '#7687a2' }}>
+                Logged
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              <View
+                style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: '#f0f4f9' }}
+              />
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: '#7687a2' }}>
+                Missed
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
 export function HomeScreen() {
   const { t } = useLocale();
   const navigation = useNavigation();
@@ -263,6 +522,8 @@ export function HomeScreen() {
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
   const [displayName, setDisplayName] = useState('');
   const [carouselPage, setCarouselPage] = useState(0);
+  const [streakModalVisible, setStreakModalVisible] = useState(false);
+  const { data: streakData, fetch: fetchStreaks } = useStreakStore();
   const { data, isLoading, fetchDashboard } = useDashboardStore();
   const {
     consumed: waterConsumed,
@@ -307,8 +568,9 @@ export function HomeScreen() {
     fetchDashboard(selectedDateKey);
     if (selectedDateKey === todayKey) {
       fetchWater();
+      fetchStreaks();
     }
-  }, [fetchDashboard, fetchWater, selectedDateKey, todayKey]);
+  }, [fetchDashboard, fetchWater, fetchStreaks, selectedDateKey, todayKey]);
 
   useEffect(() => {
     checkStepsPermission();
@@ -320,8 +582,17 @@ export function HomeScreen() {
     if (selectedDateKey === todayKey) {
       fetchWater();
       fetchTodaySteps();
+      fetchStreaks();
     }
-  }, [loadProfile, fetchDashboard, fetchWater, fetchTodaySteps, selectedDateKey, todayKey]);
+  }, [
+    loadProfile,
+    fetchDashboard,
+    fetchWater,
+    fetchTodaySteps,
+    fetchStreaks,
+    selectedDateKey,
+    todayKey,
+  ]);
 
   const handleLogMeal = () => {
     (navigation as { navigate: (s: string) => void }).navigate('Log');
@@ -423,9 +694,7 @@ export function HomeScreen() {
             </Text>
           </View>
           <Pressable
-            onPress={() =>
-              (navigation as { navigate: (s: string) => void }).navigate('WeeklySummary')
-            }
+            onPress={() => setStreakModalVisible(true)}
             className="flex-row items-center gap-1.5 bg-white rounded-full px-4 py-2"
             style={{
               shadowColor: '#0b1220',
@@ -436,7 +705,9 @@ export function HomeScreen() {
             }}
           >
             <Text style={{ fontSize: 15 }}>🔥</Text>
-            <Text className="font-sans-bold text-[#0b1220] text-sm">{data?.mealCount ?? 0}</Text>
+            <Text className="font-sans-bold text-[#0b1220] text-sm">
+              {streakData?.currentStreak ?? 0}
+            </Text>
           </Pressable>
         </View>
 
@@ -938,11 +1209,203 @@ export function HomeScreen() {
                 </View>
               </View>
             </View>
+
+            {/* ── Page 3: Streak & Consistency ── */}
+            <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
+              {/* Row 1: Current streak + Longest streak */}
+              <View className="flex-row gap-3 mb-3">
+                {/* Current streak — hero card */}
+                <Pressable
+                  className="flex-[2] bg-white rounded-3xl p-4"
+                  style={cardShadowStrong}
+                  onPress={() => setStreakModalVisible(true)}
+                >
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1 mr-2">
+                      <Text
+                        style={{
+                          fontSize: 44,
+                          fontFamily: 'Inter-Bold',
+                          color: (streakData?.currentStreak ?? 0) > 0 ? '#f97316' : '#0b1220',
+                          lineHeight: 48,
+                        }}
+                      >
+                        {streakData?.currentStreak ?? 0}
+                      </Text>
+                      <Text className="text-sm text-[#7687a2] font-sans-medium mt-1">
+                        {t('dashboard.streak')}
+                      </Text>
+                      <View className="flex-row items-center gap-2 mt-2.5">
+                        <View
+                          className="px-2 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: streakData?.todayLogged ? '#22c55e20' : '#f0f4f9',
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontFamily: 'Inter-Bold',
+                              color: streakData?.todayLogged ? '#22c55e' : '#9aabbf',
+                            }}
+                          >
+                            {streakData?.todayLogged ? '✓ Today' : '– Today'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    <ProgressArc
+                      progress={
+                        streakData && streakData.longestStreak > 0
+                          ? Math.min((streakData.currentStreak ?? 0) / streakData.longestStreak, 1)
+                          : 0
+                      }
+                      size={80}
+                      strokeWidth={7}
+                      color="#f97316"
+                      trackColor="#fff0e6"
+                    >
+                      <Text style={{ fontSize: 26 }}>🔥</Text>
+                    </ProgressArc>
+                  </View>
+                </Pressable>
+
+                {/* Best streak */}
+                <View
+                  className="flex-1 bg-white rounded-3xl p-4 justify-between"
+                  style={cardShadowStrong}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontFamily: 'Inter-SemiBold',
+                      color: '#7687a2',
+                      letterSpacing: 0.8,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {t('dashboard.streakLongest')}
+                  </Text>
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        fontFamily: 'Inter-Bold',
+                        color: '#0b1220',
+                        lineHeight: 24,
+                      }}
+                    >
+                      {streakData?.longestStreak ?? 0}
+                    </Text>
+                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                      {t('dashboard.streakDays')}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 22 }}>🏆</Text>
+                </View>
+              </View>
+
+              {/* Row 2: Consistency bars */}
+              <View className="bg-white rounded-3xl p-4 mb-3" style={cardShadow}>
+                {/* 7-day */}
+                <View className="mb-3">
+                  <View className="flex-row items-center justify-between mb-1.5">
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#0b1220' }}>
+                      {t('dashboard.streakWeek')}
+                    </Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: '#0b1220' }}>
+                      {streakData?.weekConsistency ?? 0}%
+                    </Text>
+                  </View>
+                  <View className="h-2 rounded-full bg-[#f0f4f9] overflow-hidden">
+                    <View
+                      style={{
+                        height: '100%',
+                        width: `${streakData?.weekConsistency ?? 0}%`,
+                        backgroundColor:
+                          (streakData?.weekConsistency ?? 0) >= 80
+                            ? '#22c55e'
+                            : (streakData?.weekConsistency ?? 0) >= 50
+                              ? '#f59e0b'
+                              : '#ef4444',
+                        borderRadius: 4,
+                      }}
+                    />
+                  </View>
+                </View>
+                {/* 30-day */}
+                <View>
+                  <View className="flex-row items-center justify-between mb-1.5">
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#0b1220' }}>
+                      {t('dashboard.streakMonth')}
+                    </Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: '#0b1220' }}>
+                      {streakData?.monthConsistency ?? 0}%
+                    </Text>
+                  </View>
+                  <View className="h-2 rounded-full bg-[#f0f4f9] overflow-hidden">
+                    <View
+                      style={{
+                        height: '100%',
+                        width: `${streakData?.monthConsistency ?? 0}%`,
+                        backgroundColor:
+                          (streakData?.monthConsistency ?? 0) >= 80
+                            ? '#22c55e'
+                            : (streakData?.monthConsistency ?? 0) >= 50
+                              ? '#f59e0b'
+                              : '#ef4444',
+                        borderRadius: 4,
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+
+              {/* Row 3: Mini 30-day dot calendar — tap to see full modal */}
+              <Pressable
+                className="bg-white rounded-3xl p-4"
+                style={cardShadow}
+                onPress={() => setStreakModalVisible(true)}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: 'Inter-SemiBold',
+                    color: '#9aabbf',
+                    letterSpacing: 0.8,
+                    textTransform: 'uppercase',
+                    marginBottom: 10,
+                  }}
+                >
+                  Last 30 days
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                  {(
+                    streakData?.calendar ??
+                    Array.from({ length: 30 }, (_, i) => ({
+                      date: '',
+                      logged: false,
+                      _placeholder: i,
+                    }))
+                  ).map((day, i) => (
+                    <View
+                      key={day.date || i}
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 3,
+                        backgroundColor: day.logged ? '#22c55e' : '#f0f4f9',
+                      }}
+                    />
+                  ))}
+                </View>
+              </Pressable>
+            </View>
           </ScrollView>
 
           {/* Pagination dots */}
           <View className="flex-row justify-center items-center gap-2 mt-3 mb-1">
-            {[0, 1, 2].map((i) => (
+            {[0, 1, 2, 3].map((i) => (
               <View
                 key={i}
                 style={{
@@ -1022,6 +1485,17 @@ export function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Streak Calendar Modal */}
+      <StreakCalendarModal
+        visible={streakModalVisible}
+        onClose={() => setStreakModalVisible(false)}
+        currentStreak={streakData?.currentStreak ?? 0}
+        longestStreak={streakData?.longestStreak ?? 0}
+        weekConsistency={streakData?.weekConsistency ?? 0}
+        monthConsistency={streakData?.monthConsistency ?? 0}
+        calendar={streakData?.calendar ?? []}
+      />
     </View>
   );
 }

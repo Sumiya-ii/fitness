@@ -35,6 +35,7 @@ import { AdaptiveTargetModule } from './adaptive-target/adaptive-target.module';
 import { MealTimingModule } from './meal-timing';
 import { CoachMemoryModule } from './coach-memory/coach-memory.module';
 import { OnboardingModule } from './onboarding';
+import { StreaksModule } from './streaks/streaks.module';
 import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
 
@@ -87,6 +88,7 @@ import { HealthController } from './health/health.controller';
     AdaptiveTargetModule,
     MealTimingModule,
     CoachMemoryModule,
+    StreaksModule,
   ],
   controllers: [HealthController],
   providers: [
