@@ -21,6 +21,7 @@ import { useNutritionHistoryStore, type HistoryPeriod } from '../stores/nutritio
 import { useLocale } from '../i18n';
 import { themeColors } from '../theme';
 import type { DayHistory } from '../api/dashboard';
+import { mealTimingApi, type MealTimingInsights } from '../api/meal-timing';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -700,7 +701,176 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
           <WaterBarChart points={points} chartWidth={chartWidth} />
         </View>
       </Animated.View>
+
+      {/* Meal timing insights (last week) */}
+      <MealTimingCard />
     </View>
+  );
+}
+
+// ─── Meal timing card ─────────────────────────────────────────────────────────
+
+function fmtHour(fractionalHour: number): string {
+  const h = Math.floor(fractionalHour);
+  const m = Math.round((fractionalHour - h) * 60);
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+}
+
+function fmtWindow(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function MealTimingCard() {
+  const [insights, setInsights] = useState<MealTimingInsights | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    mealTimingApi
+      .getInsights()
+      .then((res) => setInsights(res.data))
+      .catch(() => setInsights(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <SkeletonLoader height={180} borderRadius={16} />;
+  }
+
+  // Don't render the card if there was no data last week
+  if (!insights || insights.mealStats.length === 0) {
+    return null;
+  }
+
+  const breakfastStat = insights.mealStats.find((s) => s.mealType === 'breakfast');
+  const lunchStat = insights.mealStats.find((s) => s.mealType === 'lunch');
+  const dinnerStat = insights.mealStats.find((s) => s.mealType === 'dinner');
+
+  const breakfastOk = insights.breakfastWeekdayRate >= 60;
+  const lateNightOk = insights.lateNightEatingDays <= 2;
+  const windowOk =
+    insights.avgEatingWindowMinutes === null || insights.avgEatingWindowMinutes <= 12 * 60;
+
+  return (
+    <Animated.View entering={FadeInDown.delay(200).duration(350)} className="mb-4">
+      <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
+        {/* Header */}
+        <View className="flex-row items-center justify-between mb-3">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="time-outline" size={16} color={themeColors.text.secondary} />
+            <Text className="text-sm font-sans-semibold text-text">Meal Timing</Text>
+          </View>
+          <Text className="text-[10px] text-text-tertiary font-sans-medium">
+            {insights.weekStart} – {insights.weekEnd}
+          </Text>
+        </View>
+
+        {/* Average meal times row */}
+        {(breakfastStat || lunchStat || dinnerStat) && (
+          <View className="flex-row gap-2 mb-3">
+            {breakfastStat && (
+              <View className="flex-1 items-center rounded-xl bg-surface-secondary p-2.5">
+                <Text style={{ fontSize: 16 }}>🌅</Text>
+                <Text className="text-[11px] font-sans-bold text-text mt-1">
+                  {fmtHour(breakfastStat.avgHour)}
+                </Text>
+                <Text className="text-[9px] text-text-tertiary font-sans-medium">Breakfast</Text>
+              </View>
+            )}
+            {lunchStat && (
+              <View className="flex-1 items-center rounded-xl bg-surface-secondary p-2.5">
+                <Text style={{ fontSize: 16 }}>☀️</Text>
+                <Text className="text-[11px] font-sans-bold text-text mt-1">
+                  {fmtHour(lunchStat.avgHour)}
+                </Text>
+                <Text className="text-[9px] text-text-tertiary font-sans-medium">Lunch</Text>
+              </View>
+            )}
+            {dinnerStat && (
+              <View className="flex-1 items-center rounded-xl bg-surface-secondary p-2.5">
+                <Text style={{ fontSize: 16 }}>🌙</Text>
+                <Text className="text-[11px] font-sans-bold text-text mt-1">
+                  {fmtHour(dinnerStat.avgHour)}
+                </Text>
+                <Text className="text-[9px] text-text-tertiary font-sans-medium">Dinner</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Stat rows */}
+        <View className="gap-2">
+          {/* Breakfast consistency */}
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <Ionicons
+                name={breakfastOk ? 'checkmark-circle' : 'alert-circle'}
+                size={14}
+                color={breakfastOk ? themeColors.status.success : themeColors.status.warning}
+              />
+              <Text className="text-xs text-text-secondary font-sans-medium">
+                Breakfast on weekdays
+              </Text>
+            </View>
+            <Text
+              className="text-xs font-sans-bold"
+              style={{
+                color: breakfastOk ? themeColors.status.success : themeColors.status.warning,
+              }}
+            >
+              {insights.breakfastWeekdayRate}%
+            </Text>
+          </View>
+
+          {/* Late-night eating */}
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <Ionicons
+                name={lateNightOk ? 'checkmark-circle' : 'alert-circle'}
+                size={14}
+                color={lateNightOk ? themeColors.status.success : themeColors.status.warning}
+              />
+              <Text className="text-xs text-text-secondary font-sans-medium">
+                Late-night eating (after 20:00)
+              </Text>
+            </View>
+            <Text
+              className="text-xs font-sans-bold"
+              style={{
+                color: lateNightOk ? themeColors.status.success : themeColors.status.warning,
+              }}
+            >
+              {insights.lateNightEatingDays}d / 7
+            </Text>
+          </View>
+
+          {/* Eating window */}
+          {insights.avgEatingWindowMinutes !== null && (
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name={windowOk ? 'checkmark-circle' : 'alert-circle'}
+                  size={14}
+                  color={windowOk ? themeColors.status.success : themeColors.status.warning}
+                />
+                <Text className="text-xs text-text-secondary font-sans-medium">
+                  Avg eating window
+                </Text>
+              </View>
+              <Text
+                className="text-xs font-sans-bold"
+                style={{
+                  color: windowOk ? themeColors.status.success : themeColors.status.warning,
+                }}
+              >
+                {fmtWindow(insights.avgEatingWindowMinutes)}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </Animated.View>
   );
 }
 

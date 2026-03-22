@@ -7,3 +7,5 @@ export { chatApi } from './chat';
 export type * from './chat';
 export { waterApi } from './water';
 export type * from './water';
+export { mealTimingApi } from './meal-timing';
+export type * from './meal-timing';
