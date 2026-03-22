@@ -40,6 +40,12 @@
       ],
       "expo-apple-authentication",
       [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow $(PRODUCT_NAME) to access your motion data for step counting."
+        }
+      ],
+      [
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.885740405893-dkqgaqcdtcgh1hdvijtrce9vmg691l2t"
@@ -84,7 +90,13 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning and meal photo logging.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use your microphone for voice meal logging.",
-        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos so you can attach meal images."
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos so you can attach meal images.",
+        "NSHealthShareUsageDescription": "Allow $(PRODUCT_NAME) to read your step count from Apple Health to track your daily activity.",
+        "NSHealthUpdateUsageDescription": "Allow $(PRODUCT_NAME) to update your health data in Apple Health."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": []
       }
     },
     "android": {

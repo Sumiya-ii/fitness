@@ -20,6 +20,7 @@ import Animated, {
 import { SkeletonLoader } from '../components/ui';
 import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
 import { useWaterStore } from '../stores/water.store';
+import { useStepsStore, STEPS_GOAL, KCAL_PER_STEP } from '../stores/steps.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 
@@ -270,6 +271,13 @@ export function HomeScreen() {
     removeCup,
     fetchDaily: fetchWater,
   } = useWaterStore();
+  const {
+    steps,
+    permissionStatus: stepsPermission,
+    checkPermission: checkStepsPermission,
+    requestPermission: requestStepsPermission,
+    fetchTodaySteps,
+  } = useStepsStore();
 
   // 7 days: 5 past, today (6th), 1 future
   const weekDays = useMemo(() => {
@@ -302,13 +310,18 @@ export function HomeScreen() {
     }
   }, [fetchDashboard, fetchWater, selectedDateKey, todayKey]);
 
+  useEffect(() => {
+    checkStepsPermission();
+  }, [checkStepsPermission]);
+
   const onRefresh = useCallback(() => {
     loadProfile();
     fetchDashboard(selectedDateKey);
     if (selectedDateKey === todayKey) {
       fetchWater();
+      fetchTodaySteps();
     }
-  }, [loadProfile, fetchDashboard, fetchWater, selectedDateKey, todayKey]);
+  }, [loadProfile, fetchDashboard, fetchWater, fetchTodaySteps, selectedDateKey, todayKey]);
 
   const handleLogMeal = () => {
     (navigation as { navigate: (s: string) => void }).navigate('Log');
@@ -392,6 +405,9 @@ export function HomeScreen() {
         : healthScore >= 50
           ? '#f59e0b'
           : '#ef4444';
+
+  const stepsProg = Math.min(steps / STEPS_GOAL, 1);
+  const caloriesBurned = Math.round(steps * KCAL_PER_STEP);
 
   return (
     <View className="flex-1 bg-[#f4f7fb]">
@@ -790,26 +806,153 @@ export function HomeScreen() {
                 />
               </View>
             </View>
+
+            {/* ── Page 2: Steps ── */}
+            <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
+              <View className="flex-row gap-3">
+                {/* Left: Steps card or Connect prompt */}
+                {stepsPermission === 'granted' ? (
+                  <View className="flex-[2] bg-white rounded-3xl p-4" style={cardShadowStrong}>
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-1 mr-2">
+                        <Text
+                          style={{
+                            fontSize: 44,
+                            fontFamily: 'Inter-Bold',
+                            color: '#0b1220',
+                            lineHeight: 48,
+                          }}
+                        >
+                          {steps.toLocaleString()}
+                        </Text>
+                        <Text className="text-sm text-[#7687a2] font-sans-medium mt-1">
+                          {t('dashboard.steps')}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontFamily: 'Inter-Medium',
+                            color: '#9aabbf',
+                            marginTop: 6,
+                          }}
+                        >
+                          / {STEPS_GOAL.toLocaleString()} {t('dashboard.stepsGoal')}
+                        </Text>
+                      </View>
+                      <ProgressArc
+                        progress={stepsProg}
+                        size={80}
+                        strokeWidth={7}
+                        color="#0f172a"
+                        trackColor="#e8eef5"
+                      >
+                        <Text style={{ fontSize: 22 }}>🚶</Text>
+                      </ProgressArc>
+                    </View>
+                  </View>
+                ) : (
+                  <View
+                    className="flex-[2] bg-white rounded-3xl p-4 items-center justify-center"
+                    style={cardShadowStrong}
+                  >
+                    <View className="w-12 h-12 rounded-2xl bg-[#fff0f3] items-center justify-center mb-2">
+                      <Text style={{ fontSize: 24 }}>❤️</Text>
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontFamily: 'Inter-Bold',
+                        color: '#0b1220',
+                        textAlign: 'center',
+                        marginBottom: 2,
+                      }}
+                    >
+                      {t('dashboard.connectHealth')}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontFamily: 'Inter-Medium',
+                        color: '#9aabbf',
+                        textAlign: 'center',
+                        marginBottom: 12,
+                      }}
+                    >
+                      {t('dashboard.trackSteps')}
+                    </Text>
+                    <Pressable
+                      onPress={requestStepsPermission}
+                      className="bg-[#0f172a] px-5 py-2 rounded-full"
+                    >
+                      <Text style={{ color: '#fff', fontFamily: 'Inter-SemiBold', fontSize: 13 }}>
+                        {t('dashboard.connect')}
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* Right: Calories burned */}
+                <View
+                  className="flex-1 bg-white rounded-3xl p-4 justify-between"
+                  style={cardShadowStrong}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontFamily: 'Inter-SemiBold',
+                      color: '#7687a2',
+                      letterSpacing: 0.8,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {t('dashboard.caloriesBurned')}
+                  </Text>
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        fontFamily: 'Inter-Bold',
+                        color: '#0b1220',
+                        lineHeight: 24,
+                      }}
+                    >
+                      {caloriesBurned}
+                    </Text>
+                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                      cal
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center gap-1.5">
+                    <Text style={{ fontSize: 16 }}>🚶</Text>
+                    <View>
+                      <Text
+                        style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: '#0b1220' }}
+                      >
+                        {t('dashboard.steps')}
+                      </Text>
+                      <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                        {caloriesBurned} cal
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
           </ScrollView>
 
           {/* Pagination dots */}
           <View className="flex-row justify-center items-center gap-2 mt-3 mb-1">
-            <View
-              style={{
-                width: carouselPage === 0 ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: carouselPage === 0 ? '#0f172a' : '#dde5f0',
-              }}
-            />
-            <View
-              style={{
-                width: carouselPage === 1 ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: carouselPage === 1 ? '#0f172a' : '#dde5f0',
-              }}
-            />
+            {[0, 1, 2].map((i) => (
+              <View
+                key={i}
+                style={{
+                  width: carouselPage === i ? 18 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: carouselPage === i ? '#0f172a' : '#dde5f0',
+                }}
+              />
+            ))}
           </View>
         </Animated.View>
 

@@ -55,6 +55,12 @@ export const en = {
     sugar: 'Sugar',
     sodium: 'Sodium',
     comingSoon: 'Soon',
+    steps: 'Steps',
+    stepsGoal: 'goal',
+    caloriesBurned: 'Calories burned',
+    connectHealth: 'Connect Apple Health',
+    trackSteps: 'Track your steps',
+    connect: 'Connect',
   },
   logging: {
     logMeal: 'Log a Meal',

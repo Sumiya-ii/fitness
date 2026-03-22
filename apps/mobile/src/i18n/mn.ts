@@ -55,6 +55,12 @@ export const mn = {
     sugar: 'Сахар',
     sodium: 'Натри',
     comingSoon: 'Удахгүй',
+    steps: 'Алхам',
+    stepsGoal: 'зорилго',
+    caloriesBurned: 'Зарцуулсан калори',
+    connectHealth: 'Apple Health холбох',
+    trackSteps: 'Алхамаа хянаарай',
+    connect: 'Холбох',
   },
   logging: {
     logMeal: 'Хоол бүртгэх',
