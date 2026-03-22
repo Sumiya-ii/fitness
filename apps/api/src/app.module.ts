@@ -31,6 +31,7 @@ import { RemindersModule } from './reminders';
 import { ChatModule } from './chat';
 import { CoachModule } from './coach/coach.module';
 import { WeeklyReportModule } from './weekly-report';
+import { AdaptiveTargetModule } from './adaptive-target/adaptive-target.module';
 import { OnboardingModule } from './onboarding';
 import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
@@ -81,6 +82,7 @@ import { HealthController } from './health/health.controller';
     ChatModule,
     CoachModule,
     WeeklyReportModule,
+    AdaptiveTargetModule,
   ],
   controllers: [HealthController],
   providers: [
