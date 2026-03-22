@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '../config';
 import { DashboardService } from '../dashboard/dashboard.service';
+import { PrismaService } from '../prisma';
 import OpenAI from 'openai';
 import Redis from 'ioredis';
 
@@ -29,6 +30,7 @@ export class ChatService implements OnModuleDestroy {
   constructor(
     private readonly config: ConfigService,
     private readonly dashboardService: DashboardService,
+    private readonly prisma: PrismaService,
   ) {
     const apiKey = this.config.get('OPENAI_API_KEY');
     if (apiKey) {
@@ -91,7 +93,26 @@ export class ChatService implements OnModuleDestroy {
       // Use default message above
     }
 
-    const systemPrompt = `${SYSTEM_PROMPT_BASE}\n\n${nutritionContext}`;
+    // Inject long-term coach memory if available
+    let memoryBlock = '';
+    try {
+      const memories = await this.prisma.coachMemory.findMany({ where: { userId } });
+      if (memories.length) {
+        const categoryOrder = ['foods', 'patterns', 'goals', 'preferences'];
+        const sorted = [...memories].sort(
+          (a, b) => categoryOrder.indexOf(a.category) - categoryOrder.indexOf(b.category),
+        );
+        const lines = sorted.map((m) => {
+          const label = m.category.charAt(0).toUpperCase() + m.category.slice(1);
+          return `${label}: ${m.summary}`;
+        });
+        memoryBlock = `\n\n=== Coach memory (last 30 days) ===\n${lines.join('\n')}`;
+      }
+    } catch {
+      // Memory is non-critical — proceed without it
+    }
+
+    const systemPrompt = `${SYSTEM_PROMPT_BASE}\n\n${nutritionContext}${memoryBlock}`;
 
     const history = await this.getHistory(userId);
 

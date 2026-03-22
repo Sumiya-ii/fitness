@@ -44,6 +44,7 @@ export interface CoachJobData {
   locale?: string;
   pushTokens?: string[];
   context: CoachContext;
+  memoryBlock?: string;
 }
 
 /** Cooldown durations in seconds per message type */

@@ -33,6 +33,7 @@ import { CoachModule } from './coach/coach.module';
 import { WeeklyReportModule } from './weekly-report';
 import { AdaptiveTargetModule } from './adaptive-target/adaptive-target.module';
 import { MealTimingModule } from './meal-timing';
+import { CoachMemoryModule } from './coach-memory/coach-memory.module';
 import { OnboardingModule } from './onboarding';
 import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
@@ -85,6 +86,7 @@ import { HealthController } from './health/health.controller';
     WeeklyReportModule,
     AdaptiveTargetModule,
     MealTimingModule,
+    CoachMemoryModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -49,6 +49,7 @@ interface CoachJobData {
   locale?: string;
   pushTokens?: string[];
   context: CoachContext;
+  memoryBlock?: string;
 }
 
 // ── Coach Persona ─────────────────────────────────────────────────────────────
@@ -122,7 +123,8 @@ User data snapshot at ${localTime}:
     streak_celebration: `They've been logging meals for ${streak.mealLoggingDays} days straight! Celebrate their consistency with real enthusiasm. Make them feel like a champion. Mention one benefit of consistent logging.`,
   };
 
-  return `${contextBlock}\n\nTask: ${instructions[messageType]}`;
+  const memory = data.memoryBlock ? `\n\n${data.memoryBlock}` : '';
+  return `${contextBlock}${memory}\n\nTask: ${instructions[messageType]}`;
 }
 
 // ── Delivery helpers ──────────────────────────────────────────────────────────

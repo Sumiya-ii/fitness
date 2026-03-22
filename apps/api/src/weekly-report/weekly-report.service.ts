@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
 import { QUEUE_NAMES } from '@coach/shared';
+import { CoachMemoryService } from '../coach-memory/coach-memory.service';
 
 export interface WeeklyReportData {
   weekStart: string;
@@ -28,6 +29,7 @@ export interface WeeklyReportJobData {
   pushTokens?: string[];
   report: WeeklyReportData;
   userName: string | null;
+  memoryBlock?: string;
 }
 
 @Injectable()
@@ -37,6 +39,7 @@ export class WeeklyReportService implements OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly memoryService: CoachMemoryService,
     @InjectQueue(QUEUE_NAMES.WEEKLY_REPORT) private readonly weeklyReportQueue: Queue,
   ) {
     this.redis = new Redis(this.config.get('REDIS_URL'));
@@ -177,6 +180,8 @@ export class WeeklyReportService implements OnModuleDestroy {
         lastMonday,
       );
 
+      const memoryBlock = await this.memoryService.getMemoryBlock(pref.userId).catch(() => null);
+
       const jobData: WeeklyReportJobData = {
         userId: pref.userId,
         channels: pref.channels,
@@ -185,6 +190,7 @@ export class WeeklyReportService implements OnModuleDestroy {
         pushTokens: deviceTokens.map((d) => d.token),
         report,
         userName: profile?.displayName ?? null,
+        memoryBlock: memoryBlock ?? undefined,
       };
 
       await this.weeklyReportQueue.add('weekly_report', jobData, {

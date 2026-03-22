@@ -27,6 +27,7 @@ interface WeeklyReportJobData {
   pushTokens?: string[];
   report: WeeklyReportData;
   userName: string | null;
+  memoryBlock?: string;
 }
 
 // ── System prompt ─────────────────────────────────────────────────────────────
@@ -79,13 +80,15 @@ function buildPrompt(data: WeeklyReportJobData): string {
       ? `finished the week with a ${report.endOfWeekStreak}-day logging streak`
       : `end-of-week streak: ${report.endOfWeekStreak} consecutive days`;
 
+  const memory = data.memoryBlock ? `\n\n${data.memoryBlock}` : '';
+
   return `
 Weekly report for ${name} (locale: ${locale}):
 - Logged: ${report.daysLogged}/7 days (adherence ${report.adherenceScore}%)
 - ${calorieStatus}
 - ${proteinStatus}
 - ${weightStatus}
-- ${streakNote}
+- ${streakNote}${memory}
 
 Write the weekly performance summary following the system prompt structure.
 `.trim();

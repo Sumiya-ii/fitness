@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
 import { QUEUE_NAMES } from '@coach/shared';
 import { CoachContextService } from './coach-context.service';
+import { CoachMemoryService } from '../coach-memory/coach-memory.service';
 import {
   CoachJobData,
   CoachMessageType,
@@ -34,6 +35,7 @@ export class CoachService implements OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly contextService: CoachContextService,
+    private readonly memoryService: CoachMemoryService,
     @InjectQueue(QUEUE_NAMES.COACH_MESSAGES) private readonly coachQueue: Queue,
   ) {
     this.redis = new Redis(this.config.get('REDIS_URL'));
@@ -222,6 +224,8 @@ export class CoachService implements OnModuleDestroy {
       // Rebuild context with final message type
       context.messageType = messageType;
 
+      const memoryBlock = await this.memoryService.getMemoryBlock(info.userId).catch(() => null);
+
       const jobData: CoachJobData = {
         userId: info.userId,
         messageType,
@@ -230,6 +234,7 @@ export class CoachService implements OnModuleDestroy {
         locale: info.locale,
         pushTokens: info.pushTokens,
         context,
+        memoryBlock: memoryBlock ?? undefined,
       };
 
       await this.coachQueue.add(messageType, jobData, {

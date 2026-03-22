@@ -33,6 +33,7 @@ model User {
   qpayInvoices         QPayInvoice[]
   voiceDrafts          VoiceDraft[]
   waterLogs            WaterLog[]
+  coachMemories        CoachMemory[]
 
   @@map("users")
 }
@@ -555,4 +556,19 @@ model Favorite {
 
   @@unique([userId, foodId])
   @@map("favorites")
+}
+
+// ─── Coach Memory ────────────────────────────────────────────────
+
+model CoachMemory {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  category  String   @db.VarChar(30) // foods | patterns | goals | preferences
+  summary   String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@map("coach_memories")
 }
