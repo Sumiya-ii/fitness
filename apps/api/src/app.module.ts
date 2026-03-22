@@ -37,7 +37,6 @@ import { CoachMemoryModule } from './coach-memory/coach-memory.module';
 import { OnboardingModule } from './onboarding';
 import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
-import { BullBoardUiModule } from './bull-board/bull-board.module';
 
 @Module({
   imports: [
@@ -88,7 +87,6 @@ import { BullBoardUiModule } from './bull-board/bull-board.module';
     AdaptiveTargetModule,
     MealTimingModule,
     CoachMemoryModule,
-    BullBoardUiModule,
   ],
   controllers: [HealthController],
   providers: [

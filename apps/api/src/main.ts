@@ -2,8 +2,15 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { API_PREFIX } from '@coach/shared';
+import { API_PREFIX, QUEUE_NAMES } from '@coach/shared';
 import { ConfigService } from './config';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter as BullBoardExpressAdapter } from '@bull-board/express';
+import { Queue } from 'bullmq';
+import { Request, Response, NextFunction } from 'express';
+
+const BULL_BOARD_PATH = '/admin/queues';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +19,42 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
   const port = config.port;
+
+  // ── Bull Board ────────────────────────────────────────────────────────────
+  // Mount directly on the underlying Express app so NestJS's global prefix
+  // and routing layer don't interfere.
+  const boardAdapter = new BullBoardExpressAdapter();
+  boardAdapter.setBasePath(BULL_BOARD_PATH);
+
+  createBullBoard({
+    queues: Object.values(QUEUE_NAMES).map(
+      (name) => new BullMQAdapter(new Queue(name, { connection: { url: config.redisUrl } })),
+    ),
+    serverAdapter: boardAdapter,
+  });
+
+  const basicAuth = (req: Request, res: Response, next: NextFunction) => {
+    const header = req.headers.authorization;
+    if (!header?.startsWith('Basic ')) {
+      res.setHeader('WWW-Authenticate', 'Basic realm="Coach Admin"');
+      res.status(401).send('Authentication required');
+      return;
+    }
+    const decoded = Buffer.from(header.slice(6), 'base64').toString('utf-8');
+    const colonIdx = decoded.indexOf(':');
+    const user = decoded.slice(0, colonIdx);
+    const pass = decoded.slice(colonIdx + 1);
+    if (user !== config.bullBoardUser || pass !== config.bullBoardPassword) {
+      res.setHeader('WWW-Authenticate', 'Basic realm="Coach Admin"');
+      res.status(401).send('Invalid credentials');
+      return;
+    }
+    next();
+  };
+
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.use(BULL_BOARD_PATH, basicAuth, boardAdapter.getRouter());
+  // ─────────────────────────────────────────────────────────────────────────
 
   if (!config.isProduction) {
     const documentBuilder = new DocumentBuilder()
@@ -26,5 +69,6 @@ async function bootstrap() {
 
   await app.listen(port);
   console.log(`Coach API running on port ${port}`);
+  console.log(`Bull Board available at ${BULL_BOARD_PATH}`);
 }
 bootstrap();
