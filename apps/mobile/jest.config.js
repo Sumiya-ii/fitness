@@ -21,6 +21,9 @@ module.exports = {
     '^expo-constants$': '<rootDir>/src/__mocks__/expo-constants.js',
     '^expo-secure-store$': '<rootDir>/src/__mocks__/expo-secure-store.js',
     '^expo-sensors$': '<rootDir>/src/__mocks__/expo-sensors.js',
+    '^react-native-mmkv$': '<rootDir>/src/__mocks__/react-native-mmkv.js',
+    '^@react-native-community/netinfo$':
+      '<rootDir>/src/__mocks__/@react-native-community/netinfo.js',
   },
   // Transform expo-* packages (they ship ESM) in addition to react-native/*
   transformIgnorePatterns: [

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { SyncBanner } from './src/components/ui/SyncBanner';
 import { useAuthStore } from './src/stores/auth.store';
 import { appNavigationTheme } from './src/theme';
 import * as Sentry from '@sentry/react-native';
@@ -39,6 +40,7 @@ export default Sentry.wrap(function App() {
       <SafeAreaProvider>
         <NavigationContainer theme={appNavigationTheme}>
           <RootNavigator />
+          <SyncBanner />
           <StatusBar style="dark" />
         </NavigationContainer>
       </SafeAreaProvider>

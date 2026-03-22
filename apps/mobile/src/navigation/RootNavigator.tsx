@@ -7,6 +7,7 @@ import { SetupStack } from './SetupStack';
 import { MainStack } from './MainStack';
 import { themeColors } from '../theme';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { useSyncQueue } from '../hooks/useSyncQueue';
 
 function RootContent() {
   const profileSetupComplete = useOnboardingStore((s) => s.profileSetupComplete);
@@ -31,6 +32,7 @@ export function RootNavigator() {
   const isLoading = useAuthStore((s) => s.isLoading);
 
   usePushNotifications();
+  useSyncQueue();
 
   useEffect(() => {
     loadOnboardingStatus();

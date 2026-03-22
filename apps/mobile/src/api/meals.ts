@@ -1,4 +1,6 @@
 import { api } from './client';
+import { isNetworkError, offlineQueue } from '../services/offlineQueue';
+import { useSyncStore } from '../stores/sync.store';
 
 export interface FoodSearchResult {
   id: string;
@@ -95,17 +97,36 @@ export interface RecentItem {
 export const mealsApi = {
   searchFoods: (query: string, page = 1, limit = 20) =>
     api.get<FoodsResponse>(
-      `/foods?search=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
+      `/foods?search=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
     ),
 
-  getFood: (id: string) =>
-    api.get<{ data: FoodSearchResult }>(`/foods/${id}`),
+  getFood: (id: string) => api.get<{ data: FoodSearchResult }>(`/foods/${id}`),
 
-  createMealLog: (payload: CreateMealLogPayload) =>
-    api.post<{ data: unknown }>('/meal-logs', payload),
+  createMealLog: async (payload: CreateMealLogPayload): Promise<{ data: unknown }> => {
+    try {
+      return await api.post<{ data: unknown }>('/meal-logs', payload);
+    } catch (e) {
+      if (isNetworkError(e)) {
+        offlineQueue.enqueue({ path: '/meal-logs', body: payload });
+        useSyncStore.getState().refreshCount();
+        return { data: null };
+      }
+      throw e;
+    }
+  },
 
-  quickAdd: (payload: QuickAddPayload) =>
-    api.post<{ data: unknown }>('/meal-logs/quick-add', payload),
+  quickAdd: async (payload: QuickAddPayload): Promise<{ data: unknown }> => {
+    try {
+      return await api.post<{ data: unknown }>('/meal-logs/quick-add', payload);
+    } catch (e) {
+      if (isNetworkError(e)) {
+        offlineQueue.enqueue({ path: '/meal-logs/quick-add', body: payload });
+        useSyncStore.getState().refreshCount();
+        return { data: null };
+      }
+      throw e;
+    }
+  },
 
   getMealLogs: (date?: string, page = 1, limit = 50) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -113,21 +134,16 @@ export const mealsApi = {
     return api.get<{ data: unknown[] }>(`/meal-logs?${params}`);
   },
 
-  barcodeLookup: (code: string) =>
-    api.get<{ data: BarcodeLookupResult }>(`/barcodes/${code}`),
+  barcodeLookup: (code: string) => api.get<{ data: BarcodeLookupResult }>(`/barcodes/${code}`),
 
   submitBarcode: (payload: SubmitBarcodePayload) =>
     api.post<{ data: { status: string; foodId?: string } }>('/barcodes/submit', payload),
 
-  getFavorites: (limit = 20) =>
-    api.get<{ data: FavoriteItem[] }>(`/favorites?limit=${limit}`),
+  getFavorites: (limit = 20) => api.get<{ data: FavoriteItem[] }>(`/favorites?limit=${limit}`),
 
-  getRecents: (limit = 20) =>
-    api.get<{ data: RecentItem[] }>(`/favorites/recents?limit=${limit}`),
+  getRecents: (limit = 20) => api.get<{ data: RecentItem[] }>(`/favorites/recents?limit=${limit}`),
 
-  addFavorite: (foodId: string) =>
-    api.post<{ data: unknown }>(`/favorites/${foodId}`),
+  addFavorite: (foodId: string) => api.post<{ data: unknown }>(`/favorites/${foodId}`),
 
-  removeFavorite: (foodId: string) =>
-    api.delete(`/favorites/${foodId}`),
+  removeFavorite: (foodId: string) => api.delete(`/favorites/${foodId}`),
 };

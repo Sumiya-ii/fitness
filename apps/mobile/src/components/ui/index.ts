@@ -42,3 +42,5 @@ export type { MacroBarProps } from './MacroBar';
 
 export { ProgressRing } from './ProgressRing';
 export type { ProgressRingProps } from './ProgressRing';
+
+export { SyncBanner } from './SyncBanner';

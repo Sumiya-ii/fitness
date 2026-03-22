@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../api';
+import { isNetworkError, offlineQueue } from '../services/offlineQueue';
+import { useSyncStore } from './sync.store';
 
 export interface WeightLogEntry {
   id: string;
@@ -61,8 +63,22 @@ export const useWeightStore = create<WeightState>((set, get) => ({
 
   logWeight: async (weightKg: number, loggedAt?: string) => {
     const body = loggedAt ? { weightKg, loggedAt } : { weightKg };
-    const res = await api.post<{ data: WeightLogEntry }>('/weight-logs', body);
-    await Promise.all([get().fetchHistory(), get().fetchTrend()]);
-    return res.data;
+    try {
+      const res = await api.post<{ data: WeightLogEntry }>('/weight-logs', body);
+      await Promise.all([get().fetchHistory(), get().fetchTrend()]);
+      return res.data;
+    } catch (e) {
+      if (isNetworkError(e)) {
+        offlineQueue.enqueue({ path: '/weight-logs', body });
+        useSyncStore.getState().refreshCount();
+        // Return a synthetic entry so callers (e.g. ProgressScreen) can close their sheet.
+        return {
+          id: `__offline_${Date.now()}`,
+          weightKg,
+          loggedAt: loggedAt ?? new Date().toISOString().split('T')[0]!,
+        };
+      }
+      throw e;
+    }
   },
 }));
