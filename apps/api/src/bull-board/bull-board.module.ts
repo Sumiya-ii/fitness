@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { QUEUE_NAMES } from '@coach/shared';
+import { BullBoardAuthMiddleware } from './bull-board-auth.middleware';
 
 @Module({
   imports: [
@@ -17,5 +18,10 @@ import { QUEUE_NAMES } from '@coach/shared';
       }),
     ),
   ],
+  providers: [BullBoardAuthMiddleware],
 })
-export class BullBoardUiModule {}
+export class BullBoardUiModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(BullBoardAuthMiddleware).forRoutes('/admin/queues*');
+  }
+}

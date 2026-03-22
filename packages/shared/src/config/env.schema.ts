@@ -15,6 +15,10 @@ export const envSchema = z.object({
   FIREBASE_CLIENT_EMAIL: z.string().email().optional(),
   FIREBASE_PRIVATE_KEY: z.string().optional(),
 
+  // Bull Board dashboard credentials (basic auth)
+  BULL_BOARD_USER: z.string().min(1).default('admin'),
+  BULL_BOARD_PASSWORD: z.string().min(1).default('admin'),
+
   // Admin access
   ADMIN_USER_IDS: z
     .string()

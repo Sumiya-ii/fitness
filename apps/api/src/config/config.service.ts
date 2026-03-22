@@ -41,6 +41,14 @@ export class ConfigService {
     return this.config.ADMIN_USER_IDS;
   }
 
+  get bullBoardUser(): string {
+    return this.config.BULL_BOARD_USER;
+  }
+
+  get bullBoardPassword(): string {
+    return this.config.BULL_BOARD_PASSWORD;
+  }
+
   get qpayApiUrl(): string {
     return this.config.QPAY_API_URL ?? 'https://merchant-sandbox.qpay.mn/v2';
   }
