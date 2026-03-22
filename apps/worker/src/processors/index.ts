@@ -6,6 +6,7 @@ import { processReminderJob } from './reminders.processor';
 import { processCoachMessageJob } from './coach.processor';
 import { processWeeklyReportJob } from './weekly-report.processor';
 import { processAdaptiveTargetJob } from './adaptive-target.processor';
+import { processMealTimingJob } from './meal-timing.processor';
 
 export async function processJob(queueName: QueueName, job: Job): Promise<unknown> {
   switch (queueName) {
@@ -26,6 +27,9 @@ export async function processJob(queueName: QueueName, job: Job): Promise<unknow
 
     case QUEUE_NAMES.ADAPTIVE_TARGET:
       return processAdaptiveTargetJob(job);
+
+    case QUEUE_NAMES.MEAL_TIMING_INSIGHTS:
+      return processMealTimingJob(job);
 
     case QUEUE_NAMES.FOOD_INDEX_SYNC:
       // TODO: Call Typesense reindex when Typesense is configured

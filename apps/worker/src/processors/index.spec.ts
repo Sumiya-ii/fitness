@@ -10,6 +10,7 @@ jest.mock('./photo.processor', () => ({ processPhotoJob: jest.fn() }));
 jest.mock('./reminders.processor', () => ({ processReminderJob: jest.fn() }));
 jest.mock('./coach.processor', () => ({ processCoachMessageJob: jest.fn() }));
 jest.mock('./adaptive-target.processor', () => ({ processAdaptiveTargetJob: jest.fn() }));
+jest.mock('./meal-timing.processor', () => ({ processMealTimingJob: jest.fn() }));
 
 import { processJob } from './index';
 import { processSttJob } from './stt.processor';
@@ -17,6 +18,7 @@ import { processPhotoJob } from './photo.processor';
 import { processReminderJob } from './reminders.processor';
 import { processCoachMessageJob } from './coach.processor';
 import { processAdaptiveTargetJob } from './adaptive-target.processor';
+import { processMealTimingJob } from './meal-timing.processor';
 import { QUEUE_NAMES } from '@coach/shared';
 import type { Job } from 'bullmq';
 
@@ -27,6 +29,7 @@ const mockCoach = processCoachMessageJob as jest.MockedFunction<typeof processCo
 const mockAdaptiveTarget = processAdaptiveTargetJob as jest.MockedFunction<
   typeof processAdaptiveTargetJob
 >;
+const mockMealTiming = processMealTimingJob as jest.MockedFunction<typeof processMealTimingJob>;
 
 const fakeJob = { id: 'job-1', name: 'test-job', data: {} } as unknown as Job;
 
@@ -115,6 +118,13 @@ describe('processJob routing', () => {
     mockAdaptiveTarget.mockResolvedValue(undefined);
     await processJob(QUEUE_NAMES.ADAPTIVE_TARGET, fakeJob);
     expect(mockAdaptiveTarget).toHaveBeenCalledWith(fakeJob);
+    expect(mockStt).not.toHaveBeenCalled();
+  });
+
+  it('routes meal-timing-insights to processMealTimingJob', async () => {
+    mockMealTiming.mockResolvedValue(undefined);
+    await processJob(QUEUE_NAMES.MEAL_TIMING_INSIGHTS, fakeJob);
+    expect(mockMealTiming).toHaveBeenCalledWith(fakeJob);
     expect(mockStt).not.toHaveBeenCalled();
   });
 
