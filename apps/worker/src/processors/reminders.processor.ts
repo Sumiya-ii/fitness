@@ -1,6 +1,7 @@
 import { Job } from 'bullmq';
 import { Telegraf } from 'telegraf';
 import { sendExpoPush } from '../expo-push';
+import { logMessage } from '../message-log.service';
 
 interface ReminderJobData {
   userId: string;
@@ -48,18 +49,68 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
     return;
   }
 
-  const results = await Promise.allSettled([
-    hasTelegram ? sendTelegramReminder(userId, chatId!, message.body) : Promise.resolve(),
-    hasPush
-      ? sendExpoPush(pushTokens, message.title, message.body, { type: 'reminder' })
-      : Promise.resolve(),
-  ]);
+  const sharedLogFields = {
+    userId,
+    messageType: `reminder_${type}` as const,
+    content: message.body,
+    jobId: job.id,
+  };
 
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.error(`[Reminders] User ${userId}: delivery error:`, result.reason);
-    }
+  const deliveries: Promise<void>[] = [];
+
+  if (hasTelegram) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendTelegramReminder(userId, chatId!, message.body);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[Reminders] Telegram delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
   }
+
+  if (hasPush) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendExpoPush(pushTokens, message.title, message.body, { type: 'reminder' });
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[Reminders] Push delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
+  }
+
+  await Promise.allSettled(deliveries);
 
   console.log(
     `[Reminders] Sent ${type} reminder to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`,

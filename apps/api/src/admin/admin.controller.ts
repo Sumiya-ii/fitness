@@ -10,7 +10,12 @@ import {
 } from '@nestjs/common';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { AdminService } from './admin.service';
-import { moderationQuerySchema, rejectSchema } from './admin.dto';
+import {
+  moderationQuerySchema,
+  rejectSchema,
+  messageQuerySchema,
+  messageStatsQuerySchema,
+} from './admin.dto';
 import { AdminGuard } from './admin.guard';
 
 @Controller('admin')
@@ -19,10 +24,7 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('moderation')
-  async listModeration(
-    @CurrentUser() _user: AuthenticatedUser,
-    @Query() query: unknown,
-  ) {
+  async listModeration(@CurrentUser() _user: AuthenticatedUser, @Query() query: unknown) {
     const parsed = moderationQuerySchema.safeParse(query);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
@@ -31,10 +33,7 @@ export class AdminController {
   }
 
   @Post('moderation/:id/approve')
-  async approve(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  async approve(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.adminService.approve(user.id, id);
   }
 
@@ -49,5 +48,25 @@ export class AdminController {
       throw new BadRequestException(parsed.error.issues);
     }
     return this.adminService.reject(user.id, id, parsed.data);
+  }
+
+  // ── Outbound message log ───────────────────────────────────────
+
+  @Get('messages')
+  async listMessages(@CurrentUser() _user: AuthenticatedUser, @Query() query: unknown) {
+    const parsed = messageQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues);
+    }
+    return this.adminService.listMessages(parsed.data);
+  }
+
+  @Get('messages/stats')
+  async messageStats(@CurrentUser() _user: AuthenticatedUser, @Query() query: unknown) {
+    const parsed = messageStatsQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues);
+    }
+    return this.adminService.getMessageStats(parsed.data);
   }
 }

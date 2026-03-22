@@ -2,6 +2,7 @@ import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
 import { sendExpoPush } from '../expo-push';
+import { logMessage } from '../message-log.service';
 
 // ── Types (mirrors api/src/meal-timing/meal-timing.service.ts) ────────────────
 
@@ -114,7 +115,12 @@ export async function processMealTimingJob(job: Job<MealTimingJobData>): Promise
   const openai = new OpenAI({ apiKey: openaiKey });
 
   let message: string;
+  let promptTokens: number | undefined;
+  let completionTokens: number | undefined;
+  let generationMs: number | undefined;
+
   try {
+    const genStart = Date.now();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -124,6 +130,10 @@ export async function processMealTimingJob(job: Job<MealTimingJobData>): Promise
       max_tokens: 300,
       temperature: 0.7,
     });
+
+    generationMs = Date.now() - genStart;
+    promptTokens = response.usage?.prompt_tokens;
+    completionTokens = response.usage?.completion_tokens;
 
     const fallback =
       locale === 'mn'
@@ -148,21 +158,75 @@ export async function processMealTimingJob(job: Job<MealTimingJobData>): Promise
 
   const title = locale === 'en' ? 'Meal timing insight 🕐' : 'Хоол идэх цагийн дүн шинжилгээ 🕐';
 
-  const results = await Promise.allSettled([
-    hasTelegram ? sendTelegram(chatId!, message) : Promise.resolve(),
-    hasPush
-      ? sendExpoPush(pushTokens, title, message, {
-          type: 'meal_timing_insights',
-          screen: 'CoachChat',
-        })
-      : Promise.resolve(),
-  ]);
+  const sharedLogFields = {
+    userId,
+    messageType: 'meal_timing',
+    content: message,
+    aiModel: 'gpt-4o',
+    promptTokens,
+    completionTokens,
+    generationMs,
+    jobId: job.id,
+  };
 
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.error(`[MealTiming] Delivery error for user ${userId}:`, result.reason);
-    }
+  const deliveries: Promise<void>[] = [];
+
+  if (hasTelegram) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendTelegram(chatId!, message);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[MealTiming] Telegram delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
   }
+
+  if (hasPush) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendExpoPush(pushTokens, title, message, {
+            type: 'meal_timing_insights',
+            screen: 'CoachChat',
+          });
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[MealTiming] Push delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
+  }
+
+  await Promise.allSettled(deliveries);
 
   console.log(`[MealTiming] Sent to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`);
 }

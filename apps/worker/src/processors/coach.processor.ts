@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
 import Redis from 'ioredis';
 import { sendExpoPush } from '../expo-push';
+import { logMessage } from '../message-log.service';
 
 // ── Types (mirrors api/src/coach/coach.types.ts) ─────────────────────────────
 
@@ -196,8 +197,13 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
   const redis = new Redis(process.env.REDIS_URL!);
 
   let coachMessage: string;
+  let promptTokens: number | undefined;
+  let completionTokens: number | undefined;
+  let generationMs: number | undefined;
+
   try {
     const userPrompt = buildUserPrompt(job.data);
+    const genStart = Date.now();
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -208,6 +214,10 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
       max_tokens: 300,
       temperature: 0.85,
     });
+
+    generationMs = Date.now() - genStart;
+    promptTokens = response.usage?.prompt_tokens;
+    completionTokens = response.usage?.completion_tokens;
 
     coachMessage =
       response.choices[0]?.message?.content?.trim() ??
@@ -242,21 +252,75 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
   const lang = locale === 'en' ? 'en' : 'mn';
   const title = PUSH_TITLES[messageType][lang] ?? PUSH_TITLES[messageType]['mn']!;
 
-  const results = await Promise.allSettled([
-    hasTelegram ? sendTelegram(chatId!, coachMessage) : Promise.resolve(),
-    hasPush
-      ? sendExpoPush(pushTokens, title, coachMessage, {
-          type: 'coach_message',
-          screen: 'CoachChat',
-        })
-      : Promise.resolve(),
-  ]);
+  const sharedLogFields = {
+    userId,
+    messageType,
+    content: coachMessage,
+    aiModel: 'gpt-4o',
+    promptTokens,
+    completionTokens,
+    generationMs,
+    jobId: job.id,
+  };
 
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.error(`[CoachProcessor] Delivery error for user ${userId}:`, result.reason);
-    }
+  const deliveries: Promise<void>[] = [];
+
+  if (hasTelegram) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendTelegram(chatId!, coachMessage);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[CoachProcessor] Telegram delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
   }
+
+  if (hasPush) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendExpoPush(pushTokens, title, coachMessage, {
+            type: 'coach_message',
+            screen: 'CoachChat',
+          });
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[CoachProcessor] Push delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
+  }
+
+  await Promise.allSettled(deliveries);
 
   console.log(
     `[CoachProcessor] Sent ${messageType} to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`,

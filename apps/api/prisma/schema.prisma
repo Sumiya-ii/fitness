@@ -34,6 +34,7 @@ model User {
   voiceDrafts          VoiceDraft[]
   waterLogs            WaterLog[]
   coachMemories        CoachMemory[]
+  outboundMessages     OutboundMessage[]
 
   @@map("users")
 }
@@ -556,6 +557,39 @@ model Favorite {
 
   @@unique([userId, foodId])
   @@map("favorites")
+}
+
+// ─── Outbound Message Log ────────────────────────────────────────
+
+model OutboundMessage {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id") @db.Uuid
+  channel          String   @db.VarChar(20)    // telegram | push
+  messageType      String   @map("message_type") @db.VarChar(50)
+  content          String   @db.Text
+  status           String   @db.VarChar(10)    // sent | failed
+  errorMessage     String?  @map("error_message") @db.Text
+  // AI generation metadata — null for static (reminder/adaptive-target) messages
+  aiModel          String?  @map("ai_model") @db.VarChar(30)
+  promptTokens     Int?     @map("prompt_tokens")
+  completionTokens Int?     @map("completion_tokens")
+  generationMs     Int?     @map("generation_ms")
+  // Delivery timing
+  deliveryMs       Int?     @map("delivery_ms")
+  // BullMQ job tracing
+  jobId            String?  @map("job_id") @db.VarChar(100)
+  // Extra context (e.g. adjustmentKcal for adaptive_target)
+  metadata         Json?
+  sentAt           DateTime @default(now()) @map("sent_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([messageType])
+  @@index([status])
+  @@index([sentAt(sort: Desc)])
+  @@index([channel])
+  @@map("outbound_messages")
 }
 
 // ─── Coach Memory ────────────────────────────────────────────────

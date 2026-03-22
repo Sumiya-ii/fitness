@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
 import Redis from 'ioredis';
 import { sendExpoPush } from '../expo-push';
+import { logMessage } from '../message-log.service';
 
 // ── Types (mirrors api/src/weekly-report/weekly-report.service.ts) ────────────
 
@@ -142,7 +143,12 @@ export async function processWeeklyReportJob(job: Job<WeeklyReportJobData>): Pro
   const redis = new Redis(process.env.REDIS_URL!);
 
   let reportMessage: string;
+  let promptTokens: number | undefined;
+  let completionTokens: number | undefined;
+  let generationMs: number | undefined;
+
   try {
+    const genStart = Date.now();
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -152,6 +158,10 @@ export async function processWeeklyReportJob(job: Job<WeeklyReportJobData>): Pro
       max_tokens: 400,
       temperature: 0.75,
     });
+
+    generationMs = Date.now() - genStart;
+    promptTokens = response.usage?.prompt_tokens;
+    completionTokens = response.usage?.completion_tokens;
 
     const fallback =
       locale === 'mn'
@@ -185,21 +195,75 @@ export async function processWeeklyReportJob(job: Job<WeeklyReportJobData>): Pro
 
   const title = locale === 'en' ? 'Your weekly report 📊' : '7 хоногийн тайлан 📊';
 
-  const results = await Promise.allSettled([
-    hasTelegram ? sendTelegram(chatId!, reportMessage) : Promise.resolve(),
-    hasPush
-      ? sendExpoPush(pushTokens, title, reportMessage, {
-          type: 'weekly_report',
-          screen: 'CoachChat',
-        })
-      : Promise.resolve(),
-  ]);
+  const sharedLogFields = {
+    userId,
+    messageType: 'weekly_report',
+    content: reportMessage,
+    aiModel: 'gpt-4o',
+    promptTokens,
+    completionTokens,
+    generationMs,
+    jobId: job.id,
+  };
 
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.error(`[WeeklyReport] Delivery error for user ${userId}:`, result.reason);
-    }
+  const deliveries: Promise<void>[] = [];
+
+  if (hasTelegram) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendTelegram(chatId!, reportMessage);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[WeeklyReport] Telegram delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
   }
+
+  if (hasPush) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendExpoPush(pushTokens, title, reportMessage, {
+            type: 'weekly_report',
+            screen: 'CoachChat',
+          });
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[WeeklyReport] Push delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
+  }
+
+  await Promise.allSettled(deliveries);
 
   console.log(`[WeeklyReport] Sent to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`);
 }

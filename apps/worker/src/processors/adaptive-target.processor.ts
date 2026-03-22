@@ -1,6 +1,7 @@
 import { Job } from 'bullmq';
 import { Telegraf } from 'telegraf';
 import { sendExpoPush } from '../expo-push';
+import { logMessage } from '../message-log.service';
 
 interface AdaptiveTargetJobData {
   userId: string;
@@ -65,22 +66,78 @@ export async function processAdaptiveTargetJob(job: Job<AdaptiveTargetJobData>):
 
   const message = buildMessage(data);
 
-  const results = await Promise.allSettled([
-    hasTelegram ? sendTelegramMessage(chatId!, message.body) : Promise.resolve(),
-    hasPush
-      ? sendExpoPush(pushTokens, message.title, message.body, {
-          type: 'adaptive_target',
-          adjustmentKcal: data.adjustmentKcal,
-          newCalorieTarget: data.newCalorieTarget,
-        })
-      : Promise.resolve(),
-  ]);
+  const sharedLogFields = {
+    userId,
+    messageType: 'adaptive_target',
+    content: message.body,
+    jobId: job.id,
+    metadata: {
+      reason: data.reason,
+      adjustmentKcal: data.adjustmentKcal,
+      newCalorieTarget: data.newCalorieTarget,
+      goalType: data.goalType,
+    },
+  };
 
-  for (const result of results) {
-    if (result.status === 'rejected') {
-      console.error(`[AdaptiveTarget] User ${userId}: delivery error:`, result.reason);
-    }
+  const deliveries: Promise<void>[] = [];
+
+  if (hasTelegram) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendTelegramMessage(chatId!, message.body);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[AdaptiveTarget] Telegram delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'telegram',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
   }
+
+  if (hasPush) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendExpoPush(pushTokens, message.title, message.body, {
+            type: 'adaptive_target',
+            adjustmentKcal: data.adjustmentKcal,
+            newCalorieTarget: data.newCalorieTarget,
+          });
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+          });
+        } catch (err) {
+          console.error(`[AdaptiveTarget] Push delivery error for user ${userId}:`, err);
+          await logMessage({
+            ...sharedLogFields,
+            channel: 'push',
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })(),
+    );
+  }
+
+  await Promise.allSettled(deliveries);
 
   console.log(
     `[AdaptiveTarget] Notified user ${userId}: ${data.reason}, adjustment=${data.adjustmentKcal > 0 ? '+' : ''}${data.adjustmentKcal} kcal → ${data.newCalorieTarget} kcal/day`,
