@@ -4,9 +4,11 @@ export const QUEUE_NAMES = {
   FOOD_INDEX_SYNC: 'food-index-sync',
   REMINDERS: 'reminders',
   COACH_MESSAGES: 'coach-messages',
+  WEEKLY_REPORT: 'weekly-report',
   WEBHOOK_RETRY: 'webhook-retry',
   DATA_EXPORT: 'data-export',
   ANALYTICS: 'analytics',
+  ADAPTIVE_TARGET: 'adaptive-target',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
