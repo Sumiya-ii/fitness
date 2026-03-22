@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../navigation/types';
 import { api } from '../api/client';
 
 Notifications.setNotificationHandler({
@@ -65,21 +68,31 @@ export async function requestAndRegisterPushToken(): Promise<boolean> {
 }
 
 /**
- * Hook used in RootNavigator. Silently refreshes the push token on mount
- * and whenever the app returns to the foreground — no permission prompt.
+ * Hook used in RootNavigator. Silently refreshes the push token on mount,
+ * refreshes on foreground, and navigates to the correct screen when the user
+ * taps a push notification.
  */
 export function usePushNotifications() {
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
+  const responseListener = useRef<Notifications.Subscription | null>(null);
+
   useEffect(() => {
-    // Refresh on cold start (only if permission already granted)
     refreshTokenIfGranted();
 
-    // Refresh whenever the app comes back to foreground
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        refreshTokenIfGranted();
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshTokenIfGranted();
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as Record<string, string>;
+      if (data?.screen === 'CoachChat') {
+        navigation.navigate('CoachChat');
       }
     });
 
-    return () => subscription.remove();
-  }, []);
+    return () => {
+      appStateSubscription.remove();
+      responseListener.current?.remove();
+    };
+  }, [navigation]);
 }
