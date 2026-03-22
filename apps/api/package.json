@@ -24,6 +24,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
+    "@bull-board/api": "^6.20.6",
+    "@bull-board/express": "^6.20.6",
+    "@bull-board/nestjs": "^6.20.6",
     "@coach/shared": "*",
     "@google-cloud/speech": "^7.3.0",
     "@google/generative-ai": "^0.24.1",
