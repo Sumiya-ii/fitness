@@ -6,8 +6,8 @@ import { MealTimingService } from './meal-timing.service';
 export class MealTimingCron {
   constructor(private readonly mealTimingService: MealTimingService) {}
 
-  // Run every 15 minutes; service filters to Monday 9–10 AM per user timezone
-  @Cron('*/15 * * * *')
+  // Monday 01:00 UTC = Monday 09:00 Asia/Ulaanbaatar
+  @Cron('0 1 * * 1')
   async handleMealTimingInsights() {
     const count = await this.mealTimingService.scheduleMealTimingInsights();
     if (count > 0) {

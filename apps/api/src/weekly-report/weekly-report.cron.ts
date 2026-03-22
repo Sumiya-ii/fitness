@@ -6,8 +6,8 @@ import { WeeklyReportService } from './weekly-report.service';
 export class WeeklyReportCron {
   constructor(private readonly weeklyReportService: WeeklyReportService) {}
 
-  // Run every 15 minutes; service filters to Monday 9–10 AM per user timezone
-  @Cron('*/15 * * * *')
+  // Monday 01:00 UTC = Monday 09:00 Asia/Ulaanbaatar
+  @Cron('0 1 * * 1')
   async handleWeeklyReports() {
     const count = await this.weeklyReportService.scheduleWeeklyReports();
     if (count > 0) {
