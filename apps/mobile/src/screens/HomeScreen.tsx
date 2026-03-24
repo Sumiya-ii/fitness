@@ -23,6 +23,8 @@ import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store
 import { useWaterStore } from '../stores/water.store';
 import { useStepsStore, STEPS_GOAL, KCAL_PER_STEP } from '../stores/steps.store';
 import { useStreakStore } from '../stores/streak.store';
+import { useNutritionHistoryStore } from '../stores/nutrition-history.store';
+import { type DayHistory } from '../api/dashboard';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 
@@ -135,6 +137,98 @@ function ProgressArc({
         />
       </Svg>
       {children}
+    </View>
+  );
+}
+
+const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const BAR_MAX_H = 96;
+
+function HistoryBarChart({
+  history,
+  targetCalories,
+  onDayPress,
+  selectedDateKey,
+}: {
+  history: DayHistory[];
+  targetCalories: number | null;
+  onDayPress: (dateKey: string) => void;
+  selectedDateKey: string;
+}) {
+  const maxCal = Math.max(...history.map((d) => d.calories), targetCalories ?? 0, 1);
+  const targetLineBottom = targetCalories != null ? (targetCalories / maxCal) * BAR_MAX_H : null;
+
+  return (
+    <View style={{ position: 'relative' }}>
+      {targetLineBottom != null && (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 20 + targetLineBottom,
+            height: 1,
+            borderTopWidth: 1,
+            borderStyle: 'dashed',
+            borderColor: '#c3cedf',
+          }}
+        />
+      )}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: BAR_MAX_H + 20 }}>
+        {history.map((day) => {
+          const hasData = day.calories > 0;
+          const barH = hasData ? Math.max((day.calories / maxCal) * BAR_MAX_H, 6) : 6;
+          const pcal = day.protein * 4;
+          const ccal = day.carbs * 4;
+          const fcal = day.fat * 9;
+          const isSelected = day.date === selectedDateKey;
+          const dayLabel = DAY_LABELS[new Date(day.date + 'T12:00:00').getDay()];
+
+          return (
+            <Pressable
+              key={day.date}
+              onPress={() => onDayPress(day.date)}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                height: BAR_MAX_H + 20,
+              }}
+            >
+              <View
+                style={{
+                  width: '55%',
+                  height: barH,
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                  opacity: isSelected ? 1 : 0.7,
+                }}
+              >
+                {hasData ? (
+                  <>
+                    <View style={{ flex: pcal || 0.001, backgroundColor: '#f97316' }} />
+                    <View style={{ flex: ccal || 0.001, backgroundColor: '#f59e0b' }} />
+                    <View style={{ flex: fcal || 0.001, backgroundColor: '#3b82f6' }} />
+                  </>
+                ) : (
+                  <View style={{ flex: 1, backgroundColor: '#f0f4f9' }} />
+                )}
+              </View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: isSelected ? 'Inter-Bold' : 'Inter-Medium',
+                  color: isSelected ? '#0f172a' : '#9aabbf',
+                  marginTop: 5,
+                  height: 14,
+                }}
+              >
+                {dayLabel}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -525,6 +619,8 @@ export function HomeScreen() {
   const [streakModalVisible, setStreakModalVisible] = useState(false);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
   const { data, isLoading, fetchDashboard } = useDashboardStore();
+  const { data: historyData, fetchHistory } = useNutritionHistoryStore();
+  const history7 = historyData[7];
   const {
     consumed: waterConsumed,
     target: waterTarget,
@@ -566,11 +662,12 @@ export function HomeScreen() {
 
   useEffect(() => {
     fetchDashboard(selectedDateKey);
+    fetchHistory(7);
     if (selectedDateKey === todayKey) {
       fetchWater();
       fetchStreaks();
     }
-  }, [fetchDashboard, fetchWater, fetchStreaks, selectedDateKey, todayKey]);
+  }, [fetchDashboard, fetchWater, fetchStreaks, fetchHistory, selectedDateKey, todayKey]);
 
   useEffect(() => {
     checkStepsPermission();
@@ -579,6 +676,7 @@ export function HomeScreen() {
   const onRefresh = useCallback(() => {
     loadProfile();
     fetchDashboard(selectedDateKey);
+    fetchHistory(7);
     if (selectedDateKey === todayKey) {
       fetchWater();
       fetchTodaySteps();
@@ -590,6 +688,7 @@ export function HomeScreen() {
     fetchWater,
     fetchTodaySteps,
     fetchStreaks,
+    fetchHistory,
     selectedDateKey,
     todayKey,
   ]);
@@ -1401,11 +1500,95 @@ export function HomeScreen() {
                 </View>
               </Pressable>
             </View>
+
+            {/* ── Page 4: 7-Day Nutrition History ── */}
+            <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
+              <View className="bg-white rounded-3xl p-4 mb-3" style={cardShadowStrong}>
+                {/* Header */}
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text style={{ fontSize: 15, fontFamily: 'Inter-Bold', color: '#0b1220' }}>
+                    {t('dashboard.historyTitle')}
+                  </Text>
+                  <View className="flex-row items-center gap-3">
+                    <View className="flex-row items-center gap-1">
+                      <View
+                        style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#f97316' }}
+                      />
+                      <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                        {t('dashboard.protein')}
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center gap-1">
+                      <View
+                        style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#f59e0b' }}
+                      />
+                      <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                        {t('dashboard.carbs')}
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center gap-1">
+                      <View
+                        style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: '#3b82f6' }}
+                      />
+                      <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                        {t('dashboard.fat')}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {history7 && history7.history.length > 0 ? (
+                  <>
+                    <HistoryBarChart
+                      history={history7.history}
+                      targetCalories={history7.target?.calories ?? null}
+                      onDayPress={setSelectedDateKey}
+                      selectedDateKey={selectedDateKey}
+                    />
+                    {/* Summary row */}
+                    {(() => {
+                      const logged = history7.history.filter((d) => d.calories > 0);
+                      const avg =
+                        logged.length > 0
+                          ? Math.round(logged.reduce((s, d) => s + d.calories, 0) / logged.length)
+                          : 0;
+                      return (
+                        <View
+                          className="flex-row items-center justify-between mt-3 pt-3"
+                          style={{ borderTopWidth: 1, borderColor: '#f0f4f9' }}
+                        >
+                          <Text
+                            style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: '#9aabbf' }}
+                          >
+                            {avg > 0
+                              ? `${avg} kcal  ${t('dashboard.historyAvgLabel')}`
+                              : t('dashboard.historyNoData')}
+                          </Text>
+                          {history7.target && (
+                            <Text
+                              style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: '#c3cedf' }}
+                            >
+                              — {history7.target.calories} {t('dashboard.historyTargetLabel')}
+                            </Text>
+                          )}
+                        </View>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  <View style={{ height: 116, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                      {t('dashboard.historyNoData')}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
           </ScrollView>
 
           {/* Pagination dots */}
           <View className="flex-row justify-center items-center gap-2 mt-3 mb-1">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <View
                 key={i}
                 style={{

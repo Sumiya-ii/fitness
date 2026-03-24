@@ -68,6 +68,10 @@ export const en = {
     streakToday: "Today's logged",
     streakCalendarTitle: 'Your Streak Calendar',
     streakDays: 'days',
+    historyTitle: '7-Day History',
+    historyAvgLabel: 'avg / day',
+    historyTargetLabel: 'target',
+    historyNoData: 'Log meals to see your history',
   },
   logging: {
     logMeal: 'Log a Meal',

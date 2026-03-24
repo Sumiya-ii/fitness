@@ -68,6 +68,10 @@ export const mn = {
     streakToday: 'Өнөөдөр бүртгэсэн',
     streakCalendarTitle: 'Таны дараалал',
     streakDays: 'өдөр',
+    historyTitle: '7 хоногийн түүх',
+    historyAvgLabel: 'дундаж / өдөр',
+    historyTargetLabel: 'зорилго',
+    historyNoData: 'Хоолоо бүртгэж түүхээ харна уу',
   },
   logging: {
     logMeal: 'Хоол бүртгэх',
