@@ -11,6 +11,7 @@ export const QUEUE_NAMES = {
   ADAPTIVE_TARGET: 'adaptive-target',
   MEAL_TIMING_INSIGHTS: 'meal-timing-insights',
   COACH_MEMORY: 'coach-memory',
+  MEAL_NUDGE: 'meal-nudge',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];

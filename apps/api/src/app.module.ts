@@ -36,6 +36,7 @@ import { MealTimingModule } from './meal-timing';
 import { CoachMemoryModule } from './coach-memory/coach-memory.module';
 import { OnboardingModule } from './onboarding';
 import { StreaksModule } from './streaks/streaks.module';
+import { MealNudgeModule } from './meal-nudge';
 import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
 
@@ -89,6 +90,7 @@ import { HealthController } from './health/health.controller';
     MealTimingModule,
     CoachMemoryModule,
     StreaksModule,
+    MealNudgeModule,
   ],
   controllers: [HealthController],
   providers: [

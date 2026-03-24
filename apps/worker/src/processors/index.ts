@@ -8,6 +8,7 @@ import { processWeeklyReportJob } from './weekly-report.processor';
 import { processAdaptiveTargetJob } from './adaptive-target.processor';
 import { processMealTimingJob } from './meal-timing.processor';
 import { processCoachMemoryJob } from './coach-memory.processor';
+import { processMealNudgeJob } from './meal-nudge.processor';
 
 export async function processJob(queueName: QueueName, job: Job): Promise<unknown> {
   switch (queueName) {
@@ -34,6 +35,9 @@ export async function processJob(queueName: QueueName, job: Job): Promise<unknow
 
     case QUEUE_NAMES.COACH_MEMORY:
       return processCoachMemoryJob(job);
+
+    case QUEUE_NAMES.MEAL_NUDGE:
+      return processMealNudgeJob(job);
 
     case QUEUE_NAMES.FOOD_INDEX_SYNC:
       // TODO: Call Typesense reindex when Typesense is configured
