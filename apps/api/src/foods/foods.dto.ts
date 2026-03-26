@@ -9,11 +9,13 @@ const servingSchema = z.object({
 });
 
 const nutrientSchema = z.object({
-  caloriesPer100g: z.number().min(0),
-  proteinPer100g: z.number().min(0),
-  carbsPer100g: z.number().min(0),
-  fatPer100g: z.number().min(0),
-  fiberPer100g: z.number().min(0).optional(),
+  // Theoretical max: ~900 kcal/100g (pure fat). Hard cap at 1000 to catch data errors.
+  caloriesPer100g: z.number().min(0).max(1000),
+  // No single macro can exceed 100g per 100g of food
+  proteinPer100g: z.number().min(0).max(100),
+  carbsPer100g: z.number().min(0).max(100),
+  fatPer100g: z.number().min(0).max(100),
+  fiberPer100g: z.number().min(0).max(100).optional(),
 });
 
 const localizationSchema = z.object({

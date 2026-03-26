@@ -11,6 +11,7 @@ interface StepsStore {
   steps: number;
   permissionStatus: PermissionStatus;
   isLoading: boolean;
+  error: string | null;
   /** Seed permission status on mount — fetches steps if already granted */
   checkPermission: () => Promise<void>;
   /** Called when user taps "Connect Apple Health" */
@@ -23,6 +24,7 @@ export const useStepsStore = create<StepsStore>((set, get) => ({
   steps: 0,
   permissionStatus: 'undetermined',
   isLoading: false,
+  error: null,
 
   checkPermission: async () => {
     const { status } = await Pedometer.getPermissionsAsync();
@@ -41,15 +43,18 @@ export const useStepsStore = create<StepsStore>((set, get) => ({
   },
 
   fetchTodaySteps: async () => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       const end = new Date();
       const result = await Pedometer.getStepCountAsync(start, end);
       set({ steps: result.steps, isLoading: false });
-    } catch {
-      set({ isLoading: false });
+    } catch (e) {
+      set({
+        isLoading: false,
+        error: e instanceof Error ? e.message : 'Failed to fetch steps',
+      });
     }
   },
 }));

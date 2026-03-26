@@ -75,7 +75,14 @@ export const useWeightStore = create<WeightState>((set, get) => ({
         return {
           id: `__offline_${Date.now()}`,
           weightKg,
-          loggedAt: loggedAt ?? new Date().toISOString().split('T')[0]!,
+          // Use full ISO datetime so callers that parse loggedAt get consistent results.
+          // If the caller passed a date-only string (YYYY-MM-DD), normalise it to UTC noon
+          // to avoid day-boundary shifts when displayed in the user's local timezone.
+          loggedAt: loggedAt
+            ? new Date(
+                loggedAt.length === 10 ? loggedAt + 'T12:00:00.000Z' : loggedAt,
+              ).toISOString()
+            : new Date().toISOString(),
         };
       }
       throw e;

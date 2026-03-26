@@ -38,7 +38,7 @@ export class OnboardingService {
     });
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     const [updatedProfile, target] = await this.prisma.$transaction([
       this.prisma.profile.update({

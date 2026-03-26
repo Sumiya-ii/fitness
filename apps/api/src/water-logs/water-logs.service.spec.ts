@@ -1,4 +1,4 @@
-import { WaterLogsService, WATER_TARGET_ML } from './water-logs.service';
+import { WaterLogsService, DEFAULT_WATER_TARGET_ML } from './water-logs.service';
 import { PrismaService } from '../prisma';
 
 describe('WaterLogsService', () => {
@@ -19,6 +19,9 @@ describe('WaterLogsService', () => {
         findMany: jest.fn().mockResolvedValue([]),
         findFirst: jest.fn().mockResolvedValue(null),
         delete: jest.fn().mockResolvedValue(mockEntry),
+      },
+      profile: {
+        findUnique: jest.fn().mockResolvedValue({ waterTargetMl: 2000 }),
       },
     };
     service = new WaterLogsService(prisma as unknown as PrismaService);
@@ -52,7 +55,7 @@ describe('WaterLogsService', () => {
       prisma.waterLog.findMany.mockResolvedValue([]);
       const result = await service.getDaily('user-uuid');
       expect(result.consumed).toBe(0);
-      expect(result.target).toBe(WATER_TARGET_ML);
+      expect(result.target).toBe(DEFAULT_WATER_TARGET_ML);
       expect(result.entries).toHaveLength(0);
     });
 
@@ -67,9 +70,23 @@ describe('WaterLogsService', () => {
       expect(result.entries).toHaveLength(3);
     });
 
-    it('should return correct target', async () => {
+    it('should use profile waterTargetMl over default', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ waterTargetMl: 2500 });
       const result = await service.getDaily('user-uuid');
-      expect(result.target).toBe(2000);
+      expect(result.target).toBe(2500);
+    });
+
+    it('should fall back to default target when profile has none', async () => {
+      prisma.profile.findUnique.mockResolvedValue(null);
+      const result = await service.getDaily('user-uuid');
+      expect(result.target).toBe(DEFAULT_WATER_TARGET_ML);
+    });
+
+    it('should use UTC day boundaries when dateStr provided', async () => {
+      await service.getDaily('user-uuid', '2026-03-21');
+      const whereArg = prisma.waterLog.findMany.mock.calls[0][0].where;
+      expect(whereArg.loggedAt.gte.toISOString()).toBe('2026-03-21T00:00:00.000Z');
+      expect(whereArg.loggedAt.lt.toISOString()).toBe('2026-03-22T00:00:00.000Z');
     });
   });
 

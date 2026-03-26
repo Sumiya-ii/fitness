@@ -43,7 +43,8 @@ export const useWaterStore = create<WaterState>((set, get) => ({
   },
 
   removeCup: async (cupMl: number) => {
-    if (get().consumed <= 0) return;
+    // Optimistically decrement, but always attempt the server call — local state
+    // may be stale (e.g. after an offline sync replay), so the server is authoritative.
     set((s) => ({ consumed: Math.max(0, s.consumed - cupMl) }));
     try {
       const res = await waterApi.deleteLast();

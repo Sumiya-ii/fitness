@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { AddWaterDto } from './water-logs.dto';
 
-export const WATER_TARGET_ML = 2000;
+export const DEFAULT_WATER_TARGET_ML = 2000;
 
 @Injectable()
 export class WaterLogsService {
@@ -23,22 +23,29 @@ export class WaterLogsService {
   }
 
   async getDaily(userId: string, dateStr?: string) {
-    const date = dateStr ? new Date(dateStr) : new Date();
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
+    const dateKey = dateStr ?? new Date().toISOString().split('T')[0]!;
+    // Explicit UTC boundaries to avoid server-timezone day-boundary drift
+    const dayStart = new Date(dateKey + 'T00:00:00.000Z');
+    const dayEnd = new Date(dateKey + 'T00:00:00.000Z');
+    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 
-    const entries = await this.prisma.waterLog.findMany({
-      where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
-      orderBy: { loggedAt: 'asc' },
-    });
+    const [entries, profile] = await Promise.all([
+      this.prisma.waterLog.findMany({
+        where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
+        orderBy: { loggedAt: 'asc' },
+      }),
+      this.prisma.profile.findUnique({
+        where: { userId },
+        select: { waterTargetMl: true },
+      }),
+    ]);
 
     const consumed = entries.reduce((sum, e) => sum + e.amountMl, 0);
+    const target = profile?.waterTargetMl ?? DEFAULT_WATER_TARGET_ML;
 
     return {
       consumed,
-      target: WATER_TARGET_ML,
+      target,
       entries: entries.map((e) => ({
         id: e.id,
         amountMl: e.amountMl,
@@ -48,11 +55,10 @@ export class WaterLogsService {
   }
 
   async deleteLast(userId: string) {
-    const today = new Date();
-    const dayStart = new Date(today);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
+    const todayKey = new Date().toISOString().split('T')[0]!;
+    const dayStart = new Date(todayKey + 'T00:00:00.000Z');
+    const dayEnd = new Date(todayKey + 'T00:00:00.000Z');
+    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 
     const last = await this.prisma.waterLog.findFirst({
       where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
