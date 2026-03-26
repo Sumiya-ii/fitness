@@ -32,6 +32,7 @@ export type LogStackParamList = {
   BarcodeSubmit: { barcode: string };
   VoiceLog: undefined;
   PhotoLog: undefined;
+  LabelScan: undefined;
   FavoritesRecents: undefined;
 };
 

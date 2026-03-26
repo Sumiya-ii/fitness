@@ -164,8 +164,32 @@ export function LogScreen() {
             </View>
           </Animated.View>
 
+          {/* ── Label Scan ── */}
+          <Animated.View entering={FadeInDown.delay(160).duration(350)} className="mx-4 mb-4">
+            <Pressable
+              onPress={() => navigation.navigate('LabelScan')}
+              className="bg-white rounded-2xl flex-row items-center px-5 py-4"
+              style={{
+                shadowColor: '#0b1220',
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 2,
+              }}
+            >
+              <View className="h-10 w-10 rounded-xl bg-[#ecfdf5] items-center justify-center mr-4">
+                <Ionicons name="document-text" size={20} color="#059669" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-sans-bold text-[#0b1220]">Nutrition Label</Text>
+                <Text className="text-xs text-[#9aabbf] font-sans-medium">Scan package label</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+            </Pressable>
+          </Animated.View>
+
           {/* ── Quick Add ── */}
-          <Animated.View entering={FadeInDown.delay(160).duration(350)} className="mx-4 mb-6">
+          <Animated.View entering={FadeInDown.delay(240).duration(350)} className="mx-4 mb-6">
             <Pressable
               onPress={() => navigation.navigate('QuickAdd')}
               className="bg-white rounded-2xl flex-row items-center px-5 py-4"

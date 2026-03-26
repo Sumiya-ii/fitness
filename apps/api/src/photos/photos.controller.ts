@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Param,
+  Query,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
@@ -23,14 +24,17 @@ export class PhotosController {
   async upload(
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFile() file: Express.Multer.File | undefined,
+    @Query('mode') mode?: 'food' | 'label',
   ) {
     if (!file?.buffer) {
       throw new BadRequestException('Photo file is required');
     }
+    const validMode = mode === 'label' ? 'label' : undefined;
     const { draftId } = await this.photosService.uploadPhoto(
       user.id,
       file.buffer,
       file.originalname,
+      validMode,
     );
     return { data: { draftId } };
   }

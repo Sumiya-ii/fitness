@@ -28,12 +28,14 @@ export class PhotosService {
     userId: string,
     photoBuffer: Buffer,
     originalName?: string,
+    mode?: 'food' | 'label',
   ): Promise<{ draftId: string }> {
     const reference = `user/${userId}/${Date.now()}-${originalName ?? 'photo'}`;
     const job = await this.photoQueue.add('parse', {
       userId,
       reference,
       photoBuffer: photoBuffer.toString('base64'),
+      ...(mode && { mode }),
     });
     return { draftId: String(job.id!) };
   }

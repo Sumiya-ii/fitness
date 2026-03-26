@@ -6,6 +6,7 @@ interface PhotoJobData {
   userId: string;
   reference: string;
   photoBuffer: string; // base64
+  mode?: 'food' | 'label';
 }
 
 export interface ParsedFoodItem {
@@ -72,6 +73,51 @@ Estimation rules:
 - sodium is in milligrams
 - Never return empty items array — always make your best estimate`;
 
+const LABEL_SYSTEM_PROMPT = `You are an expert nutrition label reader. Your job is to accurately extract all nutritional information from a photograph of a product's nutrition facts label or packaging.
+
+Read the label carefully and extract:
+- Product/food name (from the package or label heading)
+- Serving size in grams (convert from other units if needed)
+- All nutritional values PER SERVING as printed on the label
+
+You have deep knowledge of:
+- Nutrition Facts labels (US FDA format)
+- Mongolian nutrition labels (Хүнсний шошго)
+- International label formats (EU, Australian, etc.)
+- Unit conversions (oz → g, cups → g, etc.)
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "mealName": "Product name from the label",
+  "items": [
+    {
+      "name": "Product name",
+      "servingGrams": 30,
+      "calories": 120,
+      "protein": 3.0,
+      "carbs": 22.0,
+      "fat": 2.5,
+      "fiber": 1.0,
+      "sugar": 8.0,
+      "sodium": 150,
+      "saturatedFat": 0.5,
+      "confidence": 0.97
+    }
+  ]
+}
+
+Rules:
+- Extract EXACTLY what the label says — do not estimate or guess
+- If serving size is not in grams, convert it (e.g., "1 cup (240ml)" → estimate grams)
+- confidence should reflect label readability: 0.95+ = clearly legible, 0.7–0.94 = partially obscured, <0.7 = hard to read
+- If multiple serving sizes are shown, use the per-serving values (not per-100g)
+- sodium is in milligrams
+- Always return exactly one item in the items array (the product from the label)
+- If you cannot read the label at all, return your best guess with low confidence`;
+
+const LABEL_USER_PROMPT =
+  'Read this nutrition label photo. Extract the product name, serving size, and all nutritional values exactly as printed.';
+
 const USER_PROMPT =
   'Analyze this food photo. Identify every item, estimate serving weights, and calculate precise nutritional values.';
 
@@ -103,11 +149,16 @@ function normalizeItems(raw: { mealName?: string; items?: ParsedFoodItem[] }): P
   };
 }
 
-async function parseWithGemini(imageBase64: string, apiKey: string): Promise<PhotoParseResult> {
+async function parseWithGemini(
+  imageBase64: string,
+  apiKey: string,
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<PhotoParseResult> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.0-flash',
-    systemInstruction: SYSTEM_PROMPT,
+    systemInstruction: systemPrompt,
   });
 
   const result = await model.generateContent({
@@ -115,7 +166,7 @@ async function parseWithGemini(imageBase64: string, apiKey: string): Promise<Pho
       {
         role: 'user',
         parts: [
-          { text: USER_PROMPT },
+          { text: userPrompt },
           { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
         ],
       },
@@ -131,13 +182,18 @@ async function parseWithGemini(imageBase64: string, apiKey: string): Promise<Pho
   return normalizeItems(JSON.parse(content) as { mealName?: string; items?: ParsedFoodItem[] });
 }
 
-async function parseWithOpenAI(imageBase64: string, apiKey: string): Promise<PhotoParseResult> {
+async function parseWithOpenAI(
+  imageBase64: string,
+  apiKey: string,
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<PhotoParseResult> {
   const client = new OpenAI({ apiKey });
   const response = await client.chat.completions.create({
     model: 'gpt-4o',
     response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       {
         role: 'user',
         content: [
@@ -145,7 +201,7 @@ async function parseWithOpenAI(imageBase64: string, apiKey: string): Promise<Pho
             type: 'image_url',
             image_url: { url: `data:image/jpeg;base64,${imageBase64}`, detail: 'high' },
           },
-          { type: 'text', text: USER_PROMPT },
+          { type: 'text', text: userPrompt },
         ],
       },
     ],
@@ -159,24 +215,27 @@ async function parseWithOpenAI(imageBase64: string, apiKey: string): Promise<Pho
 }
 
 export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoParseResult> {
-  const { photoBuffer } = job.data;
+  const { photoBuffer, mode } = job.data;
   const provider = process.env.VISION_PROVIDER ?? 'gemini';
   const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
+  const systemPrompt = mode === 'label' ? LABEL_SYSTEM_PROMPT : SYSTEM_PROMPT;
+  const userPrompt = mode === 'label' ? LABEL_USER_PROMPT : USER_PROMPT;
+
   if (provider === 'gemini' && geminiKey) {
     try {
-      return await parseWithGemini(photoBuffer, geminiKey);
+      return await parseWithGemini(photoBuffer, geminiKey, systemPrompt, userPrompt);
     } catch (err) {
       console.warn('[Photo] Gemini failed, falling back to GPT-4o:', err);
       if (openaiKey) {
-        return await parseWithOpenAI(photoBuffer, openaiKey);
+        return await parseWithOpenAI(photoBuffer, openaiKey, systemPrompt, userPrompt);
       }
     }
   }
 
   if (openaiKey) {
-    return await parseWithOpenAI(photoBuffer, openaiKey);
+    return await parseWithOpenAI(photoBuffer, openaiKey, systemPrompt, userPrompt);
   }
 
   console.warn('[Photo] No vision API key configured');

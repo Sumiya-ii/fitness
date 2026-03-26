@@ -5,4 +5,5 @@ export { BarcodeScanScreen } from './BarcodeScanScreen';
 export { BarcodeSubmitScreen } from './BarcodeSubmitScreen';
 export { VoiceLogScreen } from './VoiceLogScreen';
 export { PhotoLogScreen } from './PhotoLogScreen';
+export { LabelScanScreen } from './LabelScanScreen';
 export { FavoritesRecentsScreen } from './FavoritesRecentsScreen';
