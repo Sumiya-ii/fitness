@@ -17,11 +17,52 @@ import {
   createWorkoutLogSchema,
   updateWorkoutLogSchema,
   workoutLogQuerySchema,
+  estimateQuerySchema,
 } from './workout-logs.dto';
 
 @Controller('workout-logs')
 export class WorkoutLogsController {
   constructor(private readonly workoutLogsService: WorkoutLogsService) {}
+
+  /** Categorized workout type catalog for the mobile picker (no auth needed). */
+  @Get('types')
+  getTypes() {
+    return { data: this.workoutLogsService.getTypes() };
+  }
+
+  /** Flat list of all workout types (for search/autocomplete). */
+  @Get('types/list')
+  getTypeList() {
+    return { data: this.workoutLogsService.getTypeList() };
+  }
+
+  /** Calorie burn preview: ?workoutType=running&durationMin=30 */
+  @Get('estimate')
+  async estimate(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown) {
+    const parsed = estimateQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues);
+    }
+    return {
+      data: await this.workoutLogsService.estimate(
+        user.id,
+        parsed.data.workoutType,
+        parsed.data.durationMin,
+      ),
+    };
+  }
+
+  /** Last 5 distinct workout types the user has logged. */
+  @Get('recents')
+  async getRecents(@CurrentUser() user: AuthenticatedUser) {
+    return { data: await this.workoutLogsService.getRecents(user.id) };
+  }
+
+  /** This week's workout summary. */
+  @Get('summary')
+  async getSummary(@CurrentUser() user: AuthenticatedUser) {
+    return { data: await this.workoutLogsService.getWeeklySummary(user.id) };
+  }
 
   @Post()
   async create(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {

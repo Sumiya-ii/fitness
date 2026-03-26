@@ -29,6 +29,12 @@ export const workoutLogQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 });
 
+export const estimateQuerySchema = z.object({
+  workoutType: z.string().min(1).max(50),
+  durationMin: z.coerce.number().int().positive().max(1440),
+});
+
 export type CreateWorkoutLogDto = z.infer<typeof createWorkoutLogSchema>;
 export type UpdateWorkoutLogDto = z.infer<typeof updateWorkoutLogSchema>;
 export type WorkoutLogQueryDto = z.infer<typeof workoutLogQuerySchema>;
+export type EstimateQueryDto = z.infer<typeof estimateQuerySchema>;

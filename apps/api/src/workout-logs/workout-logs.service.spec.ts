@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { WorkoutLogsService } from './workout-logs.service';
 import { PrismaService } from '../prisma';
-import { calculateCaloriesBurned, getMetValue } from './met-calculator';
+import {
+  calculateCaloriesBurned,
+  getMetValue,
+  getWorkoutTypeInfo,
+  getWorkoutCatalog,
+} from './met-calculator';
 
 // ─── MET Calculator unit tests ───────────────────────────────────────────────
 
@@ -31,6 +36,27 @@ describe('MET calculator', () => {
 
   it('returns 0 for zero weight', () => {
     expect(calculateCaloriesBurned('running', 30, 0)).toBe(0);
+  });
+
+  it('getWorkoutTypeInfo returns label and icon for known types', () => {
+    const info = getWorkoutTypeInfo('running');
+    expect(info).not.toBeNull();
+    expect(info!.label.mn).toBe('Гүйлт');
+    expect(info!.icon).toBe('🏃');
+    expect(info!.category).toBe('cardio');
+  });
+
+  it('getWorkoutTypeInfo returns null for unknown types', () => {
+    expect(getWorkoutTypeInfo('flamethrowing')).toBeNull();
+  });
+
+  it('getWorkoutCatalog returns grouped categories', () => {
+    const catalog = getWorkoutCatalog();
+    expect(catalog.cardio).toBeDefined();
+    expect(catalog.strength).toBeDefined();
+    expect(catalog.sports).toBeDefined();
+    expect(catalog.flexibility).toBeDefined();
+    expect(catalog.cardio.length).toBeGreaterThan(0);
   });
 });
 
@@ -123,16 +149,74 @@ describe('WorkoutLogsService', () => {
     });
   });
 
+  describe('format enrichment', () => {
+    it('includes label and icon for known types', async () => {
+      const result = await service.findById('user-1', 'uuid-1');
+      expect(result.label).toEqual({ en: 'Running', mn: 'Гүйлт' });
+      expect(result.icon).toBe('🏃');
+    });
+
+    it('returns null label/icon for unknown types', async () => {
+      prisma.workoutLog.findFirst.mockResolvedValue({ ...mockEntry, workoutType: 'zorbing' });
+      const result = await service.findById('user-1', 'uuid-1');
+      expect(result.label).toBeNull();
+      expect(result.icon).toBeNull();
+    });
+  });
+
   describe('findById', () => {
     it('throws NotFoundException for unknown id', async () => {
       prisma.workoutLog.findFirst.mockResolvedValue(null);
       await expect(service.findById('user-1', 'bad-id')).rejects.toThrow(NotFoundException);
     });
+  });
 
-    it('returns formatted entry', async () => {
-      const result = await service.findById('user-1', 'uuid-1');
-      expect(result.id).toBe('uuid-1');
-      expect(result.loggedAt).toBe('2026-03-26T08:00:00.000Z');
+  describe('estimate', () => {
+    it('returns calorie estimate with label', async () => {
+      const result = await service.estimate('user-1', 'running', 30);
+      expect(result.calorieBurned).toBe(343);
+      expect(result.weightKg).toBe(70);
+      expect(result.label).toEqual({ en: 'Running', mn: 'Гүйлт' });
+    });
+  });
+
+  describe('getRecents', () => {
+    it('returns distinct workout types with labels', async () => {
+      prisma.workoutLog.findMany.mockResolvedValue([
+        { workoutType: 'running', durationMin: 30, calorieBurned: 343 },
+        { workoutType: 'running', durationMin: 25, calorieBurned: 286 },
+        { workoutType: 'yoga', durationMin: 60, calorieBurned: 210 },
+      ]);
+      const recents = await service.getRecents('user-1');
+      expect(recents).toHaveLength(2);
+      expect(recents[0].workoutType).toBe('running');
+      expect(recents[1].workoutType).toBe('yoga');
+      expect(recents[0].label?.mn).toBe('Гүйлт');
+    });
+  });
+
+  describe('getWeeklySummary', () => {
+    it('aggregates workout stats for the week', async () => {
+      prisma.workoutLog.findMany.mockResolvedValue([
+        {
+          workoutType: 'running',
+          durationMin: 30,
+          calorieBurned: 343,
+          loggedAt: new Date('2026-03-26T08:00:00Z'),
+        },
+        {
+          workoutType: 'yoga',
+          durationMin: 60,
+          calorieBurned: 210,
+          loggedAt: new Date('2026-03-25T08:00:00Z'),
+        },
+      ]);
+      const summary = await service.getWeeklySummary('user-1');
+      expect(summary.workoutCount).toBe(2);
+      expect(summary.totalDurationMin).toBe(90);
+      expect(summary.totalCaloriesBurned).toBe(553);
+      expect(summary.activeDays).toBe(2);
+      expect(summary.byType).toEqual({ running: 1, yoga: 1 });
     });
   });
 
@@ -152,6 +236,14 @@ describe('WorkoutLogsService', () => {
     it('throws NotFoundException when entry does not belong to user', async () => {
       prisma.workoutLog.findFirst.mockResolvedValue(null);
       await expect(service.remove('user-1', 'bad-id')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getTypes', () => {
+    it('returns categorized catalog', () => {
+      const types = service.getTypes();
+      expect(types.cardio).toBeDefined();
+      expect(types.strength).toBeDefined();
     });
   });
 });
