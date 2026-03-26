@@ -1086,7 +1086,7 @@ export function HomeScreen() {
                   </View>
                 </View>
 
-                {/* Water Summary */}
+                {/* Water Summary + Controls */}
                 <View
                   className="flex-1 bg-white rounded-3xl p-4 justify-between"
                   style={cardShadowStrong}
@@ -1102,85 +1102,49 @@ export function HomeScreen() {
                   >
                     {t('dashboard.water')}
                   </Text>
-                  <View>
+                  <View className="items-center" style={{ marginVertical: 4 }}>
+                    <ProgressArc
+                      progress={waterProgress}
+                      size={52}
+                      strokeWidth={5}
+                      color="#0ea5e9"
+                      trackColor="#e0f2fe"
+                    >
+                      <Text style={{ fontSize: 14 }}>💧</Text>
+                    </ProgressArc>
                     <Text
                       style={{
-                        fontSize: 20,
+                        fontSize: 16,
                         fontFamily: 'Inter-Bold',
                         color: '#0b1220',
-                        lineHeight: 24,
+                        marginTop: 4,
                       }}
                     >
                       {waterCupsConsumed.toFixed(1)}
                     </Text>
-                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
-                      {t('dashboard.waterCups')}
+                    <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
+                      {t('dashboard.waterCups')} · {waterMlLabel}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        fontFamily: 'Inter-Medium',
-                        color: '#b0bec5',
-                        marginTop: 2,
-                      }}
+                  </View>
+                  <View className="flex-row items-center gap-2">
+                    <Pressable
+                      onPress={() => removeCup(CUP_ML)}
+                      disabled={effectiveWaterConsumed <= 0}
+                      className="flex-1 h-8 rounded-xl bg-[#f0f4f9] items-center justify-center"
                     >
-                      {waterMlLabel}
-                    </Text>
+                      <Ionicons
+                        name="remove"
+                        size={18}
+                        color={effectiveWaterConsumed <= 0 ? '#c3cedf' : '#0b1220'}
+                      />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => addWater(CUP_ML)}
+                      className="flex-1 h-8 rounded-xl bg-[#0ea5e9] items-center justify-center"
+                    >
+                      <Ionicons name="add" size={18} color="#ffffff" />
+                    </Pressable>
                   </View>
-                  <ProgressArc
-                    progress={waterProgress}
-                    size={48}
-                    strokeWidth={5}
-                    color="#0ea5e9"
-                    trackColor="#e0f2fe"
-                  >
-                    <Text style={{ fontSize: 14 }}>💧</Text>
-                  </ProgressArc>
-                </View>
-              </View>
-
-              {/* Row 2: Water cup +/- controls */}
-              <View className="bg-white rounded-3xl p-4 mb-3" style={cardShadow}>
-                <View className="flex-row items-center justify-between mb-3">
-                  <View>
-                    <Text className="text-sm font-sans-semibold text-[#0b1220]">
-                      {t('dashboard.water')}
-                    </Text>
-                    <Text style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
-                      {waterCupsConsumed.toFixed(1)} / {waterCupsTarget} {t('dashboard.waterCups')}{' '}
-                      · {waterMlLabel}
-                    </Text>
-                  </View>
-                  <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#b0bec5' }}>
-                    {CUP_ML} {t('dashboard.mlPerCup')}
-                  </Text>
-                </View>
-                <View className="flex-row items-center gap-3">
-                  <Pressable
-                    onPress={() => removeCup(CUP_ML)}
-                    disabled={effectiveWaterConsumed <= 0}
-                    className="flex-1 h-12 rounded-2xl bg-[#f0f4f9] items-center justify-center"
-                  >
-                    <Ionicons
-                      name="remove"
-                      size={22}
-                      color={effectiveWaterConsumed <= 0 ? '#c3cedf' : '#0b1220'}
-                    />
-                  </Pressable>
-                  <View className="flex-1 items-center">
-                    <Text style={{ fontSize: 22, fontFamily: 'Inter-Bold', color: '#0ea5e9' }}>
-                      {waterCupsConsumed.toFixed(1)}
-                    </Text>
-                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#9aabbf' }}>
-                      {t('dashboard.waterCups')}
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => addWater(CUP_ML)}
-                    className="flex-1 h-12 rounded-2xl bg-[#0ea5e9] items-center justify-center"
-                  >
-                    <Ionicons name="add" size={22} color="#ffffff" />
-                  </Pressable>
                 </View>
               </View>
 
