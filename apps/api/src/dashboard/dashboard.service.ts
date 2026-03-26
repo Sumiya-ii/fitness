@@ -8,6 +8,9 @@ export interface DayHistory {
   carbs: number;
   fat: number;
   fiber: number | null;
+  sugar: number | null;
+  sodium: number | null;
+  saturatedFat: number | null;
   waterMl: number;
 }
 
@@ -22,7 +25,7 @@ export class DashboardService {
     const dayEnd = new Date(dateKey + 'T00:00:00.000Z');
     dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 
-    const [mealLogs, target, waterLogs, profile] = await Promise.all([
+    const [mealLogs, target, waterLogs, profile, workoutEntries] = await Promise.all([
       this.prisma.mealLog.findMany({
         where: {
           userId,
@@ -42,6 +45,10 @@ export class DashboardService {
         where: { userId },
         select: { waterTargetMl: true },
       }),
+      this.prisma.workoutLog.findMany({
+        where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
+        orderBy: { loggedAt: 'asc' },
+      }),
     ]);
 
     const waterConsumed = waterLogs.reduce((sum, l) => sum + l.amountMl, 0);
@@ -53,6 +60,9 @@ export class DashboardService {
       carbs: 0,
       fat: 0,
       fiber: null as number | null,
+      sugar: null as number | null,
+      sodium: null as number | null,
+      saturatedFat: null as number | null,
     };
 
     for (const log of mealLogs) {
@@ -62,6 +72,17 @@ export class DashboardService {
       consumed.fat += Number(log.totalFat ?? 0);
       if (log.totalFiber !== null && log.totalFiber !== undefined) {
         consumed.fiber = Number(((consumed.fiber ?? 0) + Number(log.totalFiber)).toFixed(1));
+      }
+      if (log.totalSugar !== null && log.totalSugar !== undefined) {
+        consumed.sugar = Number(((consumed.sugar ?? 0) + Number(log.totalSugar)).toFixed(1));
+      }
+      if (log.totalSodium !== null && log.totalSodium !== undefined) {
+        consumed.sodium = Number(((consumed.sodium ?? 0) + Number(log.totalSodium)).toFixed(1));
+      }
+      if (log.totalSaturatedFat !== null && log.totalSaturatedFat !== undefined) {
+        consumed.saturatedFat = Number(
+          ((consumed.saturatedFat ?? 0) + Number(log.totalSaturatedFat)).toFixed(1),
+        );
       }
     }
 
@@ -103,6 +124,9 @@ export class DashboardService {
       totalCarbs: Number(log.totalCarbs ?? 0),
       totalFat: Number(log.totalFat ?? 0),
       totalFiber: log.totalFiber ? Number(log.totalFiber) : null,
+      totalSugar: log.totalSugar ? Number(log.totalSugar) : null,
+      totalSodium: log.totalSodium ? Number(log.totalSodium) : null,
+      totalSaturatedFat: log.totalSaturatedFat ? Number(log.totalSaturatedFat) : null,
       loggedAt: log.loggedAt.toISOString(),
       items: log.items.map((item) => ({
         id: item.id,
@@ -112,7 +136,22 @@ export class DashboardService {
         snapshotCarbs: Number(item.snapshotCarbs),
         snapshotFat: Number(item.snapshotFat),
         snapshotFiber: item.snapshotFiber ? Number(item.snapshotFiber) : null,
+        snapshotSugar: item.snapshotSugar ? Number(item.snapshotSugar) : null,
+        snapshotSodium: item.snapshotSodium ? Number(item.snapshotSodium) : null,
+        snapshotSaturatedFat: item.snapshotSaturatedFat ? Number(item.snapshotSaturatedFat) : null,
       })),
+    }));
+
+    const caloriesBurned = workoutEntries.reduce((sum, w) => sum + (w.calorieBurned ?? 0), 0);
+    const netCalories = consumed.calories - caloriesBurned;
+
+    const workouts = workoutEntries.map((w) => ({
+      id: w.id,
+      workoutType: w.workoutType,
+      durationMin: w.durationMin,
+      calorieBurned: w.calorieBurned,
+      note: w.note,
+      loggedAt: w.loggedAt.toISOString(),
     }));
 
     return {
@@ -125,6 +164,10 @@ export class DashboardService {
       meals,
       waterConsumed,
       waterTarget,
+      caloriesBurned,
+      netCalories,
+      workoutCount: workoutEntries.length,
+      workouts,
     };
   }
 
@@ -148,6 +191,9 @@ export class DashboardService {
           totalCarbs: true,
           totalFat: true,
           totalFiber: true,
+          totalSugar: true,
+          totalSodium: true,
+          totalSaturatedFat: true,
         },
       }),
       this.prisma.waterLog.findMany({
@@ -172,6 +218,9 @@ export class DashboardService {
         carbs: 0,
         fat: 0,
         fiber: null,
+        sugar: null,
+        sodium: null,
+        saturatedFat: null,
         waterMl: 0,
       });
     }
@@ -186,6 +235,15 @@ export class DashboardService {
         day.fat += Number(log.totalFat ?? 0);
         if (log.totalFiber !== null && log.totalFiber !== undefined) {
           day.fiber = (day.fiber ?? 0) + Number(log.totalFiber);
+        }
+        if (log.totalSugar !== null && log.totalSugar !== undefined) {
+          day.sugar = (day.sugar ?? 0) + Number(log.totalSugar);
+        }
+        if (log.totalSodium !== null && log.totalSodium !== undefined) {
+          day.sodium = (day.sodium ?? 0) + Number(log.totalSodium);
+        }
+        if (log.totalSaturatedFat !== null && log.totalSaturatedFat !== undefined) {
+          day.saturatedFat = (day.saturatedFat ?? 0) + Number(log.totalSaturatedFat);
         }
       }
     }
@@ -205,6 +263,9 @@ export class DashboardService {
       carbs: Number(d.carbs.toFixed(1)),
       fat: Number(d.fat.toFixed(1)),
       fiber: d.fiber !== null ? Number(d.fiber.toFixed(1)) : null,
+      sugar: d.sugar !== null ? Number(d.sugar.toFixed(1)) : null,
+      sodium: d.sodium !== null ? Number(d.sodium.toFixed(1)) : null,
+      saturatedFat: d.saturatedFat !== null ? Number(d.saturatedFat.toFixed(1)) : null,
       waterMl: d.waterMl,
     }));
 

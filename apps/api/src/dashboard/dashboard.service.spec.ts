@@ -26,6 +26,9 @@ describe('DashboardService', () => {
       profile: {
         findUnique: jest.fn().mockResolvedValue({ waterTargetMl: 2000 }),
       },
+      workoutLog: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
     };
     service = new DashboardService(prisma as unknown as PrismaService);
   });
@@ -49,6 +52,9 @@ describe('DashboardService', () => {
         totalCarbs: 60,
         totalFat: 15,
         totalFiber: null,
+        totalSugar: null,
+        totalSodium: null,
+        totalSaturatedFat: null,
         items: [],
       },
       {
@@ -61,6 +67,9 @@ describe('DashboardService', () => {
         totalCarbs: 80,
         totalFat: 25,
         totalFiber: null,
+        totalSugar: null,
+        totalSodium: null,
+        totalSaturatedFat: null,
         items: [],
       },
     ]);
@@ -84,6 +93,9 @@ describe('DashboardService', () => {
         totalCarbs: 50,
         totalFat: 15,
         totalFiber: null,
+        totalSugar: null,
+        totalSodium: null,
+        totalSaturatedFat: null,
         items: [],
       },
     ]);

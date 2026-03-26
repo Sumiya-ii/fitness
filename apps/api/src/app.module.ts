@@ -38,6 +38,7 @@ import { OnboardingModule } from './onboarding';
 import { StreaksModule } from './streaks/streaks.module';
 import { MealNudgeModule } from './meal-nudge';
 import { QPayModule } from './qpay';
+import { WorkoutLogsModule } from './workout-logs';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -91,6 +92,7 @@ import { HealthController } from './health/health.controller';
     CoachMemoryModule,
     StreaksModule,
     MealNudgeModule,
+    WorkoutLogsModule,
   ],
   controllers: [HealthController],
   providers: [

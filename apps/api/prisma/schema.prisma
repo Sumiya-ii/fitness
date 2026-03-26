@@ -131,6 +131,9 @@ model FoodNutrient {
   carbsPer100g    Decimal @map("carbs_per_100g") @db.Decimal(8, 2)
   fatPer100g      Decimal @map("fat_per_100g") @db.Decimal(8, 2)
   fiberPer100g    Decimal? @map("fiber_per_100g") @db.Decimal(8, 2)
+  sugarPer100g    Decimal? @map("sugar_per_100g") @db.Decimal(8, 2)
+  sodiumPer100g   Decimal? @map("sodium_per_100g") @db.Decimal(8, 2) // mg per 100g
+  saturatedFatPer100g Decimal? @map("saturated_fat_per_100g") @db.Decimal(8, 2)
 
   food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 
@@ -200,6 +203,9 @@ model MealLog {
   totalCarbs    Decimal? @map("total_carbs") @db.Decimal(8, 2)
   totalFat      Decimal? @map("total_fat") @db.Decimal(8, 2)
   totalFiber    Decimal? @map("total_fiber") @db.Decimal(8, 2)
+  totalSugar    Decimal? @map("total_sugar") @db.Decimal(8, 2)
+  totalSodium   Decimal? @map("total_sodium") @db.Decimal(8, 2) // mg
+  totalSaturatedFat Decimal? @map("total_saturated_fat") @db.Decimal(8, 2)
 
   user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   items MealLogItem[]
@@ -222,6 +228,9 @@ model MealLogItem {
   snapshotCarbs    Decimal @map("snapshot_carbs") @db.Decimal(8, 2)
   snapshotFat      Decimal @map("snapshot_fat") @db.Decimal(8, 2)
   snapshotFiber    Decimal? @map("snapshot_fiber") @db.Decimal(8, 2)
+  snapshotSugar    Decimal? @map("snapshot_sugar") @db.Decimal(8, 2)
+  snapshotSodium   Decimal? @map("snapshot_sodium") @db.Decimal(8, 2) // mg
+  snapshotSaturatedFat Decimal? @map("snapshot_saturated_fat") @db.Decimal(8, 2)
   snapshotFoodName String  @map("snapshot_food_name") @db.VarChar(500)
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -264,13 +273,14 @@ model WeightLog {
 }
 
 model WorkoutLog {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
-  workoutType  String   @map("workout_type") @db.VarChar(50)
-  durationMin  Int?     @map("duration_min")
-  note         String?
-  loggedAt     DateTime @map("logged_at")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  workoutType    String   @map("workout_type") @db.VarChar(50)
+  durationMin    Int?     @map("duration_min")
+  calorieBurned  Int?     @map("calorie_burned")
+  note           String?
+  loggedAt       DateTime @map("logged_at")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -471,6 +481,9 @@ model VoiceDraft {
   totalProtein  Float?    @map("total_protein")
   totalCarbs    Float?    @map("total_carbs")
   totalFat      Float?    @map("total_fat")
+  totalSugar    Float?    @map("total_sugar")
+  totalSodium   Float?    @map("total_sodium")
+  totalSaturatedFat Float? @map("total_saturated_fat")
   errorMessage  String?   @map("error_message")
   createdAt     DateTime  @default(now()) @map("created_at")
   expiresAt     DateTime  @map("expires_at")
