@@ -1,9 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Image, Alert, Animated, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Image,
+  Alert,
+  Animated,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { BackButton, Button, Card, Badge } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
@@ -65,6 +78,69 @@ function autoDetectMealType(): MealType {
   return 'snack';
 }
 
+// ── Cross-platform prompt modal (Alert.prompt is iOS-only) ──
+function InputModal({
+  visible,
+  title,
+  value,
+  onSubmit,
+  onCancel,
+  keyboardType = 'default',
+}: {
+  visible: boolean;
+  title: string;
+  value: string;
+  onSubmit: (v: string) => void;
+  onCancel: () => void;
+  keyboardType?: 'default' | 'decimal-pad';
+}) {
+  const [inputValue, setInputValue] = useState(value);
+  useEffect(() => {
+    if (visible) setInputValue(value);
+  }, [visible, value]);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <Pressable onPress={onCancel} className="flex-1 bg-black/40 items-center justify-center px-8">
+        <Pressable
+          onPress={() => {}}
+          className="bg-white w-full rounded-2xl p-5"
+          style={{
+            shadowColor: '#000',
+            shadowOpacity: 0.15,
+            shadowRadius: 20,
+            shadowOffset: { width: 0, height: 8 },
+            elevation: 10,
+          }}
+        >
+          <Text className="text-base font-sans-semibold text-text mb-3">{title}</Text>
+          <TextInput
+            autoFocus
+            value={inputValue}
+            onChangeText={setInputValue}
+            onSubmitEditing={() => onSubmit(inputValue)}
+            keyboardType={keyboardType}
+            returnKeyType="done"
+            selectTextOnFocus
+            className="border border-surface-border rounded-xl px-4 py-3 text-base text-text font-sans-medium"
+          />
+          <View className="flex-row justify-end gap-3 mt-4">
+            <Pressable onPress={onCancel} className="px-4 py-2">
+              <Text className="text-sm font-sans-medium text-text-secondary">Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onSubmit(inputValue)}
+              className="bg-text px-5 py-2 rounded-xl"
+            >
+              <Text className="text-sm font-sans-semibold text-white">Save</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 function ScanningAnimation({ isLabel }: { isLabel: boolean }) {
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -107,23 +183,65 @@ function ServingStepper({
   onChange: (v: number) => void;
   label: string;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+
+  const handleStartEdit = () => {
+    setInputValue(value % 1 === 0 ? String(value) : value.toFixed(2).replace(/0$/, ''));
+    setEditing(true);
+  };
+
+  const handleSubmitEdit = () => {
+    const parsed = parseFloat(inputValue);
+    if (!isNaN(parsed) && parsed > 0 && parsed <= 20) {
+      onChange(Math.round(parsed * 4) / 4); // snap to 0.25 increments
+    }
+    setEditing(false);
+  };
+
+  const handleDecrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onChange(Math.max(SERVING_STEP, value - SERVING_STEP));
+  };
+
+  const handleIncrement = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onChange(Math.min(20, value + SERVING_STEP));
+  };
+
   return (
     <View>
       <Text className="text-xs text-text-secondary mb-1.5">{label}</Text>
       <View className="flex-row items-center gap-2">
         <Pressable
-          onPress={() => onChange(Math.max(SERVING_STEP, value - SERVING_STEP))}
+          onPress={handleDecrement}
           className="h-9 w-9 items-center justify-center rounded-xl bg-surface-secondary active:opacity-60"
         >
           <Ionicons name="remove" size={18} color="#1f2028" />
         </Pressable>
-        <View className="min-w-[48px] items-center">
-          <Text className="text-base font-sans-semibold text-text">
-            {value % 1 === 0 ? value : value.toFixed(2).replace(/0$/, '')}
-          </Text>
-        </View>
+        {editing ? (
+          <View className="min-w-[48px] items-center">
+            <TextInput
+              autoFocus
+              value={inputValue}
+              onChangeText={setInputValue}
+              onBlur={handleSubmitEdit}
+              onSubmitEditing={handleSubmitEdit}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              selectTextOnFocus
+              className="text-base font-sans-semibold text-text text-center p-0 min-w-[40px]"
+            />
+          </View>
+        ) : (
+          <Pressable onPress={handleStartEdit} className="min-w-[48px] items-center">
+            <Text className="text-base font-sans-semibold text-text">
+              {value % 1 === 0 ? value : value.toFixed(2).replace(/0$/, '')}
+            </Text>
+          </Pressable>
+        )}
         <Pressable
-          onPress={() => onChange(Math.min(10, value + SERVING_STEP))}
+          onPress={handleIncrement}
           className="h-9 w-9 items-center justify-center rounded-xl bg-surface-secondary active:opacity-60"
         >
           <Ionicons name="add" size={18} color="#1f2028" />
@@ -185,10 +303,13 @@ function EditableValue({
       className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5 active:opacity-60"
     >
       <Text className="text-xs text-text-secondary">{label}</Text>
-      <Text className="text-sm font-sans-semibold text-text">
-        {value}
-        {unit}
-      </Text>
+      <View className="flex-row items-center gap-0.5">
+        <Text className="text-sm font-sans-semibold text-text">
+          {value}
+          {unit}
+        </Text>
+        <Ionicons name="pencil" size={10} color="#9a9caa" />
+      </View>
     </Pressable>
   );
 }
@@ -211,6 +332,24 @@ export function PhotoLogScreen() {
   const [mealType, setMealType] = useState<MealType>(autoDetectMealType);
   const [cameraLaunched, setCameraLaunched] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cross-platform modal state (replaces Alert.prompt)
+  const [modal, setModal] = useState<{
+    visible: boolean;
+    title: string;
+    value: string;
+    keyboardType: 'default' | 'decimal-pad';
+    onSubmit: (v: string) => void;
+  }>({ visible: false, title: '', value: '', keyboardType: 'default', onSubmit: () => {} });
+
+  const showEditModal = (
+    title: string,
+    value: string,
+    onSubmit: (v: string) => void,
+    keyboardType: 'default' | 'decimal-pad' = 'default',
+  ) => {
+    setModal({ visible: true, title, value, keyboardType, onSubmit });
+  };
 
   useEffect(() => {
     return () => {
@@ -432,6 +571,7 @@ export function PhotoLogScreen() {
       });
 
       setFoodSaved(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save food');
     } finally {
@@ -488,363 +628,408 @@ export function PhotoLogScreen() {
           )}
         </View>
 
-        <ScrollView
+        <KeyboardAvoidingView
           className="flex-1"
-          contentContainerStyle={{ paddingBottom: 32 }}
-          keyboardShouldPersistTaps="handled"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Initial state: camera / gallery picker */}
-          {!photoUri && !analyzing && (
-            <View className="flex-1 items-center justify-center px-6 pt-16 pb-8">
-              <View className="h-16 w-16 rounded-2xl bg-surface-secondary items-center justify-center mb-5">
-                <Ionicons name={isLabel ? 'document-text' : 'camera'} size={32} color="#1f2028" />
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 32 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Initial state: camera / gallery picker */}
+            {!photoUri && !analyzing && (
+              <View className="flex-1 items-center justify-center px-6 pt-16 pb-8">
+                <View className="h-16 w-16 rounded-2xl bg-surface-secondary items-center justify-center mb-5">
+                  <Ionicons name={isLabel ? 'document-text' : 'camera'} size={32} color="#1f2028" />
+                </View>
+                <Text className="text-xl font-sans-semibold text-text mb-1">
+                  {isLabel ? 'Scan Nutrition Label' : 'Log with Photo'}
+                </Text>
+                <Text className="text-text-secondary text-sm text-center mb-8">
+                  {isLabel
+                    ? 'Photograph a nutrition facts panel — make sure the full label is visible and well-lit'
+                    : 'Take a photo of your meal and AI will calculate the calories and macros'}
+                </Text>
+                <View className="w-full flex-row gap-3 mb-6">
+                  <Pressable
+                    onPress={handleCapture}
+                    className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
+                  >
+                    <Ionicons name="camera-outline" size={32} color="#1f2028" />
+                    <Text className="mt-2 font-sans-medium text-text text-sm">Camera</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handlePickFromGallery}
+                    className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
+                  >
+                    <Ionicons name="images-outline" size={32} color="#1f2028" />
+                    <Text className="mt-2 font-sans-medium text-text text-sm">Gallery</Text>
+                  </Pressable>
+                </View>
+                {error && <Text className="text-center text-red-400 text-sm">{error}</Text>}
               </View>
-              <Text className="text-xl font-sans-semibold text-text mb-1">
-                {isLabel ? 'Scan Nutrition Label' : 'Log with Photo'}
-              </Text>
-              <Text className="text-text-secondary text-sm text-center mb-8">
-                {isLabel
-                  ? 'Photograph a nutrition facts panel — make sure the full label is visible and well-lit'
-                  : 'Take a photo of your meal and AI will calculate the calories and macros'}
-              </Text>
-              <View className="w-full flex-row gap-3 mb-6">
-                <Pressable
-                  onPress={handleCapture}
-                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
-                >
-                  <Ionicons name="camera-outline" size={32} color="#1f2028" />
-                  <Text className="mt-2 font-sans-medium text-text text-sm">Camera</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handlePickFromGallery}
-                  className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
-                >
-                  <Ionicons name="images-outline" size={32} color="#1f2028" />
-                  <Text className="mt-2 font-sans-medium text-text text-sm">Gallery</Text>
-                </Pressable>
-              </View>
-              {error && <Text className="text-center text-red-400 text-sm">{error}</Text>}
-            </View>
-          )}
+            )}
 
-          {/* Analyzing state */}
-          {analyzing && (
-            <View className="px-4">
-              {photoUri && (
+            {/* Analyzing state */}
+            {analyzing && (
+              <View className="px-4">
+                {photoUri && (
+                  <Image
+                    source={{ uri: photoUri }}
+                    className="mt-4 mb-2 h-52 w-full rounded-2xl bg-surface-secondary"
+                    resizeMode="cover"
+                  />
+                )}
+                <ScanningAnimation isLabel={isLabel} />
+              </View>
+            )}
+
+            {/* Results state */}
+            {photoUri && hasResults && (
+              <View className="px-4 pt-4">
                 <Image
                   source={{ uri: photoUri }}
-                  className="mt-4 mb-2 h-52 w-full rounded-2xl bg-surface-secondary"
+                  className="mb-4 h-52 w-full rounded-2xl bg-surface-secondary"
                   resizeMode="cover"
                 />
-              )}
-              <ScanningAnimation isLabel={isLabel} />
-            </View>
-          )}
 
-          {/* Results state */}
-          {photoUri && hasResults && (
-            <View className="px-4 pt-4">
-              <Image
-                source={{ uri: photoUri }}
-                className="mb-4 h-52 w-full rounded-2xl bg-surface-secondary"
-                resizeMode="cover"
-              />
-
-              {hasItems ? (
-                <>
-                  {/* Meal type selector */}
-                  <View className="mb-4">
-                    <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
-                      Meal Type
-                    </Text>
-                    <View className="flex-row gap-2">
-                      {(Object.keys(MEAL_TYPE_LABELS) as MealType[]).map((type) => (
-                        <Pressable
-                          key={type}
-                          onPress={() => setMealType(type)}
-                          className={`flex-1 items-center py-2 rounded-xl border ${
-                            mealType === type
-                              ? 'bg-text border-text'
-                              : 'bg-surface-card border-surface-border'
-                          }`}
-                        >
-                          <Text
-                            className={`text-xs font-sans-medium ${
-                              mealType === type ? 'text-white' : 'text-text-secondary'
+                {hasItems ? (
+                  <>
+                    {/* Meal type selector */}
+                    <View className="mb-4">
+                      <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
+                        Meal Type
+                      </Text>
+                      <View className="flex-row gap-2">
+                        {(Object.keys(MEAL_TYPE_LABELS) as MealType[]).map((type) => (
+                          <Pressable
+                            key={type}
+                            onPress={() => setMealType(type)}
+                            className={`flex-1 items-center py-2 rounded-xl border ${
+                              mealType === type
+                                ? 'bg-text border-text'
+                                : 'bg-surface-card border-surface-border'
                             }`}
                           >
-                            {MEAL_TYPE_LABELS[type]}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Meal name + item count / label badge */}
-                  <View className="flex-row items-center justify-between mb-3">
-                    <Text className="font-sans-semibold text-text text-base flex-1 mr-2">
-                      {draft?.mealName ?? (isLabel ? 'Product' : 'Identified foods')}
-                    </Text>
-                    {isLabel ? (
-                      <Badge variant="info">From label</Badge>
-                    ) : (
-                      <Text className="text-xs text-text-secondary font-sans-medium">
-                        {effectiveItems.length} item{effectiveItems.length !== 1 ? 's' : ''}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Food item cards */}
-                  {baseItems.map((item, index) => {
-                    const effective = getEffectiveItem(item, index);
-                    const currentMultiplier = multipliers[index] ?? 1;
-                    return (
-                      <Card key={`${item.name}-${index}`} className="mb-3">
-                        {/* Item header row */}
-                        <View className="flex-row items-start justify-between mb-2">
-                          <Pressable
-                            className="flex-1 pr-2"
-                            onPress={() => {
-                              Alert.prompt(
-                                'Edit name',
-                                undefined,
-                                (text) => {
-                                  if (text?.trim()) handleEditName(index, text.trim());
-                                },
-                                'plain-text',
-                                item.name,
-                              );
-                            }}
-                          >
-                            <Text className="font-sans-semibold text-text">{item.name}</Text>
-                            <Text className="text-xs text-text-secondary mt-0.5">
-                              {item.servingGrams > 0
-                                ? isLabel
-                                  ? `${Math.round(item.servingGrams * currentMultiplier)}g per serving`
-                                  : `~${Math.round(item.servingGrams * currentMultiplier)}g`
-                                : isLabel
-                                  ? 'Per serving'
-                                  : 'Estimated serving'}
+                            <Text
+                              className={`text-xs font-sans-medium ${
+                                mealType === type ? 'text-white' : 'text-text-secondary'
+                              }`}
+                            >
+                              {MEAL_TYPE_LABELS[type]}
                             </Text>
                           </Pressable>
-                          <View className="flex-row items-center gap-2">
-                            {!isLabel && (
-                              <Badge variant={item.confidence >= 0.8 ? 'success' : 'warning'}>
-                                {Math.round(item.confidence * 100)}%
-                              </Badge>
-                            )}
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Meal name + item count / label badge */}
+                    <View className="flex-row items-center justify-between mb-3">
+                      <Pressable
+                        className="flex-1 mr-2"
+                        onPress={() => {
+                          // Name editing not needed for meal name header
+                        }}
+                      >
+                        <Text className="font-sans-semibold text-text text-base">
+                          {draft?.mealName ?? (isLabel ? 'Product' : 'Identified foods')}
+                        </Text>
+                      </Pressable>
+                      {isLabel ? (
+                        <Badge variant="info">From label</Badge>
+                      ) : (
+                        <Text className="text-xs text-text-secondary font-sans-medium">
+                          {effectiveItems.length} item{effectiveItems.length !== 1 ? 's' : ''}
+                        </Text>
+                      )}
+                    </View>
+
+                    {/* Tap-to-edit hint (shown once) */}
+                    {baseItems.length > 0 && (
+                      <View className="flex-row items-center gap-1 mb-2">
+                        <Ionicons name="pencil" size={11} color="#9a9caa" />
+                        <Text className="text-xs text-text-secondary">Tap any value to edit</Text>
+                      </View>
+                    )}
+
+                    {/* Food item cards */}
+                    {baseItems.map((item, index) => {
+                      const effective = getEffectiveItem(item, index);
+                      const currentMultiplier = multipliers[index] ?? 1;
+                      return (
+                        <Card key={`${item.name}-${index}`} className="mb-3">
+                          {/* Item header row */}
+                          <View className="flex-row items-start justify-between mb-2">
                             <Pressable
-                              onPress={() => handleDeleteItem(index)}
-                              className="h-7 w-7 items-center justify-center rounded-full bg-surface-secondary active:opacity-60"
+                              className="flex-1 pr-2"
+                              onPress={() =>
+                                showEditModal('Edit name', item.name, (text) => {
+                                  if (text.trim()) handleEditName(index, text.trim());
+                                  setModal((m) => ({ ...m, visible: false }));
+                                })
+                              }
                             >
-                              <Ionicons name="close" size={14} color="#9a9caa" />
+                              <View className="flex-row items-center gap-1">
+                                <Text className="font-sans-semibold text-text">{item.name}</Text>
+                                <Ionicons name="pencil" size={11} color="#9a9caa" />
+                              </View>
+                              <Text className="text-xs text-text-secondary mt-0.5">
+                                {item.servingGrams > 0
+                                  ? isLabel
+                                    ? `${Math.round(item.servingGrams * currentMultiplier)}g per serving`
+                                    : `~${Math.round(item.servingGrams * currentMultiplier)}g`
+                                  : isLabel
+                                    ? 'Per serving'
+                                    : 'Estimated serving'}
+                              </Text>
                             </Pressable>
+                            <View className="flex-row items-center gap-2">
+                              {!isLabel && (
+                                <Badge variant={item.confidence >= 0.8 ? 'success' : 'warning'}>
+                                  {Math.round(item.confidence * 100)}%
+                                </Badge>
+                              )}
+                              <Pressable
+                                onPress={() => handleDeleteItem(index)}
+                                className="h-7 w-7 items-center justify-center rounded-full bg-surface-secondary active:opacity-60"
+                              >
+                                <Ionicons name="close" size={14} color="#9a9caa" />
+                              </Pressable>
+                            </View>
                           </View>
-                        </View>
 
-                        {/* Calories — editable */}
-                        <Pressable
-                          onPress={() => {
-                            Alert.prompt(
-                              'Edit calories',
-                              undefined,
-                              (text) => {
-                                const v = parseFloat(text);
-                                if (!isNaN(v) && v >= 0) handleEditNutrient(index, 'calories', v);
-                              },
-                              'plain-text',
-                              String(item.calories),
-                            );
-                          }}
-                          className="active:opacity-60"
-                        >
-                          <Text className="text-2xl font-sans-semibold text-text mb-1">
-                            {effective.calories}
-                            <Text className="text-sm font-sans-regular text-text-secondary">
-                              {' '}
-                              cal
-                            </Text>
-                          </Text>
-                        </Pressable>
+                          {/* Calories — editable */}
+                          <Pressable
+                            onPress={() =>
+                              showEditModal(
+                                'Edit calories',
+                                String(item.calories),
+                                (text) => {
+                                  const v = parseFloat(text);
+                                  if (!isNaN(v) && v >= 0) handleEditNutrient(index, 'calories', v);
+                                  setModal((m) => ({ ...m, visible: false }));
+                                },
+                                'decimal-pad',
+                              )
+                            }
+                            className="active:opacity-60"
+                          >
+                            <View className="flex-row items-baseline gap-1 mb-1">
+                              <Text className="text-2xl font-sans-semibold text-text">
+                                {effective.calories}
+                              </Text>
+                              <Text className="text-sm font-sans-regular text-text-secondary">
+                                cal
+                              </Text>
+                              <Ionicons
+                                name="pencil"
+                                size={11}
+                                color="#9a9caa"
+                                style={{ marginBottom: 2 }}
+                              />
+                            </View>
+                          </Pressable>
 
-                        {/* Macros row — editable */}
-                        <View className="flex-row gap-3 mb-3">
-                          <EditableValue
-                            value={effective.protein}
-                            unit="g"
-                            label="Protein"
-                            onSave={(v) => {
-                              const m = multipliers[index] ?? 1;
-                              handleEditNutrient(
-                                index,
-                                'protein',
-                                m !== 0 ? Math.round((v / m) * 10) / 10 : v,
-                              );
-                            }}
-                          />
-                          <EditableValue
-                            value={effective.carbs}
-                            unit="g"
-                            label="Carbs"
-                            onSave={(v) => {
-                              const m = multipliers[index] ?? 1;
-                              handleEditNutrient(
-                                index,
-                                'carbs',
-                                m !== 0 ? Math.round((v / m) * 10) / 10 : v,
-                              );
-                            }}
-                          />
-                          <EditableValue
-                            value={effective.fat}
-                            unit="g"
-                            label="Fat"
-                            onSave={(v) => {
-                              const m = multipliers[index] ?? 1;
-                              handleEditNutrient(
-                                index,
-                                'fat',
-                                m !== 0 ? Math.round((v / m) * 10) / 10 : v,
-                              );
-                            }}
-                          />
-                          {item.fiber > 0 && (
+                          {/* Macros row — editable */}
+                          <View className="flex-row gap-3 mb-3">
                             <EditableValue
-                              value={effective.fiber}
+                              value={effective.protein}
                               unit="g"
-                              label="Fiber"
+                              label="Protein"
                               onSave={(v) => {
                                 const m = multipliers[index] ?? 1;
                                 handleEditNutrient(
                                   index,
-                                  'fiber',
+                                  'protein',
                                   m !== 0 ? Math.round((v / m) * 10) / 10 : v,
                                 );
                               }}
                             />
-                          )}
-                        </View>
-
-                        {/* Serving stepper */}
-                        <View className="flex-row items-end justify-between">
-                          <ServingStepper
-                            value={currentMultiplier}
-                            onChange={(v) => handleSetMultiplier(index, v)}
-                            label={isLabel ? 'Number of servings' : 'Serving size'}
-                          />
-                          {item.servingGrams > 0 && (
-                            <Pressable
-                              onPress={() => {
-                                Alert.prompt(
-                                  'Serving weight (g)',
-                                  undefined,
-                                  (text) => {
-                                    const v = parseFloat(text);
-                                    if (!isNaN(v) && v > 0) handleEditServingGrams(index, v);
-                                  },
-                                  'plain-text',
-                                  String(item.servingGrams),
+                            <EditableValue
+                              value={effective.carbs}
+                              unit="g"
+                              label="Carbs"
+                              onSave={(v) => {
+                                const m = multipliers[index] ?? 1;
+                                handleEditNutrient(
+                                  index,
+                                  'carbs',
+                                  m !== 0 ? Math.round((v / m) * 10) / 10 : v,
                                 );
                               }}
-                              className="active:opacity-60"
-                            >
-                              <Text className="text-xs text-text-secondary">
-                                {Math.round(item.servingGrams * currentMultiplier)}g total
-                              </Text>
-                            </Pressable>
-                          )}
-                        </View>
-                      </Card>
-                    );
-                  })}
+                            />
+                            <EditableValue
+                              value={effective.fat}
+                              unit="g"
+                              label="Fat"
+                              onSave={(v) => {
+                                const m = multipliers[index] ?? 1;
+                                handleEditNutrient(
+                                  index,
+                                  'fat',
+                                  m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                                );
+                              }}
+                            />
+                            {item.fiber > 0 && (
+                              <EditableValue
+                                value={effective.fiber}
+                                unit="g"
+                                label="Fiber"
+                                onSave={(v) => {
+                                  const m = multipliers[index] ?? 1;
+                                  handleEditNutrient(
+                                    index,
+                                    'fiber',
+                                    m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                                  );
+                                }}
+                              />
+                            )}
+                          </View>
 
-                  {/* Totals summary */}
-                  <View className="rounded-xl bg-surface-card border border-surface-border p-4 mb-4">
-                    <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
-                      Total
-                    </Text>
-                    <Text className="text-3xl font-sans-semibold text-text mb-1">
-                      {totalCalories}
-                      <Text className="text-base font-sans-regular text-text-secondary"> cal</Text>
-                    </Text>
-                    <View className="flex-row gap-4">
-                      <Text className="text-sm text-text-secondary">
-                        P{' '}
-                        <Text className="text-text font-sans-medium">
-                          {Math.round(totalProtein)}g
+                          {/* Serving stepper */}
+                          <View className="flex-row items-end justify-between">
+                            <ServingStepper
+                              value={currentMultiplier}
+                              onChange={(v) => handleSetMultiplier(index, v)}
+                              label={isLabel ? 'Number of servings' : 'Serving size'}
+                            />
+                            {item.servingGrams > 0 && (
+                              <Pressable
+                                onPress={() =>
+                                  showEditModal(
+                                    'Serving weight (g)',
+                                    String(item.servingGrams),
+                                    (text) => {
+                                      const v = parseFloat(text);
+                                      if (!isNaN(v) && v > 0) handleEditServingGrams(index, v);
+                                      setModal((m) => ({ ...m, visible: false }));
+                                    },
+                                    'decimal-pad',
+                                  )
+                                }
+                                className="active:opacity-60"
+                              >
+                                <View className="flex-row items-center gap-1">
+                                  <Text className="text-xs text-text-secondary">
+                                    {Math.round(item.servingGrams * currentMultiplier)}g total
+                                  </Text>
+                                  <Ionicons name="pencil" size={9} color="#9a9caa" />
+                                </View>
+                              </Pressable>
+                            )}
+                          </View>
+                        </Card>
+                      );
+                    })}
+
+                    {/* Totals summary */}
+                    <View className="rounded-xl bg-surface-card border border-surface-border p-4 mb-4">
+                      <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
+                        Total
+                      </Text>
+                      <Text className="text-3xl font-sans-semibold text-text mb-1">
+                        {totalCalories}
+                        <Text className="text-base font-sans-regular text-text-secondary">
+                          {' '}
+                          cal
                         </Text>
                       </Text>
-                      <Text className="text-sm text-text-secondary">
-                        C{' '}
-                        <Text className="text-text font-sans-medium">
-                          {Math.round(totalCarbs)}g
-                        </Text>
-                      </Text>
-                      <Text className="text-sm text-text-secondary">
-                        F{' '}
-                        <Text className="text-text font-sans-medium">{Math.round(totalFat)}g</Text>
-                      </Text>
-                      {totalFiber > 0 && (
+                      <View className="flex-row gap-4">
                         <Text className="text-sm text-text-secondary">
-                          Fiber{' '}
+                          P{' '}
                           <Text className="text-text font-sans-medium">
-                            {Math.round(totalFiber)}g
+                            {Math.round(totalProtein)}g
                           </Text>
                         </Text>
-                      )}
+                        <Text className="text-sm text-text-secondary">
+                          C{' '}
+                          <Text className="text-text font-sans-medium">
+                            {Math.round(totalCarbs)}g
+                          </Text>
+                        </Text>
+                        <Text className="text-sm text-text-secondary">
+                          F{' '}
+                          <Text className="text-text font-sans-medium">
+                            {Math.round(totalFat)}g
+                          </Text>
+                        </Text>
+                        {totalFiber > 0 && (
+                          <Text className="text-sm text-text-secondary">
+                            Fiber{' '}
+                            <Text className="text-text font-sans-medium">
+                              {Math.round(totalFiber)}g
+                            </Text>
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                  </View>
 
-                  {error && <Text className="mb-4 text-center text-red-400 text-sm">{error}</Text>}
+                    {error && (
+                      <Text className="mb-4 text-center text-red-400 text-sm">{error}</Text>
+                    )}
 
-                  {/* Save to foods (label mode only) */}
-                  {isLabel && !foodSaved && (
-                    <Pressable
-                      onPress={handleSaveToFoods}
-                      disabled={savingFood}
-                      className="flex-row items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface-card py-3 mb-3 active:opacity-60"
-                    >
-                      <Ionicons name="bookmark-outline" size={18} color="#1f2028" />
-                      <Text className="text-sm font-sans-semibold text-text">
-                        {savingFood ? 'Saving...' : 'Save to My Foods'}
-                      </Text>
-                    </Pressable>
-                  )}
-                  {isLabel && foodSaved && (
-                    <View className="flex-row items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 py-3 mb-3">
-                      <Ionicons name="checkmark-circle" size={18} color="#16a34a" />
-                      <Text className="text-sm font-sans-semibold text-green-700">
-                        Saved to My Foods
-                      </Text>
+                    {/* Save to foods (label mode only) */}
+                    {isLabel && !foodSaved && (
+                      <Pressable
+                        onPress={handleSaveToFoods}
+                        disabled={savingFood}
+                        className="flex-row items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface-card py-3 mb-3 active:opacity-60"
+                      >
+                        <Ionicons name="bookmark-outline" size={18} color="#1f2028" />
+                        <Text className="text-sm font-sans-semibold text-text">
+                          {savingFood ? 'Saving...' : 'Save to My Foods'}
+                        </Text>
+                      </Pressable>
+                    )}
+                    {isLabel && foodSaved && (
+                      <View className="flex-row items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 py-3 mb-3">
+                        <Ionicons name="checkmark-circle" size={18} color="#16a34a" />
+                        <Text className="text-sm font-sans-semibold text-green-700">
+                          Saved to My Foods
+                        </Text>
+                      </View>
+                    )}
+
+                    <Button onPress={handleConfirmSave} loading={saving} disabled={saving}>
+                      Log {MEAL_TYPE_LABELS[mealType]}
+                    </Button>
+                  </>
+                ) : (
+                  /* No items found */
+                  <View className="items-center py-10">
+                    <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-4">
+                      <Ionicons name="search" size={28} color="#9a9caa" />
                     </View>
-                  )}
-
-                  <Button onPress={handleConfirmSave} loading={saving} disabled={saving}>
-                    Log {MEAL_TYPE_LABELS[mealType]}
-                  </Button>
-                </>
-              ) : (
-                /* No items found */
-                <View className="items-center py-10">
-                  <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-4">
-                    <Ionicons name="search" size={28} color="#9a9caa" />
+                    <Text className="font-sans-semibold text-text mb-1">
+                      {isLabel ? 'Could not read the label' : 'No food detected'}
+                    </Text>
+                    <Text className="text-text-secondary text-sm text-center mb-5">
+                      {isLabel
+                        ? 'Try a clearer photo with the nutrition facts panel fully visible'
+                        : 'Try a clearer photo with better lighting, or use manual entry'}
+                    </Text>
+                    <Button variant="outline" onPress={handleRetake}>
+                      Try another photo
+                    </Button>
                   </View>
-                  <Text className="font-sans-semibold text-text mb-1">
-                    {isLabel ? 'Could not read the label' : 'No food detected'}
-                  </Text>
-                  <Text className="text-text-secondary text-sm text-center mb-5">
-                    {isLabel
-                      ? 'Try a clearer photo with the nutrition facts panel fully visible'
-                      : 'Try a clearer photo with better lighting, or use manual entry'}
-                  </Text>
-                  <Button variant="outline" onPress={handleRetake}>
-                    Try another photo
-                  </Button>
-                </View>
-              )}
-            </View>
-          )}
-        </ScrollView>
+                )}
+              </View>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        {/* Cross-platform edit modal */}
+        <InputModal
+          visible={modal.visible}
+          title={modal.title}
+          value={modal.value}
+          keyboardType={modal.keyboardType}
+          onSubmit={modal.onSubmit}
+          onCancel={() => setModal((m) => ({ ...m, visible: false }))}
+        />
       </SafeAreaView>
     </View>
   );
