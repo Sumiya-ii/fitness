@@ -39,6 +39,7 @@ import { StreaksModule } from './streaks/streaks.module';
 import { MealNudgeModule } from './meal-nudge';
 import { QPayModule } from './qpay';
 import { WorkoutLogsModule } from './workout-logs';
+import { BodyCompositionModule } from './body-composition';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -93,6 +94,7 @@ import { HealthController } from './health/health.controller';
     StreaksModule,
     MealNudgeModule,
     WorkoutLogsModule,
+    BodyCompositionModule,
   ],
   controllers: [HealthController],
   providers: [

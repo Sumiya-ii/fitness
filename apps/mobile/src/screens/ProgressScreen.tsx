@@ -22,6 +22,8 @@ import { useLocale } from '../i18n';
 import { themeColors } from '../theme';
 import type { DayHistory } from '../api/dashboard';
 import { mealTimingApi, type MealTimingInsights } from '../api/meal-timing';
+import { useBodyCompositionStore } from '../stores/body-composition.store';
+import { useProfileStore } from '../stores/profile.store';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1008,6 +1010,241 @@ function WeightChart({
   );
 }
 
+// ─── Body composition card ────────────────────────────────────────────────────
+
+const BMI_CATEGORY_LABELS: Record<string, string> = {
+  underweight: 'Underweight',
+  normal: 'Normal',
+  overweight: 'Overweight',
+  obese_class_1: 'Obese I',
+  obese_class_2: 'Obese II',
+  obese_class_3: 'Obese III',
+};
+
+const BF_CATEGORY_LABELS: Record<string, string> = {
+  essential: 'Essential',
+  athletic: 'Athletic',
+  fitness: 'Fitness',
+  average: 'Average',
+  obese: 'Obese',
+};
+
+const BF_CATEGORY_COLORS: Record<string, string> = {
+  essential: '#ef4444',
+  athletic: '#3b82f6',
+  fitness: '#22c55e',
+  average: '#f59e0b',
+  obese: '#ef4444',
+};
+
+const BMI_CATEGORY_COLORS: Record<string, string> = {
+  underweight: '#3b82f6',
+  normal: '#22c55e',
+  overweight: '#f59e0b',
+  obese_class_1: '#f97316',
+  obese_class_2: '#ef4444',
+  obese_class_3: '#dc2626',
+};
+
+function BodyCompositionCard() {
+  const { t } = useLocale();
+  const { latest, fetchLatest } = useBodyCompositionStore();
+
+  useEffect(() => {
+    fetchLatest();
+  }, [fetchLatest]);
+
+  if (!latest) return null;
+
+  const bfColor = BF_CATEGORY_COLORS[latest.bodyFatCategory] ?? themeColors.text.secondary;
+  const bmiColor = BMI_CATEGORY_COLORS[latest.bmiCategory] ?? themeColors.text.secondary;
+
+  return (
+    <Animated.View entering={FadeInDown.delay(300).duration(400)} className="mb-4">
+      <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
+        <View className="flex-row items-center gap-2 mb-3">
+          <Ionicons name="body-outline" size={16} color={themeColors.text.secondary} />
+          <Text className="text-sm font-sans-semibold text-text">
+            {t('progress.bodyComposition')}
+          </Text>
+          <Text className="text-[10px] text-text-tertiary font-sans-medium ml-auto">
+            {new Date(latest.loggedAt + 'T12:00:00').toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </Text>
+        </View>
+
+        {/* Main metrics */}
+        <View className="flex-row gap-2 mb-3">
+          {/* Body fat */}
+          <View className="flex-1 items-center rounded-xl bg-surface-secondary p-3">
+            <Text className="text-[10px] text-text-tertiary font-sans-medium mb-1">
+              {t('progress.bodyFat')}
+            </Text>
+            <Text className="text-2xl font-sans-bold text-text">{latest.bodyFatPercent}%</Text>
+            <View
+              className="rounded-full px-2 py-0.5 mt-1"
+              style={{ backgroundColor: bfColor + '20' }}
+            >
+              <Text className="text-[10px] font-sans-semibold" style={{ color: bfColor }}>
+                {BF_CATEGORY_LABELS[latest.bodyFatCategory] ?? latest.bodyFatCategory}
+              </Text>
+            </View>
+          </View>
+
+          {/* BMI */}
+          <View className="flex-1 items-center rounded-xl bg-surface-secondary p-3">
+            <Text className="text-[10px] text-text-tertiary font-sans-medium mb-1">
+              {t('progress.bmi')}
+            </Text>
+            <Text className="text-2xl font-sans-bold text-text">{latest.bmi}</Text>
+            <View
+              className="rounded-full px-2 py-0.5 mt-1"
+              style={{ backgroundColor: bmiColor + '20' }}
+            >
+              <Text className="text-[10px] font-sans-semibold" style={{ color: bmiColor }}>
+                {BMI_CATEGORY_LABELS[latest.bmiCategory] ?? latest.bmiCategory}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Fat/Lean mass */}
+        <View className="flex-row gap-2">
+          <View className="flex-1 items-center rounded-xl bg-surface-secondary p-2.5">
+            <Text className="text-[10px] text-text-tertiary font-sans-medium">
+              {t('progress.fatMass')}
+            </Text>
+            <Text className="text-sm font-sans-bold text-text mt-0.5">{latest.fatMassKg} kg</Text>
+          </View>
+          <View className="flex-1 items-center rounded-xl bg-surface-secondary p-2.5">
+            <Text className="text-[10px] text-text-tertiary font-sans-medium">
+              {t('progress.leanMass')}
+            </Text>
+            <Text className="text-sm font-sans-bold text-text mt-0.5">{latest.leanMassKg} kg</Text>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+// ─── Weekly calorie budget card ───────────────────────────────────────────────
+
+function WeeklyBudgetCard() {
+  const { t } = useLocale();
+  const { weeklyBudget, fetchWeeklyBudget } = useBodyCompositionStore();
+
+  useEffect(() => {
+    fetchWeeklyBudget();
+  }, [fetchWeeklyBudget]);
+
+  if (!weeklyBudget) return null;
+
+  const todayStr = new Date().toISOString().split('T')[0]!;
+  const progress = Math.min(100, (weeklyBudget.totalConsumed / weeklyBudget.weeklyBudget) * 100);
+  const isOverBudget = weeklyBudget.remaining < 0;
+
+  return (
+    <Animated.View entering={FadeInDown.delay(400).duration(400)} className="mb-4">
+      <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
+        <View className="flex-row items-center gap-2 mb-3">
+          <Ionicons name="calendar-outline" size={16} color={themeColors.text.secondary} />
+          <Text className="text-sm font-sans-semibold text-text">{t('progress.weeklyBudget')}</Text>
+        </View>
+
+        {/* Progress bar */}
+        <View className="h-3 rounded-full bg-surface-secondary mb-2 overflow-hidden">
+          <View
+            className="h-full rounded-full"
+            style={{
+              width: `${Math.min(100, progress)}%`,
+              backgroundColor: isOverBudget ? '#ef4444' : themeColors.primary['500'],
+            }}
+          />
+        </View>
+
+        <View className="flex-row justify-between mb-3">
+          <Text className="text-xs text-text-secondary font-sans-medium">
+            {weeklyBudget.totalConsumed.toLocaleString()} /{' '}
+            {weeklyBudget.weeklyBudget.toLocaleString()} kcal
+          </Text>
+          <Text
+            className="text-xs font-sans-semibold"
+            style={{ color: isOverBudget ? '#ef4444' : themeColors.status.success }}
+          >
+            {Math.abs(weeklyBudget.remaining).toLocaleString()} {t('progress.budgetRemaining')}
+          </Text>
+        </View>
+
+        {/* Daily bars */}
+        <View className="flex-row gap-1">
+          {weeklyBudget.days.map((day) => {
+            const dayLabel = new Date(day.date + 'T12:00:00').toLocaleDateString('en', {
+              weekday: 'narrow',
+            });
+            const pct = day.target > 0 ? Math.min(100, (day.consumed / day.target) * 100) : 0;
+            const isToday = day.date === todayStr;
+            const isFuture = day.date > todayStr;
+            const isOver = day.consumed > day.target;
+
+            return (
+              <View key={day.date} className="flex-1 items-center">
+                <View
+                  className="w-full rounded-md overflow-hidden mb-1"
+                  style={{
+                    height: 40,
+                    backgroundColor: themeColors.surface.secondary,
+                  }}
+                >
+                  {!isFuture && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        width: '100%',
+                        height: `${pct}%`,
+                        backgroundColor: isOver
+                          ? '#ef4444'
+                          : isToday
+                            ? themeColors.primary['500']
+                            : themeColors.primary['400'] + '80',
+                        borderRadius: 4,
+                      }}
+                    />
+                  )}
+                </View>
+                <Text
+                  className="text-[9px] font-sans-medium"
+                  style={{
+                    color: isToday ? themeColors.primary['500'] : themeColors.text.tertiary,
+                  }}
+                >
+                  {dayLabel}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Adjusted target */}
+        {weeklyBudget.adjustedDailyTarget !== null &&
+          weeklyBudget.adjustedDailyTarget !== weeklyBudget.dailyTarget && (
+            <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-surface-border">
+              <Text className="text-xs text-text-secondary font-sans-medium">
+                {t('progress.adjustedTarget')}
+              </Text>
+              <Text className="text-sm font-sans-bold text-text">
+                {weeklyBudget.adjustedDailyTarget.toLocaleString()} kcal
+              </Text>
+            </View>
+          )}
+      </View>
+    </Animated.View>
+  );
+}
+
 // ─── Body (weight) tab ────────────────────────────────────────────────────────
 
 function BodyTab({ viewportWidth }: { viewportWidth: number }) {
@@ -1015,11 +1252,23 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
   const navigation = useNavigation();
   const [period, setPeriod] = useState<WeightPeriod>('week');
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [measureSheetVisible, setMeasureSheetVisible] = useState(false);
   const [weightInput, setWeightInput] = useState('');
   const [dateInput, setDateInput] = useState(() => new Date().toISOString().split('T')[0]!);
   const [saving, setSaving] = useState(false);
 
+  // Measurement inputs
+  const [waistInput, setWaistInput] = useState('');
+  const [neckInput, setNeckInput] = useState('');
+  const [hipInput, setHipInput] = useState('');
+  const [measureSaving, setMeasureSaving] = useState(false);
+  const [measureError, setMeasureError] = useState<string | null>(null);
+
+  const profile = useProfileStore();
+  const isFemale = profile.gender === 'female';
+
   const { history, trend, isLoading, fetchHistory, fetchTrend, logWeight } = useWeightStore();
+  const { logMeasurement } = useBodyCompositionStore();
 
   const load = useCallback(() => {
     fetchHistory(PERIOD_DAYS[period]);
@@ -1041,6 +1290,30 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
       setDateInput(new Date().toISOString().split('T')[0]!);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLogMeasurement = async () => {
+    const waist = parseFloat(waistInput.replace(',', '.'));
+    const neck = parseFloat(neckInput.replace(',', '.'));
+    const hip = hipInput ? parseFloat(hipInput.replace(',', '.')) : undefined;
+
+    if (isNaN(waist) || waist < 40 || waist > 200) return;
+    if (isNaN(neck) || neck < 20 || neck > 80) return;
+    if (isFemale && (hip === undefined || isNaN(hip) || hip < 50 || hip > 200)) return;
+
+    setMeasureSaving(true);
+    setMeasureError(null);
+    try {
+      await logMeasurement({ waistCm: waist, neckCm: neck, hipCm: hip });
+      setMeasureSheetVisible(false);
+      setWaistInput('');
+      setNeckInput('');
+      setHipInput('');
+    } catch (e) {
+      setMeasureError(e instanceof Error ? e.message : 'Failed to save measurements');
+    } finally {
+      setMeasureSaving(false);
     }
   };
 
@@ -1279,18 +1552,37 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
         )}
       </View>
 
-      {/* Log weight FAB */}
-      <View className="items-end mt-6">
+      {/* Body Composition */}
+      <BodyCompositionCard />
+
+      {/* Weekly Calorie Budget (Rollover) */}
+      <WeeklyBudgetCard />
+
+      {/* Action buttons */}
+      <View className="flex-row gap-3 mt-2">
         <Pressable
           onPress={() => setSheetVisible(true)}
-          className="h-14 w-14 items-center justify-center rounded-full bg-primary-500 shadow-lg shadow-primary-500/40"
+          className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5"
           accessibilityRole="button"
           accessibilityLabel={t('progress.logWeight')}
         >
-          <Ionicons name="add" size={28} color="white" />
+          <Ionicons name="scale-outline" size={18} color="white" />
+          <Text className="font-sans-semibold text-white text-sm">{t('progress.logWeight')}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setMeasureSheetVisible(true)}
+          className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-surface-card border border-surface-border py-3.5"
+          accessibilityRole="button"
+          accessibilityLabel={t('progress.logMeasurements')}
+        >
+          <Ionicons name="body-outline" size={18} color={themeColors.text.secondary} />
+          <Text className="font-sans-semibold text-text-secondary text-sm">
+            {t('progress.logMeasurements')}
+          </Text>
         </Pressable>
       </View>
 
+      {/* Log Weight Sheet */}
       <BottomSheet visible={sheetVisible} onClose={() => setSheetVisible(false)}>
         <View className="px-1">
           <Text className="mb-1 text-lg font-sans-bold text-text">{t('progress.logWeight')}</Text>
@@ -1345,6 +1637,65 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
             disabled={!weightInput.trim()}
           >
             {t('progress.saveWeight')}
+          </Button>
+        </View>
+      </BottomSheet>
+
+      {/* Log Measurements Sheet */}
+      <BottomSheet
+        visible={measureSheetVisible}
+        onClose={() => {
+          setMeasureSheetVisible(false);
+          setMeasureError(null);
+        }}
+      >
+        <View className="px-1">
+          <Text className="mb-1 text-lg font-sans-bold text-text">
+            {t('progress.logMeasurements')}
+          </Text>
+          <Text className="mb-5 text-sm text-text-secondary">
+            {t('progress.logMeasurementsDesc')}
+          </Text>
+
+          {measureError && (
+            <View className="mb-4 rounded-xl bg-red-50 border border-red-200 p-3">
+              <Text className="text-sm text-red-600">{measureError}</Text>
+            </View>
+          )}
+
+          <Input
+            label={t('progress.waistCm')}
+            placeholder={t('progress.waistPlaceholder')}
+            value={waistInput}
+            onChangeText={setWaistInput}
+            keyboardType="decimal-pad"
+            containerClassName="mb-4"
+          />
+          <Input
+            label={t('progress.neckCm')}
+            placeholder={t('progress.neckPlaceholder')}
+            value={neckInput}
+            onChangeText={setNeckInput}
+            keyboardType="decimal-pad"
+            containerClassName="mb-4"
+          />
+          {isFemale && (
+            <Input
+              label={t('progress.hipCm')}
+              placeholder={t('progress.hipPlaceholder')}
+              value={hipInput}
+              onChangeText={setHipInput}
+              keyboardType="decimal-pad"
+              containerClassName="mb-4"
+            />
+          )}
+          <Button
+            variant="primary"
+            onPress={handleLogMeasurement}
+            loading={measureSaving}
+            disabled={!waistInput.trim() || !neckInput.trim() || (isFemale && !hipInput.trim())}
+          >
+            {t('progress.saveMeasurements')}
           </Button>
         </View>
       </BottomSheet>

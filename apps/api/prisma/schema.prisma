@@ -35,6 +35,7 @@ model User {
   waterLogs            WaterLog[]
   coachMemories        CoachMemory[]
   outboundMessages     OutboundMessage[]
+  bodyMeasurementLogs  BodyMeasurementLog[]
 
   @@map("users")
 }
@@ -270,6 +271,28 @@ model WeightLog {
 
   @@unique([userId, loggedAt])
   @@map("weight_logs")
+}
+
+model BodyMeasurementLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  waistCm         Decimal  @map("waist_cm") @db.Decimal(5, 1)
+  neckCm          Decimal  @map("neck_cm") @db.Decimal(5, 1)
+  hipCm           Decimal? @map("hip_cm") @db.Decimal(5, 1) // required for female
+  weightKg        Decimal  @map("weight_kg") @db.Decimal(5, 1)
+  bodyFatPercent   Decimal  @map("body_fat_percent") @db.Decimal(4, 1)
+  fatMassKg       Decimal  @map("fat_mass_kg") @db.Decimal(5, 1)
+  leanMassKg      Decimal  @map("lean_mass_kg") @db.Decimal(5, 1)
+  bmi             Decimal  @map("bmi") @db.Decimal(4, 1)
+  bmiCategory     String   @map("bmi_category") @db.VarChar(20)
+  loggedAt        DateTime @map("logged_at") @db.Date
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, loggedAt])
+  @@index([userId, loggedAt(sort: Desc)])
+  @@map("body_measurement_logs")
 }
 
 model WorkoutLog {
