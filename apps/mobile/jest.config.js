@@ -24,6 +24,7 @@ module.exports = {
     '^react-native-mmkv$': '<rootDir>/src/__mocks__/react-native-mmkv.js',
     '^@react-native-community/netinfo$':
       '<rootDir>/src/__mocks__/@react-native-community/netinfo.js',
+    '^react-native-purchases$': '<rootDir>/src/__mocks__/react-native-purchases.js',
   },
   // Transform expo-* packages (they ship ESM) in addition to react-native/*
   transformIgnorePatterns: [

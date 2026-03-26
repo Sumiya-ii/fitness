@@ -72,4 +72,8 @@ export class ConfigService {
   get qpayInvoiceTtlMinutes(): number {
     return this.config.QPAY_INVOICE_TTL_MINUTES ?? 30;
   }
+
+  get revenueCatWebhookSecret(): string | undefined {
+    return this.config.REVENUECAT_WEBHOOK_SECRET;
+  }
 }

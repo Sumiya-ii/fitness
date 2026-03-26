@@ -131,4 +131,93 @@ describe('SubscriptionsService', () => {
       });
     });
   });
+
+  describe('handleRevenueCatWebhook', () => {
+    const makeRcPayload = (type: string, overrides = {}) => ({
+      api_version: '1.0',
+      event: {
+        type,
+        id: 'rc-event-id-1',
+        app_user_id: 'user-uuid',
+        original_app_user_id: 'user-uuid',
+        environment: 'PRODUCTION' as const,
+        event_timestamp_ms: Date.now(),
+        store: 'APP_STORE' as const,
+        purchased_at_ms: Date.now(),
+        expiration_at_ms: new Date('2026-04-01').getTime(),
+        transaction_id: 'txn-001',
+        original_transaction_id: 'txn-000',
+        ...overrides,
+      },
+    });
+
+    it('upgrades to pro on INITIAL_PURCHASE', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-uuid',
+        subscription: mockSubscription,
+      });
+
+      const result = await service.handleRevenueCatWebhook(makeRcPayload('INITIAL_PURCHASE'));
+
+      expect(result.success).toBe(true);
+      expect(prisma.subscription.update).toHaveBeenCalledWith({
+        where: { id: 'sub-uuid' },
+        data: expect.objectContaining({ tier: 'pro', status: 'active', provider: 'apple' }),
+      });
+      expect(prisma.idempotencyKey.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            externalSystem: 'revenuecat',
+            externalEventId: 'rc-event-id-1',
+          }),
+        }),
+      );
+    });
+
+    it('creates a subscription row if none exists', async () => {
+      prisma.subscription.create = jest.fn().mockResolvedValue(mockSubscription);
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-uuid', subscription: null });
+
+      await service.handleRevenueCatWebhook(makeRcPayload('INITIAL_PURCHASE'));
+
+      expect(prisma.subscription.create).toHaveBeenCalledWith({
+        data: { userId: 'user-uuid', tier: 'free', status: 'active' },
+      });
+    });
+
+    it('downgrades to free on EXPIRATION', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-uuid',
+        subscription: mockProSubscription,
+      });
+
+      await service.handleRevenueCatWebhook(makeRcPayload('EXPIRATION', { id: 'rc-event-id-2' }));
+
+      expect(prisma.subscription.update).toHaveBeenCalledWith({
+        where: { id: 'sub-uuid' },
+        data: { tier: 'free', status: 'expired' },
+      });
+    });
+
+    it('is idempotent — skips duplicate event IDs', async () => {
+      prisma.idempotencyKey.findUnique.mockResolvedValue({ id: 'existing' });
+
+      const result = await service.handleRevenueCatWebhook(makeRcPayload('RENEWAL'));
+
+      expect(result.success).toBe(true);
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
+    });
+
+    it('skips TRANSFER events without error', async () => {
+      const result = await service.handleRevenueCatWebhook(makeRcPayload('TRANSFER'));
+      expect(result.success).toBe(true);
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('returns false when user not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      const result = await service.handleRevenueCatWebhook(makeRcPayload('INITIAL_PURCHASE'));
+      expect(result.success).toBe(false);
+    });
+  });
 });

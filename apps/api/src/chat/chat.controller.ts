@@ -7,12 +7,15 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { CurrentUser, AuthenticatedUser } from '../auth';
+import { SubscriptionGuard } from '../subscriptions';
 import { ChatService } from './chat.service';
 import { sendMessageSchema } from './chat.dto';
 
 @Controller('chat')
+@UseGuards(SubscriptionGuard)
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 

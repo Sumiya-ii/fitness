@@ -79,6 +79,9 @@ export const envSchema = z.object({
   QPAY_INVOICE_CODE: z.string().optional(),
   QPAY_CALLBACK_TOKEN: z.string().optional(),
   QPAY_INVOICE_TTL_MINUTES: z.coerce.number().int().positive().optional(),
+
+  // RevenueCat
+  REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

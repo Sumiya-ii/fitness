@@ -6,12 +6,15 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser, AuthenticatedUser } from '../auth';
+import { SubscriptionGuard } from '../subscriptions';
 import { PhotosService } from './photos.service';
 
 @Controller('photos')
+@UseGuards(SubscriptionGuard)
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
@@ -33,10 +36,7 @@ export class PhotosController {
   }
 
   @Get('drafts/:id')
-  async getDraft(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  async getDraft(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return {
       data: await this.photosService.getDraft(id, user.id),
     };

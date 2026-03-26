@@ -7,10 +7,12 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser, AuthenticatedUser } from '../auth';
+import { SubscriptionGuard } from '../subscriptions';
 import { VoiceService } from './voice.service';
 import { S3Service } from '../storage';
 
@@ -25,6 +27,7 @@ export class VoiceController {
   ) {}
 
   @Post('upload')
+  @UseGuards(SubscriptionGuard)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseInterceptors(
     FileInterceptor('audio', {
@@ -54,6 +57,7 @@ export class VoiceController {
   }
 
   @Get('drafts/:id')
+  @UseGuards(SubscriptionGuard)
   async getDraft(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return {
       data: await this.voiceService.getDraft(id, user.id),
