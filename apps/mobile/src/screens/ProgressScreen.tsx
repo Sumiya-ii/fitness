@@ -1012,23 +1012,6 @@ function WeightChart({
 
 // ─── Body composition card ────────────────────────────────────────────────────
 
-const BMI_CATEGORY_LABELS: Record<string, string> = {
-  underweight: 'Underweight',
-  normal: 'Normal',
-  overweight: 'Overweight',
-  obese_class_1: 'Obese I',
-  obese_class_2: 'Obese II',
-  obese_class_3: 'Obese III',
-};
-
-const BF_CATEGORY_LABELS: Record<string, string> = {
-  essential: 'Essential',
-  athletic: 'Athletic',
-  fitness: 'Fitness',
-  average: 'Average',
-  obese: 'Obese',
-};
-
 const BF_CATEGORY_COLORS: Record<string, string> = {
   essential: '#ef4444',
   athletic: '#3b82f6',
@@ -1046,18 +1029,79 @@ const BMI_CATEGORY_COLORS: Record<string, string> = {
   obese_class_3: '#dc2626',
 };
 
-function BodyCompositionCard() {
+function useBmiCategoryLabel(category: string): string {
   const { t } = useLocale();
-  const { latest, fetchLatest } = useBodyCompositionStore();
+  const map: Record<string, string> = {
+    underweight: t('progress.underweight'),
+    normal: t('progress.normal'),
+    overweight: t('progress.overweight'),
+    obese_class_1: t('progress.obese') + ' I',
+    obese_class_2: t('progress.obese') + ' II',
+    obese_class_3: t('progress.obese') + ' III',
+  };
+  return map[category] ?? category;
+}
+
+function useBfCategoryLabel(category: string): string {
+  const { t } = useLocale();
+  const map: Record<string, string> = {
+    essential: t('progress.essential'),
+    athletic: t('progress.athletic'),
+    fitness: t('progress.fitness'),
+    average: t('progress.average'),
+    obese: t('progress.obese'),
+  };
+  return map[category] ?? category;
+}
+
+function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => void }) {
+  const { t } = useLocale();
+  const { latest, history, fetchLatest, fetchHistory } = useBodyCompositionStore();
 
   useEffect(() => {
     fetchLatest();
-  }, [fetchLatest]);
+    fetchHistory();
+  }, [fetchLatest, fetchHistory]);
 
-  if (!latest) return null;
+  const bfLabel = useBfCategoryLabel(latest?.bodyFatCategory ?? '');
+  const bmiLabel = useBmiCategoryLabel(latest?.bmiCategory ?? '');
+
+  // Empty state — guide user to start measuring
+  if (!latest) {
+    return (
+      <Animated.View entering={FadeInDown.delay(300).duration(400)} className="mb-4">
+        <View className="rounded-2xl bg-surface-card border border-surface-border p-5 items-center">
+          <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-3">
+            <Ionicons name="body-outline" size={26} color={themeColors.text.tertiary} />
+          </View>
+          <Text className="text-base font-sans-semibold text-text mb-1">
+            {t('progress.noMeasurements')}
+          </Text>
+          <Text className="text-sm text-text-secondary text-center mb-4">
+            {t('progress.noMeasurementsDesc')}
+          </Text>
+          <Pressable
+            onPress={onLogMeasurements}
+            className="flex-row items-center gap-2 rounded-full bg-primary-500 px-5 py-2.5"
+          >
+            <Ionicons name="add-circle-outline" size={18} color="white" />
+            <Text className="font-sans-semibold text-white text-sm">
+              {t('progress.logMeasurements')}
+            </Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    );
+  }
 
   const bfColor = BF_CATEGORY_COLORS[latest.bodyFatCategory] ?? themeColors.text.secondary;
   const bmiColor = BMI_CATEGORY_COLORS[latest.bmiCategory] ?? themeColors.text.secondary;
+
+  // Calculate delta from previous measurement
+  const previous = history.length >= 2 ? history[history.length - 2] : null;
+  const bfDelta = previous
+    ? Number((latest.bodyFatPercent - previous.bodyFatPercent).toFixed(1))
+    : null;
 
   return (
     <Animated.View entering={FadeInDown.delay(300).duration(400)} className="mb-4">
@@ -1083,12 +1127,21 @@ function BodyCompositionCard() {
               {t('progress.bodyFat')}
             </Text>
             <Text className="text-2xl font-sans-bold text-text">{latest.bodyFatPercent}%</Text>
+            {bfDelta !== null && bfDelta !== 0 && (
+              <Text
+                className="text-[10px] font-sans-medium"
+                style={{ color: bfDelta < 0 ? themeColors.status.success : '#f59e0b' }}
+              >
+                {bfDelta > 0 ? '+' : ''}
+                {bfDelta}%
+              </Text>
+            )}
             <View
               className="rounded-full px-2 py-0.5 mt-1"
               style={{ backgroundColor: bfColor + '20' }}
             >
               <Text className="text-[10px] font-sans-semibold" style={{ color: bfColor }}>
-                {BF_CATEGORY_LABELS[latest.bodyFatCategory] ?? latest.bodyFatCategory}
+                {bfLabel}
               </Text>
             </View>
           </View>
@@ -1104,7 +1157,7 @@ function BodyCompositionCard() {
               style={{ backgroundColor: bmiColor + '20' }}
             >
               <Text className="text-[10px] font-sans-semibold" style={{ color: bmiColor }}>
-                {BMI_CATEGORY_LABELS[latest.bmiCategory] ?? latest.bmiCategory}
+                {bmiLabel}
               </Text>
             </View>
           </View>
@@ -1174,7 +1227,9 @@ function WeeklyBudgetCard() {
             className="text-xs font-sans-semibold"
             style={{ color: isOverBudget ? '#ef4444' : themeColors.status.success }}
           >
-            {Math.abs(weeklyBudget.remaining).toLocaleString()} {t('progress.budgetRemaining')}
+            {isOverBudget
+              ? `${Math.abs(weeklyBudget.remaining).toLocaleString()} ${t('progress.surplus')}`
+              : `${weeklyBudget.remaining.toLocaleString()} ${t('progress.budgetRemaining')}`}
           </Text>
         </View>
 
@@ -1268,7 +1323,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
   const isFemale = profile.gender === 'female';
 
   const { history, trend, isLoading, fetchHistory, fetchTrend, logWeight } = useWeightStore();
-  const { logMeasurement } = useBodyCompositionStore();
+  const { latest, logMeasurement } = useBodyCompositionStore();
 
   const load = useCallback(() => {
     fetchHistory(PERIOD_DAYS[period]);
@@ -1553,7 +1608,17 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
       </View>
 
       {/* Body Composition */}
-      <BodyCompositionCard />
+      <BodyCompositionCard
+        onLogMeasurements={() => {
+          // Pre-fill with last values for easier re-entry
+          if (latest) {
+            setWaistInput(String(latest.waistCm));
+            setNeckInput(String(latest.neckCm));
+            if (latest.hipCm) setHipInput(String(latest.hipCm));
+          }
+          setMeasureSheetVisible(true);
+        }}
+      />
 
       {/* Weekly Calorie Budget (Rollover) */}
       <WeeklyBudgetCard />
@@ -1570,7 +1635,14 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           <Text className="font-sans-semibold text-white text-sm">{t('progress.logWeight')}</Text>
         </Pressable>
         <Pressable
-          onPress={() => setMeasureSheetVisible(true)}
+          onPress={() => {
+            if (latest) {
+              setWaistInput(String(latest.waistCm));
+              setNeckInput(String(latest.neckCm));
+              if (latest.hipCm) setHipInput(String(latest.hipCm));
+            }
+            setMeasureSheetVisible(true);
+          }}
           className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-surface-card border border-surface-border py-3.5"
           accessibilityRole="button"
           accessibilityLabel={t('progress.logMeasurements')}
@@ -1653,9 +1725,33 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           <Text className="mb-1 text-lg font-sans-bold text-text">
             {t('progress.logMeasurements')}
           </Text>
-          <Text className="mb-5 text-sm text-text-secondary">
+          <Text className="mb-3 text-sm text-text-secondary">
             {t('progress.logMeasurementsDesc')}
           </Text>
+
+          {/* Measurement guidance */}
+          <View className="mb-4 rounded-xl bg-surface-secondary p-3 gap-1.5">
+            <View className="flex-row items-start gap-2">
+              <Text className="text-xs text-text-tertiary">1.</Text>
+              <Text className="text-xs text-text-secondary font-sans-medium flex-1">
+                {t('progress.waistHint')}
+              </Text>
+            </View>
+            <View className="flex-row items-start gap-2">
+              <Text className="text-xs text-text-tertiary">2.</Text>
+              <Text className="text-xs text-text-secondary font-sans-medium flex-1">
+                {t('progress.neckHint')}
+              </Text>
+            </View>
+            {isFemale && (
+              <View className="flex-row items-start gap-2">
+                <Text className="text-xs text-text-tertiary">3.</Text>
+                <Text className="text-xs text-text-secondary font-sans-medium flex-1">
+                  {t('progress.hipHint')}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {measureError && (
             <View className="mb-4 rounded-xl bg-red-50 border border-red-200 p-3">
