@@ -1,11 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma';
-import type {
-  WebhookPayloadDto,
-  RevenueCatWebhookDto,
-  RevenueCatEventDto,
-} from './subscriptions.dto';
+import type { WebhookPayloadDto, RevenueCatWebhookDto } from './subscriptions.dto';
 
 export type Entitlement = 'free' | 'pro';
 
