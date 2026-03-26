@@ -1,348 +1,247 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { SkeletonLoader } from '../components/ui';
 import { mealsApi, type RecentItem } from '../api/meals';
 import type { LogStackParamList } from '../navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useLocale } from '../i18n';
+import { useDashboardStore } from '../stores/dashboard.store';
 
 type NavProp = NativeStackNavigationProp<LogStackParamList, 'LogHome'>;
+
+const ACTIONS = [
+  { key: 'camera', icon: 'camera' as const, label: 'Photo', color: '#0f172a', bg: '#f1f5f9' },
+  { key: 'voice', icon: 'mic' as const, label: 'Voice', color: '#ea580c', bg: '#fff7ed' },
+  {
+    key: 'barcode',
+    icon: 'barcode-outline' as const,
+    label: 'Scan',
+    color: '#16a34a',
+    bg: '#f0fdf4',
+  },
+  { key: 'quick', icon: 'flash' as const, label: 'Quick', color: '#7c3aed', bg: '#faf5ff' },
+] as const;
 
 export function LogScreen() {
   const navigation = useNavigation<NavProp>();
   const { t } = useLocale();
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const [loadingRecents, setLoadingRecents] = useState(true);
+  const [loggingId, setLoggingId] = useState<string | null>(null);
+  const refreshDashboard = useDashboardStore((s) => s.fetchDashboard);
 
   useFocusEffect(
     useCallback(() => {
       setLoadingRecents(true);
       mealsApi
-        .getRecents(10)
+        .getRecents(15)
         .then((res) => setRecents(res.data))
         .catch(() => setRecents([]))
         .finally(() => setLoadingRecents(false));
     }, []),
   );
 
+  const handleAction = (key: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    switch (key) {
+      case 'camera':
+        return navigation.navigate('PhotoLog');
+      case 'voice':
+        return navigation.navigate('VoiceLog');
+      case 'barcode':
+        return navigation.navigate('BarcodeScan');
+      case 'quick':
+        return navigation.navigate('QuickAdd');
+    }
+  };
+
+  const relogItem = async (item: RecentItem) => {
+    if (loggingId) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setLoggingId(item.foodId);
+    try {
+      const hour = new Date().getHours();
+      const mealType =
+        hour < 10 ? 'breakfast' : hour < 14 ? 'lunch' : hour < 17 ? 'snack' : 'dinner';
+      await mealsApi.quickAdd({
+        mealType,
+        calories: item.lastCalories,
+        proteinGrams: item.lastProtein ?? 0,
+        note: item.name,
+        source: 'quick_relog',
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      refreshDashboard();
+      mealsApi
+        .getRecents(15)
+        .then((res) => setRecents(res.data))
+        .catch(() => {});
+    } catch {
+      Alert.alert('Error', 'Could not log meal. Please try again.');
+    } finally {
+      setLoggingId(null);
+    }
+  };
+
   return (
-    <View className="flex-1 bg-[#f4f7fb]">
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 60 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <View className="px-5 pt-4 pb-5">
-            <Text className="text-2xl font-sans-bold text-[#0b1220]">{t('logging.logMeal')}</Text>
-            <Text className="text-sm text-[#7687a2] font-sans-medium mt-1">
-              {t('logging.chooseHow')}
+          <View className="px-5 pt-3 pb-1">
+            <Text className="text-2xl font-sans-bold text-text-DEFAULT">
+              {t('logging.logMeal')}
             </Text>
           </View>
 
-          {/* ── Primary Action: AI Photo ── */}
-          <Animated.View entering={FadeInDown.duration(350)} className="mx-4 mb-4">
+          {/* Search bar — tap to navigate */}
+          <Animated.View entering={FadeInDown.duration(300)} className="mx-5 mt-3 mb-5">
             <Pressable
-              onPress={() => navigation.navigate('PhotoLog')}
-              className="bg-[#0f172a] rounded-3xl overflow-hidden"
-              style={{
-                shadowColor: '#0f172a',
-                shadowOpacity: 0.25,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 6 },
-                elevation: 6,
-              }}
+              onPress={() => navigation.navigate('TextSearch')}
+              className="bg-white rounded-2xl flex-row items-center px-4 py-3.5 border border-surface-border"
             >
-              <View className="p-6 flex-row items-center justify-between">
-                <View className="flex-1 pr-4">
-                  {/* AI badge */}
-                  <View className="flex-row items-center gap-1.5 mb-3">
-                    <View className="h-5 w-5 rounded-full bg-white/15 items-center justify-center">
-                      <Ionicons name="sparkles" size={11} color="#ffffff" />
-                    </View>
-                    <Text className="text-xs font-sans-semibold text-white/60 uppercase tracking-widest">
-                      {t('logging.aiPowered')}
-                    </Text>
-                  </View>
-                  <Text className="text-2xl font-sans-bold text-white mb-1.5">
-                    {t('logging.snapTrack')}
-                  </Text>
-                  <Text className="text-sm text-white/60 font-sans-medium leading-5">
-                    {t('logging.snapDesc')}
-                  </Text>
-                </View>
-
-                {/* Camera icon circle */}
-                <View
-                  className="h-20 w-20 rounded-3xl bg-white/10 items-center justify-center"
-                  style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }}
-                >
-                  <Ionicons name="camera" size={36} color="#ffffff" />
-                </View>
-              </View>
-
-              {/* Tap hint bar at bottom */}
-              <View
-                className="flex-row items-center justify-center gap-1.5 py-3"
-                style={{ borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' }}
-              >
-                <Text className="text-xs text-white/40 font-sans-medium">Tap to open camera</Text>
-                <Ionicons name="arrow-forward" size={11} color="rgba(255,255,255,0.4)" />
-              </View>
-            </Pressable>
-          </Animated.View>
-
-          {/* ── Secondary Methods: 2x2 grid ── */}
-          <Animated.View entering={FadeInDown.delay(80).duration(350)} className="mx-4 mb-4">
-            <View className="flex-row gap-3 mb-3">
-              {/* Search */}
-              <Pressable
-                onPress={() => navigation.navigate('TextSearch')}
-                className="flex-1 bg-white rounded-3xl items-center py-5"
-                style={{
-                  shadowColor: '#0b1220',
-                  shadowOpacity: 0.05,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 3 },
-                  elevation: 2,
-                }}
-              >
-                <View className="h-14 w-14 rounded-2xl bg-[#f0f4ff] items-center justify-center mb-3">
-                  <Ionicons name="search" size={26} color="#3b5bdb" />
-                </View>
-                <Text className="text-sm font-sans-bold text-[#0b1220]">
+              <Ionicons name="search" size={20} color="#94a3b8" />
+              <Text className="flex-1 ml-3 text-base text-text-tertiary font-sans">
+                {t('logging.findFoods')}
+              </Text>
+              <View className="h-7 px-2.5 rounded-lg bg-surface-secondary items-center justify-center">
+                <Text className="text-xs font-sans-medium text-text-tertiary">
                   {t('logging.textSearch')}
                 </Text>
-                <Text className="text-xs text-[#9aabbf] font-sans-medium mt-0.5">
-                  {t('logging.findFoods')}
-                </Text>
-              </Pressable>
-
-              {/* Barcode */}
-              <Pressable
-                onPress={() => navigation.navigate('BarcodeScan')}
-                className="flex-1 bg-white rounded-3xl items-center py-5"
-                style={{
-                  shadowColor: '#0b1220',
-                  shadowOpacity: 0.05,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 3 },
-                  elevation: 2,
-                }}
-              >
-                <View className="h-14 w-14 rounded-2xl bg-[#f0fdf4] items-center justify-center mb-3">
-                  <Ionicons name="barcode-outline" size={26} color="#16a34a" />
-                </View>
-                <Text className="text-sm font-sans-bold text-[#0b1220]">Barcode</Text>
-                <Text className="text-xs text-[#9aabbf] font-sans-medium mt-0.5">
-                  {t('logging.scanLabel')}
-                </Text>
-              </Pressable>
-            </View>
-            <View className="flex-row gap-3">
-              {/* Label Scan */}
-              <Pressable
-                onPress={() => navigation.navigate('PhotoLog', { mode: 'label' })}
-                className="flex-1 bg-white rounded-3xl items-center py-5"
-                style={{
-                  shadowColor: '#0b1220',
-                  shadowOpacity: 0.05,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 3 },
-                  elevation: 2,
-                }}
-              >
-                <View className="h-14 w-14 rounded-2xl bg-[#ecfdf5] items-center justify-center mb-3">
-                  <Ionicons name="document-text" size={26} color="#059669" />
-                </View>
-                <Text className="text-sm font-sans-bold text-[#0b1220]">Label</Text>
-                <Text className="text-xs text-[#9aabbf] font-sans-medium mt-0.5">Scan package</Text>
-              </Pressable>
-
-              {/* Voice */}
-              <Pressable
-                onPress={() => navigation.navigate('VoiceLog')}
-                className="flex-1 bg-white rounded-3xl items-center py-5"
-                style={{
-                  shadowColor: '#0b1220',
-                  shadowOpacity: 0.05,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 3 },
-                  elevation: 2,
-                }}
-              >
-                <View className="h-14 w-14 rounded-2xl bg-[#fff7ed] items-center justify-center mb-3">
-                  <Ionicons name="mic" size={26} color="#ea580c" />
-                </View>
-                <Text className="text-sm font-sans-bold text-[#0b1220]">{t('logging.voice')}</Text>
-                <Text className="text-xs text-[#9aabbf] font-sans-medium mt-0.5">Speak to log</Text>
-              </Pressable>
-            </View>
-          </Animated.View>
-
-          {/* ── Quick Add ── */}
-          <Animated.View entering={FadeInDown.delay(160).duration(350)} className="mx-4 mb-6">
-            <Pressable
-              onPress={() => navigation.navigate('QuickAdd')}
-              className="bg-white rounded-2xl flex-row items-center px-5 py-4"
-              style={{
-                shadowColor: '#0b1220',
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 2,
-              }}
-            >
-              <View className="h-10 w-10 rounded-xl bg-[#fdf2f8] items-center justify-center mr-4">
-                <Ionicons name="flash" size={20} color="#a855f7" />
               </View>
-              <View className="flex-1">
-                <Text className="text-sm font-sans-bold text-[#0b1220]">
-                  {t('logging.quickAdd')}
-                </Text>
-                <Text className="text-xs text-[#9aabbf] font-sans-medium">
-                  {t('logging.manualEntry')}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
             </Pressable>
           </Animated.View>
 
-          {/* ── My Meals (Saved Templates) ── */}
-          <Animated.View entering={FadeInDown.delay(280).duration(350)} className="mx-4 mb-6">
+          {/* Action strip */}
+          <Animated.View
+            entering={FadeInDown.delay(60).duration(300)}
+            className="flex-row mx-5 mb-6 gap-3"
+          >
+            {ACTIONS.map((action) => (
+              <Pressable
+                key={action.key}
+                onPress={() => handleAction(action.key)}
+                className="flex-1 items-center py-3 rounded-2xl bg-white border border-surface-border"
+              >
+                <View
+                  className="h-11 w-11 rounded-xl items-center justify-center mb-1.5"
+                  style={{ backgroundColor: action.bg }}
+                >
+                  <Ionicons name={action.icon} size={22} color={action.color} />
+                </View>
+                <Text className="text-xs font-sans-semibold text-text-DEFAULT">{action.label}</Text>
+              </Pressable>
+            ))}
+          </Animated.View>
+
+          {/* Quick access row — Templates & Favorites */}
+          <Animated.View
+            entering={FadeInDown.delay(120).duration(300)}
+            className="flex-row mx-5 mb-6 gap-3"
+          >
             <Pressable
               onPress={() => navigation.navigate('MealTemplates')}
-              className="bg-white rounded-2xl flex-row items-center px-5 py-4"
-              style={{
-                shadowColor: '#0b1220',
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 2,
-              }}
+              className="flex-1 bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
             >
-              <View className="h-10 w-10 rounded-xl bg-[#eff6ff] items-center justify-center mr-4">
-                <Ionicons name="bookmark" size={20} color="#3b5bdb" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-sans-bold text-[#0b1220]">My Meals</Text>
-                <Text className="text-xs text-[#9aabbf] font-sans-medium">
-                  Saved meal templates
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+              <Ionicons name="bookmark-outline" size={18} color="#51617a" />
+              <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">My Meals</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate('FavoritesRecents')}
+              className="flex-1 bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
+            >
+              <Ionicons name="heart-outline" size={18} color="#51617a" />
+              <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">Favorites</Text>
             </Pressable>
           </Animated.View>
 
-          {/* ── Recently Logged ── */}
-          <View className="px-5">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-base font-sans-bold text-[#0b1220]">
-                {t('logging.recentMeals')}
-              </Text>
-              <Pressable onPress={() => navigation.navigate('FavoritesRecents')}>
-                <Text className="text-sm font-sans-medium text-[#3b5bdb]">
-                  {t('common.seeAll')}
-                </Text>
-              </Pressable>
-            </View>
+          {/* Recently Logged — one-tap re-log */}
+          <Animated.View entering={FadeInDown.delay(180).duration(300)} className="px-5">
+            <Text className="text-base font-sans-bold text-text-DEFAULT mb-3">
+              {t('logging.recentMeals')}
+            </Text>
 
             {loadingRecents ? (
               <View className="gap-2">
-                {Array.from({ length: 3 }).map((_, i) => (
+                {Array.from({ length: 4 }).map((_, i) => (
                   <View
                     key={`sk-${i}`}
-                    className="bg-white rounded-2xl p-4 flex-row items-center gap-3"
-                    style={{ elevation: 1 }}
+                    className="bg-white rounded-2xl p-3.5 flex-row items-center gap-3 border border-surface-border"
                   >
-                    <SkeletonLoader variant="circle" width={40} />
+                    <SkeletonLoader variant="rect" width={40} height={40} borderRadius={12} />
                     <View className="flex-1 gap-2">
-                      <SkeletonLoader width="70%" height={13} borderRadius={6} />
-                      <SkeletonLoader width="40%" height={11} borderRadius={6} />
+                      <SkeletonLoader width="65%" height={13} borderRadius={6} />
+                      <SkeletonLoader width="35%" height={11} borderRadius={6} />
                     </View>
-                    <SkeletonLoader width={32} height={32} borderRadius={16} />
                   </View>
                 ))}
               </View>
             ) : recents.length === 0 ? (
-              <Animated.View entering={FadeInUp.duration(350)}>
-                <Pressable
-                  onPress={() => navigation.navigate('TextSearch')}
-                  className="bg-white rounded-2xl p-5 items-center"
-                  style={{
-                    shadowColor: '#0b1220',
-                    shadowOpacity: 0.04,
-                    shadowRadius: 8,
-                    shadowOffset: { width: 0, height: 2 },
-                    elevation: 1,
-                  }}
-                >
-                  <View className="h-12 w-12 rounded-full bg-[#f4f7fb] items-center justify-center mb-3">
-                    <Ionicons name="time-outline" size={22} color="#9aabbf" />
-                  </View>
-                  <Text className="text-sm font-sans-semibold text-[#0b1220] mb-1">
-                    {t('logging.noRecents')}
-                  </Text>
-                  <Text className="text-xs text-[#9aabbf] text-center">
-                    {t('logging.noRecentsDesc')}
-                  </Text>
-                </Pressable>
-              </Animated.View>
+              <View className="bg-white rounded-2xl p-6 items-center border border-surface-border">
+                <Ionicons name="time-outline" size={28} color="#c3cedf" />
+                <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
+                  {t('logging.noRecents')}
+                </Text>
+              </View>
             ) : (
-              <View
-                className="bg-white rounded-3xl overflow-hidden"
-                style={{
-                  shadowColor: '#0b1220',
-                  shadowOpacity: 0.05,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 3 },
-                  elevation: 2,
-                }}
-              >
-                {recents.slice(0, 6).map((item, index) => (
-                  <Animated.View
-                    key={item.foodId}
-                    entering={FadeInDown.delay(200 + index * 40).duration(300)}
-                  >
-                    <Pressable
-                      onPress={() => navigation.navigate('TextSearch')}
-                      className="flex-row items-center px-4 py-3.5"
-                      style={
-                        index > 0 ? { borderTopWidth: 1, borderTopColor: '#f0f4f9' } : undefined
-                      }
+              <View className="gap-2">
+                {recents.slice(0, 8).map((item, index) => {
+                  const isLogging = loggingId === item.foodId;
+                  return (
+                    <Animated.View
+                      key={`${item.foodId}-${index}`}
+                      entering={FadeInDown.delay(200 + index * 30).duration(250)}
                     >
-                      {/* Food icon */}
-                      <View className="h-10 w-10 rounded-xl bg-[#f4f7fb] items-center justify-center mr-3">
-                        <Text style={{ fontSize: 20 }}>🍽️</Text>
-                      </View>
+                      <Pressable
+                        onPress={() => relogItem(item)}
+                        disabled={isLogging}
+                        className="bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
+                        style={isLogging ? { opacity: 0.5 } : undefined}
+                      >
+                        {/* Calories badge */}
+                        <View className="h-10 w-10 rounded-xl bg-surface-secondary items-center justify-center mr-3">
+                          <Text className="text-xs font-sans-bold text-text-secondary">
+                            {item.lastCalories}
+                          </Text>
+                        </View>
 
-                      {/* Name + kcal */}
-                      <View className="flex-1 mr-3">
-                        <Text
-                          className="text-sm font-sans-semibold text-[#0b1220]"
-                          numberOfLines={1}
-                        >
-                          {item.name}
-                        </Text>
-                        <Text className="text-xs text-[#9aabbf] font-sans-medium mt-0.5">
-                          {item.lastCalories} kcal
-                        </Text>
-                      </View>
+                        {/* Name */}
+                        <View className="flex-1 mr-3">
+                          <Text
+                            className="text-sm font-sans-semibold text-text-DEFAULT"
+                            numberOfLines={1}
+                          >
+                            {item.name}
+                          </Text>
+                          <Text className="text-xs text-text-tertiary font-sans mt-0.5">
+                            kcal · tap to log again
+                          </Text>
+                        </View>
 
-                      {/* Add button */}
-                      <View className="h-8 w-8 rounded-full bg-[#f4f7fb] items-center justify-center">
-                        <Ionicons name="add" size={18} color="#3b5bdb" />
-                      </View>
-                    </Pressable>
-                  </Animated.View>
-                ))}
+                        {/* Add icon */}
+                        <View className="h-8 w-8 rounded-full bg-primary-50 items-center justify-center">
+                          {isLogging ? (
+                            <Ionicons name="hourglass-outline" size={16} color="#0f172a" />
+                          ) : (
+                            <Ionicons name="add" size={18} color="#0f172a" />
+                          )}
+                        </View>
+                      </Pressable>
+                    </Animated.View>
+                  );
+                })}
               </View>
             )}
-          </View>
+          </Animated.View>
         </ScrollView>
       </SafeAreaView>
     </View>
