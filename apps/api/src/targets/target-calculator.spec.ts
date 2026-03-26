@@ -69,17 +69,16 @@ describe('calculateTargets', () => {
     expect(result.proteinGrams).toBeGreaterThanOrEqual(80 * 1.6);
   });
 
-  it('should allocate fat as 20% of calories', () => {
+  it('should allocate fat as 25% of calories for standard diet', () => {
     const result = calculateTargets(baseInput);
     const fatCalories = result.fatGrams * 9;
     const fatPercent = fatCalories / result.calorieTarget;
-    expect(fatPercent).toBeCloseTo(0.2, 1);
+    expect(fatPercent).toBeCloseTo(0.25, 1);
   });
 
   it('should fill remaining calories with carbs', () => {
     const result = calculateTargets(baseInput);
-    const total =
-      result.proteinGrams * 4 + result.carbsGrams * 4 + result.fatGrams * 9;
+    const total = result.proteinGrams * 4 + result.carbsGrams * 4 + result.fatGrams * 9;
     // Should be close to calorie target (rounding differences)
     expect(Math.abs(total - result.calorieTarget)).toBeLessThan(10);
   });

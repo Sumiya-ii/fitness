@@ -30,11 +30,18 @@ const ACTIVITY_MULTIPLIERS: Record<string, number> = {
 /**
  * Mifflin-St Jeor BMR equation (widely accepted for calorie estimation).
  */
-function calculateBMR(gender: string, weightKg: number, heightCm: number, ageYears: number): number {
-  if (gender === 'female') {
-    return 10 * weightKg + 6.25 * heightCm - 5 * ageYears - 161;
-  }
-  return 10 * weightKg + 6.25 * heightCm - 5 * ageYears + 5;
+function calculateBMR(
+  gender: string,
+  weightKg: number,
+  heightCm: number,
+  ageYears: number,
+): number {
+  const male = 10 * weightKg + 6.25 * heightCm - 5 * ageYears + 5;
+  if (gender === 'male') return male;
+  const female = 10 * weightKg + 6.25 * heightCm - 5 * ageYears - 161;
+  if (gender === 'female') return female;
+  // 'other': average of male and female Mifflin-St Jeor
+  return (male + female) / 2;
 }
 
 function getAgeYears(birthDate: string): number {
@@ -49,7 +56,7 @@ function getAgeYears(birthDate: string): number {
 }
 
 const PROTEIN_MIN_G_PER_KG = 1.6;
-const FAT_MIN_PERCENT = 0.2;
+const FAT_STD_PERCENT = 0.25;
 const KCAL_PER_KG_FAT = 7700;
 
 /**
@@ -112,13 +119,17 @@ function getMacroRatios(preference?: DietPreference): {
 } {
   switch (preference) {
     case 'high_protein':
-      return { proteinRatio: 0.35, fatRatio: 0.25 };
+      // ~40% cals from protein, 25% fat → ~35% carbs
+      return { proteinRatio: 0.4, fatRatio: 0.25 };
     case 'low_carb':
-      return { proteinRatio: 0.30, fatRatio: 0.40 };
+      // 30% protein, 40% fat → ~30% carbs
+      return { proteinRatio: 0.3, fatRatio: 0.4 };
     case 'low_fat':
-      return { proteinRatio: 0.30, fatRatio: 0.15 };
+      // 30% protein, 15% fat → ~55% carbs
+      return { proteinRatio: 0.3, fatRatio: 0.15 };
     case 'standard':
     default:
-      return { proteinRatio: 0.25, fatRatio: FAT_MIN_PERCENT };
+      // 30% protein, 25% fat → ~45% carbs (balanced modern split)
+      return { proteinRatio: 0.3, fatRatio: FAT_STD_PERCENT };
   }
 }

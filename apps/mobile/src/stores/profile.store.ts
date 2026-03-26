@@ -49,14 +49,14 @@ function getMacroRatios(pref: DietPreference): {
 } {
   switch (pref) {
     case 'high_protein':
-      return { proteinRatio: 0.35, fatRatio: 0.25 };
+      return { proteinRatio: 0.4, fatRatio: 0.25 };
     case 'low_carb':
       return { proteinRatio: 0.3, fatRatio: 0.4 };
     case 'low_fat':
       return { proteinRatio: 0.3, fatRatio: 0.15 };
     case 'standard':
     default:
-      return { proteinRatio: 0.25, fatRatio: 0.2 };
+      return { proteinRatio: 0.3, fatRatio: 0.25 };
   }
 }
 
