@@ -1,6 +1,7 @@
-import { View, Pressable, Text, Platform } from 'react-native';
+import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { MainTabParamList } from './types';
@@ -28,138 +29,184 @@ const TAB_LABEL_KEYS: Record<string, string> = {
   Settings: 'tabs.settings',
 };
 
-function PremiumTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useLocale();
 
   return (
     <View
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 16,
-        paddingBottom: Math.max(insets.bottom, 8) + 4,
-      }}
+      style={[styles.outerContainer, { paddingBottom: Math.max(insets.bottom, 8) + 4 }]}
       pointerEvents="box-none"
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          backgroundColor: '#ffffff',
-          borderRadius: 28,
-          height: 68,
-          shadowColor: '#0b1220',
-          shadowOpacity: 0.14,
-          shadowRadius: 24,
-          shadowOffset: { width: 0, height: 8 },
-          elevation: 14,
-          alignItems: 'center',
-          paddingHorizontal: 4,
-          ...Platform.select({
-            ios: {},
-            android: { borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)' },
-          }),
-        }}
-      >
-        {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
-          const isLog = route.name === 'Log';
-          const icons = TAB_ICONS[route.name] ?? { active: 'ellipse', inactive: 'ellipse-outline' };
-          const label = t(TAB_LABEL_KEYS[route.name] ?? route.name);
+      <View style={styles.pillClip}>
+        {/* Native UIVisualEffectView — systemUltraThinMaterial is what iOS 26 uses for glass */}
+        <BlurView tint="systemUltraThinMaterial" intensity={85} style={StyleSheet.absoluteFill} />
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+        {/* Specular highlight ring — matches iOS 26 glass border */}
+        <View style={styles.glassRing} />
+
+        {/* Tab items */}
+        <View style={styles.tabRow}>
+          {state.routes.map((route, index) => {
+            const isFocused = state.index === index;
+            const isLog = route.name === 'Log';
+            const icons = TAB_ICONS[route.name] ?? {
+              active: 'ellipse',
+              inactive: 'ellipse-outline',
+            };
+            const label = t(TAB_LABEL_KEYS[route.name] ?? route.name);
+
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
+
+            if (isLog) {
+              return (
+                <Pressable
+                  key={route.key}
+                  onPress={onPress}
+                  style={styles.tabItem}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isFocused }}
+                  accessibilityLabel={label}
+                >
+                  {/* Log FAB — also uses glass/vibrancy fill */}
+                  <View style={styles.logFab}>
+                    <BlurView tint="dark" intensity={95} style={StyleSheet.absoluteFill} />
+                    <View style={styles.logFabHighlight} />
+                    <Ionicons name="add" size={24} color="rgba(255,255,255,0.95)" />
+                  </View>
+                </Pressable>
+              );
             }
-          };
 
-          if (isLog) {
             return (
               <Pressable
                 key={route.key}
                 onPress={onPress}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                style={styles.tabItem}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isFocused }}
+                accessibilityLabel={label}
               >
-                <View
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 25,
-                    backgroundColor: '#0f172a',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: '#0f172a',
-                    shadowOpacity: 0.35,
-                    shadowRadius: 10,
-                    shadowOffset: { width: 0, height: 4 },
-                    elevation: 8,
-                  }}
-                >
-                  <Ionicons name="add" size={26} color="#ffffff" />
-                </View>
-              </Pressable>
-            );
-          }
+                {/* Active pill indicator */}
+                {isFocused && <View style={styles.activePill} />}
 
-          return (
-            <Pressable
-              key={route.key}
-              onPress={onPress}
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 3,
-                paddingVertical: 6,
-              }}
-            >
-              <View
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: isFocused ? '#f0f4f9' : 'transparent',
-                }}
-              >
                 <Ionicons
                   name={isFocused ? icons.active : icons.inactive}
-                  size={20}
-                  color={isFocused ? '#0f172a' : '#a8b8cc'}
+                  size={22}
+                  color={isFocused ? 'rgba(0, 0, 0, 0.85)' : 'rgba(60, 60, 67, 0.45)'}
                 />
-              </View>
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontFamily: isFocused ? 'Inter-SemiBold' : 'Inter-Regular',
-                  color: isFocused ? '#0f172a' : '#a8b8cc',
-                  letterSpacing: 0.2,
-                }}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          );
-        })}
+                <Text
+                  style={[
+                    styles.label,
+                    {
+                      color: isFocused ? 'rgba(0,0,0,0.85)' : 'rgba(60,60,67,0.45)',
+                      fontWeight: isFocused ? '600' : '400',
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
 }
 
+const styles = StyleSheet.create({
+  outerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    // no background — fully transparent so screen bleeds through glass
+  },
+  pillClip: {
+    borderRadius: 50,
+    overflow: 'hidden',
+    // iOS 26-style floating shadow
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  glassRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 50,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.55)',
+    // top-edge specular highlight
+    borderTopColor: 'rgba(255,255,255,0.75)',
+  },
+  tabRow: {
+    flexDirection: 'row',
+    height: 66,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: 6,
+    position: 'relative',
+  },
+  activePill: {
+    position: 'absolute',
+    top: 4,
+    alignSelf: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  label: {
+    fontSize: 10,
+    letterSpacing: 0.1,
+  },
+  logFab: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  logFabHighlight: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 24,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderTopColor: 'rgba(255,255,255,0.45)',
+  },
+});
+
 export function MainTabs() {
   return (
     <Tab.Navigator
-      tabBar={(props) => <PremiumTabBar {...props} />}
+      tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        // Let content render beneath the glass tab bar
+        tabBarStyle: { display: 'none' },
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
