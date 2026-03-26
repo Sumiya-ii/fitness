@@ -26,6 +26,7 @@ import { BackButton } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
 import { trackEvent, EVENTS } from '../../utils/analytics';
+import { useLocale } from '../../i18n';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'VoiceLog'>;
@@ -91,10 +92,11 @@ function getDeviceLocale(): 'mn' | 'en' {
 function getProcessingMessage(
   screenState: ScreenState,
   draftWorkerStatus: 'waiting' | 'active' | null,
+  t: (key: string) => string,
 ): string {
-  if (screenState === 'uploading') return 'Uploading audio...';
-  if (draftWorkerStatus === 'active') return 'Analyzing nutrition...';
-  return 'Transcribing your voice...';
+  if (screenState === 'uploading') return t('voiceLog.uploading');
+  if (draftWorkerStatus === 'active') return t('voiceLog.analyzingNutrition');
+  return t('voiceLog.transcribing');
 }
 
 // ── Edit Item Modal ──────────────────────────────────────────────────────────
@@ -103,9 +105,10 @@ interface EditItemModalProps {
   item: ParsedFoodItem;
   onSave: (updated: ParsedFoodItem) => void;
   onClose: () => void;
+  t: (key: string) => string;
 }
 
-function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
+function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
   const [name, setName] = useState(item.name);
   const [calories, setCalories] = useState(String(Math.round(item.calories)));
   const [protein, setProtein] = useState(String(item.protein));
@@ -115,7 +118,7 @@ function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
   const handleSave = () => {
     const cal = parseFloat(calories);
     if (isNaN(cal) || cal < 0) {
-      Alert.alert('Invalid', 'Enter valid calories');
+      Alert.alert(t('voiceLog.invalid'), t('voiceLog.invalidCalories'));
       return;
     }
     onSave({
@@ -138,13 +141,15 @@ function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
         <Pressable className="flex-1 bg-black/40" onPress={onClose} />
         <View className="bg-surface-card rounded-t-3xl px-5 pt-5 pb-8">
           <View className="flex-row items-center justify-between mb-5">
-            <Text className="text-text font-sans-semibold text-lg">Edit food item</Text>
+            <Text className="text-text font-sans-semibold text-lg">
+              {t('voiceLog.editFoodItem')}
+            </Text>
             <Pressable onPress={onClose} hitSlop={12}>
               <Ionicons name="close" size={22} color="#9a9caa" />
             </Pressable>
           </View>
 
-          <Text className="text-xs text-text-secondary mb-1">Name</Text>
+          <Text className="text-xs text-text-secondary mb-1">{t('voiceLog.name')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
@@ -155,10 +160,10 @@ function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
           <View className="flex-row gap-3 mb-5">
             {(
               [
-                { label: 'Calories', value: calories, set: setCalories },
-                { label: 'Protein (g)', value: protein, set: setProtein },
-                { label: 'Carbs (g)', value: carbs, set: setCarbs },
-                { label: 'Fat (g)', value: fat, set: setFat },
+                { label: t('voiceLog.calories'), value: calories, set: setCalories },
+                { label: t('voiceLog.proteinG'), value: protein, set: setProtein },
+                { label: t('voiceLog.carbsG'), value: carbs, set: setCarbs },
+                { label: t('voiceLog.fatG'), value: fat, set: setFat },
               ] as const
             ).map(({ label, value, set }) => (
               <View key={label} className="flex-1">
@@ -175,7 +180,9 @@ function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
           </View>
 
           <Pressable onPress={handleSave} className="rounded-2xl bg-primary-500 py-4 items-center">
-            <Text className="font-sans-semibold text-text-inverse text-base">Save</Text>
+            <Text className="font-sans-semibold text-text-inverse text-base">
+              {t('common.save')}
+            </Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -187,6 +194,7 @@ function EditItemModal({ item, onSave, onClose }: EditItemModalProps) {
 
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
+  const { t } = useLocale();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [screenState, setScreenState] = useState<ScreenState>('idle');
@@ -240,7 +248,7 @@ export function VoiceLogScreen() {
     setError(null);
     const { granted } = await requestRecordingPermissionsAsync();
     if (!granted) {
-      Alert.alert('Permission needed', 'Microphone access is required for voice logging.');
+      Alert.alert(t('common.permissionNeeded'), t('voiceLog.micRequired'));
       return;
     }
     await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
@@ -269,7 +277,7 @@ export function VoiceLogScreen() {
     await recorder.stop();
     const uri = recorder.uri;
     if (!uri) {
-      setError('Recording failed. Please try again.');
+      setError(t('voiceLog.recordingFailed'));
       setScreenState('idle');
       return;
     }
@@ -298,7 +306,7 @@ export function VoiceLogScreen() {
 
   const pollDraft = async (draftId: string, attempt = 0) => {
     if (attempt >= MAX_POLL_ATTEMPTS) {
-      setError('Processing timed out. Please try again.');
+      setError(t('voiceLog.processingTimeout'));
       setScreenState('idle');
       return;
     }
@@ -328,14 +336,14 @@ export function VoiceLogScreen() {
       }
 
       if (d.status === 'failed') {
-        setError('Processing failed. Please try again.');
+        setError(t('voiceLog.processingFailed'));
         setScreenState('idle');
         return;
       }
 
       pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), POLL_INTERVAL_MS);
     } catch {
-      setError('Failed to check processing status.');
+      setError(t('voiceLog.statusCheckFailed'));
       setScreenState('idle');
     }
   };
@@ -426,7 +434,7 @@ export function VoiceLogScreen() {
         {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
           <BackButton />
-          <Text className="ml-3 text-lg font-sans-semibold text-text">Voice Log</Text>
+          <Text className="ml-3 text-lg font-sans-semibold text-text">{t('voiceLog.title')}</Text>
         </View>
 
         <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
@@ -434,7 +442,7 @@ export function VoiceLogScreen() {
           {screenState === 'idle' && (
             <View className="flex-1 items-center justify-center px-8 py-16">
               <Text className="text-text-secondary text-center mb-10 text-base leading-6">
-                Tap the microphone and describe what you ate in Mongolian or English.
+                {t('voiceLog.instruction')}
               </Text>
               <Pressable
                 onPress={startRecording}
@@ -442,7 +450,7 @@ export function VoiceLogScreen() {
               >
                 <Ionicons name="mic" size={52} color="#ffffff" />
               </Pressable>
-              <Text className="mt-5 text-text-secondary text-sm">Tap to start recording</Text>
+              <Text className="mt-5 text-text-secondary text-sm">{t('voiceLog.tapToStart')}</Text>
               {error && <Text className="mt-6 text-center text-red-400 text-sm px-4">{error}</Text>}
             </View>
           )}
@@ -451,13 +459,13 @@ export function VoiceLogScreen() {
           {screenState === 'recording' && (
             <View className="flex-1 items-center justify-center px-8 py-16">
               <Text className="text-text-secondary text-center mb-6 text-base">
-                Listening... speak clearly.
+                {t('voiceLog.listening')}
               </Text>
               <Text className={`font-sans-bold text-5xl mb-1 tabular-nums ${timerColor}`}>
                 {formatElapsed(elapsed)}
               </Text>
               <Text className="text-xs text-text-secondary mb-10">
-                / {formatElapsed(MAX_RECORDING_SECONDS)} max
+                / {formatElapsed(MAX_RECORDING_SECONDS)} {t('voiceLog.max')}
               </Text>
               <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <Pressable
@@ -467,7 +475,7 @@ export function VoiceLogScreen() {
                   <Ionicons name="stop" size={46} color="#ffffff" />
                 </Pressable>
               </Animated.View>
-              <Text className="mt-5 text-text-secondary text-sm">Tap to stop</Text>
+              <Text className="mt-5 text-text-secondary text-sm">{t('voiceLog.tapToStop')}</Text>
             </View>
           )}
 
@@ -476,7 +484,7 @@ export function VoiceLogScreen() {
             <View className="flex-1 items-center justify-center px-8 py-16">
               <ActivityIndicator size="large" color="#1f2028" />
               <Text className="mt-5 text-text text-base font-sans-medium">
-                {getProcessingMessage(screenState, draftWorkerStatus)}
+                {getProcessingMessage(screenState, draftWorkerStatus, t)}
               </Text>
               {/* Step progress pills */}
               <View className="flex-row gap-2 mt-5">
@@ -491,10 +499,10 @@ export function VoiceLogScreen() {
               </View>
               <Text className="mt-3 text-xs text-text-secondary">
                 {processingStepIndex === 0
-                  ? 'Uploading · Transcribing · Analyzing'
+                  ? `${t('voiceLog.uploadStep')} · ${t('voiceLog.transcribeStep')} · ${t('voiceLog.analyzeStep')}`
                   : processingStepIndex === 1
-                    ? 'Uploading ✓ · Transcribing · Analyzing'
-                    : 'Uploading ✓ · Transcribing ✓ · Analyzing'}
+                    ? `${t('voiceLog.uploadStep')} ✓ · ${t('voiceLog.transcribeStep')} · ${t('voiceLog.analyzeStep')}`
+                    : `${t('voiceLog.uploadStep')} ✓ · ${t('voiceLog.transcribeStep')} ✓ · ${t('voiceLog.analyzeStep')}`}
               </Text>
             </View>
           )}
@@ -506,7 +514,7 @@ export function VoiceLogScreen() {
               {transcription.length > 0 && (
                 <View className="rounded-xl bg-surface-card border border-surface-border p-4 mb-4">
                   <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    What you said
+                    {t('voiceLog.whatYouSaid')}
                   </Text>
                   <Text className="text-text text-sm leading-5 italic">"{transcription}"</Text>
                 </View>
@@ -514,7 +522,7 @@ export function VoiceLogScreen() {
 
               {/* Meal type chips */}
               <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-2">
-                Meal type
+                {t('voiceLog.mealType')}
               </Text>
               <View className="flex-row gap-2 mb-5">
                 {MEAL_TYPES.map((type) => (
@@ -526,11 +534,11 @@ export function VoiceLogScreen() {
                     }`}
                   >
                     <Text
-                      className={`font-sans-medium capitalize text-sm ${
+                      className={`font-sans-medium text-sm ${
                         mealType === type ? 'text-text-inverse' : 'text-text-secondary'
                       }`}
                     >
-                      {type}
+                      {t(`mealTypes.${type}`)}
                     </Text>
                   </Pressable>
                 ))}
@@ -539,7 +547,9 @@ export function VoiceLogScreen() {
               {/* Food items with edit + delete */}
               {draftItems.length > 0 && (
                 <>
-                  <Text className="font-sans-semibold text-text mb-3">Identified foods</Text>
+                  <Text className="font-sans-semibold text-text mb-3">
+                    {t('voiceLog.identifiedFoods')}
+                  </Text>
                   {draftItems.map((item, index) => {
                     const isLowConfidence = item.confidence < 0.7;
                     const portionLabel =
@@ -560,7 +570,7 @@ export function VoiceLogScreen() {
                               {isLowConfidence && (
                                 <View className="rounded-full bg-amber-100 px-2 py-0.5">
                                   <Text className="text-xs text-amber-700 font-sans-medium">
-                                    Estimated
+                                    {t('voiceLog.estimated')}
                                   </Text>
                                 </View>
                               )}
@@ -594,7 +604,7 @@ export function VoiceLogScreen() {
                   {/* Total */}
                   <View className="rounded-xl bg-surface-secondary border border-surface-border p-4 mb-6">
                     <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-1">
-                      Total
+                      {t('voiceLog.total')}
                     </Text>
                     <Text className="text-text font-sans-bold text-2xl">{totalCalories} cal</Text>
                     <Text className="text-xs text-text-secondary mt-1">
@@ -609,17 +619,17 @@ export function VoiceLogScreen() {
                 <View className="items-center py-10">
                   <Ionicons name="alert-circle-outline" size={40} color="#9a9caa" />
                   <Text className="text-text-secondary mt-3 text-base text-center">
-                    No food items could be identified.
+                    {t('voiceLog.noFoodsIdentified')}
                   </Text>
                   <Text className="text-text-secondary mt-1 text-sm text-center">
-                    You can add it manually or try again.
+                    {t('voiceLog.addManually')}
                   </Text>
                   <Pressable
                     onPress={() => navigation.navigate('QuickAdd')}
                     className="mt-5 rounded-2xl bg-surface-secondary border border-surface-border px-6 py-3"
                   >
                     <Text className="font-sans-semibold text-text-secondary text-sm">
-                      Add entry manually
+                      {t('voiceLog.addEntryManually')}
                     </Text>
                   </Pressable>
                 </View>
@@ -638,7 +648,7 @@ export function VoiceLogScreen() {
                       <ActivityIndicator color="#ffffff" />
                     ) : (
                       <Text className="font-sans-semibold text-text-inverse text-base">
-                        Log Meal
+                        {t('voiceLog.logMeal')}
                       </Text>
                     )}
                   </Pressable>
@@ -648,7 +658,7 @@ export function VoiceLogScreen() {
                   className="rounded-2xl border border-surface-border px-6 py-4 items-center"
                 >
                   <Text className="font-sans-semibold text-text-secondary text-base">
-                    Record Again
+                    {t('voiceLog.recordAgain')}
                   </Text>
                 </Pressable>
               </View>
@@ -663,6 +673,7 @@ export function VoiceLogScreen() {
           item={draftItems[editingIndex]}
           onSave={(updated) => handleEditSave(editingIndex, updated)}
           onClose={() => setEditingIndex(null)}
+          t={t}
         />
       )}
 
@@ -678,7 +689,9 @@ export function VoiceLogScreen() {
           >
             <Ionicons name="checkmark" size={60} color="#ffffff" />
           </Animated.View>
-          <Text className="mt-5 text-white font-sans-semibold text-lg">Meal logged!</Text>
+          <Text className="mt-5 text-white font-sans-semibold text-lg">
+            {t('voiceLog.mealLogged')}
+          </Text>
         </Animated.View>
       )}
     </View>
