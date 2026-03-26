@@ -248,7 +248,7 @@ function PhoneMockup() {
 }
 
 export function WelcomeScreen({ navigation }: Props) {
-  const { locale, setLocale } = useLocale();
+  const { locale, setLocale, t } = useLocale();
 
   const toggleLocale = async () => {
     await setLocale(locale === 'en' ? 'mn' : 'en');
@@ -310,7 +310,7 @@ export function WelcomeScreen({ navigation }: Props) {
             marginBottom: 28,
           }}
         >
-          AI nutrition{'\n'}tracking made easy
+          {t('welcome.headline')}
         </Text>
 
         <Pressable
@@ -333,7 +333,7 @@ export function WelcomeScreen({ navigation }: Props) {
               letterSpacing: 0.2,
             }}
           >
-            Get Started
+            {t('welcome.getStarted')}
           </Text>
         </Pressable>
 
@@ -342,8 +342,8 @@ export function WelcomeScreen({ navigation }: Props) {
           style={{ alignItems: 'center', paddingVertical: 8 }}
         >
           <Text style={{ fontSize: 15, color: '#51617a' }}>
-            Already have an account?{' '}
-            <Text style={{ fontWeight: '700', color: '#0b1220' }}>Sign In</Text>
+            {t('welcome.alreadyHaveAccount')}{' '}
+            <Text style={{ fontWeight: '700', color: '#0b1220' }}>{t('welcome.signIn')}</Text>
           </Text>
         </Pressable>
       </View>

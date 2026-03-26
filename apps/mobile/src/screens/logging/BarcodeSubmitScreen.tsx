@@ -14,11 +14,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { BackButton, Input, Button } from '../../components/ui';
 import { mealsApi } from '../../api/meals';
+import { useLocale } from '../../i18n';
 import type { LogStackParamList } from '../../navigation/types';
 
 type Route = RouteProp<LogStackParamList, 'BarcodeSubmit'>;
 
 export function BarcodeSubmitScreen() {
+  const { t } = useLocale();
   const navigation = useNavigation();
   const route = useRoute<Route>();
   const barcode = route.params?.barcode ?? '';
@@ -37,7 +39,7 @@ export function BarcodeSubmitScreen() {
   const handleCapturePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera access is required to capture the label.');
+      Alert.alert(t('common.permissionNeeded'), t('barcodeSubmit.cameraRequired'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -64,7 +66,7 @@ export function BarcodeSubmitScreen() {
       grams <= 0 ||
       !servingLabel.trim()
     ) {
-      setError('Please fill all required fields with valid values.');
+      setError(t('barcodeSubmit.fillAllFields'));
       return;
     }
     setError(null);
@@ -97,21 +99,28 @@ export function BarcodeSubmitScreen() {
       >
         <View className="flex-row items-center border-b border-surface-border px-4 py-3">
           <BackButton />
-          <Text className="ml-3 text-lg font-sans-semibold text-text">Submit Product</Text>
+          <Text className="ml-3 text-lg font-sans-semibold text-text">
+            {t('barcodeSubmit.title')}
+          </Text>
         </View>
 
         <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
           <View className="p-4">
-            <Input label="Barcode" value={barcode} editable={false} className="mb-4" />
             <Input
-              label="Product name"
-              value={productName}
-              onChangeText={setProductName}
-              placeholder="e.g. Mongolian Milk 2.5%"
+              label={t('barcodeSubmit.barcode')}
+              value={barcode}
+              editable={false}
               className="mb-4"
             />
             <Input
-              label="Calories per 100g"
+              label={t('barcodeSubmit.productName')}
+              value={productName}
+              onChangeText={setProductName}
+              placeholder={t('barcodeSubmit.productNamePlaceholder')}
+              className="mb-4"
+            />
+            <Input
+              label={t('barcodeSubmit.caloriesPer100g')}
               value={calories}
               onChangeText={setCalories}
               placeholder="0"
@@ -119,7 +128,7 @@ export function BarcodeSubmitScreen() {
               className="mb-4"
             />
             <Input
-              label="Protein per 100g (g)"
+              label={t('barcodeSubmit.proteinPer100g')}
               value={protein}
               onChangeText={setProtein}
               placeholder="0"
@@ -127,7 +136,7 @@ export function BarcodeSubmitScreen() {
               className="mb-4"
             />
             <Input
-              label="Carbs per 100g (g)"
+              label={t('barcodeSubmit.carbsPer100g')}
               value={carbs}
               onChangeText={setCarbs}
               placeholder="0"
@@ -135,7 +144,7 @@ export function BarcodeSubmitScreen() {
               className="mb-4"
             />
             <Input
-              label="Fat per 100g (g)"
+              label={t('barcodeSubmit.fatPer100g')}
               value={fat}
               onChangeText={setFat}
               placeholder="0"
@@ -143,17 +152,17 @@ export function BarcodeSubmitScreen() {
               className="mb-4"
             />
             <Input
-              label="Serving label"
+              label={t('barcodeSubmit.servingLabel')}
               value={servingLabel}
               onChangeText={setServingLabel}
-              placeholder="e.g. 1 cup, 100g"
+              placeholder={t('barcodeSubmit.servingLabelPlaceholder')}
               className="mb-4"
             />
             <Input
-              label="Grams per serving"
+              label={t('barcodeSubmit.gramsPerServing')}
               value={gramsPerServing}
               onChangeText={setGramsPerServing}
-              placeholder="e.g. 100"
+              placeholder={t('barcodeSubmit.gramsPlaceholder')}
               keyboardType="decimal-pad"
               className="mb-6"
             />
@@ -164,14 +173,14 @@ export function BarcodeSubmitScreen() {
             >
               <Ionicons name="camera-outline" size={32} color="#9a9caa" />
               <Text className="ml-2 font-sans-medium text-text-secondary">
-                {photoUri ? 'Photo captured' : 'Capture label photo'}
+                {photoUri ? t('barcodeSubmit.photoCaptured') : t('barcodeSubmit.captureLabel')}
               </Text>
             </Pressable>
 
             {error && <Text className="mb-4 text-center text-danger">{error}</Text>}
 
             <Button onPress={handleSubmit} loading={submitting} disabled={submitting}>
-              Submit for Review
+              {t('barcodeSubmit.submitForReview')}
             </Button>
           </View>
         </ScrollView>

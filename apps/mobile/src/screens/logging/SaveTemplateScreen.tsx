@@ -15,18 +15,20 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from '../../components/ui';
 import { mealsApi } from '../../api/meals';
+import { useLocale } from '../../i18n';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'SaveTemplate'>;
 
 const MEAL_TYPES = [
-  { key: 'breakfast', label: 'Breakfast', icon: 'sunny-outline' as const },
-  { key: 'lunch', label: 'Lunch', icon: 'restaurant-outline' as const },
-  { key: 'dinner', label: 'Dinner', icon: 'moon-outline' as const },
-  { key: 'snack', label: 'Snack', icon: 'cafe-outline' as const },
+  { key: 'breakfast', icon: 'sunny-outline' as const },
+  { key: 'lunch', icon: 'restaurant-outline' as const },
+  { key: 'dinner', icon: 'moon-outline' as const },
+  { key: 'snack', icon: 'cafe-outline' as const },
 ];
 
 export function SaveTemplateScreen() {
+  const { t } = useLocale();
   const navigation = useNavigation<Props['navigation']>();
   const route = useRoute<Props['route']>();
   const { mealLogId, mealType: initialMealType, itemNames } = route.params;
@@ -37,7 +39,7 @@ export function SaveTemplateScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Please enter a name for this meal template.');
+      Alert.alert(t('template.nameRequired'), t('template.nameRequiredDesc'));
       return;
     }
 
@@ -46,7 +48,7 @@ export function SaveTemplateScreen() {
       await mealsApi.createTemplateFromLog(mealLogId, name.trim(), mealType);
       navigation.goBack();
     } catch {
-      Alert.alert('Error', 'Failed to save meal template. Please try again.');
+      Alert.alert(t('common.error'), t('template.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -60,18 +62,20 @@ export function SaveTemplateScreen() {
       >
         <View className="flex-row items-center border-b border-[#e8edf4] px-4 py-3">
           <BackButton />
-          <Text className="ml-3 text-lg font-sans-semibold text-[#0b1220]">Save as Template</Text>
+          <Text className="ml-3 text-lg font-sans-semibold text-[#0b1220]">
+            {t('template.saveAsTemplate')}
+          </Text>
         </View>
 
         <ScrollView className="flex-1 px-5 pt-6" keyboardShouldPersistTaps="handled">
           {/* Template name */}
           <Text className="text-sm font-sans-semibold text-[#6b7a90] uppercase tracking-wider mb-2">
-            Template Name
+            {t('template.templateName')}
           </Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="e.g. My Go-To Lunch"
+            placeholder={t('template.templateNamePlaceholder')}
             placeholderTextColor="#9aabbf"
             maxLength={200}
             autoFocus
@@ -87,7 +91,7 @@ export function SaveTemplateScreen() {
 
           {/* Meal type */}
           <Text className="text-sm font-sans-semibold text-[#6b7a90] uppercase tracking-wider mb-2">
-            Default Meal Type
+            {t('template.defaultMealType')}
           </Text>
           <View className="flex-row gap-2 mb-6">
             {MEAL_TYPES.map((mt) => (
@@ -115,7 +119,7 @@ export function SaveTemplateScreen() {
                     mealType === mt.key ? 'text-white' : 'text-[#6b7a90]'
                   }`}
                 >
-                  {mt.label}
+                  {t(`mealTypes.${mt.key}`)}
                 </Text>
               </Pressable>
             ))}
@@ -123,7 +127,7 @@ export function SaveTemplateScreen() {
 
           {/* Items preview */}
           <Text className="text-sm font-sans-semibold text-[#6b7a90] uppercase tracking-wider mb-2">
-            Items in this meal
+            {t('template.itemsInMeal')}
           </Text>
           <View
             className="bg-white rounded-2xl p-4"
@@ -171,7 +175,9 @@ export function SaveTemplateScreen() {
             {saving ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text className="text-base font-sans-bold text-white">Save Template</Text>
+              <Text className="text-base font-sans-bold text-white">
+                {t('template.saveTemplate')}
+              </Text>
             )}
           </Pressable>
         </View>

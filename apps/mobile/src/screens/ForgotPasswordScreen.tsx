@@ -6,10 +6,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 import { Button, Input } from '../components/ui';
 import { resetPassword } from '../services/firebase-auth.service';
+import { useLocale } from '../i18n';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
 export function ForgotPasswordScreen({ navigation }: Props) {
+  const { t } = useLocale();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -46,23 +48,25 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               <Ionicons name="arrow-back" size={24} color="#0f172a" />
             </Pressable>
 
-            <Text className="text-3xl font-sans-bold text-text mb-1">Reset password</Text>
+            <Text className="text-3xl font-sans-bold text-text mb-1">
+              {t('auth.resetPassword')}
+            </Text>
             <Text className="text-base text-text-secondary mb-8">
-              Enter your email and we'll send you a link to reset your password.
+              {t('auth.resetPasswordDesc')}
             </Text>
 
             {sent ? (
               <View className="flex-row items-start gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-4 mb-6">
                 <Ionicons name="checkmark-circle-outline" size={20} color="#22c55e" />
                 <Text className="text-sm text-green-700 flex-1 leading-5">
-                  Check your inbox. We sent a reset link to {email.trim()}.
+                  {`${t('auth.checkInbox')} ${email.trim()}.`}
                 </Text>
               </View>
             ) : (
               <>
                 <Input
-                  label="Email"
-                  placeholder="you@example.com"
+                  label={t('auth.email')}
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -88,7 +92,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
                   disabled={!email.trim() || loading}
                   className="w-full"
                 >
-                  Send reset link
+                  {t('auth.sendResetLink')}
                 </Button>
               </>
             )}
@@ -100,7 +104,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
                 size="lg"
                 className="w-full mt-4"
               >
-                Back to sign in
+                {t('auth.backToSignIn')}
               </Button>
             )}
           </View>

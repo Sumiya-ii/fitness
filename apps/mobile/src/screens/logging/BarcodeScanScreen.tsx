@@ -106,10 +106,8 @@ export function BarcodeScanScreen() {
           </Text>
         </View>
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="mb-4 text-center text-text">
-            Camera permission is required to scan barcodes.
-          </Text>
-          <Button onPress={requestPermission}>Grant Permission</Button>
+          <Text className="mb-4 text-center text-text">{t('barcode.cameraRequired')}</Text>
+          <Button onPress={requestPermission}>{t('barcode.grantPermission')}</Button>
         </View>
       </SafeAreaView>
     );
@@ -140,14 +138,14 @@ export function BarcodeScanScreen() {
         {loading && (
           <View className="items-center py-8">
             <ActivityIndicator size="large" color="#ffffff" />
-            <Text className="mt-2 text-text">Looking up product...</Text>
+            <Text className="mt-2 text-text">{t('barcode.lookingUp')}</Text>
           </View>
         )}
 
         <View className="px-4 pb-8">
           {scanned && !loading && (
             <Button variant="secondary" onPress={resetScan}>
-              Scan Again
+              {t('barcode.scanAgain')}
             </Button>
           )}
         </View>
@@ -191,7 +189,7 @@ export function BarcodeScanScreen() {
               </Pressable>
             </View>
             <Button onPress={handleSaveFromResult} loading={saving} disabled={saving}>
-              Add to Log
+              {t('logging.addToLog')}
             </Button>
           </View>
         )}
@@ -207,12 +205,10 @@ export function BarcodeScanScreen() {
       >
         <View className="items-center">
           <Text className="mb-2 text-center text-lg font-sans-semibold text-text">
-            Product not found
+            {t('barcode.productNotFound')}
           </Text>
-          <Text className="mb-6 text-center text-text-secondary">
-            This barcode is not in our database. You can submit it for review.
-          </Text>
-          <Button onPress={handleSubmitProduct}>Submit Product</Button>
+          <Text className="mb-6 text-center text-text-secondary">{t('barcode.notFoundDesc')}</Text>
+          <Button onPress={handleSubmitProduct}>{t('barcode.submitProduct')}</Button>
         </View>
       </BottomSheet>
     </View>

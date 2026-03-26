@@ -30,17 +30,19 @@ function getPasswordStrength(password: string): PasswordStrength {
   return 'fair';
 }
 
-const strengthConfig: Record<PasswordStrength, { label: string; color: string; segments: number }> =
-  {
-    weak: { label: 'Weak', color: '#ef4444', segments: 1 },
-    fair: { label: 'Fair', color: '#f97316', segments: 2 },
-    strong: { label: 'Strong', color: '#22c55e', segments: 3 },
-  };
+const strengthConfig: Record<
+  PasswordStrength,
+  { labelKey: string; color: string; segments: number }
+> = {
+  weak: { labelKey: 'auth.weak', color: '#ef4444', segments: 1 },
+  fair: { labelKey: 'auth.fair', color: '#f97316', segments: 2 },
+  strong: { labelKey: 'auth.strong', color: '#22c55e', segments: 3 },
+};
 
-function PasswordStrengthBar({ password }: { password: string }) {
+function PasswordStrengthBar({ password, t }: { password: string; t: (key: string) => string }) {
   if (!password) return null;
   const strength = getPasswordStrength(password);
-  const { label, color, segments } = strengthConfig[strength];
+  const { labelKey, color, segments } = strengthConfig[strength];
   return (
     <View className="mt-2 mb-4">
       <View className="flex-row gap-1 mb-1">
@@ -53,7 +55,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
         ))}
       </View>
       <Text className="text-xs font-sans-medium" style={{ color }}>
-        {label}
+        {t(labelKey)}
       </Text>
     </View>
   );
@@ -156,7 +158,7 @@ export function SignUpScreen({ navigation }: Props) {
                   <>
                     <Ionicons name="logo-google" size={20} color="#0f172a" />
                     <Text className="ml-3 text-base font-sans-semibold text-text">
-                      Continue with Google
+                      {t('auth.continueWithGoogle')}
                     </Text>
                   </>
                 )}
@@ -175,7 +177,7 @@ export function SignUpScreen({ navigation }: Props) {
                     <>
                       <Ionicons name="logo-apple" size={20} color="#ffffff" />
                       <Text className="ml-3 text-base font-sans-semibold text-white">
-                        Continue with Apple
+                        {t('auth.continueWithApple')}
                       </Text>
                     </>
                   )}
@@ -186,14 +188,16 @@ export function SignUpScreen({ navigation }: Props) {
             {/* Divider */}
             <View className="flex-row items-center gap-4 mb-6">
               <View className="flex-1 h-px bg-surface-secondary" />
-              <Text className="text-xs text-text-tertiary font-sans-medium">or with email</Text>
+              <Text className="text-xs text-text-tertiary font-sans-medium">
+                {t('auth.orWithEmail')}
+              </Text>
               <View className="flex-1 h-px bg-surface-secondary" />
             </View>
 
             {/* Email form */}
             <Input
               label={t('auth.email')}
-              placeholder="you@example.com"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -208,7 +212,7 @@ export function SignUpScreen({ navigation }: Props) {
             <Input
               ref={passwordRef}
               label={t('auth.password')}
-              placeholder="Min. 8 characters"
+              placeholder={t('auth.minChars')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -227,7 +231,7 @@ export function SignUpScreen({ navigation }: Props) {
                 </Pressable>
               }
             />
-            <PasswordStrengthBar password={password} />
+            <PasswordStrengthBar password={password} t={t} />
 
             <Input
               ref={confirmRef}

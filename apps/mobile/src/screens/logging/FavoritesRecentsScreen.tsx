@@ -5,6 +5,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { BackButton, Card, EmptyState } from '../../components/ui';
 import { mealsApi, type FavoriteItem, type RecentItem } from '../../api/meals';
+import { useLocale } from '../../i18n';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'FavoritesRecents'>;
@@ -12,6 +13,7 @@ type Props = LogStackScreenProps<'FavoritesRecents'>;
 type Tab = 'favorites' | 'recents';
 
 export function FavoritesRecentsScreen() {
+  const { t } = useLocale();
   const navigation = useNavigation<Props['navigation']>();
   const [tab, setTab] = useState<Tab>('recents');
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
@@ -136,7 +138,7 @@ export function FavoritesRecentsScreen() {
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center border-b border-surface-border px-4 py-3">
         <BackButton />
-        <Text className="ml-3 text-lg font-sans-semibold text-text">Favorites & Recents</Text>
+        <Text className="ml-3 text-lg font-sans-semibold text-text">{t('favRecents.title')}</Text>
       </View>
 
       {/* Tabs */}
@@ -152,7 +154,7 @@ export function FavoritesRecentsScreen() {
               tab === 'favorites' ? 'text-primary-600' : 'text-text-secondary'
             }`}
           >
-            Favorites
+            {t('favRecents.favorites')}
           </Text>
         </Pressable>
         <Pressable
@@ -166,7 +168,7 @@ export function FavoritesRecentsScreen() {
               tab === 'recents' ? 'text-primary-600' : 'text-text-secondary'
             }`}
           >
-            Recents
+            {t('favRecents.recents')}
           </Text>
         </Pressable>
       </View>
@@ -178,11 +180,9 @@ export function FavoritesRecentsScreen() {
       ) : isEmpty ? (
         <EmptyState
           icon={tab === 'favorites' ? 'heart' : 'list'}
-          title={tab === 'favorites' ? 'No favorites yet' : 'No recent meals'}
+          title={tab === 'favorites' ? t('favRecents.noFavorites') : t('favRecents.noRecents')}
           subtitle={
-            tab === 'favorites'
-              ? 'Tap the heart on foods to add them here'
-              : 'Log some meals to see them here'
+            tab === 'favorites' ? t('favRecents.noFavoritesDesc') : t('favRecents.noRecentsDesc')
           }
         />
       ) : (

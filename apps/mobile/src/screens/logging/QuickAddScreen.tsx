@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { BackButton, Input, Button, Card } from '../../components/ui';
 import { mealsApi } from '../../api/meals';
+import { useLocale } from '../../i18n';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'QuickAdd'>;
@@ -12,6 +13,7 @@ type Props = LogStackScreenProps<'QuickAdd'>;
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
 export function QuickAddScreen() {
+  const { t } = useLocale();
   const navigation = useNavigation<Props['navigation']>();
   const [mealType, setMealType] = useState<(typeof MEAL_TYPES)[number]>('lunch');
   const [calories, setCalories] = useState('');
@@ -26,7 +28,7 @@ export function QuickAddScreen() {
   const handleSave = async () => {
     const cal = parseInt(calories, 10);
     if (isNaN(cal) || cal < 0) {
-      setError('Enter valid calories');
+      setError(t('quickAdd.enterValidCalories'));
       return;
     }
     setError(null);
@@ -57,13 +59,15 @@ export function QuickAddScreen() {
         {/* Header */}
         <View className="flex-row items-center border-b border-surface-border px-4 py-3">
           <BackButton />
-          <Text className="ml-3 text-lg font-sans-semibold text-text">Quick Add</Text>
+          <Text className="ml-3 text-lg font-sans-semibold text-text">{t('quickAdd.title')}</Text>
         </View>
 
         <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
           <View className="p-4">
             {/* Meal type chips */}
-            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">Meal type</Text>
+            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
+              {t('quickAdd.mealType')}
+            </Text>
             <View className="mb-6 flex-row flex-wrap gap-2">
               {MEAL_TYPES.map((type) => (
                 <Pressable
@@ -78,14 +82,16 @@ export function QuickAddScreen() {
                       mealType === type ? 'text-text-inverse' : 'text-text-secondary'
                     }`}
                   >
-                    {type}
+                    {t(`mealTypes.${type}`)}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
             {/* Calorie input */}
-            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">Calories</Text>
+            <Text className="mb-2 text-sm font-sans-medium text-text-secondary">
+              {t('quickAdd.calories')}
+            </Text>
             <Input
               value={calories}
               onChangeText={setCalories}
@@ -100,7 +106,7 @@ export function QuickAddScreen() {
               className="mb-4 flex-row items-center justify-between"
             >
               <Text className="text-sm font-sans-medium text-text-secondary">
-                Macro breakdown (optional)
+                {t('quickAdd.macroBreakdown')}
               </Text>
               <Ionicons
                 name={showMacros ? 'chevron-up' : 'chevron-down'}
@@ -111,7 +117,7 @@ export function QuickAddScreen() {
             {showMacros && (
               <Card className="mb-6">
                 <Input
-                  label="Protein (g)"
+                  label={t('quickAdd.proteinG')}
                   value={protein}
                   onChangeText={setProtein}
                   placeholder="0"
@@ -119,7 +125,7 @@ export function QuickAddScreen() {
                   className="mb-3"
                 />
                 <Input
-                  label="Carbs (g)"
+                  label={t('quickAdd.carbsG')}
                   value={carbs}
                   onChangeText={setCarbs}
                   placeholder="0"
@@ -127,7 +133,7 @@ export function QuickAddScreen() {
                   className="mb-3"
                 />
                 <Input
-                  label="Fat (g)"
+                  label={t('quickAdd.fatG')}
                   value={fat}
                   onChangeText={setFat}
                   placeholder="0"
@@ -138,17 +144,17 @@ export function QuickAddScreen() {
 
             {/* Note */}
             <Input
-              label="Note (optional)"
+              label={t('quickAdd.note')}
               value={note}
               onChangeText={setNote}
-              placeholder="e.g. Homemade salad"
+              placeholder={t('quickAdd.notePlaceholder')}
               className="mb-6"
             />
 
             {error && <Text className="mb-4 text-center text-danger">{error}</Text>}
 
             <Button onPress={handleSave} loading={saving} disabled={saving}>
-              Save
+              {t('common.save')}
             </Button>
           </View>
         </ScrollView>
