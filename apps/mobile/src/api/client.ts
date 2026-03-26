@@ -37,9 +37,11 @@ async function clearToken(): Promise<void> {
 async function request<T>(
   method: string,
   path: string,
-  options?: { body?: unknown; headers?: Record<string, string> }
+  options?: { body?: unknown; headers?: Record<string, string> },
 ): Promise<T> {
-  const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const url = path.startsWith('http')
+    ? path
+    : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
   const token = await getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -77,11 +79,16 @@ export const api = {
   async put<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
     return request<T>('PUT', path, { body, headers });
   },
+  async patch<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+    return request<T>('PATCH', path, { body, headers });
+  },
   async delete<T>(path: string, headers?: Record<string, string>): Promise<T> {
     return request<T>('DELETE', path, { headers });
   },
   async upload<T>(path: string, formData: FormData): Promise<T> {
-    const url = path.startsWith('http') ? path : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+    const url = path.startsWith('http')
+      ? path
+      : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
     const token = await getToken();
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;

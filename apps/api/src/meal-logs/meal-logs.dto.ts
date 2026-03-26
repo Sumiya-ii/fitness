@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+// Allow up to 5 minutes in the future to tolerate clock skew between client and server
+const notFuture = (v: string | undefined) => !v || new Date(v) <= new Date(Date.now() + 5 * 60_000);
+const loggedAtField = z
+  .string()
+  .datetime()
+  .refine(notFuture, { message: 'loggedAt cannot be in the future' })
+  .optional();
+
 const mealLogItemSchema = z.object({
   foodId: z.string().uuid(),
   servingId: z.string().uuid(),
@@ -9,14 +17,14 @@ const mealLogItemSchema = z.object({
 export const createMealLogSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
   source: z.enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram']).default('text'),
-  loggedAt: z.string().datetime().optional(),
+  loggedAt: loggedAtField,
   note: z.string().max(500).optional(),
   items: z.array(mealLogItemSchema).min(1),
 });
 
 export const quickAddSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
-  loggedAt: z.string().datetime().optional(),
+  loggedAt: loggedAtField,
   note: z.string().max(500).optional(),
   calories: z.number().int().min(0),
   proteinGrams: z.number().min(0).optional().default(0),
@@ -32,7 +40,7 @@ export const quickAddSchema = z.object({
 export const updateMealLogSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
   note: z.string().max(500).nullable().optional(),
-  loggedAt: z.string().datetime().optional(),
+  loggedAt: loggedAtField,
 });
 
 export const mealLogQuerySchema = z.object({

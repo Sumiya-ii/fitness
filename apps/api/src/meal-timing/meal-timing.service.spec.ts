@@ -184,7 +184,11 @@ describe('MealTimingService.scheduleMealTimingInsights', () => {
             { loggedAt: new Date('2026-03-16T00:00:00Z'), mealType: 'breakfast' },
           ]),
       },
-      profile: { findUnique: jest.fn().mockResolvedValue({ locale: 'mn', displayName: 'Bat' }) },
+      profile: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ timezone: 'Asia/Ulaanbaatar', displayName: 'Bat' }),
+      },
       telegramLink: { findUnique: jest.fn().mockResolvedValue(null) },
       deviceToken: { findMany: jest.fn().mockResolvedValue([{ token: 'expo-tok' }]) },
     };

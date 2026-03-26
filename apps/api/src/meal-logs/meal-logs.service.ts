@@ -43,16 +43,22 @@ export class MealLogsService {
         snapshotProtein: Number((Number(nutrient.proteinPer100g) * factor).toFixed(2)),
         snapshotCarbs: Number((Number(nutrient.carbsPer100g) * factor).toFixed(2)),
         snapshotFat: Number((Number(nutrient.fatPer100g) * factor).toFixed(2)),
-        snapshotFiber: nutrient.fiberPer100g
-          ? Number((Number(nutrient.fiberPer100g) * factor).toFixed(2))
-          : null,
+        snapshotFiber:
+          nutrient.fiberPer100g !== null && nutrient.fiberPer100g !== undefined
+            ? Number((Number(nutrient.fiberPer100g) * factor).toFixed(2))
+            : null,
       };
     });
 
     const totalCalories = itemSnapshots.reduce((sum, i) => sum + i.snapshotCalories, 0);
-    const totalProtein = itemSnapshots.reduce((sum, i) => sum + i.snapshotProtein, 0);
-    const totalCarbs = itemSnapshots.reduce((sum, i) => sum + i.snapshotCarbs, 0);
-    const totalFat = itemSnapshots.reduce((sum, i) => sum + i.snapshotFat, 0);
+    // Round after summing to prevent float accumulation (e.g. 5.40 + 2.70 → 8.100000000000001)
+    const totalProtein = Number(
+      itemSnapshots.reduce((sum, i) => sum + i.snapshotProtein, 0).toFixed(2),
+    );
+    const totalCarbs = Number(
+      itemSnapshots.reduce((sum, i) => sum + i.snapshotCarbs, 0).toFixed(2),
+    );
+    const totalFat = Number(itemSnapshots.reduce((sum, i) => sum + i.snapshotFat, 0).toFixed(2));
     const totalFiber = itemSnapshots.some((i) => i.snapshotFiber !== null)
       ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotFiber ?? 0), 0).toFixed(2))
       : null;
@@ -220,7 +226,8 @@ export class MealLogsService {
       totalProtein: log.totalProtein ? Number(log.totalProtein) : 0,
       totalCarbs: log.totalCarbs ? Number(log.totalCarbs) : 0,
       totalFat: log.totalFat ? Number(log.totalFat) : 0,
-      totalFiber: log.totalFiber ? Number(log.totalFiber) : null,
+      totalFiber:
+        log.totalFiber !== null && log.totalFiber !== undefined ? Number(log.totalFiber) : null,
       items: log.items.map((item) => ({
         id: item.id,
         foodId: item.foodId,
@@ -232,7 +239,10 @@ export class MealLogsService {
         snapshotProtein: Number(item.snapshotProtein),
         snapshotCarbs: Number(item.snapshotCarbs),
         snapshotFat: Number(item.snapshotFat),
-        snapshotFiber: item.snapshotFiber ? Number(item.snapshotFiber) : null,
+        snapshotFiber:
+          item.snapshotFiber !== null && item.snapshotFiber !== undefined
+            ? Number(item.snapshotFiber)
+            : null,
       })),
       createdAt: log.createdAt.toISOString(),
       updatedAt: log.updatedAt.toISOString(),

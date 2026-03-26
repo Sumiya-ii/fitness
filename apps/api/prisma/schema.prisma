@@ -44,6 +44,7 @@ model Profile {
   userId         String   @unique @map("user_id") @db.Uuid
   displayName    String?  @map("display_name")
   locale         String   @default("mn") @db.VarChar(5)
+  timezone       String   @default("Asia/Ulaanbaatar") @db.VarChar(50)
   unitSystem     String   @default("metric") @map("unit_system") @db.VarChar(10)
   gender         String?  @db.VarChar(20)
   birthDate      DateTime? @map("birth_date") @db.Date

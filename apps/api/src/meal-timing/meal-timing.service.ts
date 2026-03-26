@@ -198,7 +198,11 @@ export class MealTimingService {
    * If no date is provided, defaults to the last full Mon–Sun week.
    */
   async getInsights(userId: string, weekStartDate?: string): Promise<MealTimingInsights> {
-    const timezone = 'Asia/Ulaanbaatar';
+    const profile = await this.prisma.profile.findUnique({
+      where: { userId },
+      select: { timezone: true },
+    });
+    const timezone = profile?.timezone ?? 'Asia/Ulaanbaatar';
     let weekStart: DateTime;
 
     if (weekStartDate) {

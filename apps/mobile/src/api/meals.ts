@@ -2,16 +2,19 @@ import { api } from './client';
 import { isNetworkError, offlineQueue } from '../services/offlineQueue';
 import { useSyncStore } from '../stores/sync.store';
 
+export interface FoodNutrients {
+  caloriesPer100g: number;
+  proteinPer100g: number;
+  carbsPer100g: number;
+  fatPer100g: number;
+  fiberPer100g: number | null;
+}
+
 export interface FoodSearchResult {
   id: string;
   normalizedName: string;
   servings: Array<{ id: string; label: string; gramsPerUnit: number; isDefault: boolean }>;
-  nutrients: {
-    caloriesPer100g: number;
-    proteinPer100g: number;
-    carbsPer100g: number;
-    fatPer100g: number;
-  } | null;
+  nutrients: FoodNutrients | null;
 }
 
 export interface FoodsResponse {
@@ -19,7 +22,38 @@ export interface FoodsResponse {
   meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
-export interface CreateMealLogItem {
+export interface MealLogItem {
+  id: string;
+  foodId: string | null;
+  quantity: number;
+  servingLabel: string;
+  gramsPerUnit: number;
+  snapshotFoodName: string;
+  snapshotCalories: number;
+  snapshotProtein: number;
+  snapshotCarbs: number;
+  snapshotFat: number;
+  snapshotFiber: number | null;
+}
+
+export interface MealLog {
+  id: string;
+  userId: string;
+  mealType: string | null;
+  source: string;
+  loggedAt: string;
+  note: string | null;
+  totalCalories: number | null;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  totalFiber: number | null;
+  items: MealLogItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateMealLogItemPayload {
   foodId: string;
   servingId: string;
   quantity: number;
@@ -30,7 +64,7 @@ export interface CreateMealLogPayload {
   source?: 'text' | 'quick_add' | 'barcode' | 'voice' | 'photo' | 'telegram';
   loggedAt?: string;
   note?: string;
-  items: CreateMealLogItem[];
+  items: CreateMealLogItemPayload[];
 }
 
 export interface QuickAddPayload {
@@ -41,7 +75,14 @@ export interface QuickAddPayload {
   proteinGrams?: number;
   carbsGrams?: number;
   fatGrams?: number;
+  fiberGrams?: number;
   source?: string;
+}
+
+export interface UpdateMealLogPayload {
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  note?: string | null;
+  loggedAt?: string;
 }
 
 export interface BarcodeLookupResult {
@@ -55,12 +96,7 @@ export interface BarcodeLookupResult {
       gramsPerUnit: number;
       isDefault: boolean;
     }>;
-    nutrients: {
-      caloriesPer100g: number;
-      proteinPer100g: number;
-      carbsPer100g: number;
-      fatPer100g: number;
-    } | null;
+    nutrients: FoodNutrients | null;
   };
 }
 
@@ -71,6 +107,7 @@ export interface SubmitBarcodePayload {
   proteinPer100g: number;
   carbsPer100g: number;
   fatPer100g: number;
+  fiberPer100g?: number;
   servingLabel: string;
   gramsPerUnit: number;
   labelPhotoUrls?: string[];
@@ -102,9 +139,9 @@ export const mealsApi = {
 
   getFood: (id: string) => api.get<{ data: FoodSearchResult }>(`/foods/${id}`),
 
-  createMealLog: async (payload: CreateMealLogPayload): Promise<{ data: unknown }> => {
+  createMealLog: async (payload: CreateMealLogPayload): Promise<{ data: MealLog | null }> => {
     try {
-      return await api.post<{ data: unknown }>('/meal-logs', payload);
+      return await api.post<{ data: MealLog }>('/meal-logs', payload);
     } catch (e) {
       if (isNetworkError(e)) {
         offlineQueue.enqueue({ path: '/meal-logs', body: payload });
@@ -115,9 +152,9 @@ export const mealsApi = {
     }
   },
 
-  quickAdd: async (payload: QuickAddPayload): Promise<{ data: unknown }> => {
+  quickAdd: async (payload: QuickAddPayload): Promise<{ data: MealLog | null }> => {
     try {
-      return await api.post<{ data: unknown }>('/meal-logs/quick-add', payload);
+      return await api.post<{ data: MealLog }>('/meal-logs/quick-add', payload);
     } catch (e) {
       if (isNetworkError(e)) {
         offlineQueue.enqueue({ path: '/meal-logs/quick-add', body: payload });
@@ -128,10 +165,20 @@ export const mealsApi = {
     }
   },
 
+  updateMealLog: (id: string, payload: UpdateMealLogPayload) =>
+    api.patch<{ data: MealLog }>(`/meal-logs/${id}`, payload),
+
+  deleteMealLog: (id: string) => api.delete(`/meal-logs/${id}`),
+
+  getMealLog: (id: string) => api.get<{ data: MealLog }>(`/meal-logs/${id}`),
+
   getMealLogs: (date?: string, page = 1, limit = 50) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (date) params.set('date', date);
-    return api.get<{ data: unknown[] }>(`/meal-logs?${params}`);
+    return api.get<{
+      data: MealLog[];
+      meta: { total: number; page: number; limit: number; totalPages: number };
+    }>(`/meal-logs?${params}`);
   },
 
   barcodeLookup: (code: string) => api.get<{ data: BarcodeLookupResult }>(`/barcodes/${code}`),
