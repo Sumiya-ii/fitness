@@ -1,52 +1,61 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
-import { CreateMealLogDto, QuickAddDto, MealLogQueryDto } from './meal-logs.dto';
+import { CreateMealLogDto, QuickAddDto, MealLogQueryDto, UpdateMealLogDto } from './meal-logs.dto';
 
 @Injectable()
 export class MealLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createFromFood(userId: string, dto: CreateMealLogDto) {
-    const itemSnapshots = await Promise.all(
-      dto.items.map(async (item) => {
-        const food = await this.prisma.food.findUnique({
-          where: { id: item.foodId },
-          include: { servings: true, nutrients: true },
-        });
+    const foodIds = dto.items.map((i) => i.foodId);
 
-        if (!food) throw new NotFoundException(`Food ${item.foodId} not found`);
+    // Single batched query instead of N per-item lookups
+    const foods = await this.prisma.food.findMany({
+      where: { id: { in: foodIds } },
+      include: { servings: true, nutrients: true },
+    });
 
-        const serving = food.servings.find((s) => s.id === item.servingId);
-        if (!serving)
-          throw new BadRequestException(
-            `Serving ${item.servingId} not found for food ${item.foodId}`,
-          );
+    const foodMap = new Map(foods.map((f) => [f.id, f]));
 
-        const nutrient = food.nutrients[0];
-        if (!nutrient)
-          throw new BadRequestException(`Food ${item.foodId} has no nutrient data`);
+    const itemSnapshots = dto.items.map((item) => {
+      const food = foodMap.get(item.foodId);
+      if (!food) throw new NotFoundException(`Food ${item.foodId} not found`);
 
-        const totalGrams = Number(serving.gramsPerUnit) * item.quantity;
-        const factor = totalGrams / 100;
+      const serving = food.servings.find((s) => s.id === item.servingId);
+      if (!serving)
+        throw new BadRequestException(
+          `Serving ${item.servingId} not found for food ${item.foodId}`,
+        );
 
-        return {
-          foodId: food.id,
-          quantity: item.quantity,
-          servingLabel: serving.label,
-          gramsPerUnit: Number(serving.gramsPerUnit),
-          snapshotFoodName: food.normalizedName,
-          snapshotCalories: Math.round(Number(nutrient.caloriesPer100g) * factor),
-          snapshotProtein: Number((Number(nutrient.proteinPer100g) * factor).toFixed(2)),
-          snapshotCarbs: Number((Number(nutrient.carbsPer100g) * factor).toFixed(2)),
-          snapshotFat: Number((Number(nutrient.fatPer100g) * factor).toFixed(2)),
-        };
-      }),
-    );
+      const nutrient = food.nutrients[0];
+      if (!nutrient) throw new BadRequestException(`Food ${item.foodId} has no nutrient data`);
+
+      const totalGrams = Number(serving.gramsPerUnit) * item.quantity;
+      const factor = totalGrams / 100;
+
+      return {
+        foodId: food.id,
+        quantity: item.quantity,
+        servingLabel: serving.label,
+        gramsPerUnit: Number(serving.gramsPerUnit),
+        snapshotFoodName: food.normalizedName,
+        snapshotCalories: Math.round(Number(nutrient.caloriesPer100g) * factor),
+        snapshotProtein: Number((Number(nutrient.proteinPer100g) * factor).toFixed(2)),
+        snapshotCarbs: Number((Number(nutrient.carbsPer100g) * factor).toFixed(2)),
+        snapshotFat: Number((Number(nutrient.fatPer100g) * factor).toFixed(2)),
+        snapshotFiber: nutrient.fiberPer100g
+          ? Number((Number(nutrient.fiberPer100g) * factor).toFixed(2))
+          : null,
+      };
+    });
 
     const totalCalories = itemSnapshots.reduce((sum, i) => sum + i.snapshotCalories, 0);
     const totalProtein = itemSnapshots.reduce((sum, i) => sum + i.snapshotProtein, 0);
     const totalCarbs = itemSnapshots.reduce((sum, i) => sum + i.snapshotCarbs, 0);
     const totalFat = itemSnapshots.reduce((sum, i) => sum + i.snapshotFat, 0);
+    const totalFiber = itemSnapshots.some((i) => i.snapshotFiber !== null)
+      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotFiber ?? 0), 0).toFixed(2))
+      : null;
 
     const mealLog = await this.prisma.mealLog.create({
       data: {
@@ -59,6 +68,7 @@ export class MealLogsService {
         totalProtein,
         totalCarbs,
         totalFat,
+        totalFiber,
         items: {
           create: itemSnapshots,
         },
@@ -81,6 +91,7 @@ export class MealLogsService {
         totalProtein: dto.proteinGrams,
         totalCarbs: dto.carbsGrams,
         totalFat: dto.fatGrams,
+        totalFiber: dto.fiberGrams ?? null,
         items: {
           create: {
             quantity: 1,
@@ -91,6 +102,7 @@ export class MealLogsService {
             snapshotProtein: dto.proteinGrams,
             snapshotCarbs: dto.carbsGrams,
             snapshotFat: dto.fatGrams,
+            snapshotFiber: dto.fiberGrams ?? null,
           },
         },
       },
@@ -100,14 +112,31 @@ export class MealLogsService {
     return this.formatMealLog(mealLog);
   }
 
+  async update(userId: string, id: string, dto: UpdateMealLogDto) {
+    const log = await this.prisma.mealLog.findFirst({ where: { id, userId } });
+    if (!log) throw new NotFoundException('Meal log not found');
+
+    const updated = await this.prisma.mealLog.update({
+      where: { id },
+      data: {
+        ...(dto.mealType !== undefined && { mealType: dto.mealType }),
+        ...(dto.note !== undefined && { note: dto.note }),
+        ...(dto.loggedAt !== undefined && { loggedAt: new Date(dto.loggedAt) }),
+      },
+      include: { items: true },
+    });
+
+    return this.formatMealLog(updated);
+  }
+
   async findByUser(userId: string, query: MealLogQueryDto) {
     const where: { userId: string; loggedAt?: { gte: Date; lt: Date } } = { userId };
 
     if (query.date) {
-      const dayStart = new Date(query.date);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(dayStart);
-      dayEnd.setDate(dayEnd.getDate() + 1);
+      // Parse as UTC to avoid server-timezone day-boundary drift
+      const dayStart = new Date(query.date + 'T00:00:00.000Z');
+      const dayEnd = new Date(query.date + 'T00:00:00.000Z');
+      dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
       where.loggedAt = { gte: dayStart, lt: dayEnd };
     }
 
@@ -162,6 +191,7 @@ export class MealLogsService {
     totalProtein: unknown;
     totalCarbs: unknown;
     totalFat: unknown;
+    totalFiber: unknown;
     createdAt: Date;
     updatedAt: Date;
     items: Array<{
@@ -174,6 +204,7 @@ export class MealLogsService {
       snapshotProtein: unknown;
       snapshotCarbs: unknown;
       snapshotFat: unknown;
+      snapshotFiber: unknown;
       snapshotFoodName: string;
       createdAt: Date;
     }>;
@@ -189,6 +220,7 @@ export class MealLogsService {
       totalProtein: log.totalProtein ? Number(log.totalProtein) : 0,
       totalCarbs: log.totalCarbs ? Number(log.totalCarbs) : 0,
       totalFat: log.totalFat ? Number(log.totalFat) : 0,
+      totalFiber: log.totalFiber ? Number(log.totalFiber) : null,
       items: log.items.map((item) => ({
         id: item.id,
         foodId: item.foodId,
@@ -200,6 +232,7 @@ export class MealLogsService {
         snapshotProtein: Number(item.snapshotProtein),
         snapshotCarbs: Number(item.snapshotCarbs),
         snapshotFat: Number(item.snapshotFat),
+        snapshotFiber: item.snapshotFiber ? Number(item.snapshotFiber) : null,
       })),
       createdAt: log.createdAt.toISOString(),
       updatedAt: log.updatedAt.toISOString(),

@@ -7,6 +7,7 @@ export interface DayHistory {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number | null;
   waterMl: number;
 }
 
@@ -15,13 +16,13 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getDailyDashboard(userId: string, dateStr?: string) {
-    const date = dateStr ? new Date(dateStr) : new Date();
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
+    const dateKey = dateStr ?? new Date().toISOString().split('T')[0]!;
+    // Use explicit UTC boundaries to avoid server-timezone day-boundary drift
+    const dayStart = new Date(dateKey + 'T00:00:00.000Z');
+    const dayEnd = new Date(dateKey + 'T00:00:00.000Z');
+    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 
-    const [mealLogs, target, waterLogs] = await Promise.all([
+    const [mealLogs, target, waterLogs, profile] = await Promise.all([
       this.prisma.mealLog.findMany({
         where: {
           userId,
@@ -37,15 +38,21 @@ export class DashboardService {
         where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
         select: { amountMl: true },
       }),
+      this.prisma.profile.findUnique({
+        where: { userId },
+        select: { waterTargetMl: true },
+      }),
     ]);
 
     const waterConsumed = waterLogs.reduce((sum, l) => sum + l.amountMl, 0);
+    const waterTarget = profile?.waterTargetMl ?? 2000;
 
     const consumed = {
       calories: 0,
       protein: 0,
       carbs: 0,
       fat: 0,
+      fiber: null as number | null,
     };
 
     for (const log of mealLogs) {
@@ -53,6 +60,9 @@ export class DashboardService {
       consumed.protein += Number(log.totalProtein ?? 0);
       consumed.carbs += Number(log.totalCarbs ?? 0);
       consumed.fat += Number(log.totalFat ?? 0);
+      if (log.totalFiber !== null && log.totalFiber !== undefined) {
+        consumed.fiber = Number(((consumed.fiber ?? 0) + Number(log.totalFiber)).toFixed(1));
+      }
     }
 
     consumed.protein = Number(consumed.protein.toFixed(1));
@@ -92,16 +102,21 @@ export class DashboardService {
       totalProtein: Number(log.totalProtein ?? 0),
       totalCarbs: Number(log.totalCarbs ?? 0),
       totalFat: Number(log.totalFat ?? 0),
+      totalFiber: log.totalFiber ? Number(log.totalFiber) : null,
       loggedAt: log.loggedAt.toISOString(),
       items: log.items.map((item) => ({
         id: item.id,
         snapshotFoodName: item.snapshotFoodName,
         snapshotCalories: item.snapshotCalories,
+        snapshotProtein: Number(item.snapshotProtein),
+        snapshotCarbs: Number(item.snapshotCarbs),
+        snapshotFat: Number(item.snapshotFat),
+        snapshotFiber: item.snapshotFiber ? Number(item.snapshotFiber) : null,
       })),
     }));
 
     return {
-      date: dayStart.toISOString().split('T')[0],
+      date: dateKey,
       consumed,
       targets,
       remaining,
@@ -109,16 +124,19 @@ export class DashboardService {
       mealCount: mealLogs.length,
       meals,
       waterConsumed,
-      waterTarget: 2000,
+      waterTarget,
     };
   }
 
   async getHistory(userId: string, days: number) {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    const start = new Date();
-    start.setDate(start.getDate() - days + 1);
-    start.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const endKey = now.toISOString().split('T')[0]!;
+    const end = new Date(endKey + 'T23:59:59.999Z');
+
+    const startDate = new Date(now);
+    startDate.setUTCDate(startDate.getUTCDate() - days + 1);
+    const startKey = startDate.toISOString().split('T')[0]!;
+    const start = new Date(startKey + 'T00:00:00.000Z');
 
     const [mealLogs, waterLogs, target] = await Promise.all([
       this.prisma.mealLog.findMany({
@@ -129,6 +147,7 @@ export class DashboardService {
           totalProtein: true,
           totalCarbs: true,
           totalFat: true,
+          totalFiber: true,
         },
       }),
       this.prisma.waterLog.findMany({
@@ -141,13 +160,20 @@ export class DashboardService {
       }),
     ]);
 
-    // Build a zero-filled map for every day in range
     const byDate = new Map<string, DayHistory>();
     for (let i = 0; i < days; i++) {
       const d = new Date(start);
-      d.setDate(d.getDate() + i);
+      d.setUTCDate(d.getUTCDate() + i);
       const key = d.toISOString().split('T')[0]!;
-      byDate.set(key, { date: key, calories: 0, protein: 0, carbs: 0, fat: 0, waterMl: 0 });
+      byDate.set(key, {
+        date: key,
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: null,
+        waterMl: 0,
+      });
     }
 
     for (const log of mealLogs) {
@@ -158,6 +184,9 @@ export class DashboardService {
         day.protein += Number(log.totalProtein ?? 0);
         day.carbs += Number(log.totalCarbs ?? 0);
         day.fat += Number(log.totalFat ?? 0);
+        if (log.totalFiber !== null && log.totalFiber !== undefined) {
+          day.fiber = (day.fiber ?? 0) + Number(log.totalFiber);
+        }
       }
     }
 
@@ -175,6 +204,7 @@ export class DashboardService {
       protein: Number(d.protein.toFixed(1)),
       carbs: Number(d.carbs.toFixed(1)),
       fat: Number(d.fat.toFixed(1)),
+      fiber: d.fiber !== null ? Number(d.fiber.toFixed(1)) : null,
       waterMl: d.waterMl,
     }));
 

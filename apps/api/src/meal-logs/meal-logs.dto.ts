@@ -8,9 +8,7 @@ const mealLogItemSchema = z.object({
 
 export const createMealLogSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
-  source: z
-    .enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram'])
-    .default('text'),
+  source: z.enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram']).default('text'),
   loggedAt: z.string().datetime().optional(),
   note: z.string().max(500).optional(),
   items: z.array(mealLogItemSchema).min(1),
@@ -24,10 +22,17 @@ export const quickAddSchema = z.object({
   proteinGrams: z.number().min(0).optional().default(0),
   carbsGrams: z.number().min(0).optional().default(0),
   fatGrams: z.number().min(0).optional().default(0),
+  fiberGrams: z.number().min(0).optional(),
   source: z
     .enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram'])
     .optional()
     .default('quick_add'),
+});
+
+export const updateMealLogSchema = z.object({
+  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+  note: z.string().max(500).nullable().optional(),
+  loggedAt: z.string().datetime().optional(),
 });
 
 export const mealLogQuerySchema = z.object({
@@ -38,4 +43,5 @@ export const mealLogQuerySchema = z.object({
 
 export type CreateMealLogDto = z.infer<typeof createMealLogSchema>;
 export type QuickAddDto = z.infer<typeof quickAddSchema>;
+export type UpdateMealLogDto = z.infer<typeof updateMealLogSchema>;
 export type MealLogQueryDto = z.infer<typeof mealLogQuerySchema>;

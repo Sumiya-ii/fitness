@@ -52,6 +52,7 @@ model Profile {
   goalWeightKg   Decimal? @map("goal_weight_kg") @db.Decimal(5, 1)
   activityLevel  String?  @map("activity_level") @db.VarChar(30)
   dietPreference String?  @map("diet_preference") @db.VarChar(30)
+  waterTargetMl  Int      @default(2000) @map("water_target_ml")
   onboardingCompletedAt DateTime? @map("onboarding_completed_at")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -193,10 +194,11 @@ model MealLog {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Aggregate snapshot (denormalized for dashboard performance)
-  totalCalories Int? @map("total_calories")
+  totalCalories Int?     @map("total_calories")
   totalProtein  Decimal? @map("total_protein") @db.Decimal(8, 2)
   totalCarbs    Decimal? @map("total_carbs") @db.Decimal(8, 2)
   totalFat      Decimal? @map("total_fat") @db.Decimal(8, 2)
+  totalFiber    Decimal? @map("total_fiber") @db.Decimal(8, 2)
 
   user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   items MealLogItem[]
@@ -214,10 +216,11 @@ model MealLogItem {
   gramsPerUnit Decimal @map("grams_per_unit") @db.Decimal(8, 2)
 
   // Immutable nutrition snapshot at log time (Section 9.3)
-  snapshotCalories Int    @map("snapshot_calories")
+  snapshotCalories Int     @map("snapshot_calories")
   snapshotProtein  Decimal @map("snapshot_protein") @db.Decimal(8, 2)
   snapshotCarbs    Decimal @map("snapshot_carbs") @db.Decimal(8, 2)
   snapshotFat      Decimal @map("snapshot_fat") @db.Decimal(8, 2)
+  snapshotFiber    Decimal? @map("snapshot_fiber") @db.Decimal(8, 2)
   snapshotFoodName String  @map("snapshot_food_name") @db.VarChar(500)
 
   createdAt DateTime @default(now()) @map("created_at")

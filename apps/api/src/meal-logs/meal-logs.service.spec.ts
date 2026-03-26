@@ -9,15 +9,14 @@ describe('MealLogsService', () => {
   const mockFood = {
     id: 'food-uuid',
     normalizedName: 'Цагаан будаа',
-    servings: [
-      { id: 'serving-uuid', label: '1 cup', gramsPerUnit: 200, isDefault: true },
-    ],
+    servings: [{ id: 'serving-uuid', label: '1 cup', gramsPerUnit: 200, isDefault: true }],
     nutrients: [
       {
         caloriesPer100g: 130,
         proteinPer100g: 2.7,
         carbsPer100g: 28,
         fatPer100g: 0.3,
+        fiberPer100g: 0.4,
       },
     ],
   };
@@ -33,6 +32,7 @@ describe('MealLogsService', () => {
     totalProtein: 5.4,
     totalCarbs: 56,
     totalFat: 0.6,
+    totalFiber: 0.8,
     createdAt: new Date(),
     updatedAt: new Date(),
     items: [
@@ -47,6 +47,7 @@ describe('MealLogsService', () => {
         snapshotProtein: 5.4,
         snapshotCarbs: 56,
         snapshotFat: 0.6,
+        snapshotFiber: 0.8,
         createdAt: new Date(),
       },
     ],
@@ -55,12 +56,13 @@ describe('MealLogsService', () => {
   beforeEach(() => {
     prisma = {
       food: {
-        findUnique: jest.fn().mockResolvedValue(mockFood),
+        findMany: jest.fn().mockResolvedValue([mockFood]),
       },
       mealLog: {
         create: jest.fn().mockResolvedValue(mockMealLog),
         findMany: jest.fn().mockResolvedValue([mockMealLog]),
         findFirst: jest.fn().mockResolvedValue(mockMealLog),
+        update: jest.fn().mockResolvedValue({ ...mockMealLog, mealType: 'dinner' }),
         count: jest.fn().mockResolvedValue(1),
         delete: jest.fn(),
       },
@@ -69,7 +71,7 @@ describe('MealLogsService', () => {
   });
 
   describe('createFromFood', () => {
-    it('should create meal log with immutable nutrition snapshots', async () => {
+    it('should create meal log with immutable nutrition snapshots including fiber', async () => {
       const result = await service.createFromFood('user-uuid', {
         mealType: 'lunch',
         source: 'text',
@@ -78,16 +80,34 @@ describe('MealLogsService', () => {
 
       expect(result.id).toBe('log-uuid');
       expect(result.totalCalories).toBe(260);
+      expect(result.totalFiber).toBe(0.8);
       expect(result.items).toHaveLength(1);
+      expect(result.items[0].snapshotFiber).toBe(0.8);
 
       const createCall = prisma.mealLog.create.mock.calls[0][0];
       const itemData = createCall.data.items.create[0];
       expect(itemData.snapshotCalories).toBe(260);
       expect(itemData.snapshotFoodName).toBe('Цагаан будаа');
+      expect(itemData.snapshotFiber).toBeCloseTo(0.8, 1);
+    });
+
+    it('should batch food lookups in a single query', async () => {
+      await service.createFromFood('user-uuid', {
+        source: 'text',
+        items: [{ foodId: 'food-uuid', servingId: 'serving-uuid', quantity: 1 }],
+      });
+
+      // Should call findMany once (batched), not findUnique per item
+      expect(prisma.food.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.food.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: { in: ['food-uuid'] } },
+        }),
+      );
     });
 
     it('should throw when food not found', async () => {
-      prisma.food.findUnique.mockResolvedValue(null);
+      prisma.food.findMany.mockResolvedValue([]);
       await expect(
         service.createFromFood('user-uuid', {
           source: 'text',
@@ -107,7 +127,7 @@ describe('MealLogsService', () => {
   });
 
   describe('quickAdd', () => {
-    it('should create quick add meal log', async () => {
+    it('should create quick add meal log with optional fiber', async () => {
       const quickAddLog = {
         ...mockMealLog,
         source: 'quick_add',
@@ -115,19 +135,23 @@ describe('MealLogsService', () => {
         totalProtein: 30,
         totalCarbs: 50,
         totalFat: 15,
-        items: [{
-          id: 'item-uuid',
-          foodId: null,
-          quantity: 1,
-          servingLabel: 'Quick Add',
-          gramsPerUnit: 0,
-          snapshotFoodName: 'Quick Add',
-          snapshotCalories: 500,
-          snapshotProtein: 30,
-          snapshotCarbs: 50,
-          snapshotFat: 15,
-          createdAt: new Date(),
-        }],
+        totalFiber: 5,
+        items: [
+          {
+            id: 'item-uuid',
+            foodId: null,
+            quantity: 1,
+            servingLabel: 'Quick Add',
+            gramsPerUnit: 0,
+            snapshotFoodName: 'Quick Add',
+            snapshotCalories: 500,
+            snapshotProtein: 30,
+            snapshotCarbs: 50,
+            snapshotFat: 15,
+            snapshotFiber: 5,
+            createdAt: new Date(),
+          },
+        ],
       };
       prisma.mealLog.create.mockResolvedValue(quickAddLog);
 
@@ -136,11 +160,30 @@ describe('MealLogsService', () => {
         proteinGrams: 30,
         carbsGrams: 50,
         fatGrams: 15,
+        fiberGrams: 5,
         source: 'quick_add',
       });
 
       expect(result.totalCalories).toBe(500);
+      expect(result.totalFiber).toBe(5);
       expect(result.source).toBe('quick_add');
+    });
+  });
+
+  describe('update', () => {
+    it('should update mealType and note', async () => {
+      const result = await service.update('user-uuid', 'log-uuid', { mealType: 'dinner' });
+      expect(prisma.mealLog.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'log-uuid' }, data: { mealType: 'dinner' } }),
+      );
+      expect(result.mealType).toBe('dinner');
+    });
+
+    it('should throw if log not found', async () => {
+      prisma.mealLog.findFirst.mockResolvedValue(null);
+      await expect(service.update('user-uuid', 'missing', { mealType: 'dinner' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -151,7 +194,7 @@ describe('MealLogsService', () => {
       expect(result.meta.total).toBe(1);
     });
 
-    it('should filter by date', async () => {
+    it('should filter by date using UTC boundaries', async () => {
       await service.findByUser('user-uuid', {
         page: 1,
         limit: 50,
@@ -159,6 +202,9 @@ describe('MealLogsService', () => {
       });
       const whereArg = prisma.mealLog.findMany.mock.calls[0][0].where;
       expect(whereArg.loggedAt).toBeDefined();
+      // Boundaries must be UTC midnight, not server-local midnight
+      expect(whereArg.loggedAt.gte.toISOString()).toBe('2026-03-04T00:00:00.000Z');
+      expect(whereArg.loggedAt.lt.toISOString()).toBe('2026-03-05T00:00:00.000Z');
     });
   });
 

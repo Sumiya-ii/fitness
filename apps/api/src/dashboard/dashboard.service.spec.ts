@@ -23,6 +23,9 @@ describe('DashboardService', () => {
       waterLog: {
         findMany: jest.fn().mockResolvedValue([]),
       },
+      profile: {
+        findUnique: jest.fn().mockResolvedValue({ waterTargetMl: 2000 }),
+      },
     };
     service = new DashboardService(prisma as unknown as PrismaService);
   });
@@ -45,6 +48,7 @@ describe('DashboardService', () => {
         totalProtein: 30,
         totalCarbs: 60,
         totalFat: 15,
+        totalFiber: null,
         items: [],
       },
       {
@@ -56,6 +60,7 @@ describe('DashboardService', () => {
         totalProtein: 50,
         totalCarbs: 80,
         totalFat: 25,
+        totalFiber: null,
         items: [],
       },
     ]);
@@ -78,6 +83,7 @@ describe('DashboardService', () => {
         totalProtein: 75,
         totalCarbs: 50,
         totalFat: 15,
+        totalFiber: null,
         items: [],
       },
     ]);
@@ -115,6 +121,7 @@ describe('DashboardService.getHistory', () => {
       mealLog: { findMany: jest.fn().mockResolvedValue([]) },
       target: { findFirst: jest.fn().mockResolvedValue(mockTarget) },
       waterLog: { findMany: jest.fn().mockResolvedValue([]) },
+      profile: { findUnique: jest.fn().mockResolvedValue({ waterTargetMl: 2000 }) },
     };
     service = new DashboardService(prisma as unknown as PrismaService);
   });
@@ -151,6 +158,7 @@ describe('DashboardService.getHistory', () => {
         totalProtein: 120,
         totalCarbs: 200,
         totalFat: 60,
+        totalFiber: null,
       },
       {
         loggedAt: today,
@@ -158,6 +166,7 @@ describe('DashboardService.getHistory', () => {
         totalProtein: 30,
         totalCarbs: 50,
         totalFat: 10,
+        totalFiber: null,
       },
       {
         loggedAt: yesterday,
@@ -165,6 +174,7 @@ describe('DashboardService.getHistory', () => {
         totalProtein: 150,
         totalCarbs: 220,
         totalFat: 70,
+        totalFiber: null,
       },
     ]);
 
@@ -222,6 +232,7 @@ describe('DashboardService.getHistory', () => {
         totalProtein: 33.333,
         totalCarbs: 44.444,
         totalFat: 11.111,
+        totalFiber: null,
       },
     ]);
 

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -15,6 +16,7 @@ import { MealLogsService } from './meal-logs.service';
 import {
   createMealLogSchema,
   quickAddSchema,
+  updateMealLogSchema,
   mealLogQuerySchema,
 } from './meal-logs.dto';
 
@@ -41,10 +43,7 @@ export class MealLogsController {
   }
 
   @Get()
-  async findMany(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: unknown,
-  ) {
+  async findMany(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown) {
     const parsed = mealLogQuerySchema.safeParse(query);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
@@ -53,19 +52,26 @@ export class MealLogsController {
   }
 
   @Get(':id')
-  async findOne(
+  async findOne(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return { data: await this.mealLogsService.findById(user.id, id) };
+  }
+
+  @Patch(':id')
+  async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
+    @Body() body: unknown,
   ) {
-    return { data: await this.mealLogsService.findById(user.id, id) };
+    const parsed = updateMealLogSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues);
+    }
+    return { data: await this.mealLogsService.update(user.id, id, parsed.data) };
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id') id: string,
-  ) {
+  async remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     await this.mealLogsService.remove(user.id, id);
   }
 }

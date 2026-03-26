@@ -6,6 +6,7 @@ export interface DayHistory {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number | null;
   waterMl: number;
 }
 
