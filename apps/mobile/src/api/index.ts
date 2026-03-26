@@ -9,3 +9,5 @@ export { waterApi } from './water';
 export type * from './water';
 export { mealTimingApi } from './meal-timing';
 export type * from './meal-timing';
+export { workoutsApi } from './workouts';
+export type * from './workouts';

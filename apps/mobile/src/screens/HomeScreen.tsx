@@ -24,6 +24,7 @@ import { useWaterStore } from '../stores/water.store';
 import { useStepsStore, STEPS_GOAL, KCAL_PER_STEP } from '../stores/steps.store';
 import { useStreakStore } from '../stores/streak.store';
 import { useNutritionHistoryStore } from '../stores/nutrition-history.store';
+import { useWorkoutStore } from '../stores/workout.store';
 import { type DayHistory } from '../api/dashboard';
 import { api } from '../api';
 import { useLocale } from '../i18n';
@@ -660,6 +661,7 @@ export function HomeScreen() {
     requestPermission: requestStepsPermission,
     fetchTodaySteps,
   } = useStepsStore();
+  const { summary: workoutSummary, fetchSummary: fetchWorkoutSummary } = useWorkoutStore();
 
   // 7 days: 5 past, today (6th), 1 future
   const weekDays = useMemo(() => {
@@ -691,8 +693,17 @@ export function HomeScreen() {
     if (selectedDateKey === todayKey) {
       fetchWater();
       fetchStreaks();
+      fetchWorkoutSummary();
     }
-  }, [fetchDashboard, fetchWater, fetchStreaks, fetchHistory, selectedDateKey, todayKey]);
+  }, [
+    fetchDashboard,
+    fetchWater,
+    fetchStreaks,
+    fetchHistory,
+    fetchWorkoutSummary,
+    selectedDateKey,
+    todayKey,
+  ]);
 
   useEffect(() => {
     checkStepsPermission();
@@ -1626,6 +1637,34 @@ export function HomeScreen() {
             ))}
           </View>
         </Animated.View>
+
+        {/* Workout Summary Card */}
+        {isTodaySelected && workoutSummary && workoutSummary.workoutCount > 0 && (
+          <Animated.View entering={FadeInDown.delay(100).duration(300)} className="px-4 mt-3 mb-1">
+            <Pressable
+              onPress={() => (navigation as any).navigate('WorkoutHome')}
+              className="bg-white rounded-3xl p-4 flex-row items-center"
+              style={cardShadow}
+            >
+              <View
+                className="h-11 w-11 rounded-xl items-center justify-center mr-3"
+                style={{ backgroundColor: '#fef3c7' }}
+              >
+                <Ionicons name="barbell" size={22} color="#d97706" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-sans-bold text-[#0b1220]">
+                  {t('workout.thisWeek')}
+                </Text>
+                <Text className="text-xs text-[#7687a2] font-sans mt-0.5">
+                  {workoutSummary.workoutCount} {t('workout.workouts').toLowerCase()} ·{' '}
+                  {workoutSummary.totalDurationMin} min · {workoutSummary.totalCaloriesBurned} kcal
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+            </Pressable>
+          </Animated.View>
+        )}
 
         {/* Recently Logged */}
         <View className="px-4 mt-2">

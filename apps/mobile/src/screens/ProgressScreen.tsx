@@ -24,6 +24,7 @@ import type { DayHistory } from '../api/dashboard';
 import { mealTimingApi, type MealTimingInsights } from '../api/meal-timing';
 import { useBodyCompositionStore } from '../stores/body-composition.store';
 import { useProfileStore } from '../stores/profile.store';
+import { useWorkoutStore } from '../stores/workout.store';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1801,6 +1802,103 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
 
 // ─── Main ProgressScreen ──────────────────────────────────────────────────────
 
+function WorkoutProgressSection() {
+  const { t } = useLocale();
+  const navigation = useNavigation();
+  const { summary, fetchSummary, summaryLoading } = useWorkoutStore();
+
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
+
+  return (
+    <View className="px-4 mt-5">
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="barbell-outline" size={18} color={themeColors.primary['500']} />
+          <Text className="text-lg font-sans-bold text-text">{t('workout.title')}</Text>
+        </View>
+        <Pressable
+          onPress={() =>
+            (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(
+              'WorkoutHistory',
+            )
+          }
+          hitSlop={8}
+        >
+          <Text className="text-sm font-sans-medium text-primary-400">{t('common.seeAll')}</Text>
+        </Pressable>
+      </View>
+
+      {summaryLoading && !summary ? (
+        <SkeletonLoader width="100%" height={80} borderRadius={16} />
+      ) : summary && summary.workoutCount > 0 ? (
+        <Pressable
+          onPress={() =>
+            (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(
+              'WorkoutHome',
+            )
+          }
+          className="bg-surface-card rounded-2xl p-4 border border-surface-border"
+          style={{
+            shadowColor: '#0b1220',
+            shadowOpacity: 0.04,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 1,
+          }}
+        >
+          <View className="flex-row">
+            <View className="flex-1 items-center">
+              <Text className="text-2xl font-sans-bold text-text">{summary.workoutCount}</Text>
+              <Text className="text-[10px] font-sans-medium text-text-tertiary mt-0.5">
+                {t('workout.workouts')}
+              </Text>
+            </View>
+            <View className="flex-1 items-center">
+              <Text className="text-2xl font-sans-bold text-text">{summary.totalDurationMin}</Text>
+              <Text className="text-[10px] font-sans-medium text-text-tertiary mt-0.5">
+                {t('workout.minutes')}
+              </Text>
+            </View>
+            <View className="flex-1 items-center">
+              <Text className="text-2xl font-sans-bold text-text">
+                {summary.totalCaloriesBurned}
+              </Text>
+              <Text className="text-[10px] font-sans-medium text-text-tertiary mt-0.5">
+                {t('workout.kcalBurned')}
+              </Text>
+            </View>
+            <View className="flex-1 items-center">
+              <Text className="text-2xl font-sans-bold text-text">{summary.activeDays}/7</Text>
+              <Text className="text-[10px] font-sans-medium text-text-tertiary mt-0.5">
+                {t('workout.days')}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+      ) : (
+        <Pressable
+          onPress={() =>
+            (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(
+              'WorkoutHome',
+            )
+          }
+          className="bg-surface-card rounded-2xl p-5 items-center border border-surface-border"
+        >
+          <Ionicons name="barbell-outline" size={28} color="#c3cedf" />
+          <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
+            {t('workout.noWorkoutsYet')}
+          </Text>
+          <Text className="text-xs font-sans-medium text-primary-400 mt-1">
+            {t('workout.startWorkout')}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
 export function ProgressScreen() {
   const { t } = useLocale();
   const { width } = useWindowDimensions();
@@ -1888,6 +1986,9 @@ export function ProgressScreen() {
               <BodyTab viewportWidth={width} />
             )}
           </View>
+
+          {/* Workout Summary */}
+          <WorkoutProgressSection />
         </ScrollView>
       </SafeAreaView>
     </View>

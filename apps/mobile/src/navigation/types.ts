@@ -51,6 +51,11 @@ export type MainStackParamList = {
   TelegramConnect: undefined;
   Subscription: undefined;
   CoachChat: undefined;
+  WorkoutHome: undefined;
+  WorkoutTypePicker: { category?: string } | undefined;
+  WorkoutActive: { workoutType: string };
+  WorkoutHistory: undefined;
+  WorkoutDetail: { id: string };
 };
 
 export type RootStackParamList = {
