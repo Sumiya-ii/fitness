@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { chatApi, type ChatMessage } from '../api/chat';
+import { useLocale } from '../i18n';
 
 interface DisplayMessage extends ChatMessage {
   id: string;
@@ -63,6 +64,7 @@ function TypingIndicator() {
 
 export function CoachChatScreen() {
   const navigation = useNavigation();
+  const { t } = useLocale();
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -117,24 +119,24 @@ export function CoachChatScreen() {
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (e) {
       console.error('[CoachChat] sendMessage failed:', e);
-      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to send message');
+      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('coachChat.sendFailed'));
     } finally {
       setSending(false);
     }
   };
 
   const handleClear = () => {
-    Alert.alert('Clear Conversation', 'This will delete your chat history.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('coachChat.clearConversation'), t('coachChat.clearConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Clear',
+        text: t('coachChat.clear'),
         style: 'destructive',
         onPress: async () => {
           try {
             await chatApi.clearHistory();
             setMessages([]);
           } catch {
-            Alert.alert('Error', 'Failed to clear history');
+            Alert.alert(t('common.error'), t('coachChat.clearFailed'));
           }
         },
       },
@@ -154,10 +156,8 @@ export function CoachChatScreen() {
             <Ionicons name="arrow-back" size={20} color="#9a9caa" />
           </Pressable>
           <View className="flex-1">
-            <Text className="text-lg font-sans-bold text-text">Telegram Coach</Text>
-            <Text className="text-xs text-text-secondary">
-              Chat here or via Telegram — same conversation
-            </Text>
+            <Text className="text-lg font-sans-bold text-text">{t('coachChat.title')}</Text>
+            <Text className="text-xs text-text-secondary">{t('coachChat.subtitle')}</Text>
           </View>
           <Pressable
             onPress={handleClear}
@@ -191,10 +191,10 @@ export function CoachChatScreen() {
                     <Ionicons name="sparkles" size={28} color="#1f2028" />
                   </View>
                   <Text className="text-base font-sans-semibold text-text mb-2">
-                    Your Telegram Coach
+                    {t('coachChat.emptyTitle')}
                   </Text>
                   <Text className="text-sm text-text-secondary text-center px-8">
-                    Messages you send here or to your Telegram bot both appear in this conversation.
+                    {t('coachChat.emptyDesc')}
                   </Text>
                 </View>
               }
@@ -211,7 +211,7 @@ export function CoachChatScreen() {
             <View className="flex-row items-end px-4 py-3 gap-2">
               <TextInput
                 className="flex-1 bg-surface-card border border-surface-border rounded-2xl px-4 py-3 text-text text-sm max-h-28"
-                placeholder="Ask your coach..."
+                placeholder={t('coachChat.placeholder')}
                 placeholderTextColor="#9a9caa"
                 value={input}
                 onChangeText={setInput}

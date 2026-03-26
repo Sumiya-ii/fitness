@@ -8,6 +8,7 @@ import { SkeletonLoader } from '../components/ui';
 import { mealsApi, type FoodSearchResult } from '../api/meals';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
+import { useLocale } from '../i18n';
 
 type NavProp = NativeStackNavigationProp<MainStackParamList>;
 
@@ -24,6 +25,7 @@ function getFoodDisplayData(item: FoodSearchResult) {
 
 export function SearchScreen() {
   const navigation = useNavigation<NavProp>();
+  const { t } = useLocale();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -59,14 +61,12 @@ export function SearchScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         <View className="px-4 pt-2 pb-3">
-          <Text className="text-2xl font-sans-bold text-text mb-3">
-            Search Foods
-          </Text>
+          <Text className="text-2xl font-sans-bold text-text mb-3">{t('search.title')}</Text>
           <View className="flex-row items-center rounded-3xl bg-surface-default border border-surface-border px-4 py-3 shadow-sm shadow-black/5">
             <Ionicons name="search" size={20} color="#51617a" />
             <TextInput
               className="flex-1 ml-3 text-base text-text font-sans-medium"
-              placeholder="Search for a food..."
+              placeholder={t('search.placeholder')}
               placeholderTextColor="#7687a2"
               value={query}
               onChangeText={handleSearch}
@@ -88,16 +88,19 @@ export function SearchScreen() {
               <Ionicons name="search-outline" size={36} color="#c3cedf" />
             </View>
             <Text className="text-base font-sans-semibold text-text mb-1">
-              Find any food
+              {t('search.findAny')}
             </Text>
             <Text className="text-sm text-text-secondary text-center">
-              Search our database of foods to log your meals quickly
+              {t('search.findAnyDesc')}
             </Text>
           </View>
         ) : searching ? (
           <View className="px-4 pt-2">
             {Array.from({ length: 6 }).map((_, index) => (
-              <View key={`search-skeleton-${index}`} className="rounded-2xl bg-surface-card border border-surface-border p-4 mb-2">
+              <View
+                key={`search-skeleton-${index}`}
+                className="rounded-2xl bg-surface-card border border-surface-border p-4 mb-2"
+              >
                 <View className="flex-row items-center">
                   <SkeletonLoader variant="circle" width={40} />
                   <View className="flex-1 ml-3">
@@ -114,10 +117,10 @@ export function SearchScreen() {
               <Ionicons name="nutrition-outline" size={28} color="#777985" />
             </View>
             <Text className="text-base font-sans-medium text-text mb-1">
-              No results found
+              {t('search.noResults')}
             </Text>
             <Text className="text-sm text-text-secondary text-center">
-              Try different keywords or use Quick Add to log manually
+              {t('search.noResultsDesc')}
             </Text>
           </View>
         ) : (
@@ -142,7 +145,8 @@ export function SearchScreen() {
                         {display.name}
                       </Text>
                       <Text className="text-xs text-text-secondary mt-0.5">
-                        {display.calories} kcal · {display.protein}g P · {display.carbs}g C · {display.fat}g F
+                        {display.calories} kcal · {display.protein}g P · {display.carbs}g C ·{' '}
+                        {display.fat}g F
                       </Text>
                     </View>
                     <Ionicons name="add-circle" size={24} color="#0f172a" />

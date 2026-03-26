@@ -16,17 +16,35 @@ import { useDashboardStore } from '../stores/dashboard.store';
 type NavProp = NativeStackNavigationProp<LogStackParamList, 'LogHome'>;
 
 const ACTIONS = [
-  { key: 'camera', icon: 'camera' as const, label: 'Photo', color: '#0f172a', bg: '#f1f5f9' },
-  { key: 'voice', icon: 'mic' as const, label: 'Voice', color: '#ea580c', bg: '#fff7ed' },
+  {
+    key: 'camera',
+    icon: 'camera' as const,
+    labelKey: 'logging.photo' as const,
+    color: '#0f172a',
+    bg: '#f1f5f9',
+  },
+  {
+    key: 'voice',
+    icon: 'mic' as const,
+    labelKey: 'logging.voice' as const,
+    color: '#ea580c',
+    bg: '#fff7ed',
+  },
   {
     key: 'barcode',
     icon: 'barcode-outline' as const,
-    label: 'Scan',
+    labelKey: 'logging.scan' as const,
     color: '#16a34a',
     bg: '#f0fdf4',
   },
-  { key: 'quick', icon: 'flash' as const, label: 'Quick', color: '#7c3aed', bg: '#faf5ff' },
-] as const;
+  {
+    key: 'quick',
+    icon: 'flash' as const,
+    labelKey: 'logging.quick' as const,
+    color: '#7c3aed',
+    bg: '#faf5ff',
+  },
+];
 
 export function LogScreen() {
   const navigation = useNavigation<NavProp>();
@@ -83,7 +101,7 @@ export function LogScreen() {
         .then((res) => setRecents(res.data))
         .catch(() => {});
     } catch {
-      Alert.alert('Error', 'Could not log meal. Please try again.');
+      Alert.alert(t('common.error'), t('logging.couldNotLog'));
     } finally {
       setLoggingId(null);
     }
@@ -139,7 +157,9 @@ export function LogScreen() {
                 >
                   <Ionicons name={action.icon} size={22} color={action.color} />
                 </View>
-                <Text className="text-xs font-sans-semibold text-text-DEFAULT">{action.label}</Text>
+                <Text className="text-xs font-sans-semibold text-text-DEFAULT">
+                  {t(action.labelKey)}
+                </Text>
               </Pressable>
             ))}
           </Animated.View>
@@ -180,14 +200,18 @@ export function LogScreen() {
               className="flex-1 bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
             >
               <Ionicons name="bookmark-outline" size={18} color="#51617a" />
-              <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">My Meals</Text>
+              <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">
+                {t('logging.myMeals')}
+              </Text>
             </Pressable>
             <Pressable
               onPress={() => navigation.navigate('FavoritesRecents')}
               className="flex-1 bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
             >
               <Ionicons name="heart-outline" size={18} color="#51617a" />
-              <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">Favorites</Text>
+              <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">
+                {t('logging.favorites')}
+              </Text>
             </Pressable>
           </Animated.View>
 
@@ -250,7 +274,7 @@ export function LogScreen() {
                             {item.name}
                           </Text>
                           <Text className="text-xs text-text-tertiary font-sans mt-0.5">
-                            kcal · tap to log again
+                            {t('logging.kcalTapToLog')}
                           </Text>
                         </View>
 
