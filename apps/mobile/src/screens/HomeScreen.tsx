@@ -846,7 +846,7 @@ export function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Week Calendar Strip */}
+        {/* Week Calendar Strip with Calorie Rings */}
         <View className="px-4 pb-2 pt-1">
           <Text
             style={{
@@ -865,7 +865,32 @@ export function HomeScreen() {
               const isSelected = selectedDateKey === key;
               const isToday = todayKey === key;
               const isPast = key < todayKey;
-              const circleSize = Math.min(cellSize - 8, 40);
+              const ringSize = Math.min(cellSize - 4, 44);
+              const ringStroke = 3;
+              const ringRadius = (ringSize - ringStroke) / 2;
+              const ringCirc = 2 * Math.PI * ringRadius;
+
+              // Get calorie data for this day from history
+              const dayHistory = history7?.history?.find((h) => h.date === key);
+              const dayTarget = history7?.target?.calories ?? targets.calories;
+              const dayCals = dayHistory?.calories ?? 0;
+              const dayRatio = dayTarget > 0 ? dayCals / dayTarget : 0;
+              const hasData = dayCals > 0;
+              const exceeded = dayRatio > 1;
+              const ringProgress = Math.min(dayRatio, 1);
+
+              // Ring color: green if on track, amber if >80%, red if exceeded, gray track if no data
+              const ringColor = !hasData
+                ? 'transparent'
+                : exceeded
+                  ? '#ef4444'
+                  : dayRatio >= 0.8
+                    ? '#22c55e'
+                    : dayRatio >= 0.5
+                      ? '#f59e0b'
+                      : '#cbd5e1';
+
+              const trackColor = hasData ? '#e8eef5' : isPast ? '#f0f4f9' : '#f0f4f9';
 
               return (
                 <Pressable
@@ -878,7 +903,7 @@ export function HomeScreen() {
                       fontSize: 10,
                       fontFamily: 'Inter-Medium',
                       color: isSelected || isToday ? '#0b1220' : isPast ? '#b0bec5' : '#d1dae6',
-                      marginBottom: 6,
+                      marginBottom: 4,
                       letterSpacing: 0.3,
                     }}
                   >
@@ -886,59 +911,86 @@ export function HomeScreen() {
                   </Text>
                   <View
                     style={{
-                      width: circleSize,
-                      height: circleSize,
-                      borderRadius: circleSize / 2,
+                      width: ringSize,
+                      height: ringSize,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      ...(isSelected
-                        ? { backgroundColor: '#0f172a' }
-                        : isToday
-                          ? {
-                              backgroundColor: '#ffffff',
-                              borderWidth: 2,
-                              borderColor: '#0f172a',
-                              shadowColor: '#0f172a',
-                              shadowOpacity: 0.15,
-                              shadowRadius: 6,
-                              shadowOffset: { width: 0, height: 2 },
-                            }
-                          : isPast
-                            ? { backgroundColor: '#f0f4f9' }
-                            : {}),
                     }}
                   >
-                    <Text
+                    <Svg
+                      width={ringSize}
+                      height={ringSize}
+                      style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}
+                    >
+                      {/* Track circle */}
+                      <Circle
+                        cx={ringSize / 2}
+                        cy={ringSize / 2}
+                        r={ringRadius}
+                        stroke={trackColor}
+                        strokeWidth={ringStroke}
+                        fill="none"
+                      />
+                      {/* Progress circle */}
+                      {hasData && (
+                        <Circle
+                          cx={ringSize / 2}
+                          cy={ringSize / 2}
+                          r={ringRadius}
+                          stroke={ringColor}
+                          strokeWidth={ringStroke}
+                          fill="none"
+                          strokeDasharray={ringCirc}
+                          strokeDashoffset={ringCirc * (1 - ringProgress)}
+                          strokeLinecap="round"
+                        />
+                      )}
+                    </Svg>
+                    {/* Inner fill for selected state */}
+                    <View
                       style={{
-                        fontSize: 13,
-                        fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
-                        color: isSelected
-                          ? '#ffffff'
+                        width: ringSize - ringStroke * 2 - 4,
+                        height: ringSize - ringStroke * 2 - 4,
+                        borderRadius: (ringSize - ringStroke * 2 - 4) / 2,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        ...(isSelected
+                          ? { backgroundColor: '#0f172a' }
                           : isToday
-                            ? '#0f172a'
-                            : isPast
-                              ? '#7687a2'
-                              : '#c3cedf',
+                            ? { backgroundColor: '#ffffff' }
+                            : {}),
                       }}
                     >
-                      {date.getDate()}
-                    </Text>
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
+                          color: isSelected
+                            ? '#ffffff'
+                            : isToday
+                              ? '#0f172a'
+                              : isPast
+                                ? '#7687a2'
+                                : '#c3cedf',
+                        }}
+                      >
+                        {date.getDate()}
+                      </Text>
+                    </View>
+                    {/* Exceeded indicator: small dot below */}
+                    {exceeded && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          bottom: -2,
+                          width: 5,
+                          height: 5,
+                          borderRadius: 2.5,
+                          backgroundColor: '#ef4444',
+                        }}
+                      />
+                    )}
                   </View>
-                  {/* Progress dot */}
-                  <View
-                    style={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: 2,
-                      marginTop: 5,
-                      backgroundColor:
-                        isToday && (data?.consumed?.calories ?? 0) > 0
-                          ? '#22c55e'
-                          : isSelected && !isToday
-                            ? '#0f172a'
-                            : 'transparent',
-                    }}
-                  />
                 </Pressable>
               );
             })}
