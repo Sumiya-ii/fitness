@@ -81,12 +81,20 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
     try {
       const result = await Purchases.getOfferings();
       const current = result.current;
+      if (__DEV__) {
+        console.log('[Paywall] Offerings loaded:', {
+          hasCurrentOffering: !!current,
+          monthly: current?.monthly?.identifier ?? null,
+          annual: current?.annual?.identifier ?? null,
+          allPackages: current?.availablePackages?.map((p) => p.identifier) ?? [],
+        });
+      }
       setOfferings({
         monthly: current?.monthly ?? null,
         annual: current?.annual ?? null,
       });
-    } catch {
-      // Unavailable in simulator / no network — screen still renders
+    } catch (err) {
+      if (__DEV__) console.warn('[Paywall] Failed to load offerings:', err);
     } finally {
       setLoadingOfferings(false);
     }
@@ -105,14 +113,21 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
     }
     setPurchasing(true);
     try {
+      if (__DEV__) console.log('[Paywall] Starting purchase for:', activePkg.identifier);
       const { customerInfo } = await Purchases.purchasePackage(activePkg);
-      const isPro = typeof customerInfo.entitlements.active['pro'] !== 'undefined';
-      if (isPro) {
-        await fetchStatus();
-        setPurchaseSuccess(true);
+      if (__DEV__) {
+        console.log('[Paywall] Purchase completed. Entitlements:', {
+          active: Object.keys(customerInfo.entitlements.active),
+          all: Object.keys(customerInfo.entitlements.all),
+        });
       }
+      // Sync with server (source of truth) regardless of client-side entitlement state.
+      // In sandbox/dev the entitlement may not appear immediately on the client.
+      await fetchStatus();
+      setPurchaseSuccess(true);
     } catch (err: unknown) {
       const code = (err as { code?: PURCHASES_ERROR_CODE }).code;
+      if (__DEV__) console.warn('[Paywall] Purchase error:', { code, err });
       if (code !== PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
         Alert.alert(t('subscription.purchaseErrorTitle'), t('subscription.purchaseErrorDesc'));
       }
