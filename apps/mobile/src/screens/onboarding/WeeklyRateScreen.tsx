@@ -4,28 +4,30 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
+import { useSettingsStore } from '../../stores/settings.store';
+import { displayWeeklyRate, weeklyRateUnit } from '../../utils/units';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 10;
 
 type RateOption = {
+  /** Rate in kg/week (always stored as kg) */
   value: number;
-  label: string;
   description: string;
   icon: keyof typeof Ionicons.glyphMap;
 };
 
 const LOSE_RATES: RateOption[] = [
-  { value: 0.25, label: '0.25 kg/week', description: 'Slow & steady', icon: 'walk-outline' },
-  { value: 0.5, label: '0.5 kg/week', description: 'Recommended', icon: 'bicycle-outline' },
-  { value: 0.75, label: '0.75 kg/week', description: 'Moderate', icon: 'fitness-outline' },
-  { value: 1.0, label: '1.0 kg/week', description: 'Aggressive', icon: 'flash-outline' },
+  { value: 0.25, description: 'Slow & steady', icon: 'walk-outline' },
+  { value: 0.5, description: 'Recommended', icon: 'bicycle-outline' },
+  { value: 0.75, description: 'Moderate', icon: 'fitness-outline' },
+  { value: 1.0, description: 'Aggressive', icon: 'flash-outline' },
 ];
 
 const GAIN_RATES: RateOption[] = [
-  { value: 0.25, label: '0.25 kg/week', description: 'Lean bulk', icon: 'walk-outline' },
-  { value: 0.5, label: '0.5 kg/week', description: 'Recommended', icon: 'bicycle-outline' },
-  { value: 0.75, label: '0.75 kg/week', description: 'Fast bulk', icon: 'fitness-outline' },
+  { value: 0.25, description: 'Lean bulk', icon: 'walk-outline' },
+  { value: 0.5, description: 'Recommended', icon: 'bicycle-outline' },
+  { value: 0.75, description: 'Fast bulk', icon: 'fitness-outline' },
 ];
 
 type Props = NativeStackScreenProps<SetupStackParamList, 'WeeklyRate'>;
@@ -34,8 +36,10 @@ export function WeeklyRateScreen({ navigation }: Props) {
   const goalType = useProfileStore((s) => s.goalType);
   const stored = useProfileStore((s) => s.weeklyRateKg);
   const setWeeklyRateKg = useProfileStore((s) => s.setWeeklyRateKg);
+  const unitSystem = useSettingsStore((s) => s.unitSystem);
   const [selected, setSelected] = useState<number | null>(stored);
 
+  const rateLabel = weeklyRateUnit(unitSystem);
   const rates = goalType === 'gain' ? GAIN_RATES : LOSE_RATES;
   const isMaintain = goalType === 'maintain';
 
@@ -90,6 +94,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
           {rates.map((rate) => {
             const isSelected = selected === rate.value;
             const isRecommended = rate.value === 0.5;
+            const label = `${displayWeeklyRate(rate.value, unitSystem)} ${rateLabel}`;
 
             return (
               <Pressable
@@ -104,7 +109,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
                 </View>
                 <View className="flex-1">
                   <View className="flex-row items-center">
-                    <Text className="text-base font-sans-semibold text-text">{rate.label}</Text>
+                    <Text className="text-base font-sans-semibold text-text">{label}</Text>
                     {isRecommended && (
                       <View className="ml-2 px-2 py-0.5 bg-primary-500/15 rounded-full">
                         <Text className="text-xs font-sans-medium text-primary-600">

@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
+import { useSettingsStore } from '../../stores/settings.store';
+import { cmToFeetInches, feetInchesToCm } from '../../utils/units';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 10;
@@ -13,21 +15,41 @@ type Props = NativeStackScreenProps<SetupStackParamList, 'HeightSelect'>;
 export function HeightSelectScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.heightCm);
   const setHeightCm = useProfileStore((s) => s.setHeightCm);
-  const [value, setValue] = useState(stored?.toString() ?? '');
+  const unitSystem = useSettingsStore((s) => s.unitSystem);
 
-  const height = parseInt(value, 10);
-  const isValid = !isNaN(height) && height >= 50 && height <= 300;
+  // Metric mode: single cm input
+  // Imperial mode: feet + inches inputs
+  const storedFtIn = stored ? cmToFeetInches(stored) : null;
+  const [cmValue, setCmValue] = useState(stored?.toString() ?? '');
+  const [feetValue, setFeetValue] = useState(storedFtIn ? storedFtIn.feet.toString() : '');
+  const [inchesValue, setInchesValue] = useState(storedFtIn ? storedFtIn.inches.toString() : '');
 
-  const feetInches = isValid
-    ? {
-        feet: Math.floor(height / 30.48),
-        inches: Math.round((height % 30.48) / 2.54),
-      }
-    : null;
+  const isMetric = unitSystem === 'metric';
+
+  let heightCm: number;
+  let isValid: boolean;
+  let altDisplay: string | null = null;
+
+  if (isMetric) {
+    heightCm = parseInt(cmValue, 10);
+    isValid = !isNaN(heightCm) && heightCm >= 50 && heightCm <= 300;
+    if (isValid) {
+      const { feet, inches } = cmToFeetInches(heightCm);
+      altDisplay = `≈ ${feet}'${inches}"`;
+    }
+  } else {
+    const ft = parseInt(feetValue, 10);
+    const inches = parseInt(inchesValue, 10) || 0;
+    heightCm = feetInchesToCm(isNaN(ft) ? 0 : ft, inches);
+    isValid = !isNaN(ft) && ft >= 1 && ft <= 9 && inches >= 0 && inches <= 11 && heightCm >= 50;
+    if (isValid) {
+      altDisplay = `≈ ${heightCm} cm`;
+    }
+  }
 
   const handleContinue = () => {
     if (isValid) {
-      setHeightCm(height);
+      setHeightCm(heightCm);
       navigation.navigate('WeightSelect');
     }
   };
@@ -47,26 +69,52 @@ export function HeightSelectScreen({ navigation }: Props) {
           <Ionicons name="resize-outline" size={40} color="#8f93a4" />
         </View>
 
-        <View className="flex-row items-end mb-4">
-          <TextInput
-            value={value}
-            onChangeText={(t) => setValue(t.replace(/\D/g, ''))}
-            keyboardType="number-pad"
-            placeholder="170"
-            placeholderTextColor="#9a9caa"
-            className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
-            maxLength={3}
-            autoFocus
-          />
-          <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">
-            cm
-          </Text>
-        </View>
+        {isMetric ? (
+          <View className="flex-row items-end mb-4">
+            <TextInput
+              value={cmValue}
+              onChangeText={(t) => setCmValue(t.replace(/\D/g, ''))}
+              keyboardType="number-pad"
+              placeholder="170"
+              placeholderTextColor="#9a9caa"
+              className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
+              maxLength={3}
+              autoFocus
+            />
+            <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">cm</Text>
+          </View>
+        ) : (
+          <View className="flex-row items-end mb-4 gap-3">
+            <View className="flex-row items-end">
+              <TextInput
+                value={feetValue}
+                onChangeText={(t) => setFeetValue(t.replace(/\D/g, ''))}
+                keyboardType="number-pad"
+                placeholder="5"
+                placeholderTextColor="#9a9caa"
+                className="text-5xl font-sans-bold text-text text-center min-w-[60px]"
+                maxLength={1}
+                autoFocus
+              />
+              <Text className="text-2xl font-sans-medium text-text-secondary ml-1 mb-2">ft</Text>
+            </View>
+            <View className="flex-row items-end">
+              <TextInput
+                value={inchesValue}
+                onChangeText={(t) => setInchesValue(t.replace(/\D/g, ''))}
+                keyboardType="number-pad"
+                placeholder="8"
+                placeholderTextColor="#9a9caa"
+                className="text-5xl font-sans-bold text-text text-center min-w-[60px]"
+                maxLength={2}
+              />
+              <Text className="text-2xl font-sans-medium text-text-secondary ml-1 mb-2">in</Text>
+            </View>
+          </View>
+        )}
 
-        {feetInches && (
-          <Text className="text-sm font-sans-medium text-text-secondary">
-            ≈ {feetInches.feet}'{feetInches.inches}"
-          </Text>
+        {altDisplay && (
+          <Text className="text-sm font-sans-medium text-text-secondary">{altDisplay}</Text>
         )}
       </View>
     </OnboardingLayout>

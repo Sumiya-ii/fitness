@@ -8,6 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '../stores/auth.store';
+import { useSubscriptionStore } from '../stores/subscription.store';
+import { useSettingsStore } from '../stores/settings.store';
 import { api } from '../api';
 import { useLocale, type Locale } from '../i18n';
 import { requestAndRegisterPushToken } from '../hooks/usePushNotifications';
@@ -27,11 +29,6 @@ interface NotificationPrefs {
 interface TelegramStatus {
   linked: boolean;
   telegramUsername?: string;
-}
-
-interface SubscriptionStatus {
-  tier: string;
-  status: string;
 }
 
 function getInitials(name: string | null | undefined): string {
@@ -166,23 +163,21 @@ export function SettingsScreen() {
     'undetermined',
   );
   const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const isPro = useSubscriptionStore((s) => s.tier === 'pro');
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
   const loadData = useCallback(async () => {
     try {
-      const [profileRes, notifRes, telegramRes, subRes, permResult] = await Promise.all([
+      const [profileRes, notifRes, telegramRes, permResult] = await Promise.all([
         api.get<{ data: ProfileData }>('/profile'),
         api.get<{ data: NotificationPrefs }>('/notifications/preferences'),
         api.get<TelegramStatus>('/telegram/status'),
-        api.get<{ data: SubscriptionStatus }>('/subscriptions/status'),
         Notifications.getPermissionsAsync(),
       ]);
       setProfile(profileRes.data);
       setNotifPrefs(notifRes.data);
       setTelegramStatus(telegramRes);
-      setSubscription(subRes.data);
       setOsPermission(
         permResult.status === 'granted'
           ? 'granted'
@@ -194,7 +189,6 @@ export function SettingsScreen() {
       setProfile(null);
       setNotifPrefs({ morningReminder: true, eveningReminder: true });
       setTelegramStatus(null);
-      setSubscription(null);
     }
   }, []);
 
@@ -227,12 +221,13 @@ export function SettingsScreen() {
     }
   };
 
+  const setUnitSystem = useSettingsStore((s) => s.setUnitSystem);
+  const currentUnitsFromStore = useSettingsStore((s) => s.unitSystem);
+
   const handleUnitsSelect = async (unitSystem: string) => {
-    try {
-      await api.put('/profile', { unitSystem });
+    if (unitSystem === 'metric' || unitSystem === 'imperial') {
+      await setUnitSystem(unitSystem);
       setProfile((p) => (p ? { ...p, unitSystem } : p));
-    } catch {
-      /* ignore */
     }
   };
 
@@ -298,8 +293,7 @@ export function SettingsScreen() {
 
   const appVersion = Constants.expoConfig?.version ?? '0.0.1';
   const currentLang = profile?.locale ?? currentLocale;
-  const currentUnits = profile?.unitSystem ?? 'metric';
-  const isPro = subscription?.tier === 'pro';
+  const currentUnits = currentUnitsFromStore;
 
   return (
     <View className="flex-1 bg-surface-app">

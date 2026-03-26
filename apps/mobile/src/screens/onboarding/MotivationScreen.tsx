@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
+import { useSettingsStore } from '../../stores/settings.store';
+import { displayWeight, displayWeeklyRate, weightUnit, weeklyRateUnit } from '../../utils/units';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 10;
@@ -16,18 +18,15 @@ export function MotivationScreen({ navigation }: Props) {
   const goalWeightKg = useProfileStore((s) => s.goalWeightKg);
   const weeklyRateKg = useProfileStore((s) => s.weeklyRateKg);
 
-  const diff =
-    weightKg && goalWeightKg ? Math.abs(weightKg - goalWeightKg) : null;
-  const weeks =
-    diff && weeklyRateKg && weeklyRateKg > 0
-      ? Math.ceil(diff / weeklyRateKg)
-      : null;
+  const unitSystem = useSettingsStore((s) => s.unitSystem);
+  const diff = weightKg && goalWeightKg ? Math.abs(weightKg - goalWeightKg) : null;
+  const weeks = diff && weeklyRateKg && weeklyRateKg > 0 ? Math.ceil(diff / weeklyRateKg) : null;
 
   const goalMessage =
     goalType === 'lose_fat'
       ? 'Your goal is totally realistic!'
       : goalType === 'gain'
-        ? 'Great goal — let\'s build some muscle!'
+        ? "Great goal — let's build some muscle!"
         : 'Maintaining is the smartest move!';
 
   return (
@@ -50,9 +49,7 @@ export function MotivationScreen({ navigation }: Props) {
             <View className="w-16 h-16 rounded-full bg-white/20 items-center justify-center mb-3">
               <Ionicons name="checkmark-done" size={36} color="white" />
             </View>
-            <Text className="text-xl font-sans-bold text-text text-center">
-              {goalMessage}
-            </Text>
+            <Text className="text-xl font-sans-bold text-text text-center">{goalMessage}</Text>
           </View>
 
           {weeks && goalType !== 'maintain' && (
@@ -60,11 +57,11 @@ export function MotivationScreen({ navigation }: Props) {
               <Text className="text-sm text-text/80 text-center mb-1">
                 Estimated time to reach your goal
               </Text>
-              <Text className="text-3xl font-sans-bold text-text text-center">
-                {weeks} weeks
-              </Text>
+              <Text className="text-3xl font-sans-bold text-text text-center">{weeks} weeks</Text>
               <Text className="text-xs text-text/70 text-center mt-1">
-                {diff?.toFixed(1)} kg · {weeklyRateKg} kg/week
+                {diff ? displayWeight(diff, unitSystem) : ''} {weightUnit(unitSystem)} ·{' '}
+                {weeklyRateKg ? displayWeeklyRate(weeklyRateKg, unitSystem) : ''}{' '}
+                {weeklyRateUnit(unitSystem)}
               </Text>
             </View>
           )}
@@ -89,9 +86,7 @@ export function MotivationScreen({ navigation }: Props) {
               <View className="w-8 h-8 rounded-full bg-primary-500/15 items-center justify-center mr-3">
                 <Ionicons name={item.icon} size={16} color="#1f2028" />
               </View>
-              <Text className="text-sm font-sans-medium text-text flex-1">
-                {item.text}
-              </Text>
+              <Text className="text-sm font-sans-medium text-text flex-1">{item.text}</Text>
             </View>
           ))}
         </View>

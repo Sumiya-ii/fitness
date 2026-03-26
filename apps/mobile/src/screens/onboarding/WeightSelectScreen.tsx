@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
+import { useSettingsStore } from '../../stores/settings.store';
+import { displayWeight, inputToKg, weightUnit, weightRange } from '../../utils/units';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 10;
@@ -13,16 +15,25 @@ type Props = NativeStackScreenProps<SetupStackParamList, 'WeightSelect'>;
 export function WeightSelectScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.weightKg);
   const setWeightKg = useProfileStore((s) => s.setWeightKg);
-  const [value, setValue] = useState(stored?.toString() ?? '');
+  const unitSystem = useSettingsStore((s) => s.unitSystem);
 
-  const weight = parseFloat(value);
-  const isValid = !isNaN(weight) && weight >= 20 && weight <= 500;
+  const range = weightRange(unitSystem);
+  const initialDisplay = stored ? displayWeight(stored, unitSystem).toString() : '';
+  const [value, setValue] = useState(initialDisplay);
 
-  const lbs = isValid ? Math.round(weight * 2.205) : null;
+  const parsed = parseFloat(value);
+  const isValid = !isNaN(parsed) && parsed >= range.min && parsed <= range.max;
+
+  // Show the alternate unit as a reference
+  const altValue = isValid
+    ? unitSystem === 'metric'
+      ? `≈ ${Math.round(parsed * 2.205)} lbs`
+      : `≈ ${inputToKg(parsed, 'imperial').toFixed(1)} kg`
+    : null;
 
   const handleContinue = () => {
     if (isValid) {
-      setWeightKg(weight);
+      setWeightKg(inputToKg(parsed, unitSystem));
       navigation.navigate('ActivityLevelSelect');
     }
   };
@@ -47,21 +58,19 @@ export function WeightSelectScreen({ navigation }: Props) {
             value={value}
             onChangeText={setValue}
             keyboardType="decimal-pad"
-            placeholder="75"
+            placeholder={range.placeholder}
             placeholderTextColor="#9a9caa"
             className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
-            maxLength={5}
+            maxLength={6}
             autoFocus
           />
           <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">
-            kg
+            {weightUnit(unitSystem)}
           </Text>
         </View>
 
-        {lbs && (
-          <Text className="text-sm font-sans-medium text-text-secondary">
-            ≈ {lbs} lbs
-          </Text>
+        {altValue && (
+          <Text className="text-sm font-sans-medium text-text-secondary">{altValue}</Text>
         )}
       </View>
     </OnboardingLayout>
