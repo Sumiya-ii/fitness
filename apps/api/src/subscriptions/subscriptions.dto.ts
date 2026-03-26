@@ -21,19 +21,8 @@ export type WebhookPayloadDto = z.infer<typeof webhookPayloadSchema>;
 // https://www.revenuecat.com/docs/webhooks
 // ---------------------------------------------------------------------------
 export const revenueCatEventSchema = z.object({
-  type: z.enum([
-    'INITIAL_PURCHASE',
-    'RENEWAL',
-    'CANCELLATION',
-    'EXPIRATION',
-    'BILLING_ISSUES_DETECTED',
-    'UNCANCELLATION',
-    'REFUND',
-    'NON_RENEWING_PURCHASE',
-    'PRODUCT_CHANGE',
-    'SUBSCRIPTION_PAUSED',
-    'TRANSFER',
-  ]),
+  // Accept any string — RC sends "TEST" from the dashboard and may add new types in future
+  type: z.string(),
   id: z.string(),
   app_user_id: z.string(),
   original_app_user_id: z.string(),
@@ -46,7 +35,7 @@ export const revenueCatEventSchema = z.object({
   purchased_at_ms: z.number().nullable().optional(),
   expiration_at_ms: z.number().nullable().optional(),
   store: z.enum(['APP_STORE', 'PLAY_STORE', 'AMAZON', 'STRIPE', 'PROMOTIONAL', 'RC_BILLING']),
-  is_family_share: z.boolean().optional(),
+  is_family_share: z.boolean().nullable().optional(),
   country_code: z.string().optional(),
   currency: z.string().nullable().optional(),
   price: z.number().nullable().optional(),
