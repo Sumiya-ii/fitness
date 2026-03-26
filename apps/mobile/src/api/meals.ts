@@ -146,6 +146,56 @@ export interface RecentItem {
   lastUsedAt: string;
 }
 
+// ─── Meal Templates ─────────────────────────────────────────────
+
+export interface MealTemplateItem {
+  id: string;
+  foodId: string;
+  foodName: string;
+  servingId: string;
+  servingLabel: string;
+  gramsPerUnit: number;
+  quantity: number;
+  sortOrder: number;
+}
+
+export interface MealTemplate {
+  id: string;
+  name: string;
+  mealType: string | null;
+  usageCount: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  items: MealTemplateItem[];
+}
+
+export interface MealTemplateDetailItem extends MealTemplateItem {
+  servings: Array<{ id: string; label: string; gramsPerUnit: number; isDefault: boolean }>;
+  estimatedNutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  } | null;
+}
+
+export interface MealTemplateDetail {
+  id: string;
+  name: string;
+  mealType: string | null;
+  usageCount: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  items: MealTemplateDetailItem[];
+}
+
+export interface LogTemplatePayload {
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  loggedAt?: string;
+  note?: string;
+  items: Array<{ foodId: string; servingId: string; quantity: number }>;
+}
+
 export const mealsApi = {
   searchFoods: (query: string, page = 1, limit = 20) =>
     api.get<FoodsResponse>(
@@ -208,4 +258,28 @@ export const mealsApi = {
   addFavorite: (foodId: string) => api.post<{ data: unknown }>(`/favorites/${foodId}`),
 
   removeFavorite: (foodId: string) => api.delete(`/favorites/${foodId}`),
+
+  // ─── Meal Templates ───────────────────────────────────────────
+
+  getMealTemplates: (page = 1, limit = 20) =>
+    api.get<{
+      data: MealTemplate[];
+      meta: { total: number; page: number; limit: number; totalPages: number };
+    }>(`/meal-templates?page=${page}&limit=${limit}`),
+
+  getMealTemplate: (id: string) => api.get<{ data: MealTemplateDetail }>(`/meal-templates/${id}`),
+
+  createTemplateFromLog: (mealLogId: string, name: string, mealType?: string) =>
+    api.post<{ data: MealTemplate }>(`/meal-templates/from-log/${mealLogId}`, {
+      name,
+      ...(mealType && { mealType }),
+    }),
+
+  updateTemplate: (id: string, payload: { name?: string; mealType?: string | null }) =>
+    api.patch<{ data: MealTemplate }>(`/meal-templates/${id}`, payload),
+
+  deleteTemplate: (id: string) => api.delete(`/meal-templates/${id}`),
+
+  logTemplate: (id: string, payload: LogTemplatePayload) =>
+    api.post<{ data: MealLog }>(`/meal-templates/${id}/log`, payload),
 };

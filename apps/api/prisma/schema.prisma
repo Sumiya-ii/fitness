@@ -36,6 +36,7 @@ model User {
   coachMemories        CoachMemory[]
   outboundMessages     OutboundMessage[]
   bodyMeasurementLogs  BodyMeasurementLog[]
+  mealTemplates        MealTemplate[]
 
   @@map("users")
 }
@@ -104,7 +105,8 @@ model Food {
   localizations  FoodLocalization[]
   barcodes       Barcode[]
   sources        FoodSource[]
-  mealLogItems   MealLogItem[]
+  mealLogItems       MealLogItem[]
+  mealTemplateItems  MealTemplateItem[]
 
   @@index([locale, normalizedName])
   @@map("foods")
@@ -118,7 +120,8 @@ model FoodServing {
   gramsPerUnit Decimal @map("grams_per_unit") @db.Decimal(8, 2)
   isDefault   Boolean @default(false) @map("is_default")
 
-  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  food              Food               @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  mealTemplateItems MealTemplateItem[]
 
   @@map("food_servings")
 }
@@ -582,6 +585,42 @@ model AnalyticsEvent {
   @@index([event, createdAt])
   @@index([userId, createdAt])
   @@map("analytics_events")
+}
+
+// ─── Meal Templates ─────────────────────────────────────────────
+
+model MealTemplate {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  name       String    @db.VarChar(200)
+  mealType   String?   @map("meal_type") @db.VarChar(20) // breakfast | lunch | dinner | snack
+  usageCount Int       @default(0) @map("usage_count")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  user  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items MealTemplateItem[]
+
+  @@index([userId, usageCount(sort: Desc)])
+  @@map("meal_templates")
+}
+
+model MealTemplateItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  templateId String  @map("template_id") @db.Uuid
+  foodId     String  @map("food_id") @db.Uuid
+  servingId  String  @map("serving_id") @db.Uuid
+  quantity   Decimal @db.Decimal(8, 2)
+  sortOrder  Int     @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  template MealTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  food     Food         @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  serving  FoodServing  @relation(fields: [servingId], references: [id], onDelete: Cascade)
+
+  @@index([templateId, sortOrder])
+  @@map("meal_template_items")
 }
 
 // ─── Favorites ──────────────────────────────────────────────────

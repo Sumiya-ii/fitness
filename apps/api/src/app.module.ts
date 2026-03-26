@@ -9,6 +9,7 @@ import { ProfileModule } from './profile';
 import { TargetsModule } from './targets';
 import { FoodsModule } from './foods';
 import { MealLogsModule } from './meal-logs';
+import { MealTemplatesModule } from './meal-templates/meal-templates.module';
 import { FavoritesModule } from './favorites';
 import { BarcodesModule } from './barcodes';
 import { DashboardModule } from './dashboard';
@@ -65,6 +66,7 @@ import { HealthController } from './health/health.controller';
     OnboardingModule,
     FoodsModule,
     MealLogsModule,
+    MealTemplatesModule,
     FavoritesModule,
     BarcodesModule,
     DashboardModule,

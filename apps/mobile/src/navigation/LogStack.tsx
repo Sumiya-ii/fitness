@@ -9,6 +9,9 @@ import {
   VoiceLogScreen,
   PhotoLogScreen,
   FavoritesRecentsScreen,
+  MealTemplatesScreen,
+  SaveTemplateScreen,
+  LogTemplateScreen,
 } from '../screens/logging';
 
 const Stack = createNativeStackNavigator<LogStackParamList>();
@@ -31,6 +34,9 @@ export function LogStack() {
       <Stack.Screen name="VoiceLog" component={VoiceLogScreen} />
       <Stack.Screen name="PhotoLog" component={PhotoLogScreen} />
       <Stack.Screen name="FavoritesRecents" component={FavoritesRecentsScreen} />
+      <Stack.Screen name="MealTemplates" component={MealTemplatesScreen} />
+      <Stack.Screen name="SaveTemplate" component={SaveTemplateScreen} />
+      <Stack.Screen name="LogTemplate" component={LogTemplateScreen} />
     </Stack.Navigator>
   );
 }

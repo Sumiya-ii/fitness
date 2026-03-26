@@ -33,6 +33,9 @@ export type LogStackParamList = {
   VoiceLog: undefined;
   PhotoLog: { mode?: 'food' | 'label' } | undefined;
   FavoritesRecents: undefined;
+  MealTemplates: undefined;
+  SaveTemplate: { mealLogId: string; mealType?: string; itemNames: string[] };
+  LogTemplate: { templateId: string };
 };
 
 export type MainTabParamList = {

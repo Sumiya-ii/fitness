@@ -212,6 +212,32 @@ export function LogScreen() {
             </Pressable>
           </Animated.View>
 
+          {/* ── My Meals (Saved Templates) ── */}
+          <Animated.View entering={FadeInDown.delay(280).duration(350)} className="mx-4 mb-6">
+            <Pressable
+              onPress={() => navigation.navigate('MealTemplates')}
+              className="bg-white rounded-2xl flex-row items-center px-5 py-4"
+              style={{
+                shadowColor: '#0b1220',
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 2 },
+                elevation: 2,
+              }}
+            >
+              <View className="h-10 w-10 rounded-xl bg-[#eff6ff] items-center justify-center mr-4">
+                <Ionicons name="bookmark" size={20} color="#3b5bdb" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-sans-bold text-[#0b1220]">My Meals</Text>
+                <Text className="text-xs text-[#9aabbf] font-sans-medium">
+                  Saved meal templates
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+            </Pressable>
+          </Animated.View>
+
           {/* ── Recently Logged ── */}
           <View className="px-5">
             <View className="flex-row items-center justify-between mb-3">

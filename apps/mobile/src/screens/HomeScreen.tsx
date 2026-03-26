@@ -299,8 +299,22 @@ interface MealSectionProps {
 }
 
 function MealSection({ type, meals, typeLabel }: MealSectionProps) {
+  const navigation = useNavigation();
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
   const items = meals.flatMap((m) => m.items);
+
+  const handleSaveAsTemplate = () => {
+    // Use the first meal in this group as the source
+    const meal = meals[0];
+    if (!meal) return;
+    const itemNames = meal.items.map((i) => i.snapshotFoodName);
+    // Navigate to Log tab → SaveTemplate screen
+    (navigation as any).navigate('Log', {
+      // eslint-disable-line @typescript-eslint/no-explicit-any
+      screen: 'SaveTemplate',
+      params: { mealLogId: meal.id, mealType: meal.mealType, itemNames },
+    });
+  };
 
   return (
     <View
@@ -313,11 +327,22 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
         elevation: 2,
       }}
     >
-      <View className="flex-row items-center mb-2">
-        <Ionicons name={MEAL_TYPE_ICONS[type] ?? 'cafe-outline'} size={14} color="#9aabbf" />
-        <Text className="ml-2 text-xs font-sans-semibold text-[#9aabbf] uppercase tracking-widest">
-          {typeLabel}
-        </Text>
+      <View className="flex-row items-center justify-between mb-2">
+        <View className="flex-row items-center">
+          <Ionicons name={MEAL_TYPE_ICONS[type] ?? 'cafe-outline'} size={14} color="#9aabbf" />
+          <Text className="ml-2 text-xs font-sans-semibold text-[#9aabbf] uppercase tracking-widest">
+            {typeLabel}
+          </Text>
+        </View>
+        {items.length > 0 && (
+          <Pressable
+            onPress={handleSaveAsTemplate}
+            className="flex-row items-center gap-1 px-2 py-1"
+          >
+            <Ionicons name="bookmark-outline" size={14} color="#3b5bdb" />
+            <Text className="text-xs font-sans-medium text-[#3b5bdb]">Save</Text>
+          </Pressable>
+        )}
       </View>
       {items.map((item, idx) => (
         <View

@@ -6,3 +6,6 @@ export { BarcodeSubmitScreen } from './BarcodeSubmitScreen';
 export { VoiceLogScreen } from './VoiceLogScreen';
 export { PhotoLogScreen } from './PhotoLogScreen';
 export { FavoritesRecentsScreen } from './FavoritesRecentsScreen';
+export { MealTemplatesScreen } from './MealTemplatesScreen';
+export { SaveTemplateScreen } from './SaveTemplateScreen';
+export { LogTemplateScreen } from './LogTemplateScreen';
