@@ -8,7 +8,6 @@ import {
   BarcodeSubmitScreen,
   VoiceLogScreen,
   PhotoLogScreen,
-  LabelScanScreen,
   FavoritesRecentsScreen,
 } from '../screens/logging';
 
@@ -31,7 +30,6 @@ export function LogStack() {
       <Stack.Screen name="BarcodeSubmit" component={BarcodeSubmitScreen} />
       <Stack.Screen name="VoiceLog" component={VoiceLogScreen} />
       <Stack.Screen name="PhotoLog" component={PhotoLogScreen} />
-      <Stack.Screen name="LabelScan" component={LabelScanScreen} />
       <Stack.Screen name="FavoritesRecents" component={FavoritesRecentsScreen} />
     </Stack.Navigator>
   );

@@ -1,16 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Image,
-  ActivityIndicator,
-  Alert,
-  Animated,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, Alert, Animated, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { BackButton, Button, Card, Badge } from '../../components/ui';
@@ -50,9 +41,14 @@ interface PhotoDraft {
   totalSaturatedFat?: number;
 }
 
+type NutrientField = keyof Pick<
+  ParsedFoodItem,
+  'calories' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'saturatedFat'
+>;
+
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 30;
-const MULTIPLIER_OPTIONS = [0.5, 1, 1.5, 2] as const;
+const SERVING_STEP = 0.25;
 const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: 'Breakfast',
   lunch: 'Lunch',
@@ -69,62 +65,166 @@ function autoDetectMealType(): MealType {
   return 'snack';
 }
 
-function ScanningAnimation() {
-  const scanLine = useRef(new Animated.Value(0)).current;
+function ScanningAnimation({ isLabel }: { isLabel: boolean }) {
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const scanAnim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanLine, { toValue: 1, duration: 1800, useNativeDriver: true }),
-        Animated.timing(scanLine, { toValue: 0, duration: 0, useNativeDriver: true }),
-      ]),
-    );
     const pulseAnim = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.08, duration: 700, useNativeDriver: true }),
         Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
       ]),
     );
-    scanAnim.start();
     pulseAnim.start();
-    return () => {
-      scanAnim.stop();
-      pulseAnim.stop();
-    };
-  }, [scanLine, pulse]);
+    return () => pulseAnim.stop();
+  }, [pulse]);
 
   return (
     <View className="items-center py-12 px-8">
       <Animated.View style={{ transform: [{ scale: pulse }] }}>
         <View className="h-20 w-20 rounded-full bg-surface-secondary items-center justify-center mb-5">
-          <Ionicons name="scan" size={40} color="#1f2028" />
+          <Ionicons name={isLabel ? 'document-text' : 'scan'} size={40} color="#1f2028" />
         </View>
       </Animated.View>
-      <Text className="text-text font-sans-semibold text-lg mb-1">Analyzing your meal...</Text>
+      <Text className="text-text font-sans-semibold text-lg mb-1">
+        {isLabel ? 'Reading nutrition label...' : 'Analyzing your meal...'}
+      </Text>
       <Text className="text-text-secondary text-sm text-center">
-        AI is identifying food items and calculating nutrition
+        {isLabel
+          ? 'AI is extracting nutritional data from the label'
+          : 'AI is identifying food items and calculating nutrition'}
       </Text>
     </View>
   );
 }
 
+function ServingStepper({
+  value,
+  onChange,
+  label,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  label: string;
+}) {
+  return (
+    <View>
+      <Text className="text-xs text-text-secondary mb-1.5">{label}</Text>
+      <View className="flex-row items-center gap-2">
+        <Pressable
+          onPress={() => onChange(Math.max(SERVING_STEP, value - SERVING_STEP))}
+          className="h-9 w-9 items-center justify-center rounded-xl bg-surface-secondary active:opacity-60"
+        >
+          <Ionicons name="remove" size={18} color="#1f2028" />
+        </Pressable>
+        <View className="min-w-[48px] items-center">
+          <Text className="text-base font-sans-semibold text-text">
+            {value % 1 === 0 ? value : value.toFixed(2).replace(/0$/, '')}
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => onChange(Math.min(10, value + SERVING_STEP))}
+          className="h-9 w-9 items-center justify-center rounded-xl bg-surface-secondary active:opacity-60"
+        >
+          <Ionicons name="add" size={18} color="#1f2028" />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function EditableValue({
+  value,
+  unit,
+  label,
+  onSave,
+}: {
+  value: number;
+  unit: string;
+  label: string;
+  onSave: (v: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(String(value));
+
+  const handleSubmit = () => {
+    const parsed = parseFloat(inputValue);
+    if (!isNaN(parsed) && parsed >= 0) {
+      onSave(parsed);
+    } else {
+      setInputValue(String(value));
+    }
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5 border border-text">
+        <Text className="text-xs text-text-secondary">{label}</Text>
+        <TextInput
+          autoFocus
+          value={inputValue}
+          onChangeText={setInputValue}
+          onBlur={handleSubmit}
+          onSubmitEditing={handleSubmit}
+          keyboardType="decimal-pad"
+          returnKeyType="done"
+          className="text-sm font-sans-semibold text-text text-center p-0 min-w-[40px]"
+          selectTextOnFocus
+        />
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={() => {
+        setInputValue(String(value));
+        setEditing(true);
+      }}
+      className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5 active:opacity-60"
+    >
+      <Text className="text-xs text-text-secondary">{label}</Text>
+      <Text className="text-sm font-sans-semibold text-text">
+        {value}
+        {unit}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function PhotoLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
+  const route = useRoute<Props['route']>();
+  const mode = route.params?.mode ?? 'food';
+  const isLabel = mode === 'label';
+
   const [analyzing, setAnalyzing] = useState(false);
   const [draft, setDraft] = useState<PhotoDraft | null>(null);
   const [baseItems, setBaseItems] = useState<ParsedFoodItem[]>([]);
   const [multipliers, setMultipliers] = useState<number[]>([]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingFood, setSavingFood] = useState(false);
+  const [foodSaved, setFoodSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mealType, setMealType] = useState<MealType>(autoDetectMealType);
+  const [cameraLaunched, setCameraLaunched] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     };
+  }, []);
+
+  // Camera-first: auto-launch camera in label mode
+  useEffect(() => {
+    if (isLabel && !cameraLaunched) {
+      setCameraLaunched(true);
+      handleCapture();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getEffectiveItem = useCallback(
@@ -178,7 +278,11 @@ export function PhotoLogScreen() {
       }
 
       if (d.status === 'failed') {
-        setError('Photo analysis failed. Please try again.');
+        setError(
+          isLabel
+            ? 'Label analysis failed. Please try again.'
+            : 'Photo analysis failed. Please try again.',
+        );
         setAnalyzing(false);
         return;
       }
@@ -188,6 +292,7 @@ export function PhotoLogScreen() {
       setError('Failed to check analysis status.');
       setAnalyzing(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const uploadAndAnalyze = async (uri: string) => {
@@ -196,16 +301,18 @@ export function PhotoLogScreen() {
     setDraft(null);
     setBaseItems([]);
     setMultipliers([]);
+    setFoodSaved(false);
 
     try {
       const formData = new FormData();
       formData.append('photo', {
         uri,
         type: 'image/jpeg',
-        name: 'photo.jpg',
+        name: isLabel ? 'label.jpg' : 'photo.jpg',
       } as unknown as Blob);
 
-      const res = await api.upload<{ data: { draftId: string } }>('/photos/upload', formData);
+      const uploadPath = isLabel ? '/photos/upload?mode=label' : '/photos/upload';
+      const res = await api.upload<{ data: { draftId: string } }>(uploadPath, formData);
       pollDraft(res.data.draftId);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed');
@@ -255,6 +362,7 @@ export function PhotoLogScreen() {
     setMultipliers([]);
     setAnalyzing(false);
     setError(null);
+    setFoodSaved(false);
   };
 
   const handleDeleteItem = (index: number) => {
@@ -266,13 +374,79 @@ export function PhotoLogScreen() {
     setMultipliers((prev) => prev.map((m, i) => (i === index ? value : m)));
   };
 
+  const handleEditNutrient = (index: number, field: NutrientField, value: number) => {
+    setBaseItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+    );
+  };
+
+  const handleEditServingGrams = (index: number, value: number) => {
+    setBaseItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, servingGrams: value } : item)),
+    );
+  };
+
+  const handleEditName = (index: number, name: string) => {
+    setBaseItems((prev) => prev.map((item, i) => (i === index ? { ...item, name } : item)));
+  };
+
+  const handleSaveToFoods = async () => {
+    if (baseItems.length === 0) return;
+    setSavingFood(true);
+    setError(null);
+
+    try {
+      const item = baseItems[0];
+      const servingGrams = item.servingGrams || 100;
+      const scale = 100 / servingGrams;
+
+      await api.post('/foods', {
+        normalizedName: item.name,
+        locale: 'mn',
+        sourceType: 'user',
+        sourceRef: 'label-scan',
+        servings: [
+          {
+            label: `1 serving (${servingGrams}g)`,
+            gramsPerUnit: servingGrams,
+            isDefault: true,
+          },
+          {
+            label: '100g',
+            gramsPerUnit: 100,
+            isDefault: false,
+          },
+        ],
+        nutrients: {
+          caloriesPer100g: Math.round(item.calories * scale * 10) / 10,
+          proteinPer100g: Math.round(item.protein * scale * 10) / 10,
+          carbsPer100g: Math.round(item.carbs * scale * 10) / 10,
+          fatPer100g: Math.round(item.fat * scale * 10) / 10,
+          fiberPer100g: item.fiber ? Math.round(item.fiber * scale * 10) / 10 : undefined,
+          sugarPer100g: item.sugar ? Math.round(item.sugar * scale * 10) / 10 : undefined,
+          sodiumPer100g: item.sodium ? Math.round(item.sodium * scale * 10) / 10 : undefined,
+          saturatedFatPer100g: item.saturatedFat
+            ? Math.round(item.saturatedFat * scale * 10) / 10
+            : undefined,
+        },
+      });
+
+      setFoodSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save food');
+    } finally {
+      setSavingFood(false);
+    }
+  };
+
   const handleConfirmSave = async () => {
     if (effectiveItems.length === 0) return;
     setSaving(true);
     setError(null);
 
     try {
-      const note = `Photo: ${baseItems.map((i) => i.name).join(', ')}`;
+      const prefix = isLabel ? 'Label' : 'Photo';
+      const note = `${prefix}: ${baseItems.map((i) => i.name).join(', ')}`;
 
       await mealsApi.quickAdd({
         calories: Math.round(totalCalories),
@@ -298,13 +472,15 @@ export function PhotoLogScreen() {
   const hasResults = draft !== null && !analyzing;
   const hasItems = effectiveItems.length > 0;
 
+  const headerTitle = isLabel ? 'Nutrition Label' : 'Photo Log';
+
   return (
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
           <BackButton />
-          <Text className="ml-3 text-lg font-sans-semibold text-text flex-1">Photo Log</Text>
+          <Text className="ml-3 text-lg font-sans-semibold text-text flex-1">{headerTitle}</Text>
           {hasResults && hasItems && (
             <Pressable onPress={handleRetake}>
               <Text className="text-sm text-text-secondary font-sans-medium">Retake</Text>
@@ -312,16 +488,24 @@ export function PhotoLogScreen() {
           )}
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 32 }}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Initial state: camera / gallery picker */}
           {!photoUri && !analyzing && (
             <View className="flex-1 items-center justify-center px-6 pt-16 pb-8">
               <View className="h-16 w-16 rounded-2xl bg-surface-secondary items-center justify-center mb-5">
-                <Ionicons name="camera" size={32} color="#1f2028" />
+                <Ionicons name={isLabel ? 'document-text' : 'camera'} size={32} color="#1f2028" />
               </View>
-              <Text className="text-xl font-sans-semibold text-text mb-1">Log with Photo</Text>
+              <Text className="text-xl font-sans-semibold text-text mb-1">
+                {isLabel ? 'Scan Nutrition Label' : 'Log with Photo'}
+              </Text>
               <Text className="text-text-secondary text-sm text-center mb-8">
-                Take a photo of your meal and AI will calculate the calories and macros
+                {isLabel
+                  ? 'Photograph a nutrition facts panel — make sure the full label is visible and well-lit'
+                  : 'Take a photo of your meal and AI will calculate the calories and macros'}
               </Text>
               <View className="w-full flex-row gap-3 mb-6">
                 <Pressable
@@ -353,7 +537,7 @@ export function PhotoLogScreen() {
                   resizeMode="cover"
                 />
               )}
-              <ScanningAnimation />
+              <ScanningAnimation isLabel={isLabel} />
             </View>
           )}
 
@@ -396,14 +580,18 @@ export function PhotoLogScreen() {
                     </View>
                   </View>
 
-                  {/* Meal name + item count */}
+                  {/* Meal name + item count / label badge */}
                   <View className="flex-row items-center justify-between mb-3">
-                    <Text className="font-sans-semibold text-text text-base">
-                      {draft?.mealName ?? 'Identified foods'}
+                    <Text className="font-sans-semibold text-text text-base flex-1 mr-2">
+                      {draft?.mealName ?? (isLabel ? 'Product' : 'Identified foods')}
                     </Text>
-                    <Text className="text-xs text-text-secondary font-sans-medium">
-                      {effectiveItems.length} item{effectiveItems.length !== 1 ? 's' : ''}
-                    </Text>
+                    {isLabel ? (
+                      <Badge variant="info">From label</Badge>
+                    ) : (
+                      <Text className="text-xs text-text-secondary font-sans-medium">
+                        {effectiveItems.length} item{effectiveItems.length !== 1 ? 's' : ''}
+                      </Text>
+                    )}
                   </View>
 
                   {/* Food item cards */}
@@ -414,18 +602,37 @@ export function PhotoLogScreen() {
                       <Card key={`${item.name}-${index}`} className="mb-3">
                         {/* Item header row */}
                         <View className="flex-row items-start justify-between mb-2">
-                          <View className="flex-1 pr-2">
+                          <Pressable
+                            className="flex-1 pr-2"
+                            onPress={() => {
+                              Alert.prompt(
+                                'Edit name',
+                                undefined,
+                                (text) => {
+                                  if (text?.trim()) handleEditName(index, text.trim());
+                                },
+                                'plain-text',
+                                item.name,
+                              );
+                            }}
+                          >
                             <Text className="font-sans-semibold text-text">{item.name}</Text>
                             <Text className="text-xs text-text-secondary mt-0.5">
                               {item.servingGrams > 0
-                                ? `~${Math.round(item.servingGrams * currentMultiplier)}g`
-                                : 'Estimated serving'}
+                                ? isLabel
+                                  ? `${Math.round(item.servingGrams * currentMultiplier)}g per serving`
+                                  : `~${Math.round(item.servingGrams * currentMultiplier)}g`
+                                : isLabel
+                                  ? 'Per serving'
+                                  : 'Estimated serving'}
                             </Text>
-                          </View>
+                          </Pressable>
                           <View className="flex-row items-center gap-2">
-                            <Badge variant={item.confidence >= 0.8 ? 'success' : 'warning'}>
-                              {Math.round(item.confidence * 100)}%
-                            </Badge>
+                            {!isLabel && (
+                              <Badge variant={item.confidence >= 0.8 ? 'success' : 'warning'}>
+                                {Math.round(item.confidence * 100)}%
+                              </Badge>
+                            )}
                             <Pressable
                               onPress={() => handleDeleteItem(index)}
                               className="h-7 w-7 items-center justify-center rounded-full bg-surface-secondary active:opacity-60"
@@ -435,69 +642,117 @@ export function PhotoLogScreen() {
                           </View>
                         </View>
 
-                        {/* Calories large display */}
-                        <Text className="text-2xl font-sans-semibold text-text mb-1">
-                          {effective.calories}
-                          <Text className="text-sm font-sans-regular text-text-secondary">
-                            {' '}
-                            cal
+                        {/* Calories — editable */}
+                        <Pressable
+                          onPress={() => {
+                            Alert.prompt(
+                              'Edit calories',
+                              undefined,
+                              (text) => {
+                                const v = parseFloat(text);
+                                if (!isNaN(v) && v >= 0) handleEditNutrient(index, 'calories', v);
+                              },
+                              'plain-text',
+                              String(item.calories),
+                            );
+                          }}
+                          className="active:opacity-60"
+                        >
+                          <Text className="text-2xl font-sans-semibold text-text mb-1">
+                            {effective.calories}
+                            <Text className="text-sm font-sans-regular text-text-secondary">
+                              {' '}
+                              cal
+                            </Text>
                           </Text>
-                        </Text>
+                        </Pressable>
 
-                        {/* Macros row */}
+                        {/* Macros row — editable */}
                         <View className="flex-row gap-3 mb-3">
-                          <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
-                            <Text className="text-xs text-text-secondary">Protein</Text>
-                            <Text className="text-sm font-sans-semibold text-text">
-                              {effective.protein}g
-                            </Text>
-                          </View>
-                          <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
-                            <Text className="text-xs text-text-secondary">Carbs</Text>
-                            <Text className="text-sm font-sans-semibold text-text">
-                              {effective.carbs}g
-                            </Text>
-                          </View>
-                          <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
-                            <Text className="text-xs text-text-secondary">Fat</Text>
-                            <Text className="text-sm font-sans-semibold text-text">
-                              {effective.fat}g
-                            </Text>
-                          </View>
+                          <EditableValue
+                            value={effective.protein}
+                            unit="g"
+                            label="Protein"
+                            onSave={(v) => {
+                              const m = multipliers[index] ?? 1;
+                              handleEditNutrient(
+                                index,
+                                'protein',
+                                m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                              );
+                            }}
+                          />
+                          <EditableValue
+                            value={effective.carbs}
+                            unit="g"
+                            label="Carbs"
+                            onSave={(v) => {
+                              const m = multipliers[index] ?? 1;
+                              handleEditNutrient(
+                                index,
+                                'carbs',
+                                m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                              );
+                            }}
+                          />
+                          <EditableValue
+                            value={effective.fat}
+                            unit="g"
+                            label="Fat"
+                            onSave={(v) => {
+                              const m = multipliers[index] ?? 1;
+                              handleEditNutrient(
+                                index,
+                                'fat',
+                                m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                              );
+                            }}
+                          />
                           {item.fiber > 0 && (
-                            <View className="flex-1 items-center bg-surface-secondary rounded-lg py-1.5">
-                              <Text className="text-xs text-text-secondary">Fiber</Text>
-                              <Text className="text-sm font-sans-semibold text-text">
-                                {effective.fiber}g
-                              </Text>
-                            </View>
+                            <EditableValue
+                              value={effective.fiber}
+                              unit="g"
+                              label="Fiber"
+                              onSave={(v) => {
+                                const m = multipliers[index] ?? 1;
+                                handleEditNutrient(
+                                  index,
+                                  'fiber',
+                                  m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                                );
+                              }}
+                            />
                           )}
                         </View>
 
-                        {/* Serving multiplier */}
-                        <View>
-                          <Text className="text-xs text-text-secondary mb-1.5">Serving size</Text>
-                          <View className="flex-row gap-1.5">
-                            {MULTIPLIER_OPTIONS.map((opt) => (
-                              <Pressable
-                                key={opt}
-                                onPress={() => handleSetMultiplier(index, opt)}
-                                className={`flex-1 items-center py-1.5 rounded-lg border ${
-                                  currentMultiplier === opt
-                                    ? 'bg-text border-text'
-                                    : 'bg-surface-secondary border-surface-border'
-                                }`}
-                              >
-                                <Text
-                                  className={`text-xs font-sans-semibold ${
-                                    currentMultiplier === opt ? 'text-white' : 'text-text-secondary'
-                                  }`}
-                                >
-                                  {opt}×
-                                </Text>
-                              </Pressable>
-                            ))}
-                          </View>
+                        {/* Serving stepper */}
+                        <View className="flex-row items-end justify-between">
+                          <ServingStepper
+                            value={currentMultiplier}
+                            onChange={(v) => handleSetMultiplier(index, v)}
+                            label={isLabel ? 'Number of servings' : 'Serving size'}
+                          />
+                          {item.servingGrams > 0 && (
+                            <Pressable
+                              onPress={() => {
+                                Alert.prompt(
+                                  'Serving weight (g)',
+                                  undefined,
+                                  (text) => {
+                                    const v = parseFloat(text);
+                                    if (!isNaN(v) && v > 0) handleEditServingGrams(index, v);
+                                  },
+                                  'plain-text',
+                                  String(item.servingGrams),
+                                );
+                              }}
+                              className="active:opacity-60"
+                            >
+                              <Text className="text-xs text-text-secondary">
+                                {Math.round(item.servingGrams * currentMultiplier)}g total
+                              </Text>
+                            </Pressable>
+                          )}
                         </View>
                       </Card>
                     );
@@ -542,6 +797,28 @@ export function PhotoLogScreen() {
 
                   {error && <Text className="mb-4 text-center text-red-400 text-sm">{error}</Text>}
 
+                  {/* Save to foods (label mode only) */}
+                  {isLabel && !foodSaved && (
+                    <Pressable
+                      onPress={handleSaveToFoods}
+                      disabled={savingFood}
+                      className="flex-row items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface-card py-3 mb-3 active:opacity-60"
+                    >
+                      <Ionicons name="bookmark-outline" size={18} color="#1f2028" />
+                      <Text className="text-sm font-sans-semibold text-text">
+                        {savingFood ? 'Saving...' : 'Save to My Foods'}
+                      </Text>
+                    </Pressable>
+                  )}
+                  {isLabel && foodSaved && (
+                    <View className="flex-row items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 py-3 mb-3">
+                      <Ionicons name="checkmark-circle" size={18} color="#16a34a" />
+                      <Text className="text-sm font-sans-semibold text-green-700">
+                        Saved to My Foods
+                      </Text>
+                    </View>
+                  )}
+
                   <Button onPress={handleConfirmSave} loading={saving} disabled={saving}>
                     Log {MEAL_TYPE_LABELS[mealType]}
                   </Button>
@@ -552,9 +829,13 @@ export function PhotoLogScreen() {
                   <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-4">
                     <Ionicons name="search" size={28} color="#9a9caa" />
                   </View>
-                  <Text className="font-sans-semibold text-text mb-1">No food detected</Text>
+                  <Text className="font-sans-semibold text-text mb-1">
+                    {isLabel ? 'Could not read the label' : 'No food detected'}
+                  </Text>
                   <Text className="text-text-secondary text-sm text-center mb-5">
-                    Try a clearer photo with better lighting, or use manual entry
+                    {isLabel
+                      ? 'Try a clearer photo with the nutrition facts panel fully visible'
+                      : 'Try a clearer photo with better lighting, or use manual entry'}
                   </Text>
                   <Button variant="outline" onPress={handleRetake}>
                     Try another photo
