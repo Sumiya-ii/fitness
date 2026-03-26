@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { BackButton, Button, Card, Badge } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
+import { useLocale } from '../../i18n';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'PhotoLog'>;
@@ -62,12 +63,7 @@ type NutrientField = keyof Pick<
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 30;
 const SERVING_STEP = 0.25;
-const MEAL_TYPE_LABELS: Record<MealType, string> = {
-  breakfast: 'Breakfast',
-  lunch: 'Lunch',
-  dinner: 'Dinner',
-  snack: 'Snack',
-};
+const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 function autoDetectMealType(): MealType {
   const hour = new Date().getHours();
@@ -141,7 +137,7 @@ function InputModal({
   );
 }
 
-function ScanningAnimation({ isLabel }: { isLabel: boolean }) {
+function ScanningAnimation({ isLabel, t }: { isLabel: boolean; t: (key: string) => string }) {
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -163,12 +159,10 @@ function ScanningAnimation({ isLabel }: { isLabel: boolean }) {
         </View>
       </Animated.View>
       <Text className="text-text font-sans-semibold text-lg mb-1">
-        {isLabel ? 'Reading nutrition label...' : 'Analyzing your meal...'}
+        {isLabel ? t('photoLog.readingLabel') : t('photoLog.analyzingMeal')}
       </Text>
       <Text className="text-text-secondary text-sm text-center">
-        {isLabel
-          ? 'AI is extracting nutritional data from the label'
-          : 'AI is identifying food items and calculating nutrition'}
+        {isLabel ? t('photoLog.extractingData') : t('photoLog.identifyingFoods')}
       </Text>
     </View>
   );
@@ -315,6 +309,7 @@ function EditableValue({
 }
 
 export function PhotoLogScreen() {
+  const { t } = useLocale();
   const navigation = useNavigation<Props['navigation']>();
   const route = useRoute<Props['route']>();
   const mode = route.params?.mode ?? 'food';
@@ -398,7 +393,7 @@ export function PhotoLogScreen() {
 
   const pollDraft = useCallback(async (draftId: string, attempt = 0) => {
     if (attempt >= MAX_POLL_ATTEMPTS) {
-      setError('Analysis timed out. Please try again.');
+      setError(t('photoLog.analysisTimeout'));
       setAnalyzing(false);
       return;
     }
@@ -417,18 +412,14 @@ export function PhotoLogScreen() {
       }
 
       if (d.status === 'failed') {
-        setError(
-          isLabel
-            ? 'Label analysis failed. Please try again.'
-            : 'Photo analysis failed. Please try again.',
-        );
+        setError(isLabel ? t('photoLog.labelAnalysisFailed') : t('photoLog.photoAnalysisFailed'));
         setAnalyzing(false);
         return;
       }
 
       pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), POLL_INTERVAL_MS);
     } catch {
-      setError('Failed to check analysis status.');
+      setError(t('photoLog.statusCheckFailed'));
       setAnalyzing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -462,7 +453,7 @@ export function PhotoLogScreen() {
   const handleCapture = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera access is required.');
+      Alert.alert(t('common.permissionNeeded'), t('photoLog.cameraRequired'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -479,7 +470,7 @@ export function PhotoLogScreen() {
   const handlePickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Gallery access is required.');
+      Alert.alert(t('common.permissionNeeded'), t('photoLog.galleryRequired'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -612,7 +603,7 @@ export function PhotoLogScreen() {
   const hasResults = draft !== null && !analyzing;
   const hasItems = effectiveItems.length > 0;
 
-  const headerTitle = isLabel ? 'Nutrition Label' : 'Photo Log';
+  const headerTitle = isLabel ? t('photoLog.nutritionLabel') : t('photoLog.title');
 
   return (
     <View className="flex-1 bg-surface-app">
@@ -623,7 +614,9 @@ export function PhotoLogScreen() {
           <Text className="ml-3 text-lg font-sans-semibold text-text flex-1">{headerTitle}</Text>
           {hasResults && hasItems && (
             <Pressable onPress={handleRetake}>
-              <Text className="text-sm text-text-secondary font-sans-medium">Retake</Text>
+              <Text className="text-sm text-text-secondary font-sans-medium">
+                {t('photoLog.retake')}
+              </Text>
             </Pressable>
           )}
         </View>
@@ -644,12 +637,10 @@ export function PhotoLogScreen() {
                   <Ionicons name={isLabel ? 'document-text' : 'camera'} size={32} color="#1f2028" />
                 </View>
                 <Text className="text-xl font-sans-semibold text-text mb-1">
-                  {isLabel ? 'Scan Nutrition Label' : 'Log with Photo'}
+                  {isLabel ? t('photoLog.scanLabel') : t('photoLog.logWithPhoto')}
                 </Text>
                 <Text className="text-text-secondary text-sm text-center mb-8">
-                  {isLabel
-                    ? 'Photograph a nutrition facts panel — make sure the full label is visible and well-lit'
-                    : 'Take a photo of your meal and AI will calculate the calories and macros'}
+                  {isLabel ? t('photoLog.scanLabelDesc') : t('photoLog.logWithPhotoDesc')}
                 </Text>
                 <View className="w-full flex-row gap-3 mb-6">
                   <Pressable
@@ -657,14 +648,18 @@ export function PhotoLogScreen() {
                     className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
                   >
                     <Ionicons name="camera-outline" size={32} color="#1f2028" />
-                    <Text className="mt-2 font-sans-medium text-text text-sm">Camera</Text>
+                    <Text className="mt-2 font-sans-medium text-text text-sm">
+                      {t('photoLog.camera')}
+                    </Text>
                   </Pressable>
                   <Pressable
                     onPress={handlePickFromGallery}
                     className="flex-1 items-center rounded-2xl border-2 border-dashed border-surface-border py-7 bg-surface-card active:opacity-70"
                   >
                     <Ionicons name="images-outline" size={32} color="#1f2028" />
-                    <Text className="mt-2 font-sans-medium text-text text-sm">Gallery</Text>
+                    <Text className="mt-2 font-sans-medium text-text text-sm">
+                      {t('photoLog.gallery')}
+                    </Text>
                   </Pressable>
                 </View>
                 {error && <Text className="text-center text-red-400 text-sm">{error}</Text>}
@@ -681,7 +676,7 @@ export function PhotoLogScreen() {
                     resizeMode="cover"
                   />
                 )}
-                <ScanningAnimation isLabel={isLabel} />
+                <ScanningAnimation isLabel={isLabel} t={t} />
               </View>
             )}
 
@@ -699,10 +694,10 @@ export function PhotoLogScreen() {
                     {/* Meal type selector */}
                     <View className="mb-4">
                       <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
-                        Meal Type
+                        {t('photoLog.mealType')}
                       </Text>
                       <View className="flex-row gap-2">
-                        {(Object.keys(MEAL_TYPE_LABELS) as MealType[]).map((type) => (
+                        {MEAL_TYPES.map((type) => (
                           <Pressable
                             key={type}
                             onPress={() => setMealType(type)}
@@ -717,7 +712,7 @@ export function PhotoLogScreen() {
                                 mealType === type ? 'text-white' : 'text-text-secondary'
                               }`}
                             >
-                              {MEAL_TYPE_LABELS[type]}
+                              {t(`mealTypes.${type}`)}
                             </Text>
                           </Pressable>
                         ))}
@@ -733,11 +728,12 @@ export function PhotoLogScreen() {
                         }}
                       >
                         <Text className="font-sans-semibold text-text text-base">
-                          {draft?.mealName ?? (isLabel ? 'Product' : 'Identified foods')}
+                          {draft?.mealName ??
+                            (isLabel ? t('photoLog.product') : t('photoLog.identifiedFoods'))}
                         </Text>
                       </Pressable>
                       {isLabel ? (
-                        <Badge variant="info">From label</Badge>
+                        <Badge variant="info">{t('photoLog.fromLabel')}</Badge>
                       ) : (
                         <Text className="text-xs text-text-secondary font-sans-medium">
                           {effectiveItems.length} item{effectiveItems.length !== 1 ? 's' : ''}
@@ -764,7 +760,7 @@ export function PhotoLogScreen() {
                             <Pressable
                               className="flex-1 pr-2"
                               onPress={() =>
-                                showEditModal('Edit name', item.name, (text) => {
+                                showEditModal(t('photoLog.editName'), item.name, (text) => {
                                   if (text.trim()) handleEditName(index, text.trim());
                                   setModal((m) => ({ ...m, visible: false }));
                                 })
@@ -777,11 +773,11 @@ export function PhotoLogScreen() {
                               <Text className="text-xs text-text-secondary mt-0.5">
                                 {item.servingGrams > 0
                                   ? isLabel
-                                    ? `${Math.round(item.servingGrams * currentMultiplier)}g per serving`
+                                    ? `${Math.round(item.servingGrams * currentMultiplier)}g ${t('photoLog.perServing')}`
                                     : `~${Math.round(item.servingGrams * currentMultiplier)}g`
                                   : isLabel
-                                    ? 'Per serving'
-                                    : 'Estimated serving'}
+                                    ? t('photoLog.perServing')
+                                    : t('photoLog.estimatedServing')}
                               </Text>
                             </Pressable>
                             <View className="flex-row items-center gap-2">
@@ -803,7 +799,7 @@ export function PhotoLogScreen() {
                           <Pressable
                             onPress={() =>
                               showEditModal(
-                                'Edit calories',
+                                t('photoLog.editCalories'),
                                 String(item.calories),
                                 (text) => {
                                   const v = parseFloat(text);
@@ -836,7 +832,7 @@ export function PhotoLogScreen() {
                             <EditableValue
                               value={effective.protein}
                               unit="g"
-                              label="Protein"
+                              label={t('photoLog.protein')}
                               onSave={(v) => {
                                 const m = multipliers[index] ?? 1;
                                 handleEditNutrient(
@@ -849,7 +845,7 @@ export function PhotoLogScreen() {
                             <EditableValue
                               value={effective.carbs}
                               unit="g"
-                              label="Carbs"
+                              label={t('photoLog.carbs')}
                               onSave={(v) => {
                                 const m = multipliers[index] ?? 1;
                                 handleEditNutrient(
@@ -862,7 +858,7 @@ export function PhotoLogScreen() {
                             <EditableValue
                               value={effective.fat}
                               unit="g"
-                              label="Fat"
+                              label={t('photoLog.fat')}
                               onSave={(v) => {
                                 const m = multipliers[index] ?? 1;
                                 handleEditNutrient(
@@ -876,7 +872,7 @@ export function PhotoLogScreen() {
                               <EditableValue
                                 value={effective.fiber}
                                 unit="g"
-                                label="Fiber"
+                                label={t('photoLog.fiber')}
                                 onSave={(v) => {
                                   const m = multipliers[index] ?? 1;
                                   handleEditNutrient(
@@ -894,13 +890,15 @@ export function PhotoLogScreen() {
                             <ServingStepper
                               value={currentMultiplier}
                               onChange={(v) => handleSetMultiplier(index, v)}
-                              label={isLabel ? 'Number of servings' : 'Serving size'}
+                              label={
+                                isLabel ? t('photoLog.numberOfServings') : t('photoLog.servingSize')
+                              }
                             />
                             {item.servingGrams > 0 && (
                               <Pressable
                                 onPress={() =>
                                   showEditModal(
-                                    'Serving weight (g)',
+                                    t('photoLog.servingWeightG'),
                                     String(item.servingGrams),
                                     (text) => {
                                       const v = parseFloat(text);
@@ -928,7 +926,7 @@ export function PhotoLogScreen() {
                     {/* Totals summary */}
                     <View className="rounded-xl bg-surface-card border border-surface-border p-4 mb-4">
                       <Text className="text-xs text-text-secondary font-sans-medium mb-2 uppercase tracking-wide">
-                        Total
+                        {t('photoLog.total')}
                       </Text>
                       <Text className="text-3xl font-sans-semibold text-text mb-1">
                         {totalCalories}
@@ -958,7 +956,7 @@ export function PhotoLogScreen() {
                         </Text>
                         {totalFiber > 0 && (
                           <Text className="text-sm text-text-secondary">
-                            Fiber{' '}
+                            {t('photoLog.fiber')}{' '}
                             <Text className="text-text font-sans-medium">
                               {Math.round(totalFiber)}g
                             </Text>
@@ -980,7 +978,7 @@ export function PhotoLogScreen() {
                       >
                         <Ionicons name="bookmark-outline" size={18} color="#1f2028" />
                         <Text className="text-sm font-sans-semibold text-text">
-                          {savingFood ? 'Saving...' : 'Save to My Foods'}
+                          {savingFood ? t('photoLog.saving') : t('photoLog.saveToMyFoods')}
                         </Text>
                       </Pressable>
                     )}
@@ -988,13 +986,13 @@ export function PhotoLogScreen() {
                       <View className="flex-row items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 py-3 mb-3">
                         <Ionicons name="checkmark-circle" size={18} color="#16a34a" />
                         <Text className="text-sm font-sans-semibold text-green-700">
-                          Saved to My Foods
+                          {t('photoLog.savedToMyFoods')}
                         </Text>
                       </View>
                     )}
 
                     <Button onPress={handleConfirmSave} loading={saving} disabled={saving}>
-                      Log {MEAL_TYPE_LABELS[mealType]}
+                      {t('logging.addToLog')}
                     </Button>
                   </>
                 ) : (
@@ -1004,15 +1002,13 @@ export function PhotoLogScreen() {
                       <Ionicons name="search" size={28} color="#9a9caa" />
                     </View>
                     <Text className="font-sans-semibold text-text mb-1">
-                      {isLabel ? 'Could not read the label' : 'No food detected'}
+                      {isLabel ? t('photoLog.couldNotReadLabel') : t('photoLog.noFoodDetected')}
                     </Text>
                     <Text className="text-text-secondary text-sm text-center mb-5">
-                      {isLabel
-                        ? 'Try a clearer photo with the nutrition facts panel fully visible'
-                        : 'Try a clearer photo with better lighting, or use manual entry'}
+                      {isLabel ? t('photoLog.tryClearerLabel') : t('photoLog.tryClearerPhoto')}
                     </Text>
                     <Button variant="outline" onPress={handleRetake}>
-                      Try another photo
+                      {t('photoLog.tryAnotherPhoto')}
                     </Button>
                   </View>
                 )}
