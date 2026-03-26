@@ -156,7 +156,7 @@ function SegmentedControl({
 export function SettingsScreen() {
   const navigation = useNavigation();
   const signOut = useAuthStore((s) => s.signOut);
-  const { locale: currentLocale, setLocale } = useLocale();
+  const { locale: currentLocale, setLocale, t } = useLocale();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({
     morningReminder: true,
@@ -254,53 +254,43 @@ export function SettingsScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: signOut },
+    Alert.alert(t('settings.signOut'), t('settings.signOutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.signOut'), style: 'destructive', onPress: signOut },
     ]);
   };
 
   const handleExportData = () => {
-    Alert.alert(
-      'Export Data',
-      'A data export request will be created. You will receive a link when it is ready.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Export',
-          onPress: () => {
-            api.post('/privacy/export').catch(() => {});
-            Alert.alert('Success', 'Export request submitted.');
-          },
+    Alert.alert(t('settings.exportData'), t('settings.exportConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('settings.export'),
+        onPress: () => {
+          api.post('/privacy/export').catch(() => {});
+          Alert.alert(t('common.success'), t('settings.exportSuccess'));
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and all data. This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.post('/privacy/delete-account');
-              Alert.alert(
-                'Account Deletion Requested',
-                'Your account deletion request has been submitted. Your data will be removed within 30 days.',
-                [{ text: 'OK', onPress: signOut }],
-              );
-            } catch {
-              Alert.alert('Error', 'Failed to submit deletion request.');
-            }
-          },
+    Alert.alert(t('settings.deleteAccount'), t('settings.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.post('/privacy/delete-account');
+            Alert.alert(t('settings.deleteRequested'), t('settings.deleteRequestedDesc'), [
+              { text: 'OK', onPress: signOut },
+            ]);
+          } catch {
+            Alert.alert(t('common.error'), t('settings.deleteFailed'));
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const navigate = (screen: string) =>
@@ -346,7 +336,7 @@ export function SettingsScreen() {
                   onSubmitEditing={handleSaveName}
                   returnKeyType="done"
                   placeholderTextColor="#9a9caa"
-                  placeholder="Your name"
+                  placeholder={t('settings.yourName')}
                 />
                 <Pressable onPress={handleSaveName} className="ml-1">
                   <Ionicons name="checkmark-circle" size={26} color="#16a34a" />
@@ -359,7 +349,7 @@ export function SettingsScreen() {
               <>
                 <View className="flex-row items-center gap-2 mb-0.5">
                   <Text className="text-lg font-sans-bold text-text">
-                    {profile?.displayName ?? 'User'}
+                    {profile?.displayName ?? t('settings.user')}
                   </Text>
                   {isPro && (
                     <View className="bg-primary-500 rounded-full px-2 py-0.5">
@@ -373,7 +363,9 @@ export function SettingsScreen() {
                     handleEditProfile();
                   }}
                 >
-                  <Text className="text-sm text-text-tertiary font-sans-medium">Edit profile</Text>
+                  <Text className="text-sm text-text-tertiary font-sans-medium">
+                    {t('common.edit')}
+                  </Text>
                 </Pressable>
               </>
             )}
@@ -398,10 +390,10 @@ export function SettingsScreen() {
                   <Ionicons name="diamond" size={20} color="#22d3ee" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[15px] font-sans-bold text-white">Upgrade to Pro</Text>
-                  <Text className="text-xs text-slate-400 mt-0.5">
-                    AI Coach, Telegram logging & weekly insights
+                  <Text className="text-[15px] font-sans-bold text-white">
+                    {t('settings.upgradeToPro')}
                   </Text>
+                  <Text className="text-xs text-slate-400 mt-0.5">{t('settings.unlockDesc')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#475569" />
               </LinearGradient>
@@ -422,23 +414,29 @@ export function SettingsScreen() {
                   <Ionicons name="diamond" size={17} color="#06b6d4" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[15px] font-sans-medium text-text">Pro Member</Text>
-                  <Text className="text-xs text-text-tertiary mt-0.5">All features unlocked</Text>
+                  <Text className="text-[15px] font-sans-medium text-text">
+                    {t('settings.proMember')}
+                  </Text>
+                  <Text className="text-xs text-text-tertiary mt-0.5">
+                    {t('settings.allFeaturesUnlocked')}
+                  </Text>
                 </View>
-                <Text className="text-sm text-text-tertiary font-sans-medium mr-1.5">Manage</Text>
+                <Text className="text-sm text-text-tertiary font-sans-medium mr-1.5">
+                  {t('settings.manage')}
+                </Text>
                 <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
               </Pressable>
             </SettingsSection>
           )}
 
           {/* ── Features ── */}
-          <SettingsSection title="Features">
+          <SettingsSection title={t('settings.integrations')}>
             <SettingsRow
               icon="sparkles"
               iconColor="#8b5cf6"
               iconBg="bg-violet-500/15"
-              label="AI Coach"
-              subtitle="Personalized nutrition guidance"
+              label={t('settings.aiCoach')}
+              subtitle={t('settings.personalizedGuidance')}
               onPress={() => navigate('CoachChat')}
               isFirst
             />
@@ -446,11 +444,11 @@ export function SettingsScreen() {
               icon="paper-plane"
               iconColor="#3b82f6"
               iconBg="bg-blue-500/15"
-              label="Telegram Coach"
+              label={t('settings.telegramCoach')}
               subtitle={
                 telegramStatus?.linked
                   ? `@${telegramStatus.telegramUsername ?? 'connected'}`
-                  : 'Log meals via Telegram chat'
+                  : t('settings.logMealsViaChat')
               }
               right={
                 <View className="flex-row items-center gap-2">
@@ -460,7 +458,7 @@ export function SettingsScreen() {
                     <Text
                       className={`text-[10px] font-sans-semibold ${telegramStatus?.linked ? 'text-green-600' : 'text-amber-600'}`}
                     >
-                      {telegramStatus?.linked ? 'Active' : 'Connect'}
+                      {telegramStatus?.linked ? t('settings.active') : t('settings.connect')}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
@@ -472,12 +470,14 @@ export function SettingsScreen() {
           </SettingsSection>
 
           {/* ── Preferences ── */}
-          <SettingsSection title="Preferences">
+          <SettingsSection title={t('settings.preferences')}>
             <View className="flex-row items-center px-4 py-3">
               <View className="h-8 w-8 rounded-lg bg-blue-500/15 items-center justify-center mr-3">
                 <Ionicons name="language-outline" size={17} color="#3b82f6" />
               </View>
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">Language</Text>
+              <Text className="flex-1 text-[15px] font-sans-medium text-text">
+                {t('settings.language')}
+              </Text>
               <SegmentedControl
                 options={[
                   { label: 'EN', value: 'en' },
@@ -492,11 +492,13 @@ export function SettingsScreen() {
               <View className="h-8 w-8 rounded-lg bg-violet-500/15 items-center justify-center mr-3">
                 <Ionicons name="resize-outline" size={17} color="#8b5cf6" />
               </View>
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">Units</Text>
+              <Text className="flex-1 text-[15px] font-sans-medium text-text">
+                {t('settings.units')}
+              </Text>
               <SegmentedControl
                 options={[
-                  { label: 'Metric', value: 'metric' },
-                  { label: 'Imperial', value: 'imperial' },
+                  { label: t('settings.metric'), value: 'metric' },
+                  { label: t('settings.imperial'), value: 'imperial' },
                 ]}
                 value={currentUnits}
                 onChange={handleUnitsSelect}
@@ -505,7 +507,7 @@ export function SettingsScreen() {
           </SettingsSection>
 
           {/* ── Notifications ── */}
-          <SettingsSection title="Notifications">
+          <SettingsSection title={t('settings.notifications')}>
             {osPermission === 'denied' ? (
               <View className="px-4 py-4">
                 <View className="flex-row items-start mb-3">
@@ -514,10 +516,10 @@ export function SettingsScreen() {
                   </View>
                   <View className="flex-1">
                     <Text className="text-[15px] font-sans-medium text-text">
-                      Notifications blocked
+                      {t('settings.notificationsBlocked')}
                     </Text>
                     <Text className="text-xs text-text-tertiary mt-0.5 leading-4">
-                      Open device Settings to allow Coach to send reminders.
+                      {t('settings.notificationsBlockedDesc')}
                     </Text>
                   </View>
                 </View>
@@ -528,7 +530,9 @@ export function SettingsScreen() {
                   }}
                   className="rounded-xl bg-primary-500 py-2.5 items-center"
                 >
-                  <Text className="text-sm font-sans-semibold text-white">Open Settings</Text>
+                  <Text className="text-sm font-sans-semibold text-white">
+                    {t('settings.openSettings')}
+                  </Text>
                 </Pressable>
               </View>
             ) : osPermission === 'undetermined' ? (
@@ -539,10 +543,10 @@ export function SettingsScreen() {
                   </View>
                   <View className="flex-1">
                     <Text className="text-[15px] font-sans-medium text-text">
-                      Enable notifications
+                      {t('settings.enableNotifications')}
                     </Text>
                     <Text className="text-xs text-text-tertiary mt-0.5 leading-4">
-                      Get meal reminders and daily progress updates.
+                      {t('settings.enableNotificationsDesc')}
                     </Text>
                   </View>
                 </View>
@@ -555,7 +559,7 @@ export function SettingsScreen() {
                   className="rounded-xl bg-primary-500 py-2.5 items-center"
                 >
                   <Text className="text-sm font-sans-semibold text-white">
-                    Turn On Notifications
+                    {t('settings.turnOnNotifications')}
                   </Text>
                 </Pressable>
               </View>
@@ -566,9 +570,11 @@ export function SettingsScreen() {
                     <Ionicons name="sunny-outline" size={17} color="#f59e0b" />
                   </View>
                   <View className="flex-1 mr-3">
-                    <Text className="text-[15px] font-sans-medium text-text">Morning reminder</Text>
+                    <Text className="text-[15px] font-sans-medium text-text">
+                      {t('settings.morningReminder')}
+                    </Text>
                     <Text className="text-xs text-text-tertiary mt-0.5">
-                      Daily nutrition check-in
+                      {t('settings.morningReminderDesc')}
                     </Text>
                   </View>
                   <Switch
@@ -587,9 +593,11 @@ export function SettingsScreen() {
                     <Ionicons name="moon-outline" size={17} color="#818cf8" />
                   </View>
                   <View className="flex-1 mr-3">
-                    <Text className="text-[15px] font-sans-medium text-text">Evening reminder</Text>
+                    <Text className="text-[15px] font-sans-medium text-text">
+                      {t('settings.eveningReminder')}
+                    </Text>
                     <Text className="text-xs text-text-tertiary mt-0.5">
-                      Review your day and log dinner
+                      {t('settings.eveningReminderDesc')}
                     </Text>
                   </View>
                   <Switch
@@ -607,13 +615,13 @@ export function SettingsScreen() {
           </SettingsSection>
 
           {/* ── Support ── */}
-          <SettingsSection title="Support">
+          <SettingsSection title={t('settings.privacyLegal')}>
             <SettingsRow
               icon="download-outline"
               iconColor="#06b6d4"
               iconBg="bg-cyan-500/15"
-              label="Export My Data"
-              subtitle="Download a copy of all your data"
+              label={t('settings.exportMyData')}
+              subtitle={t('settings.exportMyDataDesc')}
               onPress={handleExportData}
               isFirst
             />
@@ -621,30 +629,28 @@ export function SettingsScreen() {
               icon="shield-checkmark-outline"
               iconColor="#7687a2"
               iconBg="bg-surface-secondary"
-              label="Privacy Policy"
+              label={t('settings.privacyPolicy')}
               onPress={() =>
-                Alert.alert('Privacy Policy', 'Privacy policy will be available at launch.')
+                Alert.alert(t('settings.privacyPolicy'), t('settings.privacyPolicyNotice'))
               }
             />
             <SettingsRow
               icon="document-text-outline"
               iconColor="#7687a2"
               iconBg="bg-surface-secondary"
-              label="Terms of Service"
-              onPress={() =>
-                Alert.alert('Terms of Service', 'Terms of service will be available at launch.')
-              }
+              label={t('settings.termsOfService')}
+              onPress={() => Alert.alert(t('settings.termsOfService'), t('settings.termsNotice'))}
               isLast
             />
           </SettingsSection>
 
           {/* ── Account ── */}
-          <SettingsSection title="Account">
+          <SettingsSection title={t('settings.account')}>
             <SettingsRow
               icon="log-out-outline"
               iconColor="#f59e0b"
               iconBg="bg-amber-500/10"
-              label="Sign Out"
+              label={t('settings.signOut')}
               onPress={handleSignOut}
               isFirst
             />
@@ -652,7 +658,7 @@ export function SettingsScreen() {
               icon="trash-outline"
               iconColor="#ef4444"
               iconBg="bg-red-500/10"
-              label="Delete Account"
+              label={t('settings.deleteAccount')}
               danger
               onPress={handleDeleteAccount}
               isLast
