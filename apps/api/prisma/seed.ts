@@ -6236,6 +6236,9 @@ async function main() {
             carbsPer100g: food.carbs,
             fatPer100g: food.fat,
             fiberPer100g: food.fiber ?? 0,
+            sugarPer100g: 0,
+            sodiumPer100g: 0,
+            saturatedFatPer100g: 0,
           },
         },
         localizations: {

@@ -17,6 +17,9 @@ interface VoiceDraftUpdateCompleted {
   totalProtein: number;
   totalCarbs: number;
   totalFat: number;
+  totalSugar?: number;
+  totalSodium?: number;
+  totalSaturatedFat?: number;
 }
 
 export async function setVoiceDraftActive(draftId: string): Promise<void> {
@@ -36,7 +39,10 @@ export async function setVoiceDraftCompleted(
          total_calories = $5,
          total_protein = $6,
          total_carbs = $7,
-         total_fat = $8
+         total_fat = $8,
+         total_sugar = $9,
+         total_sodium = $10,
+         total_saturated_fat = $11
      WHERE id = $1`,
     [
       draftId,
@@ -47,6 +53,9 @@ export async function setVoiceDraftCompleted(
       data.totalProtein,
       data.totalCarbs,
       data.totalFat,
+      data.totalSugar ?? null,
+      data.totalSodium ?? null,
+      data.totalSaturatedFat ?? null,
     ],
   );
 }

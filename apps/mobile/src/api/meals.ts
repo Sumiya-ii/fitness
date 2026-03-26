@@ -8,6 +8,9 @@ export interface FoodNutrients {
   carbsPer100g: number;
   fatPer100g: number;
   fiberPer100g: number | null;
+  sugarPer100g: number | null;
+  sodiumPer100g: number | null;
+  saturatedFatPer100g: number | null;
 }
 
 export interface FoodSearchResult {
@@ -34,6 +37,9 @@ export interface MealLogItem {
   snapshotCarbs: number;
   snapshotFat: number;
   snapshotFiber: number | null;
+  snapshotSugar: number | null;
+  snapshotSodium: number | null;
+  snapshotSaturatedFat: number | null;
 }
 
 export interface MealLog {
@@ -48,6 +54,9 @@ export interface MealLog {
   totalCarbs: number;
   totalFat: number;
   totalFiber: number | null;
+  totalSugar: number | null;
+  totalSodium: number | null;
+  totalSaturatedFat: number | null;
   items: MealLogItem[];
   createdAt: string;
   updatedAt: string;
@@ -76,6 +85,9 @@ export interface QuickAddPayload {
   carbsGrams?: number;
   fatGrams?: number;
   fiberGrams?: number;
+  sugarGrams?: number;
+  sodiumMg?: number;
+  saturatedFatGrams?: number;
   source?: string;
 }
 
@@ -108,6 +120,9 @@ export interface SubmitBarcodePayload {
   carbsPer100g: number;
   fatPer100g: number;
   fiberPer100g?: number;
+  sugarPer100g?: number;
+  sodiumPer100g?: number;
+  saturatedFatPer100g?: number;
   servingLabel: string;
   gramsPerUnit: number;
   labelPhotoUrls?: string[];

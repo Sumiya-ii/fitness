@@ -31,6 +31,9 @@ export const quickAddSchema = z.object({
   carbsGrams: z.number().min(0).optional().default(0),
   fatGrams: z.number().min(0).optional().default(0),
   fiberGrams: z.number().min(0).optional(),
+  sugarGrams: z.number().min(0).optional(),
+  sodiumMg: z.number().min(0).optional(),
+  saturatedFatGrams: z.number().min(0).optional(),
   source: z
     .enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram'])
     .optional()

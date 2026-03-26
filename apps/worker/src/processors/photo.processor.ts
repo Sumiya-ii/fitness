@@ -17,6 +17,7 @@ export interface ParsedFoodItem {
   fiber: number;
   sugar: number;
   sodium: number;
+  saturatedFat: number;
   servingGrams: number;
   confidence: number;
 }
@@ -29,6 +30,9 @@ export interface PhotoParseResult {
   totalCarbs: number;
   totalFat: number;
   totalFiber: number;
+  totalSugar: number;
+  totalSodium: number;
+  totalSaturatedFat: number;
 }
 
 const SYSTEM_PROMPT = `You are an expert nutrition analyst specializing in food recognition from photos. Your job is to accurately identify every food item visible and estimate precise nutritional values based on visual portion sizes.
@@ -52,6 +56,7 @@ Return ONLY valid JSON (no markdown, no explanation):
       "fiber": 3.0,
       "sugar": 4.0,
       "sodium": 580,
+      "saturatedFat": 3.5,
       "confidence": 0.92
     }
   ]
@@ -80,6 +85,7 @@ function normalizeItems(raw: { mealName?: string; items?: ParsedFoodItem[] }): P
     fiber: Number(item.fiber) || 0,
     sugar: Number(item.sugar) || 0,
     sodium: Number(item.sodium) || 0,
+    saturatedFat: Number(item.saturatedFat) || 0,
     servingGrams: Number(item.servingGrams) || 0,
     confidence: Math.min(1, Math.max(0, Number(item.confidence) || 0)),
   }));
@@ -91,6 +97,9 @@ function normalizeItems(raw: { mealName?: string; items?: ParsedFoodItem[] }): P
     totalCarbs: items.reduce((s, i) => s + i.carbs, 0),
     totalFat: items.reduce((s, i) => s + i.fat, 0),
     totalFiber: items.reduce((s, i) => s + i.fiber, 0),
+    totalSugar: items.reduce((s, i) => s + i.sugar, 0),
+    totalSodium: items.reduce((s, i) => s + i.sodium, 0),
+    totalSaturatedFat: items.reduce((s, i) => s + i.saturatedFat, 0),
   };
 }
 
@@ -179,5 +188,8 @@ export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoPars
     totalCarbs: 0,
     totalFat: 0,
     totalFiber: 0,
+    totalSugar: 0,
+    totalSodium: 0,
+    totalSaturatedFat: 0,
   };
 }

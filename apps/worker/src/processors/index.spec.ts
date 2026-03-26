@@ -75,6 +75,9 @@ describe('processJob routing', () => {
       totalCarbs: 0,
       totalFat: 0,
       totalFiber: 0,
+      totalSugar: 0,
+      totalSodium: 0,
+      totalSaturatedFat: 0,
     });
     await processJob(QUEUE_NAMES.PHOTO_PARSING, fakeJob);
     expect(mockPhoto).toHaveBeenCalledWith(fakeJob);

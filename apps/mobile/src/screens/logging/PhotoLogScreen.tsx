@@ -30,6 +30,7 @@ interface ParsedFoodItem {
   fiber: number;
   sugar: number;
   sodium: number;
+  saturatedFat: number;
   servingGrams: number;
   confidence: number;
 }
@@ -44,6 +45,9 @@ interface PhotoDraft {
   totalCarbs?: number;
   totalFat?: number;
   totalFiber?: number;
+  totalSugar?: number;
+  totalSodium?: number;
+  totalSaturatedFat?: number;
 }
 
 const POLL_INTERVAL_MS = 2000;
@@ -133,6 +137,9 @@ export function PhotoLogScreen() {
         carbs: Math.round(item.carbs * m * 10) / 10,
         fat: Math.round(item.fat * m * 10) / 10,
         fiber: Math.round(item.fiber * m * 10) / 10,
+        sugar: Math.round(item.sugar * m * 10) / 10,
+        sodium: Math.round(item.sodium * m * 10) / 10,
+        saturatedFat: Math.round(item.saturatedFat * m * 10) / 10,
         servingGrams: Math.round(item.servingGrams * m),
       };
     },
@@ -146,6 +153,9 @@ export function PhotoLogScreen() {
   const totalCarbs = effectiveItems.reduce((s, i) => s + i.carbs, 0);
   const totalFat = effectiveItems.reduce((s, i) => s + i.fat, 0);
   const totalFiber = effectiveItems.reduce((s, i) => s + i.fiber, 0);
+  const totalSugar = effectiveItems.reduce((s, i) => s + i.sugar, 0);
+  const totalSodium = effectiveItems.reduce((s, i) => s + i.sodium, 0);
+  const totalSaturatedFat = effectiveItems.reduce((s, i) => s + i.saturatedFat, 0);
 
   const pollDraft = useCallback(async (draftId: string, attempt = 0) => {
     if (attempt >= MAX_POLL_ATTEMPTS) {
@@ -269,6 +279,9 @@ export function PhotoLogScreen() {
         proteinGrams: Math.round(totalProtein * 10) / 10,
         carbsGrams: Math.round(totalCarbs * 10) / 10,
         fatGrams: Math.round(totalFat * 10) / 10,
+        sugarGrams: Math.round(totalSugar * 10) / 10,
+        sodiumMg: Math.round(totalSodium * 10) / 10,
+        saturatedFatGrams: Math.round(totalSaturatedFat * 10) / 10,
         note,
         source: 'photo',
         mealType,

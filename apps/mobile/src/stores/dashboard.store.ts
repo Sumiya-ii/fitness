@@ -9,6 +9,9 @@ export interface DashboardMealItem {
   snapshotCarbs: number;
   snapshotFat: number;
   snapshotFiber: number | null;
+  snapshotSugar: number | null;
+  snapshotSodium: number | null;
+  snapshotSaturatedFat: number | null;
 }
 
 export interface DashboardMeal {
@@ -19,13 +22,25 @@ export interface DashboardMeal {
   totalCarbs: number;
   totalFat: number;
   totalFiber: number | null;
+  totalSugar: number | null;
+  totalSodium: number | null;
+  totalSaturatedFat: number | null;
   loggedAt: string;
   items: DashboardMealItem[];
 }
 
 export interface DashboardData {
   date: string;
-  consumed: { calories: number; protein: number; carbs: number; fat: number; fiber: number | null };
+  consumed: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number | null;
+    sugar: number | null;
+    sodium: number | null;
+    saturatedFat: number | null;
+  };
   targets: { calories: number; protein: number; carbs: number; fat: number } | null;
   remaining: { calories: number; protein: number; carbs: number; fat: number } | null;
   proteinProgress: { current: number; target: number; percentage: number } | null;

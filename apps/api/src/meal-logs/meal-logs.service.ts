@@ -47,6 +47,18 @@ export class MealLogsService {
           nutrient.fiberPer100g !== null && nutrient.fiberPer100g !== undefined
             ? Number((Number(nutrient.fiberPer100g) * factor).toFixed(2))
             : null,
+        snapshotSugar:
+          nutrient.sugarPer100g !== null && nutrient.sugarPer100g !== undefined
+            ? Number((Number(nutrient.sugarPer100g) * factor).toFixed(2))
+            : null,
+        snapshotSodium:
+          nutrient.sodiumPer100g !== null && nutrient.sodiumPer100g !== undefined
+            ? Number((Number(nutrient.sodiumPer100g) * factor).toFixed(2))
+            : null,
+        snapshotSaturatedFat:
+          nutrient.saturatedFatPer100g !== null && nutrient.saturatedFatPer100g !== undefined
+            ? Number((Number(nutrient.saturatedFatPer100g) * factor).toFixed(2))
+            : null,
       };
     });
 
@@ -62,6 +74,15 @@ export class MealLogsService {
     const totalFiber = itemSnapshots.some((i) => i.snapshotFiber !== null)
       ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotFiber ?? 0), 0).toFixed(2))
       : null;
+    const totalSugar = itemSnapshots.some((i) => i.snapshotSugar !== null)
+      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotSugar ?? 0), 0).toFixed(2))
+      : null;
+    const totalSodium = itemSnapshots.some((i) => i.snapshotSodium !== null)
+      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotSodium ?? 0), 0).toFixed(2))
+      : null;
+    const totalSaturatedFat = itemSnapshots.some((i) => i.snapshotSaturatedFat !== null)
+      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotSaturatedFat ?? 0), 0).toFixed(2))
+      : null;
 
     const mealLog = await this.prisma.mealLog.create({
       data: {
@@ -75,6 +96,9 @@ export class MealLogsService {
         totalCarbs,
         totalFat,
         totalFiber,
+        totalSugar,
+        totalSodium,
+        totalSaturatedFat,
         items: {
           create: itemSnapshots,
         },
@@ -98,6 +122,9 @@ export class MealLogsService {
         totalCarbs: dto.carbsGrams,
         totalFat: dto.fatGrams,
         totalFiber: dto.fiberGrams ?? null,
+        totalSugar: dto.sugarGrams ?? null,
+        totalSodium: dto.sodiumMg ?? null,
+        totalSaturatedFat: dto.saturatedFatGrams ?? null,
         items: {
           create: {
             quantity: 1,
@@ -109,6 +136,9 @@ export class MealLogsService {
             snapshotCarbs: dto.carbsGrams,
             snapshotFat: dto.fatGrams,
             snapshotFiber: dto.fiberGrams ?? null,
+            snapshotSugar: dto.sugarGrams ?? null,
+            snapshotSodium: dto.sodiumMg ?? null,
+            snapshotSaturatedFat: dto.saturatedFatGrams ?? null,
           },
         },
       },
@@ -198,6 +228,9 @@ export class MealLogsService {
     totalCarbs: unknown;
     totalFat: unknown;
     totalFiber: unknown;
+    totalSugar: unknown;
+    totalSodium: unknown;
+    totalSaturatedFat: unknown;
     createdAt: Date;
     updatedAt: Date;
     items: Array<{
@@ -211,6 +244,9 @@ export class MealLogsService {
       snapshotCarbs: unknown;
       snapshotFat: unknown;
       snapshotFiber: unknown;
+      snapshotSugar: unknown;
+      snapshotSodium: unknown;
+      snapshotSaturatedFat: unknown;
       snapshotFoodName: string;
       createdAt: Date;
     }>;
@@ -228,6 +264,14 @@ export class MealLogsService {
       totalFat: log.totalFat ? Number(log.totalFat) : 0,
       totalFiber:
         log.totalFiber !== null && log.totalFiber !== undefined ? Number(log.totalFiber) : null,
+      totalSugar:
+        log.totalSugar !== null && log.totalSugar !== undefined ? Number(log.totalSugar) : null,
+      totalSodium:
+        log.totalSodium !== null && log.totalSodium !== undefined ? Number(log.totalSodium) : null,
+      totalSaturatedFat:
+        log.totalSaturatedFat !== null && log.totalSaturatedFat !== undefined
+          ? Number(log.totalSaturatedFat)
+          : null,
       items: log.items.map((item) => ({
         id: item.id,
         foodId: item.foodId,
@@ -242,6 +286,18 @@ export class MealLogsService {
         snapshotFiber:
           item.snapshotFiber !== null && item.snapshotFiber !== undefined
             ? Number(item.snapshotFiber)
+            : null,
+        snapshotSugar:
+          item.snapshotSugar !== null && item.snapshotSugar !== undefined
+            ? Number(item.snapshotSugar)
+            : null,
+        snapshotSodium:
+          item.snapshotSodium !== null && item.snapshotSodium !== undefined
+            ? Number(item.snapshotSodium)
+            : null,
+        snapshotSaturatedFat:
+          item.snapshotSaturatedFat !== null && item.snapshotSaturatedFat !== undefined
+            ? Number(item.snapshotSaturatedFat)
             : null,
       })),
       createdAt: log.createdAt.toISOString(),

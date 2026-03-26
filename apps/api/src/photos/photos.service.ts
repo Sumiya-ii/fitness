@@ -15,6 +15,9 @@ export interface PhotoDraftStatus {
   totalCarbs?: number;
   totalFat?: number;
   totalFiber?: number;
+  totalSugar?: number;
+  totalSodium?: number;
+  totalSaturatedFat?: number;
 }
 
 @Injectable()
@@ -63,6 +66,9 @@ export class PhotosService {
         totalCarbs?: number;
         totalFat?: number;
         totalFiber?: number;
+        totalSugar?: number;
+        totalSodium?: number;
+        totalSaturatedFat?: number;
       };
       result.mealName = parsed.mealName;
       result.items = parsed.items;
@@ -71,6 +77,9 @@ export class PhotosService {
       result.totalCarbs = parsed.totalCarbs;
       result.totalFat = parsed.totalFat;
       result.totalFiber = parsed.totalFiber;
+      result.totalSugar = parsed.totalSugar;
+      result.totalSodium = parsed.totalSodium;
+      result.totalSaturatedFat = parsed.totalSaturatedFat;
     }
 
     return result;

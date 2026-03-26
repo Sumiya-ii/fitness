@@ -16,6 +16,9 @@ const nutrientSchema = z.object({
   carbsPer100g: z.number().min(0).max(100),
   fatPer100g: z.number().min(0).max(100),
   fiberPer100g: z.number().min(0).max(100).optional(),
+  sugarPer100g: z.number().min(0).max(100).optional(),
+  sodiumPer100g: z.number().min(0).max(10000).optional(), // mg per 100g
+  saturatedFatPer100g: z.number().min(0).max(100).optional(),
 });
 
 const localizationSchema = z.object({

@@ -30,14 +30,13 @@ export class FoodsService {
             carbsPer100g: dto.nutrients.carbsPer100g,
             fatPer100g: dto.nutrients.fatPer100g,
             fiberPer100g: dto.nutrients.fiberPer100g,
+            sugarPer100g: dto.nutrients.sugarPer100g,
+            sodiumPer100g: dto.nutrients.sodiumPer100g,
+            saturatedFatPer100g: dto.nutrients.saturatedFatPer100g,
           },
         },
-        localizations: dto.localizations
-          ? { create: dto.localizations }
-          : undefined,
-        aliases: dto.aliases
-          ? { create: dto.aliases }
-          : undefined,
+        localizations: dto.localizations ? { create: dto.localizations } : undefined,
+        aliases: dto.aliases ? { create: dto.aliases } : undefined,
         barcodes: dto.barcodes
           ? {
               create: dto.barcodes.map((code) => ({ code })),
@@ -116,6 +115,9 @@ export class FoodsService {
           carbsPer100g: dto.nutrients.carbsPer100g,
           fatPer100g: dto.nutrients.fatPer100g,
           fiberPer100g: dto.nutrients.fiberPer100g,
+          sugarPer100g: dto.nutrients.sugarPer100g,
+          sodiumPer100g: dto.nutrients.sodiumPer100g,
+          saturatedFatPer100g: dto.nutrients.saturatedFatPer100g,
         },
       });
     }
@@ -197,6 +199,9 @@ export class FoodsService {
       carbsPer100g: unknown;
       fatPer100g: unknown;
       fiberPer100g: unknown;
+      sugarPer100g: unknown;
+      sodiumPer100g: unknown;
+      saturatedFatPer100g: unknown;
     }>;
     aliases: Array<{ id: string; alias: string; locale: string }>;
     localizations: Array<{ id: string; locale: string; name: string }>;
@@ -224,8 +229,11 @@ export class FoodsService {
             proteinPer100g: Number(nutrient.proteinPer100g),
             carbsPer100g: Number(nutrient.carbsPer100g),
             fatPer100g: Number(nutrient.fatPer100g),
-            fiberPer100g: nutrient.fiberPer100g
-              ? Number(nutrient.fiberPer100g)
+            fiberPer100g: nutrient.fiberPer100g ? Number(nutrient.fiberPer100g) : null,
+            sugarPer100g: nutrient.sugarPer100g ? Number(nutrient.sugarPer100g) : null,
+            sodiumPer100g: nutrient.sodiumPer100g ? Number(nutrient.sodiumPer100g) : null,
+            saturatedFatPer100g: nutrient.saturatedFatPer100g
+              ? Number(nutrient.saturatedFatPer100g)
               : null,
           }
         : null,
