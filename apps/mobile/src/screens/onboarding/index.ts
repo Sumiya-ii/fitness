@@ -10,4 +10,5 @@ export { ActivityLevelSelectScreen } from './ActivityLevelSelectScreen';
 export { DietPreferenceSelectScreen } from './DietPreferenceSelectScreen';
 export { MotivationScreen } from './MotivationScreen';
 export { TargetReviewScreen } from './TargetReviewScreen';
+export { SubscriptionPitchScreen } from './SubscriptionPitchScreen';
 export { NotificationPermissionScreen } from './NotificationPermissionScreen';

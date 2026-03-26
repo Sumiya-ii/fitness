@@ -13,7 +13,7 @@ export const DEFAULT_UNIT_SYSTEM: UnitSystem = 'metric';
 export const GOAL_TYPES = ['lose_fat', 'maintain', 'gain'] as const;
 export type GoalType = (typeof GOAL_TYPES)[number];
 
-export const GENDERS = ['male', 'female'] as const;
+export const GENDERS = ['male', 'female', 'other'] as const;
 export type Gender = (typeof GENDERS)[number];
 
 export const ACTIVITY_LEVELS = [
@@ -25,12 +25,7 @@ export const ACTIVITY_LEVELS = [
 ] as const;
 export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number];
 
-export const DIET_PREFERENCES = [
-  'standard',
-  'high_protein',
-  'low_carb',
-  'low_fat',
-] as const;
+export const DIET_PREFERENCES = ['standard', 'high_protein', 'low_carb', 'low_fat'] as const;
 export type DietPreference = (typeof DIET_PREFERENCES)[number];
 
 export const API_VERSION = 'v1';

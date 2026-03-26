@@ -1,5 +1,4 @@
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
@@ -14,7 +13,6 @@ type GoalOption = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   description: string;
-  gradient: [string, string];
 };
 
 const GOAL_OPTIONS: GoalOption[] = [
@@ -23,21 +21,18 @@ const GOAL_OPTIONS: GoalOption[] = [
     icon: 'trending-down-outline',
     title: 'Lose Fat',
     description: 'Burn fat and get leaner with a calorie deficit',
-    gradient: ['#1f2028', '#15161d'],
   },
   {
     id: 'maintain',
     icon: 'scale-outline',
     title: 'Maintain Weight',
     description: 'Keep your current weight with balanced nutrition',
-    gradient: ['#8b8fa0', '#767b8f'],
   },
   {
     id: 'gain',
     icon: 'trending-up-outline',
     title: 'Build Muscle',
     description: 'Gain lean mass with a controlled calorie surplus',
-    gradient: ['#8f93a4', '#797d90'],
   },
 ];
 
@@ -57,29 +52,57 @@ export function GoalSetupScreen({ navigation }: Props) {
       continueDisabled={!goalType}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-        <View className="gap-4">
+        <View style={{ gap: 12 }}>
           {GOAL_OPTIONS.map((option) => {
             const selected = goalType === option.id;
             return (
               <Pressable
                 key={option.id}
                 onPress={() => setGoalType(option.id)}
-                className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
-                  selected ? 'border-primary-500' : 'border-surface-border'
-                }`}
+                style={({ pressed }) => ({
+                  backgroundColor: selected ? '#0f172a' : '#f5f5f7',
+                  borderRadius: 18,
+                  paddingVertical: 20,
+                  paddingHorizontal: 20,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  opacity: pressed ? 0.85 : 1,
+                })}
               >
-                <LinearGradient
-                  colors={option.gradient}
-                  className="w-14 h-14 rounded-xl items-center justify-center mr-4"
-                  style={{ borderRadius: 12 }}
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    backgroundColor: selected ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.08)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  <Ionicons name={option.icon} size={28} color="white" />
-                </LinearGradient>
-                <View className="flex-1">
-                  <Text className="text-lg font-sans-semibold text-text">{option.title}</Text>
-                  <Text className="text-sm text-text-secondary mt-0.5">{option.description}</Text>
+                  <Ionicons name={option.icon} size={22} color={selected ? '#ffffff' : '#0b1220'} />
                 </View>
-                {selected && <Ionicons name="checkmark-circle" size={24} color="#1f2028" />}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: '700',
+                      color: selected ? '#ffffff' : '#0b1220',
+                      marginBottom: 3,
+                    }}
+                  >
+                    {option.title}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: selected ? 'rgba(255,255,255,0.65)' : '#7687a2',
+                      lineHeight: 18,
+                    }}
+                  >
+                    {option.description}
+                  </Text>
+                </View>
               </Pressable>
             );
           })}

@@ -1,7 +1,6 @@
-import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BackButton } from '../../components/ui/BackButton';
-import { Button } from '../../components/ui/Button';
+import { Ionicons } from '@expo/vector-icons';
 
 interface OnboardingLayoutProps {
   step: number;
@@ -25,7 +24,6 @@ export function OnboardingLayout({
   onContinue,
   continueLabel = 'Continue',
   continueDisabled = false,
-  continueLoading = false,
   children,
 }: OnboardingLayoutProps) {
   const progress = step / totalSteps;
@@ -35,43 +33,108 @@ export function OnboardingLayout({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
-      <SafeAreaView className="flex-1 bg-surface-app">
-        <View className="px-6 pt-4">
-          <View className="flex-row items-center mb-6">
-            {onBack ? <BackButton onPress={onBack} /> : <View className="w-12" />}
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
+        {/* Header: back button + progress bar */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 20,
+            paddingTop: 16,
+            paddingBottom: 8,
+            gap: 14,
+          }}
+        >
+          {onBack ? (
+            <Pressable
+              onPress={onBack}
+              style={({ pressed }) => ({
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: '#dde5f0',
+                backgroundColor: '#ffffff',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.6 : 1,
+                flexShrink: 0,
+              })}
+              hitSlop={8}
+            >
+              <Ionicons name="chevron-back" size={20} color="#0b1220" />
+            </Pressable>
+          ) : (
+            <View style={{ width: 40, height: 40 }} />
+          )}
 
-            <View className="flex-1 mx-4">
-              <View className="h-1.5 bg-surface-border rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-primary-500 rounded-full"
-                  style={{ width: `${progress * 100}%` }}
-                />
-              </View>
-            </View>
-
-            <Text className="text-xs font-sans-medium text-text-secondary">
-              {step}/{totalSteps}
-            </Text>
+          {/* Progress bar */}
+          <View style={{ flex: 1, height: 3, backgroundColor: '#e8edf5', borderRadius: 2 }}>
+            <View
+              style={{
+                height: '100%',
+                width: `${progress * 100}%`,
+                backgroundColor: '#0f172a',
+                borderRadius: 2,
+              }}
+            />
           </View>
         </View>
 
-        <View className="px-6 mb-6">
-          <Text className="text-2xl font-sans-bold text-text mb-2">{title}</Text>
-          {subtitle && <Text className="text-base text-text-secondary leading-6">{subtitle}</Text>}
+        {/* Title + subtitle */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 }}>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: '800',
+              color: '#0b1220',
+              marginBottom: 8,
+              lineHeight: 34,
+            }}
+          >
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text
+              style={{
+                fontSize: 15,
+                color: '#7687a2',
+                lineHeight: 22,
+              }}
+            >
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
 
-        <View className="flex-1 px-6">{children}</View>
+        {/* Content */}
+        <View style={{ flex: 1, paddingHorizontal: 24 }}>{children}</View>
 
-        <View className="px-6 pb-8 pt-4 border-t border-surface-border">
-          <Button
-            onPress={onContinue}
-            size="lg"
+        {/* Continue button */}
+        <View style={{ paddingHorizontal: 24, paddingBottom: 40, paddingTop: 16 }}>
+          <Pressable
+            onPress={continueDisabled ? undefined : onContinue}
             disabled={continueDisabled}
-            loading={continueLoading}
-            className="w-full"
+            style={({ pressed }) => ({
+              backgroundColor: continueDisabled ? '#c3cedf' : '#0f172a',
+              borderRadius: 100,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 18,
+              opacity: pressed && !continueDisabled ? 0.88 : 1,
+            })}
           >
-            {continueLabel}
-          </Button>
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: '700',
+                color: continueDisabled ? '#7687a2' : '#ffffff',
+                letterSpacing: 0.2,
+              }}
+            >
+              {continueLabel}
+            </Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>

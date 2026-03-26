@@ -64,8 +64,8 @@ export function TargetReviewScreen({ navigation }: Props) {
       // Best-effort API call — proceed to notification primer regardless
     } finally {
       setLoading(false);
-      // Always navigate to the notification primer; it calls setProfileSetupComplete
-      navigation.navigate('NotificationPermission');
+      // Navigate to subscription pitch before finishing setup
+      navigation.navigate('SubscriptionPitch');
     }
   };
 

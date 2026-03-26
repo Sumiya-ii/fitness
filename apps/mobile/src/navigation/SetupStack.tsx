@@ -12,6 +12,7 @@ import {
   DietPreferenceSelectScreen,
   MotivationScreen,
   TargetReviewScreen,
+  SubscriptionPitchScreen,
   NotificationPermissionScreen,
 } from '../screens/onboarding';
 
@@ -36,6 +37,7 @@ export function SetupStack() {
       <Stack.Screen name="DietPreferenceSelect" component={DietPreferenceSelectScreen} />
       <Stack.Screen name="Motivation" component={MotivationScreen} />
       <Stack.Screen name="TargetReview" component={TargetReviewScreen} />
+      <Stack.Screen name="SubscriptionPitch" component={SubscriptionPitchScreen} />
       <Stack.Screen
         name="NotificationPermission"
         component={NotificationPermissionScreen}

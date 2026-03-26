@@ -78,7 +78,7 @@ export function SignInScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-app">
+    <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

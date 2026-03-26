@@ -1,5 +1,4 @@
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
@@ -15,7 +14,6 @@ type DietOption = {
   title: string;
   description: string;
   macroSplit: string;
-  gradient: [string, string];
 };
 
 const OPTIONS: DietOption[] = [
@@ -25,7 +23,6 @@ const OPTIONS: DietOption[] = [
     title: 'Standard',
     description: 'Balanced macro split for most people',
     macroSplit: '25% P · 55% C · 20% F',
-    gradient: ['#1f2028', '#15161d'],
   },
   {
     id: 'high_protein',
@@ -33,7 +30,6 @@ const OPTIONS: DietOption[] = [
     title: 'High Protein',
     description: 'More protein to preserve and build muscle',
     macroSplit: '35% P · 40% C · 25% F',
-    gradient: ['#8b8fa0', '#767b8f'],
   },
   {
     id: 'low_carb',
@@ -41,7 +37,6 @@ const OPTIONS: DietOption[] = [
     title: 'Low Carb',
     description: 'Reduced carbs with higher fat intake',
     macroSplit: '30% P · 30% C · 40% F',
-    gradient: ['#8f93a4', '#7d8194'],
   },
   {
     id: 'low_fat',
@@ -49,7 +44,6 @@ const OPTIONS: DietOption[] = [
     title: 'Low Fat',
     description: 'Reduced fat for heart-healthy eating',
     macroSplit: '30% P · 55% C · 15% F',
-    gradient: ['#8f93a4', '#797d90'],
   },
 ];
 
@@ -70,32 +64,67 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
       continueDisabled={!dietPreference}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-        <View className="gap-4">
+        <View style={{ gap: 10 }}>
           {OPTIONS.map((opt) => {
             const selected = dietPreference === opt.id;
             return (
               <Pressable
                 key={opt.id}
                 onPress={() => setDietPreference(opt.id)}
-                className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
-                  selected ? 'border-primary-500' : 'border-surface-border'
-                }`}
+                style={({ pressed }) => ({
+                  backgroundColor: selected ? '#0f172a' : '#f5f5f7',
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  paddingHorizontal: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  opacity: pressed ? 0.85 : 1,
+                })}
               >
-                <LinearGradient
-                  colors={opt.gradient}
-                  className="w-12 h-12 rounded-xl items-center justify-center mr-3"
-                  style={{ borderRadius: 12 }}
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    backgroundColor: selected ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.08)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  <Ionicons name={opt.icon} size={24} color="white" />
-                </LinearGradient>
-                <View className="flex-1">
-                  <Text className="text-base font-sans-semibold text-text">{opt.title}</Text>
-                  <Text className="text-xs text-text-secondary mt-0.5">{opt.description}</Text>
-                  <Text className="text-xs font-sans-medium text-primary-600 mt-1">
+                  <Ionicons name={opt.icon} size={22} color={selected ? '#ffffff' : '#0b1220'} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: '700',
+                      color: selected ? '#ffffff' : '#0b1220',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {opt.title}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: selected ? 'rgba(255,255,255,0.6)' : '#7687a2',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {opt.description}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '600',
+                      color: selected ? 'rgba(255,255,255,0.5)' : '#0b1220',
+                      opacity: 0.7,
+                    }}
+                  >
                     {opt.macroSplit}
                   </Text>
                 </View>
-                {selected && <Ionicons name="checkmark-circle" size={22} color="#1f2028" />}
               </Pressable>
             );
           })}

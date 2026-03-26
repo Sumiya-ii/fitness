@@ -1,5 +1,4 @@
 import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import type { Gender } from '../../stores/profile.store';
@@ -14,14 +13,9 @@ type GenderOption = {
 };
 
 const OPTIONS: GenderOption[] = [
-  {
-    id: 'male',
-    label: 'Male',
-  },
-  {
-    id: 'female',
-    label: 'Female',
-  },
+  { id: 'male', label: 'Male' },
+  { id: 'female', label: 'Female' },
+  { id: 'other', label: 'Other' },
 ];
 
 type Props = NativeStackScreenProps<SetupStackParamList, 'GenderSelect'>;
@@ -40,28 +34,33 @@ export function GenderSelectScreen({ navigation }: Props) {
       onContinue={() => navigation.navigate('BirthDateSelect')}
       continueDisabled={!gender}
     >
-      <View className="flex-1 justify-center">
-        <View className="gap-4">
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <View style={{ gap: 12 }}>
           {OPTIONS.map((opt) => {
             const selected = gender === opt.id;
             return (
               <Pressable
                 key={opt.id}
                 onPress={() => setGender(opt.id)}
-                className={`items-center py-8 rounded-3xl border ${
-                  selected
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-surface-border bg-surface-card'
-                }`}
+                style={({ pressed }) => ({
+                  backgroundColor: selected ? '#0f172a' : '#f5f5f7',
+                  borderRadius: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 26,
+                  opacity: pressed ? 0.85 : 1,
+                })}
               >
-                <Text className="text-xl font-sans-semibold text-text">
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: selected ? '700' : '500',
+                    color: selected ? '#ffffff' : '#0b1220',
+                    letterSpacing: 0.1,
+                  }}
+                >
                   {opt.label}
                 </Text>
-                {selected && (
-                  <View className="absolute top-3 right-3">
-                    <Ionicons name="checkmark-circle" size={22} color="#1f2028" />
-                  </View>
-                )}
               </Pressable>
             );
           })}

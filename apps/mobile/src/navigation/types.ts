@@ -20,6 +20,7 @@ export type SetupStackParamList = {
   DietPreferenceSelect: undefined;
   Motivation: undefined;
   TargetReview: undefined;
+  SubscriptionPitch: undefined;
   NotificationPermission: undefined;
 };
 

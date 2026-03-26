@@ -1,10 +1,5 @@
 import { create } from 'zustand';
-import type {
-  GoalType,
-  Gender,
-  ActivityLevel,
-  DietPreference,
-} from '@coach/shared';
+import type { GoalType, Gender, ActivityLevel, DietPreference } from '@coach/shared';
 
 export type { GoalType, Gender, ActivityLevel, DietPreference };
 
@@ -35,14 +30,15 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   extra_active: 1.9,
 };
 
-function calculateBMR(
-  gender: Gender,
-  weightKg: number,
-  heightCm: number,
-  age: number,
-): number {
+function calculateBMR(gender: Gender, weightKg: number, heightCm: number, age: number): number {
   if (gender === 'female') {
     return 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+  }
+  if (gender === 'other') {
+    // Use average of male and female Mifflin-St Jeor formulas
+    const male = 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+    const female = 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+    return (male + female) / 2;
   }
   return 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
 }
@@ -89,9 +85,7 @@ export function calculateTargets(data: OnboardingData): CalculatedTargets | null
     return null;
   }
 
-  const age = Math.floor(
-    (Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
-  );
+  const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
   const bmr = calculateBMR(gender, weightKg, heightCm, age);
   const tdee = bmr * ACTIVITY_MULTIPLIERS[activityLevel];
 
@@ -106,9 +100,7 @@ export function calculateTargets(data: OnboardingData): CalculatedTargets | null
   calories = Math.max(1200, Math.round(calories));
 
   const { proteinRatio, fatRatio } = getMacroRatios(dietPreference);
-  const protein = Math.round(
-    Math.max(weightKg * 1.6, (calories * proteinRatio) / 4),
-  );
+  const protein = Math.round(Math.max(weightKg * 1.6, (calories * proteinRatio) / 4));
   const fat = Math.round((calories * fatRatio) / 9);
   const remaining = Math.max(0, calories - protein * 4 - fat * 9);
   const carbs = Math.round(remaining / 4);

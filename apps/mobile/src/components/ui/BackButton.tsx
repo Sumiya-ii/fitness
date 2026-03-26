@@ -38,17 +38,19 @@ export function BackButton({ onPress, variant = 'default' }: BackButtonProps) {
       hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel="Go back"
-      className="h-10 w-10 rounded-2xl bg-white items-center justify-center"
       style={({ pressed }) => ({
-        opacity: pressed ? 0.7 : 1,
-        shadowColor: '#0b1220',
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#dde5f0',
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: pressed ? 0.6 : 1,
       })}
     >
-      <Ionicons name="chevron-back" size={22} color="#0b1220" />
+      <Ionicons name="chevron-back" size={20} color="#0b1220" />
     </Pressable>
   );
 }

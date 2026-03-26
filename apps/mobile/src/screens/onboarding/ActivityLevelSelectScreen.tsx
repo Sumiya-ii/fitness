@@ -13,7 +13,6 @@ type ActivityOption = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   description: string;
-  examples: string;
 };
 
 const OPTIONS: ActivityOption[] = [
@@ -21,36 +20,31 @@ const OPTIONS: ActivityOption[] = [
     id: 'sedentary',
     icon: 'desktop-outline',
     title: 'Sedentary',
-    description: 'Little to no exercise',
-    examples: 'Desk job, no workouts',
+    description: 'Desk job, little to no exercise',
   },
   {
     id: 'lightly_active',
     icon: 'walk-outline',
     title: 'Lightly Active',
-    description: 'Light exercise 1-3 days/week',
-    examples: 'Walking, light yoga',
+    description: 'Light exercise 1–3 days/week',
   },
   {
     id: 'moderately_active',
     icon: 'bicycle-outline',
     title: 'Moderately Active',
-    description: 'Moderate exercise 3-5 days/week',
-    examples: 'Gym sessions, running',
+    description: 'Moderate exercise 3–5 days/week',
   },
   {
     id: 'very_active',
     icon: 'fitness-outline',
     title: 'Very Active',
-    description: 'Hard exercise 6-7 days/week',
-    examples: 'Intense training, sports',
+    description: 'Hard exercise 6–7 days/week',
   },
   {
     id: 'extra_active',
     icon: 'flame-outline',
     title: 'Extra Active',
-    description: 'Very hard exercise + physical job',
-    examples: 'Athlete, construction worker',
+    description: 'Physical job + intense daily training',
   },
 ];
 
@@ -71,27 +65,56 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
       continueDisabled={!activityLevel}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-        <View className="gap-3">
+        <View style={{ gap: 10 }}>
           {OPTIONS.map((opt) => {
             const selected = activityLevel === opt.id;
             return (
               <Pressable
                 key={opt.id}
                 onPress={() => setActivityLevel(opt.id)}
-                className={`flex-row items-center p-3.5 rounded-2xl border-2 bg-surface-card ${
-                  selected ? 'border-primary-500' : 'border-surface-border'
-                }`}
+                style={({ pressed }) => ({
+                  backgroundColor: selected ? '#0f172a' : '#f5f5f7',
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  paddingHorizontal: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  opacity: pressed ? 0.85 : 1,
+                })}
               >
-                <View className="w-10 h-10 rounded-full bg-surface-secondary items-center justify-center mr-3">
-                  <Ionicons name={opt.icon} size={20} color={selected ? '#1f2028' : '#9a9caa'} />
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: selected ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.08)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name={opt.icon} size={20} color={selected ? '#ffffff' : '#0b1220'} />
                 </View>
-                <View className="flex-1">
-                  <Text className="text-base font-sans-semibold text-text">{opt.title}</Text>
-                  <Text className="text-xs text-text-secondary">
-                    {opt.description} · {opt.examples}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: '700',
+                      color: selected ? '#ffffff' : '#0b1220',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {opt.title}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: selected ? 'rgba(255,255,255,0.6)' : '#7687a2',
+                    }}
+                  >
+                    {opt.description}
                   </Text>
                 </View>
-                {selected && <Ionicons name="checkmark-circle" size={22} color="#1f2028" />}
               </Pressable>
             );
           })}
