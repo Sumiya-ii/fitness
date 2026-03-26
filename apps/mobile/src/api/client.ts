@@ -1,6 +1,13 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+// Paywall callback — registered from App.tsx after store is initialized.
+// Avoids a circular dependency between client ↔ subscription store.
+let _onPaywallRequired: (() => void) | null = null;
+export function setPaywallCallback(cb: () => void): void {
+  _onPaywallRequired = cb;
+}
+
 function normalizeBaseUrl(url: string): string {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
@@ -60,6 +67,9 @@ async function request<T>(
   const res = await fetch(url, init);
   if (!res.ok) {
     const text = await res.text();
+    if (res.status === 403 && text.includes('Pro subscription required')) {
+      _onPaywallRequired?.();
+    }
     throw new Error(`API error ${res.status}: ${text}`);
   }
   const contentType = res.headers.get('content-type');
@@ -99,6 +109,9 @@ export const api = {
     });
     if (!res.ok) {
       const text = await res.text();
+      if (res.status === 403 && text.includes('Pro subscription required')) {
+        _onPaywallRequired?.();
+      }
       throw new Error(`API error ${res.status}: ${text}`);
     }
     const contentType = res.headers.get('content-type');

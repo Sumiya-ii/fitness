@@ -8,6 +8,8 @@ interface SubscriptionState {
   currentPeriodEnd: string | null;
   /** True while an API fetch or RC check is in flight */
   isLoading: boolean;
+  /** Controls the global paywall modal overlay */
+  paywallVisible: boolean;
   /**
    * Fetches subscription status from the API (server is the source of truth
    * for gated endpoints). Call on app resume and after any purchase.
@@ -18,15 +20,23 @@ interface SubscriptionState {
    * Returns true if the 'pro' entitlement is active.
    */
   checkRcEntitlement: () => Promise<boolean>;
+  /** Show the paywall modal overlay. */
+  showPaywall: () => void;
+  /** Hide the paywall modal overlay. */
+  hidePaywall: () => void;
   /** Resets to default free state — call on sign-out. */
   reset: () => void;
 }
 
-const DEFAULT: Pick<SubscriptionState, 'tier' | 'status' | 'currentPeriodEnd' | 'isLoading'> = {
+const DEFAULT: Pick<
+  SubscriptionState,
+  'tier' | 'status' | 'currentPeriodEnd' | 'isLoading' | 'paywallVisible'
+> = {
   tier: 'free',
   status: 'active',
   currentPeriodEnd: null,
   isLoading: false,
+  paywallVisible: false,
 };
 
 export const useSubscriptionStore = create<SubscriptionState>((set) => ({
@@ -53,6 +63,9 @@ export const useSubscriptionStore = create<SubscriptionState>((set) => ({
       return false;
     }
   },
+
+  showPaywall: () => set({ paywallVisible: true }),
+  hidePaywall: () => set({ paywallVisible: false }),
 
   reset: () => set(DEFAULT),
 }));

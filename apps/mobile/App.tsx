@@ -7,8 +7,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { SyncBanner } from './src/components/ui/SyncBanner';
+import { PaywallModal } from './src/components/PaywallModal';
 import { useAuthStore } from './src/stores/auth.store';
 import { useSubscriptionStore } from './src/stores/subscription.store';
+import { setPaywallCallback } from './src/api/client';
 import { appNavigationTheme } from './src/theme';
 import * as Sentry from '@sentry/react-native';
 
@@ -27,6 +29,12 @@ export default Sentry.wrap(function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const fetchSubscriptionStatus = useSubscriptionStore((s) => s.fetchStatus);
   const resetSubscription = useSubscriptionStore((s) => s.reset);
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+
+  // Register paywall callback so the API client can trigger it on 403
+  useEffect(() => {
+    setPaywallCallback(showPaywall);
+  }, [showPaywall]);
 
   // Initialize RevenueCat SDK on first render
   useEffect(() => {
@@ -62,6 +70,7 @@ export default Sentry.wrap(function App() {
         <NavigationContainer theme={appNavigationTheme}>
           <RootNavigator />
           <SyncBanner />
+          <PaywallModal />
           <StatusBar style="dark" />
         </NavigationContainer>
       </SafeAreaProvider>
