@@ -4,8 +4,10 @@ import { Platform } from 'react-native';
 // Paywall callback — registered from App.tsx after store is initialized.
 // Avoids a circular dependency between client ↔ subscription store.
 let _onPaywallRequired: (() => void) | null = null;
-export function setPaywallCallback(cb: () => void): void {
+let _shouldSuppressPaywall: (() => boolean) | null = null;
+export function setPaywallCallback(cb: () => void, suppressCheck?: () => boolean): void {
   _onPaywallRequired = cb;
+  _shouldSuppressPaywall = suppressCheck ?? null;
 }
 
 function normalizeBaseUrl(url: string): string {
@@ -68,7 +70,11 @@ async function request<T>(
   if (!res.ok) {
     const text = await res.text();
     if (res.status === 403 && text.includes('Pro subscription required')) {
-      _onPaywallRequired?.();
+      // Don't show paywall if client already knows user is pro
+      // (server may lag behind due to webhook delay)
+      if (!_shouldSuppressPaywall?.()) {
+        _onPaywallRequired?.();
+      }
     }
     throw new Error(`API error ${res.status}: ${text}`);
   }
