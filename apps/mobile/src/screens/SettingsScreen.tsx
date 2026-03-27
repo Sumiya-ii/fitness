@@ -624,16 +624,14 @@ export function SettingsScreen() {
               iconColor="#7687a2"
               iconBg="bg-surface-secondary"
               label={t('settings.privacyPolicy')}
-              onPress={() =>
-                Alert.alert(t('settings.privacyPolicy'), t('settings.privacyPolicyNotice'))
-              }
+              onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/privacy')}
             />
             <SettingsRow
               icon="document-text-outline"
               iconColor="#7687a2"
               iconBg="bg-surface-secondary"
               label={t('settings.termsOfService')}
-              onPress={() => Alert.alert(t('settings.termsOfService'), t('settings.termsNotice'))}
+              onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/terms')}
               isLast
             />
           </SettingsSection>

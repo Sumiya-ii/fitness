@@ -381,9 +381,9 @@ export const en = {
     export: 'Export',
     exportSuccess: 'Export request submitted.',
     privacyPolicy: 'Privacy Policy',
-    privacyPolicyNotice: 'Privacy policy will be available at launch.',
+    privacyPolicyNotice: 'View our privacy policy at nexuskairos.com/coach/privacy',
     termsOfService: 'Terms of Service',
-    termsNotice: 'Terms of service will be available at launch.',
+    termsNotice: 'View our terms of service at nexuskairos.com/coach/terms',
     deleteAccount: 'Delete Account',
     deleteAccountDesc: 'Permanently remove your account and all data',
     deleteConfirm:

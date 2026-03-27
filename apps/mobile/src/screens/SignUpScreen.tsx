@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -265,8 +266,19 @@ export function SignUpScreen({ navigation }: Props) {
               </View>
               <Text className="flex-1 text-sm text-text-secondary">
                 {t('auth.agreePrefix')}{' '}
-                <Text className="text-primary-600">{t('auth.termsOfService')}</Text> {t('auth.and')}{' '}
-                <Text className="text-primary-600">{t('auth.privacyPolicy')}</Text>
+                <Text
+                  className="text-primary-600"
+                  onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/terms')}
+                >
+                  {t('auth.termsOfService')}
+                </Text>{' '}
+                {t('auth.and')}{' '}
+                <Text
+                  className="text-primary-600"
+                  onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/privacy')}
+                >
+                  {t('auth.privacyPolicy')}
+                </Text>
               </Text>
             </Pressable>
 
