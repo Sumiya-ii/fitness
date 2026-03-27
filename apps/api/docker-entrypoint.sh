@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-npm run db:migrate:deploy --workspace=apps/api
+npx prisma db push --schema=apps/api/prisma/schema.prisma
 
 echo "Starting API..."
 exec node apps/api/dist/main.js
