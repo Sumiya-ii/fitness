@@ -124,9 +124,9 @@ export function WeeklySummaryScreen() {
             <ProgressRing
               progress={adherenceProgress}
               size={140}
-              color="#0f172a"
-              gradientEnd="#1e293b"
-              backgroundColor="#c3cedf"
+              color="#ffffff"
+              gradientEnd="#a1a1aa"
+              backgroundColor="#3a3a3c"
               strokeWidth={12}
               centerLabel={`${d.adherenceScore}%`}
               centerSubLabel="adherence"
@@ -174,7 +174,7 @@ export function WeeklySummaryScreen() {
               <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4">
                 <View className="flex-row items-center gap-2 mb-2">
                   <View className="h-7 w-7 rounded-lg bg-primary-500/15 items-center justify-center">
-                    <Ionicons name="checkmark-circle-outline" size={14} color="#0f172a" />
+                    <Ionicons name="checkmark-circle-outline" size={14} color="#ffffff" />
                   </View>
                   <Text className="text-xs text-text-secondary font-sans-medium">Days Logged</Text>
                 </View>
@@ -204,14 +204,14 @@ export function WeeklySummaryScreen() {
                       }
                       size={20}
                       color={
-                        d.weightDelta < 0 ? '#0f172a' : d.weightDelta > 0 ? '#ea580c' : '#7687a2'
+                        d.weightDelta < 0 ? '#ffffff' : d.weightDelta > 0 ? '#ea580c' : '#71717a'
                       }
                     />
                     <Text
                       className="text-2xl font-sans-bold"
                       style={{
                         color:
-                          d.weightDelta < 0 ? '#0f172a' : d.weightDelta > 0 ? '#ea580c' : '#7687a2',
+                          d.weightDelta < 0 ? '#ffffff' : d.weightDelta > 0 ? '#ea580c' : '#71717a',
                       }}
                     >
                       {d.weightDelta > 0 ? '+' : ''}

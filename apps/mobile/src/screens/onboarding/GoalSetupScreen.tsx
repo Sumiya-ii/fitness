@@ -60,7 +60,7 @@ export function GoalSetupScreen({ navigation }: Props) {
                 key={option.id}
                 onPress={() => setGoalType(option.id)}
                 style={({ pressed }) => ({
-                  backgroundColor: selected ? '#0f172a' : '#f5f5f7',
+                  backgroundColor: selected ? '#ffffff' : '#1c1c1e',
                   borderRadius: 18,
                   paddingVertical: 20,
                   paddingHorizontal: 20,
@@ -75,19 +75,19 @@ export function GoalSetupScreen({ navigation }: Props) {
                     width: 44,
                     height: 44,
                     borderRadius: 12,
-                    backgroundColor: selected ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.08)',
+                    backgroundColor: selected ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.08)',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name={option.icon} size={22} color={selected ? '#ffffff' : '#0b1220'} />
+                  <Ionicons name={option.icon} size={22} color={selected ? '#000000' : '#ffffff'} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 16,
                       fontWeight: '700',
-                      color: selected ? '#ffffff' : '#0b1220',
+                      color: selected ? '#000000' : '#ffffff',
                       marginBottom: 3,
                     }}
                   >
@@ -96,7 +96,7 @@ export function GoalSetupScreen({ navigation }: Props) {
                   <Text
                     style={{
                       fontSize: 13,
-                      color: selected ? 'rgba(255,255,255,0.65)' : '#7687a2',
+                      color: selected ? 'rgba(0,0,0,0.65)' : '#71717a',
                       lineHeight: 18,
                     }}
                   >

@@ -1,39 +1,25 @@
 import * as Haptics from 'expo-haptics';
-import {
-  type ComponentProps,
-  forwardRef,
-  useCallback,
-} from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  type PressableProps,
-} from 'react-native';
+import { type ComponentProps, forwardRef, useCallback } from 'react';
+import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
 import { themeColors } from '../../theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    'bg-primary-500 active:bg-primary-600 shadow-sm shadow-black/20',
-  secondary:
-    'bg-surface-default active:bg-surface-secondary border border-surface-border',
-  outline:
-    'bg-transparent border-2 border-primary-200 active:bg-surface-secondary',
-  ghost:
-    'bg-transparent active:bg-surface-secondary',
-  danger:
-    'bg-danger active:bg-rose-700 shadow-sm shadow-rose-500/20',
+  primary: 'bg-white active:bg-zinc-200',
+  secondary: 'bg-surface-default active:bg-surface-secondary border border-surface-border',
+  outline: 'bg-transparent border-2 border-surface-border active:bg-surface-secondary',
+  ghost: 'bg-transparent active:bg-surface-secondary',
+  danger: 'bg-danger active:bg-red-700',
 };
 
 const variantTextClasses: Record<ButtonVariant, string> = {
-  primary: 'text-text-inverse',
+  primary: 'text-black',
   secondary: 'text-text',
   outline: 'text-text',
   ghost: 'text-text',
-  danger: 'text-text-inverse',
+  danger: 'text-white',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -43,11 +29,11 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const disabledVariantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-surface-muted active:bg-surface-muted',
+  primary: 'bg-surface-tertiary active:bg-surface-tertiary',
   secondary: 'bg-surface-secondary active:bg-surface-secondary',
   outline: 'border-surface-border bg-surface-secondary active:bg-surface-secondary',
   ghost: 'bg-surface-secondary active:bg-surface-secondary',
-  danger: 'bg-surface-muted active:bg-surface-muted',
+  danger: 'bg-surface-tertiary active:bg-surface-tertiary',
 };
 
 const disabledTextClasses: Record<ButtonVariant, string> = {
@@ -85,7 +71,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
       onPress,
       ...props
     },
-    ref
+    ref,
   ) => {
     const handlePress = useCallback(
       (e: Parameters<NonNullable<ComponentProps<typeof Pressable>['onPress']>>[0]) => {
@@ -93,7 +79,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.(e);
       },
-      [disabled, loading, onPress]
+      [disabled, loading, onPress],
     );
 
     const isDisabled = disabled || loading;
@@ -134,7 +120,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         )}
       </Pressable>
     );
-  }
+  },
 );
 
 Button.displayName = 'Button';

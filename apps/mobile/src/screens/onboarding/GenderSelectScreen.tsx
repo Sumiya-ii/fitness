@@ -43,7 +43,7 @@ export function GenderSelectScreen({ navigation }: Props) {
                 key={opt.id}
                 onPress={() => setGender(opt.id)}
                 style={({ pressed }) => ({
-                  backgroundColor: selected ? '#0f172a' : '#f5f5f7',
+                  backgroundColor: selected ? '#ffffff' : '#1c1c1e',
                   borderRadius: 18,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -55,7 +55,7 @@ export function GenderSelectScreen({ navigation }: Props) {
                   style={{
                     fontSize: 17,
                     fontWeight: selected ? '700' : '500',
-                    color: selected ? '#ffffff' : '#0b1220',
+                    color: selected ? '#000000' : '#ffffff',
                     letterSpacing: 0.1,
                   }}
                 >

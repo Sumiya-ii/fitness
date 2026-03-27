@@ -21,29 +21,29 @@ const ACTIONS = [
     key: 'camera',
     icon: 'camera' as const,
     labelKey: 'logging.photo' as const,
-    color: '#0f172a',
-    bg: '#f1f5f9',
+    color: '#ffffff',
+    bg: '#2c2c2e',
   },
   {
     key: 'voice',
     icon: 'mic' as const,
     labelKey: 'logging.voice' as const,
-    color: '#ea580c',
-    bg: '#fff7ed',
+    color: '#f97316',
+    bg: '#2c2c2e',
   },
   {
     key: 'barcode',
     icon: 'barcode-outline' as const,
     labelKey: 'logging.scan' as const,
-    color: '#16a34a',
-    bg: '#f0fdf4',
+    color: '#22c55e',
+    bg: '#2c2c2e',
   },
   {
     key: 'quick',
     icon: 'flash' as const,
     labelKey: 'logging.quick' as const,
-    color: '#7c3aed',
-    bg: '#faf5ff',
+    color: '#a78bfa',
+    bg: '#2c2c2e',
   },
 ];
 
@@ -130,13 +130,17 @@ export function LogScreen() {
           <Animated.View entering={FadeInDown.duration(300)} className="mx-5 mt-3 mb-5">
             <Pressable
               onPress={() => navigation.navigate('TextSearch')}
-              className="bg-white rounded-2xl flex-row items-center px-4 py-3.5 border border-surface-border"
+              className="rounded-2xl flex-row items-center px-4 py-3.5 border border-surface-border"
+              style={{ backgroundColor: '#1c1c1e' }}
             >
-              <Ionicons name="search" size={20} color="#94a3b8" />
+              <Ionicons name="search" size={20} color="#71717a" />
               <Text className="flex-1 ml-3 text-base text-text-tertiary font-sans">
                 {t('logging.findFoods')}
               </Text>
-              <View className="h-7 px-2.5 rounded-lg bg-surface-secondary items-center justify-center">
+              <View
+                className="h-7 px-2.5 rounded-lg items-center justify-center"
+                style={{ backgroundColor: '#2c2c2e' }}
+              >
                 <Text className="text-xs font-sans-medium text-text-tertiary">
                   {t('logging.textSearch')}
                 </Text>
@@ -153,7 +157,7 @@ export function LogScreen() {
               <Pressable
                 key={action.key}
                 onPress={() => void handleAction(action.key)}
-                className="flex-1 items-center py-3 rounded-2xl bg-white border border-surface-border"
+                className="flex-1 items-center py-3 rounded-2xl bg-surface-card border border-surface-border"
               >
                 <View
                   className="h-11 w-11 rounded-xl items-center justify-center mb-1.5"
@@ -177,20 +181,20 @@ export function LogScreen() {
                   .getParent<NativeStackNavigationProp<MainStackParamList>>()
                   ?.navigate('WorkoutHome');
               }}
-              className="bg-primary-500 rounded-2xl flex-row items-center px-4 py-3.5"
+              className="bg-surface-card rounded-2xl flex-row items-center px-4 py-3.5"
             >
-              <View className="h-10 w-10 rounded-xl bg-white/20 items-center justify-center mr-3">
+              <View className="h-10 w-10 rounded-xl bg-surface-secondary items-center justify-center mr-3">
                 <Ionicons name="barbell-outline" size={22} color="#ffffff" />
               </View>
               <View className="flex-1">
                 <Text className="text-white font-sans-semibold text-sm">
                   {t('workout.logWorkout')}
                 </Text>
-                <Text className="text-white/60 font-sans text-xs mt-0.5">
+                <Text className="text-zinc-500 font-sans text-xs mt-0.5">
                   {t('workout.logWorkoutDesc')}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.5)" />
+              <Ionicons name="chevron-forward" size={18} color="#71717a" />
             </Pressable>
           </Animated.View>
 
@@ -201,18 +205,18 @@ export function LogScreen() {
           >
             <Pressable
               onPress={() => navigation.navigate('MealTemplates')}
-              className="flex-1 bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
+              className="flex-1 rounded-2xl flex-row items-center px-4 py-3 border border-surface-border bg-surface-card"
             >
-              <Ionicons name="bookmark-outline" size={18} color="#51617a" />
+              <Ionicons name="bookmark-outline" size={18} color="#a1a1aa" />
               <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">
                 {t('logging.myMeals')}
               </Text>
             </Pressable>
             <Pressable
               onPress={() => navigation.navigate('FavoritesRecents')}
-              className="flex-1 bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
+              className="flex-1 rounded-2xl flex-row items-center px-4 py-3 border border-surface-border bg-surface-card"
             >
-              <Ionicons name="heart-outline" size={18} color="#51617a" />
+              <Ionicons name="heart-outline" size={18} color="#a1a1aa" />
               <Text className="ml-2.5 text-sm font-sans-medium text-text-secondary">
                 {t('logging.favorites')}
               </Text>
@@ -230,7 +234,7 @@ export function LogScreen() {
                 {Array.from({ length: 4 }).map((_, i) => (
                   <View
                     key={`sk-${i}`}
-                    className="bg-white rounded-2xl p-3.5 flex-row items-center gap-3 border border-surface-border"
+                    className="rounded-2xl p-3.5 flex-row items-center gap-3 border border-surface-border bg-surface-card"
                   >
                     <SkeletonLoader variant="rect" width={40} height={40} borderRadius={12} />
                     <View className="flex-1 gap-2">
@@ -241,8 +245,8 @@ export function LogScreen() {
                 ))}
               </View>
             ) : recents.length === 0 ? (
-              <View className="bg-white rounded-2xl p-6 items-center border border-surface-border">
-                <Ionicons name="time-outline" size={28} color="#c3cedf" />
+              <View className="rounded-2xl p-6 items-center border border-surface-border bg-surface-card">
+                <Ionicons name="time-outline" size={28} color="#3a3a3c" />
                 <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
                   {t('logging.noRecents')}
                 </Text>
@@ -259,7 +263,7 @@ export function LogScreen() {
                       <Pressable
                         onPress={() => relogItem(item)}
                         disabled={isLogging}
-                        className="bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
+                        className="rounded-2xl flex-row items-center px-4 py-3 border border-surface-border bg-surface-card"
                         style={isLogging ? { opacity: 0.5 } : undefined}
                       >
                         {/* Calories badge */}
@@ -283,11 +287,11 @@ export function LogScreen() {
                         </View>
 
                         {/* Add icon */}
-                        <View className="h-8 w-8 rounded-full bg-primary-50 items-center justify-center">
+                        <View className="h-8 w-8 rounded-full bg-surface-secondary items-center justify-center">
                           {isLogging ? (
-                            <Ionicons name="hourglass-outline" size={16} color="#0f172a" />
+                            <Ionicons name="hourglass-outline" size={16} color="#ffffff" />
                           ) : (
-                            <Ionicons name="add" size={18} color="#0f172a" />
+                            <Ionicons name="add" size={18} color="#ffffff" />
                           )}
                         </View>
                       </Pressable>

@@ -61,7 +61,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
               accessibilityLabel={label}
             >
               <View style={styles.logButton}>
-                <Ionicons name="add" size={24} color="#ffffff" />
+                <Ionicons name="add" size={24} color="#000000" />
               </View>
             </Pressable>
           );
@@ -79,9 +79,9 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             <Ionicons
               name={isFocused ? icons.active : icons.inactive}
               size={22}
-              color={isFocused ? '#0f172a' : '#94a3b8'}
+              color={isFocused ? '#ffffff' : '#71717a'}
             />
-            <Text style={[styles.label, { color: isFocused ? '#0f172a' : '#94a3b8' }]}>
+            <Text style={[styles.label, { color: isFocused ? '#ffffff' : '#71717a' }]}>
               {label}
             </Text>
           </Pressable>
@@ -94,18 +94,10 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0a0a0a',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.08)',
+    borderTopColor: 'rgba(255,255,255,0.08)',
     paddingTop: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: -2 },
-      },
-    }),
   },
   tabItem: {
     flex: 1,
@@ -123,7 +115,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,

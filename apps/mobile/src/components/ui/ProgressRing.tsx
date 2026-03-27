@@ -1,11 +1,7 @@
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import Animated, {
-  useAnimatedProps,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedProps, useSharedValue, withSpring } from 'react-native-reanimated';
 import { themeColors } from '../../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -31,9 +27,9 @@ export interface ProgressRingProps {
 export function ProgressRing({
   progress,
   size = 120,
-  color = themeColors.primary['500'],
+  color = '#ffffff',
   gradientEnd,
-  backgroundColor = themeColors.surface.border,
+  backgroundColor = '#2c2c2e',
   strokeWidth = 10,
   label,
   centerLabel,
@@ -107,15 +103,12 @@ export function ProgressRing({
             justifyContent: 'center',
           }}
         >
-          <Text
-            className="font-sans-bold text-text"
-            style={{ fontSize: size * 0.2 }}
-          >
+          <Text className="font-sans-bold text-white" style={{ fontSize: size * 0.2 }}>
             {centerText}
           </Text>
           {centerSubLabel ? (
             <Text
-              className="font-sans-medium text-text-secondary"
+              className="font-sans-medium text-zinc-400"
               style={{ fontSize: size * 0.08, marginTop: 2 }}
             >
               {centerSubLabel}
@@ -123,7 +116,7 @@ export function ProgressRing({
           ) : null}
           {centerCaption ? (
             <Text
-              className="font-sans-medium text-text-tertiary"
+              className="font-sans-medium text-zinc-500"
               style={{ fontSize: size * 0.07, marginTop: 1 }}
             >
               {centerCaption}
@@ -132,9 +125,7 @@ export function ProgressRing({
         </View>
       </View>
       {label ? (
-        <Text className="mt-2 text-sm font-sans-medium text-text-secondary">
-          {label}
-        </Text>
+        <Text className="mt-2 text-sm font-sans-medium text-text-secondary">{label}</Text>
       ) : null}
     </View>
   );

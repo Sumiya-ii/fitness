@@ -255,8 +255,8 @@ export function WelcomeScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
       {/* Language toggle */}
       <View style={{ position: 'absolute', top: 56, right: 20, zIndex: 10 }}>
@@ -266,9 +266,9 @@ export function WelcomeScreen({ navigation }: Props) {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 6,
-            backgroundColor: 'rgba(255,255,255,0.95)',
+            backgroundColor: 'rgba(28,28,30,0.95)',
             borderWidth: 1,
-            borderColor: '#dde5f0',
+            borderColor: '#2c2c2e',
             borderRadius: 100,
             paddingHorizontal: 12,
             paddingVertical: 7,
@@ -284,7 +284,7 @@ export function WelcomeScreen({ navigation }: Props) {
             style={{
               fontSize: 12,
               fontWeight: '700',
-              color: '#0b1220',
+              color: '#ffffff',
               letterSpacing: 0.5,
             }}
           >
@@ -304,7 +304,7 @@ export function WelcomeScreen({ navigation }: Props) {
           style={{
             fontSize: 36,
             fontWeight: '800',
-            color: '#0b1220',
+            color: '#ffffff',
             textAlign: 'center',
             lineHeight: 44,
             marginBottom: 28,
@@ -316,7 +316,7 @@ export function WelcomeScreen({ navigation }: Props) {
         <Pressable
           onPress={() => navigation.navigate('SignUp')}
           style={({ pressed }) => ({
-            backgroundColor: '#0f172a',
+            backgroundColor: '#ffffff',
             borderRadius: 100,
             alignItems: 'center',
             justifyContent: 'center',
@@ -329,7 +329,7 @@ export function WelcomeScreen({ navigation }: Props) {
             style={{
               fontSize: 17,
               fontWeight: '700',
-              color: '#ffffff',
+              color: '#000000',
               letterSpacing: 0.2,
             }}
           >
@@ -341,9 +341,9 @@ export function WelcomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('SignIn')}
           style={{ alignItems: 'center', paddingVertical: 8 }}
         >
-          <Text style={{ fontSize: 15, color: '#51617a' }}>
+          <Text style={{ fontSize: 15, color: '#a1a1aa' }}>
             {t('welcome.alreadyHaveAccount')}{' '}
-            <Text style={{ fontWeight: '700', color: '#0b1220' }}>{t('welcome.signIn')}</Text>
+            <Text style={{ fontWeight: '700', color: '#ffffff' }}>{t('welcome.signIn')}</Text>
           </Text>
         </Pressable>
       </View>

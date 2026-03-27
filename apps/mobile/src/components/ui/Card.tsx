@@ -1,11 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
 import { Pressable, View, type ViewProps } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -42,8 +38,7 @@ export function Card({
     transform: [{ scale: scale.value }],
   }));
 
-  const baseClasses =
-    'rounded-3xl bg-surface-default border border-surface-border p-4 shadow-sm shadow-black/5';
+  const baseClasses = 'rounded-3xl bg-surface-default border border-surface-border p-4';
 
   if (pressable && onPress) {
     return (

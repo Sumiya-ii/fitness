@@ -80,9 +80,10 @@ export function MealTemplatesScreen() {
     <Pressable
       onPress={() => navigation.navigate('LogTemplate', { templateId: item.id })}
       onLongPress={() => handleDelete(item)}
-      className="bg-white rounded-3xl p-4 mb-3"
+      className="rounded-3xl p-4 mb-3"
       style={{
-        shadowColor: '#0b1220',
+        backgroundColor: '#1c1c1e',
+        shadowColor: '#000000',
         shadowOpacity: 0.05,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: 3 },
@@ -95,10 +96,10 @@ export function MealTemplatesScreen() {
             <Ionicons name="restaurant" size={20} color="#3b5bdb" />
           </View>
           <View className="flex-1">
-            <Text className="text-base font-sans-bold text-[#0b1220]" numberOfLines={1}>
+            <Text className="text-base font-sans-bold text-white" numberOfLines={1}>
               {item.name}
             </Text>
-            <Text className="text-xs text-[#9aabbf] font-sans-medium mt-0.5">
+            <Text className="text-xs text-[#71717a] font-sans-medium mt-0.5">
               {item.mealType ? MEAL_TYPE_LABELS[item.mealType] : 'Any meal'} ·{' '}
               {estimatedCalories(item)}
             </Text>
@@ -114,7 +115,7 @@ export function MealTemplatesScreen() {
       {/* Food items preview */}
       <View className="ml-12">
         {item.items.slice(0, 3).map((food, idx) => (
-          <Text key={food.id} className="text-sm text-[#6b7a90] font-sans-medium" numberOfLines={1}>
+          <Text key={food.id} className="text-sm text-[#71717a] font-sans-medium" numberOfLines={1}>
             {food.quantity}x {food.servingLabel} {food.foodName}
             {idx === 2 && item.items.length > 3 ? ` +${item.items.length - 3} more` : ''}
           </Text>
@@ -124,8 +125,8 @@ export function MealTemplatesScreen() {
       {/* Usage stats */}
       {item.usageCount > 0 && (
         <View className="flex-row items-center mt-2 ml-12">
-          <Ionicons name="repeat" size={12} color="#9aabbf" />
-          <Text className="text-xs text-[#9aabbf] font-sans-medium ml-1">
+          <Ionicons name="repeat" size={12} color="#71717a" />
+          <Text className="text-xs text-[#71717a] font-sans-medium ml-1">
             Used {item.usageCount} time{item.usageCount !== 1 ? 's' : ''}
           </Text>
         </View>
@@ -134,15 +135,15 @@ export function MealTemplatesScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f4f7fb]" edges={['top']}>
-      <View className="flex-row items-center border-b border-[#e8edf4] px-4 py-3">
+    <SafeAreaView className="flex-1 bg-black" edges={['top']}>
+      <View className="flex-row items-center border-b border-[#2c2c2e] px-4 py-3">
         <BackButton />
-        <Text className="ml-3 text-lg font-sans-semibold text-[#0b1220]">My Meals</Text>
+        <Text className="ml-3 text-lg font-sans-semibold text-white">My Meals</Text>
       </View>
 
       {loading ? (
         <View className="flex-1 items-center justify-center py-16">
-          <ActivityIndicator size="large" color="#0b1220" />
+          <ActivityIndicator size="large" color="#ffffff" />
         </View>
       ) : templates.length === 0 ? (
         <EmptyState
@@ -157,7 +158,7 @@ export function MealTemplatesScreen() {
           renderItem={renderTemplate}
           contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0b1220" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffffff" />
           }
         />
       )}

@@ -58,7 +58,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -160,7 +160,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
             style={{
               fontSize: 18,
               fontWeight: '800',
-              color: '#0b1220',
+              color: '#ffffff',
               marginBottom: 16,
             }}
           >
@@ -174,7 +174,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: '#f9fafb',
+                  backgroundColor: '#1c1c1e',
                   borderRadius: 16,
                   padding: 14,
                   gap: 12,
@@ -194,11 +194,11 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
-                    style={{ fontSize: 14, fontWeight: '700', color: '#0b1220', marginBottom: 2 }}
+                    style={{ fontSize: 14, fontWeight: '700', color: '#ffffff', marginBottom: 2 }}
                   >
                     {f.title}
                   </Text>
-                  <Text style={{ fontSize: 12, color: '#7687a2', lineHeight: 17 }}>{f.desc}</Text>
+                  <Text style={{ fontSize: 12, color: '#71717a', lineHeight: 17 }}>{f.desc}</Text>
                 </View>
                 <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
               </View>
@@ -208,21 +208,21 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           {/* Social proof */}
           <View
             style={{
-              backgroundColor: '#f0fdf4',
+              backgroundColor: '#052e16',
               borderRadius: 16,
               padding: 16,
               marginTop: 20,
               borderWidth: 1,
-              borderColor: '#bbf7d0',
+              borderColor: '#14532d',
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <Text style={{ fontSize: 16 }}>⭐⭐⭐⭐⭐</Text>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#15803d' }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#4ade80' }}>
                 4.9 · 2,400+ reviews
               </Text>
             </View>
-            <Text style={{ fontSize: 13, color: '#166534', lineHeight: 19, fontStyle: 'italic' }}>
+            <Text style={{ fontSize: 13, color: '#86efac', lineHeight: 19, fontStyle: 'italic' }}>
               "Lost 8kg in 3 months. The AI photo logging changed everything — I actually log every
               meal now."
             </Text>
@@ -239,16 +239,16 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           paddingHorizontal: 24,
           paddingBottom: 40,
           paddingTop: 16,
-          backgroundColor: '#ffffff',
+          backgroundColor: '#000000',
           borderTopWidth: 1,
-          borderTopColor: '#f1f5f9',
+          borderTopColor: '#2c2c2e',
           gap: 12,
         }}
       >
         <Pressable
           onPress={handleStartTrial}
           style={({ pressed }) => ({
-            backgroundColor: '#0f172a',
+            backgroundColor: '#ffffff',
             borderRadius: 100,
             alignItems: 'center',
             justifyContent: 'center',
@@ -256,10 +256,10 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
             opacity: pressed ? 0.88 : 1,
           })}
         >
-          <Text style={{ fontSize: 17, fontWeight: '700', color: '#ffffff' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: '#000000' }}>
             Start 7-Day Free Trial
           </Text>
-          <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+          <Text style={{ fontSize: 11, color: 'rgba(0,0,0,0.5)', marginTop: 2 }}>
             Cancel anytime before trial ends
           </Text>
         </Pressable>
@@ -268,7 +268,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           onPress={handleContinueFree}
           style={{ alignItems: 'center', paddingVertical: 10 }}
         >
-          <Text style={{ fontSize: 14, color: '#7687a2', fontWeight: '500' }}>
+          <Text style={{ fontSize: 14, color: '#71717a', fontWeight: '500' }}>
             Continue with free plan
           </Text>
         </Pressable>

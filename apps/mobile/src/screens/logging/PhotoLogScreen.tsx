@@ -100,8 +100,9 @@ function InputModal({
       <Pressable onPress={onCancel} className="flex-1 bg-black/40 items-center justify-center px-8">
         <Pressable
           onPress={() => {}}
-          className="bg-white w-full rounded-2xl p-5"
+          className="w-full rounded-2xl p-5"
           style={{
+            backgroundColor: '#1c1c1e',
             shadowColor: '#000',
             shadowOpacity: 0.15,
             shadowRadius: 20,

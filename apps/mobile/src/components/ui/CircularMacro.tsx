@@ -1,11 +1,7 @@
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import Animated, {
-  useAnimatedProps,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedProps, useSharedValue, withSpring } from 'react-native-reanimated';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -81,25 +77,18 @@ export function CircularMacro({
             justifyContent: 'center',
           }}
         >
-          <Text
-            className="font-sans-bold text-text"
-            style={{ fontSize: size * 0.2 }}
-          >
+          <Text className="font-sans-bold text-white" style={{ fontSize: size * 0.2 }}>
             {remaining}
           </Text>
-          <Text
-            className="text-text-secondary"
-            style={{ fontSize: size * 0.12 }}
-          >
+          <Text className="text-zinc-400" style={{ fontSize: size * 0.12 }}>
             {unit}
           </Text>
         </View>
       </View>
-      <Text className="mt-1.5 text-xs font-sans-medium text-text-secondary">
-        {label}
-      </Text>
-      <Text className="text-xs text-text-tertiary">
-        {current}/{target}{unit}
+      <Text className="mt-1.5 text-xs font-sans-medium text-zinc-400">{label}</Text>
+      <Text className="text-xs text-zinc-500">
+        {current}/{target}
+        {unit}
       </Text>
     </View>
   );

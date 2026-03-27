@@ -78,7 +78,7 @@ export function SignInScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -100,14 +100,14 @@ export function SignInScreen({ navigation }: Props) {
               <Pressable
                 onPress={handleGoogle}
                 disabled={isLoading}
-                className="flex-row items-center justify-center bg-white border border-surface-border rounded-2xl py-4 active:opacity-80"
-                style={{ opacity: isLoading ? 0.7 : 1 }}
+                className="flex-row items-center justify-center border border-surface-border rounded-2xl py-4 active:opacity-80"
+                style={{ backgroundColor: '#1c1c1e', opacity: isLoading ? 0.7 : 1 }}
               >
                 {loading === 'google' ? (
-                  <ActivityIndicator size="small" color="#0f172a" />
+                  <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <>
-                    <Ionicons name="logo-google" size={20} color="#0f172a" />
+                    <Ionicons name="logo-google" size={20} color="#ffffff" />
                     <Text className="ml-3 text-base font-sans-semibold text-text">
                       Continue with Google
                     </Text>
@@ -120,14 +120,14 @@ export function SignInScreen({ navigation }: Props) {
                   onPress={handleApple}
                   disabled={isLoading}
                   className="flex-row items-center justify-center rounded-2xl py-4 active:opacity-80"
-                  style={{ backgroundColor: '#0f172a', opacity: isLoading ? 0.7 : 1 }}
+                  style={{ backgroundColor: '#ffffff', opacity: isLoading ? 0.7 : 1 }}
                 >
                   {loading === 'apple' ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
+                    <ActivityIndicator size="small" color="#000000" />
                   ) : (
                     <>
-                      <Ionicons name="logo-apple" size={20} color="#ffffff" />
-                      <Text className="ml-3 text-base font-sans-semibold text-white">
+                      <Ionicons name="logo-apple" size={20} color="#000000" />
+                      <Text className="ml-3 text-base font-sans-semibold text-black">
                         Continue with Apple
                       </Text>
                     </>
@@ -175,7 +175,7 @@ export function SignInScreen({ navigation }: Props) {
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={22}
-                    color="#7687a2"
+                    color="#71717a"
                   />
                 </Pressable>
               }

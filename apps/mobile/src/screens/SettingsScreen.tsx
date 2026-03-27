@@ -50,7 +50,7 @@ function Pill({
   onChange: (v: string) => void;
 }) {
   return (
-    <View className="flex-row bg-surface-tertiary rounded-xl p-[3px]">
+    <View className="flex-row rounded-xl p-[3px]" style={{ backgroundColor: '#2c2c2e' }}>
       {options.map((opt) => {
         const active = value === opt.value;
         return (
@@ -60,10 +60,11 @@ function Pill({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onChange(opt.value);
             }}
-            className={`px-4 py-1.5 rounded-[10px] ${active ? 'bg-surface-card shadow-sm' : ''}`}
+            className={`px-4 py-1.5 rounded-[10px]`}
+            style={active ? { backgroundColor: '#48484a' } : undefined}
           >
             <Text
-              className={`text-[13px] font-sans-semibold ${active ? 'text-text' : 'text-text-tertiary'}`}
+              className={`text-[13px] font-sans-semibold ${active ? 'text-white' : 'text-zinc-500'}`}
             >
               {opt.label}
             </Text>
@@ -114,7 +115,7 @@ function Row({
         <Text className="text-[13px] text-text-tertiary font-sans-medium mr-1">{value}</Text>
       )}
       {right}
-      {onPress && !right && <Ionicons name="chevron-forward" size={16} color="#c3cedf" />}
+      {onPress && !right && <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />}
     </Pressable>
   );
 }
@@ -310,7 +311,7 @@ export function SettingsScreen() {
                   {profile?.displayName ?? t('settings.user')}
                 </Text>
                 {isPro && (
-                  <View className="bg-primary-500 rounded-full px-2 py-0.5">
+                  <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: '#2c2c2e' }}>
                     <Text className="text-[10px] font-sans-bold text-cyan-400">PRO</Text>
                   </View>
                 )}
@@ -319,7 +320,7 @@ export function SettingsScreen() {
                 {t('settings.account')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+            <Ionicons name="chevron-forward" size={18} color="#3a3a3c" />
           </Pressable>
 
           {/* ── Name edit overlay ── */}
@@ -333,14 +334,14 @@ export function SettingsScreen() {
                   autoFocus
                   onSubmitEditing={handleSaveName}
                   returnKeyType="done"
-                  placeholderTextColor="#9a9caa"
+                  placeholderTextColor="#71717a"
                   placeholder={t('settings.yourName')}
                 />
                 <Pressable onPress={handleSaveName}>
                   <Ionicons name="checkmark-circle" size={26} color="#16a34a" />
                 </Pressable>
                 <Pressable onPress={() => setEditingName(false)}>
-                  <Ionicons name="close-circle" size={26} color="#c3cedf" />
+                  <Ionicons name="close-circle" size={26} color="#3a3a3c" />
                 </Pressable>
               </View>
             </Section>
@@ -356,7 +357,7 @@ export function SettingsScreen() {
               className="mb-3"
             >
               <LinearGradient
-                colors={['#0f172a', '#1e293b']}
+                colors={['#2c2c2e', '#3a3a3c']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 className="rounded-2xl px-4 py-4 flex-row items-center"
@@ -366,9 +367,9 @@ export function SettingsScreen() {
                   <Text className="text-[15px] font-sans-bold text-white">
                     {t('settings.upgradeToPro')}
                   </Text>
-                  <Text className="text-xs text-slate-400 mt-0.5">{t('settings.unlockDesc')}</Text>
+                  <Text className="text-xs text-zinc-500 mt-0.5">{t('settings.unlockDesc')}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#475569" />
+                <Ionicons name="chevron-forward" size={16} color="#71717a" />
               </LinearGradient>
             </Pressable>
           )}
@@ -376,7 +377,7 @@ export function SettingsScreen() {
           {/* ── Preferences ── */}
           <Section>
             <View className="flex-row items-center py-[14px]">
-              <Ionicons name="language-outline" size={20} color="#7687a2" style={{ width: 28 }} />
+              <Ionicons name="language-outline" size={20} color="#71717a" style={{ width: 28 }} />
               <Text className="flex-1 text-[15px] font-sans-medium text-text">
                 {t('settings.language')}
               </Text>
@@ -391,7 +392,7 @@ export function SettingsScreen() {
             </View>
             <Divider />
             <View className="flex-row items-center py-[14px]">
-              <Ionicons name="resize-outline" size={20} color="#7687a2" style={{ width: 28 }} />
+              <Ionicons name="resize-outline" size={20} color="#71717a" style={{ width: 28 }} />
               <Text className="flex-1 text-[15px] font-sans-medium text-text">
                 {t('settings.units')}
               </Text>
@@ -422,7 +423,7 @@ export function SettingsScreen() {
                   <View
                     className={`h-2 w-2 rounded-full ${telegramStatus?.linked ? 'bg-green-500' : 'bg-surface-muted'}`}
                   />
-                  <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
+                  <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />
                 </View>
               }
               onPress={() => navigate('TelegramConnect')}
@@ -462,7 +463,7 @@ export function SettingsScreen() {
                 <Text className="text-[13px] text-red-400 font-sans-medium mr-1">
                   {t('settings.openSettings')}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
+                <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />
               </Pressable>
             ) : osPermission === 'undetermined' ? (
               <Pressable
@@ -485,12 +486,12 @@ export function SettingsScreen() {
                 <Text className="text-[13px] text-primary-500 font-sans-medium mr-1">
                   {t('settings.turnOnNotifications')}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
+                <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />
               </Pressable>
             ) : (
               <>
                 <View className="flex-row items-center py-[14px]">
-                  <Ionicons name="sunny-outline" size={20} color="#7687a2" style={{ width: 28 }} />
+                  <Ionicons name="sunny-outline" size={20} color="#71717a" style={{ width: 28 }} />
                   <Text className="flex-1 text-[15px] font-sans-medium text-text">
                     {t('settings.morningReminder')}
                   </Text>
@@ -500,13 +501,13 @@ export function SettingsScreen() {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       updateNotifPref('morningReminder', v);
                     }}
-                    trackColor={{ false: '#dde5f0', true: '#0f172a' }}
+                    trackColor={{ false: '#3a3a3c', true: '#ffffff' }}
                     thumbColor="#ffffff"
                   />
                 </View>
                 <Divider />
                 <View className="flex-row items-center py-[14px]">
-                  <Ionicons name="moon-outline" size={20} color="#7687a2" style={{ width: 28 }} />
+                  <Ionicons name="moon-outline" size={20} color="#71717a" style={{ width: 28 }} />
                   <Text className="flex-1 text-[15px] font-sans-medium text-text">
                     {t('settings.eveningReminder')}
                   </Text>
@@ -516,7 +517,7 @@ export function SettingsScreen() {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       updateNotifPref('eveningReminder', v);
                     }}
-                    trackColor={{ false: '#dde5f0', true: '#0f172a' }}
+                    trackColor={{ false: '#3a3a3c', true: '#ffffff' }}
                     thumbColor="#ffffff"
                   />
                 </View>

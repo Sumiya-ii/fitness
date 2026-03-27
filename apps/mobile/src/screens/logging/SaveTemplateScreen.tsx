@@ -55,33 +55,34 @@ export function SaveTemplateScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f4f7fb]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-black" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-row items-center border-b border-[#e8edf4] px-4 py-3">
+        <View className="flex-row items-center border-b border-[#2c2c2e] px-4 py-3">
           <BackButton />
-          <Text className="ml-3 text-lg font-sans-semibold text-[#0b1220]">
+          <Text className="ml-3 text-lg font-sans-semibold text-white">
             {t('template.saveAsTemplate')}
           </Text>
         </View>
 
         <ScrollView className="flex-1 px-5 pt-6" keyboardShouldPersistTaps="handled">
           {/* Template name */}
-          <Text className="text-sm font-sans-semibold text-[#6b7a90] uppercase tracking-wider mb-2">
+          <Text className="text-sm font-sans-semibold text-[#71717a] uppercase tracking-wider mb-2">
             {t('template.templateName')}
           </Text>
           <TextInput
             value={name}
             onChangeText={setName}
             placeholder={t('template.templateNamePlaceholder')}
-            placeholderTextColor="#9aabbf"
+            placeholderTextColor="#71717a"
             maxLength={200}
             autoFocus
-            className="bg-white rounded-2xl px-4 py-4 text-base font-sans-medium text-[#0b1220] mb-6"
+            className="rounded-2xl px-4 py-4 text-base font-sans-medium text-white mb-6"
             style={{
-              shadowColor: '#0b1220',
+              backgroundColor: '#1c1c1e',
+              shadowColor: '#000000',
               shadowOpacity: 0.05,
               shadowRadius: 8,
               shadowOffset: { width: 0, height: 2 },
@@ -90,7 +91,7 @@ export function SaveTemplateScreen() {
           />
 
           {/* Meal type */}
-          <Text className="text-sm font-sans-semibold text-[#6b7a90] uppercase tracking-wider mb-2">
+          <Text className="text-sm font-sans-semibold text-[#71717a] uppercase tracking-wider mb-2">
             {t('template.defaultMealType')}
           </Text>
           <View className="flex-row gap-2 mb-6">
@@ -99,10 +100,10 @@ export function SaveTemplateScreen() {
                 key={mt.key}
                 onPress={() => setMealType(mealType === mt.key ? undefined : mt.key)}
                 className={`flex-1 items-center py-3 rounded-2xl ${
-                  mealType === mt.key ? 'bg-[#0f172a]' : 'bg-white'
+                  mealType === mt.key ? 'bg-white' : 'bg-[#1c1c1e]'
                 }`}
                 style={{
-                  shadowColor: '#0b1220',
+                  shadowColor: '#000000',
                   shadowOpacity: 0.05,
                   shadowRadius: 8,
                   shadowOffset: { width: 0, height: 2 },
@@ -112,11 +113,11 @@ export function SaveTemplateScreen() {
                 <Ionicons
                   name={mt.icon}
                   size={18}
-                  color={mealType === mt.key ? '#ffffff' : '#6b7a90'}
+                  color={mealType === mt.key ? '#000000' : '#71717a'}
                 />
                 <Text
                   className={`text-xs font-sans-medium mt-1 ${
-                    mealType === mt.key ? 'text-white' : 'text-[#6b7a90]'
+                    mealType === mt.key ? 'text-black' : 'text-[#71717a]'
                   }`}
                 >
                   {t(`mealTypes.${mt.key}`)}
@@ -126,13 +127,14 @@ export function SaveTemplateScreen() {
           </View>
 
           {/* Items preview */}
-          <Text className="text-sm font-sans-semibold text-[#6b7a90] uppercase tracking-wider mb-2">
+          <Text className="text-sm font-sans-semibold text-[#71717a] uppercase tracking-wider mb-2">
             {t('template.itemsInMeal')}
           </Text>
           <View
-            className="bg-white rounded-2xl p-4"
+            className="rounded-2xl p-4"
             style={{
-              shadowColor: '#0b1220',
+              backgroundColor: '#1c1c1e',
+              shadowColor: '#000000',
               shadowOpacity: 0.05,
               shadowRadius: 8,
               shadowOffset: { width: 0, height: 2 },
@@ -143,12 +145,12 @@ export function SaveTemplateScreen() {
               <View
                 key={`item-${idx}`}
                 className="flex-row items-center py-2"
-                style={idx > 0 ? { borderTopWidth: 1, borderTopColor: '#f0f4f9' } : undefined}
+                style={idx > 0 ? { borderTopWidth: 1, borderTopColor: '#2c2c2e' } : undefined}
               >
-                <View className="h-8 w-8 rounded-xl bg-[#f4f7fb] items-center justify-center mr-3">
+                <View className="h-8 w-8 rounded-xl bg-black items-center justify-center mr-3">
                   <Text style={{ fontSize: 16 }}>🍽️</Text>
                 </View>
-                <Text className="text-sm font-sans-medium text-[#0b1220] flex-1" numberOfLines={1}>
+                <Text className="text-sm font-sans-medium text-white flex-1" numberOfLines={1}>
                   {itemName}
                 </Text>
               </View>
@@ -162,10 +164,10 @@ export function SaveTemplateScreen() {
             onPress={handleSave}
             disabled={saving || !name.trim()}
             className={`rounded-2xl py-4 items-center ${
-              saving || !name.trim() ? 'bg-[#c3cedf]' : 'bg-[#0f172a]'
+              saving || !name.trim() ? 'bg-[#3a3a3c]' : 'bg-white'
             }`}
             style={{
-              shadowColor: '#0f172a',
+              shadowColor: '#000000',
               shadowOpacity: 0.2,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
@@ -175,7 +177,7 @@ export function SaveTemplateScreen() {
             {saving ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text className="text-base font-sans-bold text-white">
+              <Text className="text-base font-sans-bold text-black">
                 {t('template.saveTemplate')}
               </Text>
             )}

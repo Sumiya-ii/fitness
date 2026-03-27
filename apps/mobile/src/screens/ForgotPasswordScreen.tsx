@@ -45,7 +45,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         >
           <View className="flex-1 px-6 pt-4">
             <Pressable onPress={() => navigation.goBack()} hitSlop={12} className="mb-8 self-start">
-              <Ionicons name="arrow-back" size={24} color="#0f172a" />
+              <Ionicons name="arrow-back" size={24} color="#ffffff" />
             </Pressable>
 
             <Text className="text-3xl font-sans-bold text-text mb-1">

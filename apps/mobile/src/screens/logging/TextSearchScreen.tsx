@@ -188,7 +188,7 @@ export function TextSearchScreen() {
           )}
 
           {selectedFood && (
-            <View className="border-t border-surface-border bg-white px-4 py-4">
+            <View className="border-t border-surface-border bg-surface-card px-4 py-4">
               <Text className="mb-3 font-sans-semibold text-text">
                 {selectedFood.food.normalizedName}
               </Text>

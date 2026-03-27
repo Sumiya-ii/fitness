@@ -31,14 +31,14 @@ const navigationFonts: Theme['fonts'] = {
 };
 
 export const appNavigationTheme: Theme = {
-  dark: false,
+  dark: true,
   fonts: navigationFonts,
   colors: {
-    primary: themeColors.primary['500'],
-    background: themeColors.surface.app,
-    card: themeColors.surface.card,
-    border: themeColors.surface.border,
-    text: themeColors.text.appPrimary,
-    notification: themeColors.primary['500'],
+    primary: '#ffffff',
+    background: '#000000',
+    card: '#1c1c1e',
+    border: '#2c2c2e',
+    text: '#ffffff',
+    notification: '#f97316',
   },
 };

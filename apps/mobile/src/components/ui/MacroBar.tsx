@@ -1,10 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 export interface MacroBarProps {
   label: string;
@@ -43,19 +39,15 @@ export function MacroBar({
   return (
     <View className={`${className}`}>
       <View className="mb-1.5 flex-row items-baseline justify-between">
-        <Text className="text-sm font-sans-medium text-text">
-          {label}
-        </Text>
-        <Text className="text-sm text-text-secondary">
+        <Text className="text-sm font-sans-medium text-white">{label}</Text>
+        <Text className="text-sm text-zinc-400">
           {current}
           {unit} / {target}
           {unit}
         </Text>
       </View>
       <View
-        className={`overflow-hidden rounded-full bg-surface-secondary ${
-          size === 'large' ? 'h-3' : 'h-2'
-        }`}
+        className={`overflow-hidden rounded-full bg-zinc-800 ${size === 'large' ? 'h-3' : 'h-2'}`}
       >
         <Animated.View
           style={[

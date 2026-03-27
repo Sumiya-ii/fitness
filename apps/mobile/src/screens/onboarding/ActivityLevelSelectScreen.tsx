@@ -73,7 +73,7 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                 key={opt.id}
                 onPress={() => setActivityLevel(opt.id)}
                 style={({ pressed }) => ({
-                  backgroundColor: selected ? '#0f172a' : '#f5f5f7',
+                  backgroundColor: selected ? '#ffffff' : '#1c1c1e',
                   borderRadius: 16,
                   paddingVertical: 16,
                   paddingHorizontal: 16,
@@ -88,19 +88,19 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    backgroundColor: selected ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.08)',
+                    backgroundColor: selected ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.08)',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name={opt.icon} size={20} color={selected ? '#ffffff' : '#0b1220'} />
+                  <Ionicons name={opt.icon} size={20} color={selected ? '#000000' : '#ffffff'} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 15,
                       fontWeight: '700',
-                      color: selected ? '#ffffff' : '#0b1220',
+                      color: selected ? '#000000' : '#ffffff',
                       marginBottom: 2,
                     }}
                   >
@@ -109,7 +109,7 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: selected ? 'rgba(255,255,255,0.6)' : '#7687a2',
+                      color: selected ? 'rgba(0,0,0,0.6)' : '#71717a',
                     }}
                   >
                     {opt.description}
