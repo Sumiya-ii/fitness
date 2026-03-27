@@ -21,6 +21,13 @@ export class SentryProvider implements OnModuleInit {
     Sentry.init({
       dsn,
       environment: this.config.get('NODE_ENV'),
+      sampleRate: 1.0,
+      beforeSend(event) {
+        console.log(
+          `[Sentry] Sending event: ${event.event_id} — ${event.exception?.values?.[0]?.value ?? event.message}`,
+        );
+        return event;
+      },
     });
     this.initialized = true;
     this.logger.log('Sentry initialized');
@@ -31,8 +38,13 @@ export class SentryProvider implements OnModuleInit {
   }
 
   captureException(error: unknown): string | undefined {
-    if (!this.initialized) return undefined;
-    return Sentry.captureException(error);
+    if (!this.initialized) {
+      this.logger.warn('captureException called but Sentry is not initialized');
+      return undefined;
+    }
+    const eventId = Sentry.captureException(error);
+    this.logger.log(`Sentry event captured: ${eventId}`);
+    return eventId;
   }
 
   captureMessage(message: string, level: SentrySeverityLevel = 'info'): string | undefined {

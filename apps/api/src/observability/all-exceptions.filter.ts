@@ -53,7 +53,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         if (user?.id) {
           scope.setUser({ id: user.id });
         }
-        this.sentry.captureException(exception);
+        const eventId = Sentry.captureException(exception);
+        this.logger.log(`Sentry event captured: ${eventId}`);
       });
     }
 
