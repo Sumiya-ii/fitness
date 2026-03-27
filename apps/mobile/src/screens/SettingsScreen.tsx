@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '../stores/auth.store';
 import { useSubscriptionStore } from '../stores/subscription.store';
 import { useSettingsStore } from '../stores/settings.store';
+import { useThemeStore, type ThemeMode } from '../stores/theme.store';
 import { api } from '../api';
 import { useLocale, type Locale } from '../i18n';
 import { requestAndRegisterPushToken } from '../hooks/usePushNotifications';
@@ -147,6 +148,8 @@ export function SettingsScreen() {
     'undetermined',
   );
   const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
+  const themeMode = useThemeStore((s) => s.mode);
+  const setThemeMode = useThemeStore((s) => s.setMode);
   const isPro = useSubscriptionStore((s) => s.tier === 'pro');
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
@@ -403,6 +406,22 @@ export function SettingsScreen() {
                 ]}
                 value={currentUnits}
                 onChange={handleUnitsSelect}
+              />
+            </View>
+            <Divider />
+            <View className="flex-row items-center py-[14px]">
+              <Ionicons name="moon-outline" size={20} color="#71717a" style={{ width: 28 }} />
+              <Text className="flex-1 text-[15px] font-sans-medium text-text">
+                {t('settings.appearance')}
+              </Text>
+              <Pill
+                options={[
+                  { label: '☀️', value: 'light' },
+                  { label: '🌙', value: 'dark' },
+                  { label: '⚙️', value: 'system' },
+                ]}
+                value={themeMode}
+                onChange={(v) => setThemeMode(v as ThemeMode)}
               />
             </View>
           </Section>

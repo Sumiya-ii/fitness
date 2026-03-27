@@ -12,7 +12,8 @@ import { useAuthStore } from './src/stores/auth.store';
 import { useSubscriptionStore } from './src/stores/subscription.store';
 import { useSettingsStore } from './src/stores/settings.store';
 import { setPaywallCallback } from './src/api/client';
-import { appNavigationTheme } from './src/theme';
+import { useColors, buildNavigationTheme } from './src/theme';
+import { useThemeStore } from './src/stores/theme.store';
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
@@ -91,14 +92,17 @@ export default Sentry.wrap(function App() {
     loadToken();
   }, [loadToken]);
 
+  const colors = useColors();
+  const navTheme = buildNavigationTheme(colors);
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaProvider>
-        <NavigationContainer theme={appNavigationTheme}>
+        <NavigationContainer theme={navTheme}>
           <RootNavigator />
           <SyncBanner />
           <PaywallModal />
-          <StatusBar style="dark" />
+          <StatusBar style={colors.statusBarStyle} />
         </NavigationContainer>
       </SafeAreaProvider>
     </GestureHandlerRootView>

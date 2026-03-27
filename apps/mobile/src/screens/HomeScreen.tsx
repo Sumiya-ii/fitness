@@ -28,6 +28,7 @@ import { useWorkoutStore } from '../stores/workout.store';
 import { type DayHistory } from '../api/dashboard';
 import { api } from '../api';
 import { useLocale } from '../i18n';
+import { useColors, type ColorPalette } from '../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -69,7 +70,7 @@ function ProgressArc({
   size,
   strokeWidth,
   color,
-  trackColor = '#2c2c2e',
+  trackColor,
   children,
 }: {
   progress: number;
@@ -79,6 +80,8 @@ function ProgressArc({
   trackColor?: string;
   children?: React.ReactNode;
 }) {
+  const c = useColors();
+  const resolvedTrack = trackColor ?? c.trackBg;
   const anim = useSharedValue(0);
   const radius = (size - strokeWidth) / 2;
   const circ = 2 * Math.PI * radius;
@@ -105,7 +108,7 @@ function ProgressArc({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={trackColor}
+          stroke={resolvedTrack}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -140,6 +143,7 @@ function HistoryBarChart({
   onDayPress: (dateKey: string) => void;
   selectedDateKey: string;
 }) {
+  const c = useColors();
   const maxCal = Math.max(...history.map((d) => d.calories), targetCalories ?? 0, 1);
   const targetLineBottom = targetCalories != null ? (targetCalories / maxCal) * BAR_MAX_H : null;
 
@@ -155,7 +159,7 @@ function HistoryBarChart({
             height: 1,
             borderTopWidth: 1,
             borderStyle: 'dashed',
-            borderColor: '#3a3a3c',
+            borderColor: c.border,
           }}
         />
       )}
@@ -196,7 +200,7 @@ function HistoryBarChart({
                     <View style={{ flex: fcal || 0.001, backgroundColor: '#3b82f6' }} />
                   </>
                 ) : (
-                  <View style={{ flex: 1, backgroundColor: '#2c2c2e' }} />
+                  <View style={{ flex: 1, backgroundColor: c.cardAlt }} />
                 )}
               </View>
               <Text
@@ -228,8 +232,9 @@ interface MacroCardProps {
 }
 
 function MacroCard({ label, leftAmount, unit, progress, color, icon }: MacroCardProps) {
+  const c = useColors();
   return (
-    <View className="flex-1 rounded-3xl p-4" style={{ backgroundColor: '#1c1c1e' }}>
+    <View className="flex-1 rounded-3xl p-4" style={{ backgroundColor: c.card }}>
       <Text className="text-xl font-sans-bold text-white leading-tight">
         {leftAmount}
         {unit}
@@ -254,12 +259,15 @@ interface NutrientMiniCardProps {
 }
 
 function NutrientMiniCard({ label, value, unit, color, icon, sublabel }: NutrientMiniCardProps) {
+  const c = useColors();
   return (
-    <View className="flex-1 rounded-3xl p-4" style={{ backgroundColor: '#1c1c1e' }}>
-      <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: '#ffffff', lineHeight: 24 }}>
+    <View className="flex-1 rounded-3xl p-4" style={{ backgroundColor: c.card }}>
+      <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: c.text, lineHeight: 24 }}>
         {value}
       </Text>
-      <Text style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: '#71717a' }}>{unit}</Text>
+      <Text style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: c.textTertiary }}>
+        {unit}
+      </Text>
       <View className="flex-row items-center gap-1.5 mt-3">
         <Text style={{ fontSize: 16 }}>{icon}</Text>
         <View>
@@ -267,7 +275,7 @@ function NutrientMiniCard({ label, value, unit, color, icon, sublabel }: Nutrien
             {label}
           </Text>
           {sublabel ? (
-            <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#52525b' }}>
+            <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: c.textTertiary }}>
               {sublabel}
             </Text>
           ) : null}
@@ -284,6 +292,7 @@ interface MealSectionProps {
 }
 
 function MealSection({ type, meals, typeLabel }: MealSectionProps) {
+  const c = useColors();
   const navigation = useNavigation();
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
   const items = meals.flatMap((m) => m.items);
@@ -302,10 +311,14 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
   };
 
   return (
-    <View className="rounded-3xl p-4 mb-3" style={{ backgroundColor: '#1c1c1e' }}>
+    <View className="rounded-3xl p-4 mb-3" style={{ backgroundColor: c.card }}>
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-row items-center">
-          <Ionicons name={MEAL_TYPE_ICONS[type] ?? 'cafe-outline'} size={14} color="#71717a" />
+          <Ionicons
+            name={MEAL_TYPE_ICONS[type] ?? 'cafe-outline'}
+            size={14}
+            color={c.textTertiary}
+          />
           <Text className="ml-2 text-xs font-sans-semibold text-zinc-500 uppercase tracking-widest">
             {typeLabel}
           </Text>
@@ -324,7 +337,7 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
         <View
           key={item.id}
           className="flex-row items-center justify-between py-2.5"
-          style={idx > 0 ? { borderTopWidth: 1, borderTopColor: '#2c2c2e' } : undefined}
+          style={idx > 0 ? { borderTopWidth: 1, borderTopColor: c.border } : undefined}
         >
           <View className="flex-row items-center gap-3 flex-1 mr-3">
             <View className="h-9 w-9 rounded-xl bg-[#2c2c2e] items-center justify-center">
@@ -340,7 +353,7 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
       {items.length > 1 && (
         <View
           className="flex-row justify-between pt-2 mt-1"
-          style={{ borderTopWidth: 1, borderTopColor: '#2c2c2e' }}
+          style={{ borderTopWidth: 1, borderTopColor: c.border }}
         >
           <Text className="text-xs text-zinc-500">Total</Text>
           <Text className="text-xs font-sans-semibold text-white">{totalCal} kcal</Text>
@@ -384,6 +397,7 @@ function StreakCalendarModal({
   monthConsistency,
   calendar,
 }: StreakCalendarModalProps) {
+  const c = useColors();
   const { t } = useLocale();
 
   // Group calendar days by month for labelled sections
@@ -409,18 +423,18 @@ function StreakCalendarModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1" style={{ backgroundColor: '#000000' }}>
+      <View className="flex-1" style={{ backgroundColor: c.bg }}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-5 pb-4">
-          <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+          <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: c.text }}>
             {t('dashboard.streakCalendarTitle')}
           </Text>
           <Pressable
             onPress={onClose}
             className="h-9 w-9 rounded-full items-center justify-center"
-            style={{ backgroundColor: '#1c1c1e' }}
+            style={{ backgroundColor: c.card }}
           >
-            <Ionicons name="close" size={18} color="#ffffff" />
+            <Ionicons name="close" size={18} color={c.text} />
           </Pressable>
         </View>
 
@@ -432,7 +446,7 @@ function StreakCalendarModal({
           <View className="flex-row gap-3 px-5 mb-5">
             <View
               className="flex-1 rounded-3xl p-4 items-center"
-              style={{ backgroundColor: '#1c1c1e' }}
+              style={{ backgroundColor: c.card }}
             >
               <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: '#f97316' }}>
                 {currentStreak}
@@ -442,7 +456,7 @@ function StreakCalendarModal({
                 style={{
                   fontSize: 11,
                   fontFamily: 'Inter-Medium',
-                  color: '#71717a',
+                  color: c.textTertiary,
                   marginTop: 2,
                   textAlign: 'center',
                 }}
@@ -452,9 +466,9 @@ function StreakCalendarModal({
             </View>
             <View
               className="flex-1 rounded-3xl p-4 items-center"
-              style={{ backgroundColor: '#1c1c1e' }}
+              style={{ backgroundColor: c.card }}
             >
-              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: c.text }}>
                 {longestStreak}
               </Text>
               <Text style={{ fontSize: 16 }}>🏆</Text>
@@ -462,7 +476,7 @@ function StreakCalendarModal({
                 style={{
                   fontSize: 11,
                   fontFamily: 'Inter-Medium',
-                  color: '#71717a',
+                  color: c.textTertiary,
                   marginTop: 2,
                   textAlign: 'center',
                 }}
@@ -473,19 +487,19 @@ function StreakCalendarModal({
           </View>
 
           {/* Consistency bars */}
-          <View className="mx-5 rounded-3xl p-4 mb-5" style={{ backgroundColor: '#1c1c1e' }}>
+          <View className="mx-5 rounded-3xl p-4 mb-5" style={{ backgroundColor: c.card }}>
             <View className="mb-4">
               <View className="flex-row items-center justify-between mb-2">
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#ffffff' }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: c.text }}>
                   {t('dashboard.streakWeek')}
                 </Text>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: c.text }}>
                   {weekConsistency}%
                 </Text>
               </View>
               <View
                 className="h-2.5 rounded-full overflow-hidden"
-                style={{ backgroundColor: '#2c2c2e' }}
+                style={{ backgroundColor: c.cardAlt }}
               >
                 <View
                   style={{
@@ -504,16 +518,16 @@ function StreakCalendarModal({
             </View>
             <View>
               <View className="flex-row items-center justify-between mb-2">
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: '#ffffff' }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: c.text }}>
                   {t('dashboard.streakMonth')}
                 </Text>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: c.text }}>
                   {monthConsistency}%
                 </Text>
               </View>
               <View
                 className="h-2.5 rounded-full overflow-hidden"
-                style={{ backgroundColor: '#2c2c2e' }}
+                style={{ backgroundColor: c.cardAlt }}
               >
                 <View
                   style={{
@@ -539,7 +553,7 @@ function StreakCalendarModal({
                 style={{
                   fontSize: 12,
                   fontFamily: 'Inter-SemiBold',
-                  color: '#71717a',
+                  color: c.textTertiary,
                   letterSpacing: 0.6,
                   textTransform: 'uppercase',
                   marginBottom: 8,
@@ -547,7 +561,7 @@ function StreakCalendarModal({
               >
                 {group.label}
               </Text>
-              <View className="rounded-3xl p-4" style={{ backgroundColor: '#1c1c1e' }}>
+              <View className="rounded-3xl p-4" style={{ backgroundColor: c.card }}>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {group.days.map((day) => (
                     <View
@@ -583,15 +597,15 @@ function StreakCalendarModal({
               <View
                 style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: '#22c55e' }}
               />
-              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: '#a1a1aa' }}>
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: c.textSecondary }}>
                 Logged
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
               <View
-                style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: '#2c2c2e' }}
+                style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c.cardAlt }}
               />
-              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: '#a1a1aa' }}>
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: c.textSecondary }}>
                 Missed
               </Text>
             </View>
@@ -604,6 +618,7 @@ function StreakCalendarModal({
 
 export function HomeScreen() {
   const { t } = useLocale();
+  const c = useColors();
   const navigation = useNavigation();
   const { width: screenWidth } = useWindowDimensions();
   const todayKey = useMemo(() => toDateKey(new Date()), []);
@@ -784,7 +799,7 @@ export function HomeScreen() {
   const caloriesBurned = Math.round(steps * KCAL_PER_STEP);
 
   return (
-    <View className="flex-1" style={{ backgroundColor: '#000000' }}>
+    <View className="flex-1" style={{ backgroundColor: c.bg }}>
       <SafeAreaView edges={['top']}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-3 pb-1">
@@ -799,7 +814,7 @@ export function HomeScreen() {
           <Pressable
             onPress={() => setStreakModalVisible(true)}
             className="flex-row items-center gap-1.5 rounded-full px-4 py-2"
-            style={{ backgroundColor: '#1c1c1e' }}
+            style={{ backgroundColor: c.card }}
           >
             <Text style={{ fontSize: 15 }}>🔥</Text>
             <Text className="font-sans-bold text-white text-sm">
@@ -814,7 +829,7 @@ export function HomeScreen() {
             style={{
               fontSize: 11,
               fontFamily: 'Inter-SemiBold',
-              color: '#71717a',
+              color: c.textTertiary,
               letterSpacing: 0.8,
               textTransform: 'uppercase',
               marginBottom: 8,
@@ -919,7 +934,7 @@ export function HomeScreen() {
                         ...(isSelected
                           ? { backgroundColor: '#ffffff' }
                           : isToday
-                            ? { backgroundColor: '#1c1c1e' }
+                            ? { backgroundColor: c.card }
                             : {}),
                       }}
                     >
@@ -967,7 +982,7 @@ export function HomeScreen() {
           <RefreshControl
             refreshing={isLoading && !!data}
             onRefresh={onRefresh}
-            tintColor="#ffffff"
+            tintColor={c.text}
           />
         }
       >
@@ -989,7 +1004,7 @@ export function HomeScreen() {
               <Pressable
                 onPress={handleLogMeal}
                 className="rounded-3xl p-4 mb-3"
-                style={{ backgroundColor: '#1c1c1e' }}
+                style={{ backgroundColor: c.card }}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 mr-2">
@@ -1014,7 +1029,7 @@ export function HomeScreen() {
                       </View>
                     </View>
                   </View>
-                  <ProgressArc progress={calProg} size={80} strokeWidth={7} color="#ffffff">
+                  <ProgressArc progress={calProg} size={80} strokeWidth={7} color={c.text}>
                     <Text style={{ fontSize: 26 }}>🔥</Text>
                   </ProgressArc>
                 </View>
@@ -1054,7 +1069,7 @@ export function HomeScreen() {
               {/* Row 1: Health Score card (flex-[2]) + Water quick-info (flex-1) */}
               <View className="flex-row gap-3 mb-3">
                 {/* Health Score */}
-                <View className="flex-[2] rounded-3xl p-4" style={{ backgroundColor: '#1c1c1e' }}>
+                <View className="flex-[2] rounded-3xl p-4" style={{ backgroundColor: c.card }}>
                   <View className="flex-row items-center justify-between">
                     <View className="flex-1 mr-2">
                       <Text
@@ -1103,13 +1118,13 @@ export function HomeScreen() {
                 {/* Water Summary + Controls */}
                 <View
                   className="flex-1 rounded-3xl p-4 justify-between"
-                  style={{ backgroundColor: '#1c1c1e' }}
+                  style={{ backgroundColor: c.card }}
                 >
                   <Text
                     style={{
                       fontSize: 10,
                       fontFamily: 'Inter-SemiBold',
-                      color: '#71717a',
+                      color: c.textTertiary,
                       letterSpacing: 0.8,
                       textTransform: 'uppercase',
                     }}
@@ -1130,13 +1145,15 @@ export function HomeScreen() {
                       style={{
                         fontSize: 16,
                         fontFamily: 'Inter-Bold',
-                        color: '#ffffff',
+                        color: c.text,
                         marginTop: 4,
                       }}
                     >
                       {waterCupsConsumed.toFixed(1)}
                     </Text>
-                    <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: '#71717a' }}>
+                    <Text
+                      style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                    >
                       {t('dashboard.waterCups')} · {waterMlLabel}
                     </Text>
                   </View>
@@ -1145,7 +1162,7 @@ export function HomeScreen() {
                       onPress={() => removeCup(CUP_ML)}
                       disabled={effectiveWaterConsumed <= 0}
                       className="flex-1 h-8 rounded-xl items-center justify-center"
-                      style={{ backgroundColor: '#2c2c2e' }}
+                      style={{ backgroundColor: c.cardAlt }}
                     >
                       <Ionicons
                         name="remove"
@@ -1157,7 +1174,7 @@ export function HomeScreen() {
                       onPress={() => addWater(CUP_ML)}
                       className="flex-1 h-8 rounded-xl bg-[#0ea5e9] items-center justify-center"
                     >
-                      <Ionicons name="add" size={18} color="#ffffff" />
+                      <Ionicons name="add" size={18} color={c.text} />
                     </Pressable>
                   </View>
                 </View>
@@ -1197,14 +1214,14 @@ export function HomeScreen() {
               <View className="flex-row gap-3">
                 {/* Left: Steps card or Connect prompt */}
                 {stepsPermission === 'granted' ? (
-                  <View className="flex-[2] rounded-3xl p-4" style={{ backgroundColor: '#1c1c1e' }}>
+                  <View className="flex-[2] rounded-3xl p-4" style={{ backgroundColor: c.card }}>
                     <View className="flex-row items-center justify-between">
                       <View className="flex-1 mr-2">
                         <Text
                           style={{
                             fontSize: 44,
                             fontFamily: 'Inter-Bold',
-                            color: '#ffffff',
+                            color: c.text,
                             lineHeight: 48,
                           }}
                         >
@@ -1217,7 +1234,7 @@ export function HomeScreen() {
                           style={{
                             fontSize: 11,
                             fontFamily: 'Inter-Medium',
-                            color: '#71717a',
+                            color: c.textTertiary,
                             marginTop: 6,
                           }}
                         >
@@ -1228,7 +1245,7 @@ export function HomeScreen() {
                         progress={stepsProg}
                         size={80}
                         strokeWidth={7}
-                        color="#ffffff"
+                        color={c.text}
                         trackColor="#2c2c2e"
                       >
                         <Text style={{ fontSize: 22 }}>🚶</Text>
@@ -1238,11 +1255,11 @@ export function HomeScreen() {
                 ) : (
                   <View
                     className="flex-[2] rounded-3xl p-4 items-center justify-center"
-                    style={{ backgroundColor: '#1c1c1e' }}
+                    style={{ backgroundColor: c.card }}
                   >
                     <View
                       className="w-12 h-12 rounded-2xl items-center justify-center mb-2"
-                      style={{ backgroundColor: '#2c2c2e' }}
+                      style={{ backgroundColor: c.cardAlt }}
                     >
                       <Text style={{ fontSize: 24 }}>❤️</Text>
                     </View>
@@ -1250,7 +1267,7 @@ export function HomeScreen() {
                       style={{
                         fontSize: 14,
                         fontFamily: 'Inter-Bold',
-                        color: '#ffffff',
+                        color: c.text,
                         textAlign: 'center',
                         marginBottom: 2,
                       }}
@@ -1261,7 +1278,7 @@ export function HomeScreen() {
                       style={{
                         fontSize: 11,
                         fontFamily: 'Inter-Medium',
-                        color: '#71717a',
+                        color: c.textTertiary,
                         textAlign: 'center',
                         marginBottom: 12,
                       }}
@@ -1282,13 +1299,13 @@ export function HomeScreen() {
                 {/* Right: Calories burned */}
                 <View
                   className="flex-1 rounded-3xl p-4 justify-between"
-                  style={{ backgroundColor: '#1c1c1e' }}
+                  style={{ backgroundColor: c.card }}
                 >
                   <Text
                     style={{
                       fontSize: 10,
                       fontFamily: 'Inter-SemiBold',
-                      color: '#71717a',
+                      color: c.textTertiary,
                       letterSpacing: 0.8,
                       textTransform: 'uppercase',
                     }}
@@ -1300,25 +1317,27 @@ export function HomeScreen() {
                       style={{
                         fontSize: 20,
                         fontFamily: 'Inter-Bold',
-                        color: '#ffffff',
+                        color: c.text,
                         lineHeight: 24,
                       }}
                     >
                       {caloriesBurned}
                     </Text>
-                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#71717a' }}>
+                    <Text
+                      style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                    >
                       cal
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-1.5">
                     <Text style={{ fontSize: 16 }}>🚶</Text>
                     <View>
-                      <Text
-                        style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: '#ffffff' }}
-                      >
+                      <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.text }}>
                         {t('dashboard.steps')}
                       </Text>
-                      <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#71717a' }}>
+                      <Text
+                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                      >
                         {caloriesBurned} cal
                       </Text>
                     </View>
@@ -1334,7 +1353,7 @@ export function HomeScreen() {
                 {/* Current streak — hero card */}
                 <Pressable
                   className="flex-[2] rounded-3xl p-4"
-                  style={{ backgroundColor: '#1c1c1e' }}
+                  style={{ backgroundColor: c.card }}
                   onPress={() => setStreakModalVisible(true)}
                 >
                   <View className="flex-row items-center justify-between">
@@ -1390,13 +1409,13 @@ export function HomeScreen() {
                 {/* Best streak */}
                 <View
                   className="flex-1 rounded-3xl p-4 justify-between"
-                  style={{ backgroundColor: '#1c1c1e' }}
+                  style={{ backgroundColor: c.card }}
                 >
                   <Text
                     style={{
                       fontSize: 10,
                       fontFamily: 'Inter-SemiBold',
-                      color: '#71717a',
+                      color: c.textTertiary,
                       letterSpacing: 0.8,
                       textTransform: 'uppercase',
                     }}
@@ -1408,13 +1427,15 @@ export function HomeScreen() {
                       style={{
                         fontSize: 20,
                         fontFamily: 'Inter-Bold',
-                        color: '#ffffff',
+                        color: c.text,
                         lineHeight: 24,
                       }}
                     >
                       {streakData?.longestStreak ?? 0}
                     </Text>
-                    <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#71717a' }}>
+                    <Text
+                      style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                    >
                       {t('dashboard.streakDays')}
                     </Text>
                   </View>
@@ -1423,20 +1444,20 @@ export function HomeScreen() {
               </View>
 
               {/* Row 2: Consistency bars */}
-              <View className="rounded-3xl p-4 mb-3" style={{ backgroundColor: '#1c1c1e' }}>
+              <View className="rounded-3xl p-4 mb-3" style={{ backgroundColor: c.card }}>
                 {/* 7-day */}
                 <View className="mb-3">
                   <View className="flex-row items-center justify-between mb-1.5">
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#ffffff' }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.text }}>
                       {t('dashboard.streakWeek')}
                     </Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: c.text }}>
                       {streakData?.weekConsistency ?? 0}%
                     </Text>
                   </View>
                   <View
                     className="h-2 rounded-full overflow-hidden"
-                    style={{ backgroundColor: '#2c2c2e' }}
+                    style={{ backgroundColor: c.cardAlt }}
                   >
                     <View
                       style={{
@@ -1456,16 +1477,16 @@ export function HomeScreen() {
                 {/* 30-day */}
                 <View>
                   <View className="flex-row items-center justify-between mb-1.5">
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#ffffff' }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.text }}>
                       {t('dashboard.streakMonth')}
                     </Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: '#ffffff' }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: c.text }}>
                       {streakData?.monthConsistency ?? 0}%
                     </Text>
                   </View>
                   <View
                     className="h-2 rounded-full overflow-hidden"
-                    style={{ backgroundColor: '#2c2c2e' }}
+                    style={{ backgroundColor: c.cardAlt }}
                   >
                     <View
                       style={{
@@ -1487,7 +1508,7 @@ export function HomeScreen() {
               {/* Row 3: Workouts */}
               <Pressable
                 className="rounded-3xl p-4"
-                style={{ backgroundColor: '#1c1c1e' }}
+                style={{ backgroundColor: c.card }}
                 onPress={() =>
                   (navigation as { navigate: (s: string, p?: object) => void }).navigate(
                     'WorkoutHome',
@@ -1496,20 +1517,24 @@ export function HomeScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <View>
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: '#71717a' }}>
+                    <Text
+                      style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.textTertiary }}
+                    >
                       {t('dashboard.workouts')}
                     </Text>
                     <Text
                       style={{
                         fontSize: 28,
                         fontFamily: 'Inter-Bold',
-                        color: '#ffffff',
+                        color: c.text,
                         marginTop: 2,
                       }}
                     >
                       {workoutSummary?.workoutCount ?? 0}
                     </Text>
-                    <Text style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: '#71717a' }}>
+                    <Text
+                      style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                    >
                       {t('dashboard.thisWeek')}
                     </Text>
                   </View>
@@ -1518,7 +1543,9 @@ export function HomeScreen() {
                       <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#f97316' }}>
                         {workoutSummary?.totalDurationMin ?? 0}
                       </Text>
-                      <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#71717a' }}>
+                      <Text
+                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                      >
                         min
                       </Text>
                     </View>
@@ -1526,11 +1553,13 @@ export function HomeScreen() {
                       <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#22c55e' }}>
                         {workoutSummary?.totalCaloriesBurned ?? 0}
                       </Text>
-                      <Text style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: '#71717a' }}>
+                      <Text
+                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                      >
                         cal
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color="#71717a" />
+                    <Ionicons name="chevron-forward" size={18} color={c.textTertiary} />
                   </View>
                 </View>
               </Pressable>
@@ -1556,12 +1585,12 @@ export function HomeScreen() {
         {/* ── 7-Day History Chart ── */}
         {history7?.history && history7.history.length > 0 && (
           <Animated.View entering={FadeInDown.duration(350).delay(100)} className="px-4 mb-4">
-            <View className="rounded-3xl p-4" style={{ backgroundColor: '#1c1c1e' }}>
+            <View className="rounded-3xl p-4" style={{ backgroundColor: c.card }}>
               <Text
                 style={{
                   fontSize: 11,
                   fontFamily: 'Inter-SemiBold',
-                  color: '#71717a',
+                  color: c.textTertiary,
                   letterSpacing: 0.8,
                   textTransform: 'uppercase',
                   marginBottom: 12,
@@ -1585,7 +1614,7 @@ export function HomeScreen() {
             style={{
               fontSize: 11,
               fontFamily: 'Inter-SemiBold',
-              color: '#71717a',
+              color: c.textTertiary,
               letterSpacing: 0.8,
               textTransform: 'uppercase',
               marginBottom: 10,
@@ -1608,13 +1637,13 @@ export function HomeScreen() {
             <Pressable
               onPress={handleLogMeal}
               className="rounded-3xl p-6 items-center"
-              style={{ backgroundColor: '#1c1c1e' }}
+              style={{ backgroundColor: c.card }}
             >
               <View
                 className="h-12 w-12 rounded-2xl items-center justify-center mb-3"
-                style={{ backgroundColor: '#2c2c2e' }}
+                style={{ backgroundColor: c.cardAlt }}
               >
-                <Ionicons name="restaurant-outline" size={22} color="#71717a" />
+                <Ionicons name="restaurant-outline" size={22} color={c.textTertiary} />
               </View>
               <Text className="text-sm font-sans-semibold text-white mb-1">
                 {t('dashboard.noMeals')}
@@ -1640,8 +1669,9 @@ export function HomeScreen() {
 }
 
 function HomeSkeleton() {
+  const c = useColors();
   return (
-    <View className="flex-1" style={{ backgroundColor: '#000000' }}>
+    <View className="flex-1" style={{ backgroundColor: c.bg }}>
       <SafeAreaView edges={['top']}>
         <View className="px-5 pt-3 pb-3">
           <SkeletonLoader width={140} height={28} borderRadius={8} />

@@ -1,4 +1,4 @@
-import { View, Pressable, Text, Platform, StyleSheet } from 'react-native';
+import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { LogStack } from './LogStack';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useLocale } from '../i18n';
+import { useColors } from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -31,9 +32,19 @@ const TAB_LABEL_KEYS: Record<string, string> = {
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useLocale();
+  const c = useColors();
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingBottom: Math.max(insets.bottom, 8),
+          backgroundColor: c.tabBarBg,
+          borderTopColor: c.tabBarBorder,
+        },
+      ]}
+    >
       {state.routes.map((route, index) => {
         const isFocused = state.index === index;
         const isLog = route.name === 'Log';
@@ -60,8 +71,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
               accessibilityRole="button"
               accessibilityLabel={label}
             >
-              <View style={styles.logButton}>
-                <Ionicons name="add" size={24} color="#000000" />
+              <View style={[styles.logButton, { backgroundColor: c.logButton }]}>
+                <Ionicons name="add" size={24} color={c.logButtonIcon} />
               </View>
             </Pressable>
           );
@@ -79,9 +90,9 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             <Ionicons
               name={isFocused ? icons.active : icons.inactive}
               size={22}
-              color={isFocused ? '#ffffff' : '#71717a'}
+              color={isFocused ? c.tabActive : c.tabInactive}
             />
-            <Text style={[styles.label, { color: isFocused ? '#ffffff' : '#71717a' }]}>
+            <Text style={[styles.label, { color: isFocused ? c.tabActive : c.tabInactive }]}>
               {label}
             </Text>
           </Pressable>
@@ -94,9 +105,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#0a0a0a',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.08)',
     paddingTop: 8,
   },
   tabItem: {
@@ -115,7 +124,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,

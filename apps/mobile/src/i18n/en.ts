@@ -353,6 +353,7 @@ export const en = {
     units: 'Units',
     metric: 'Metric',
     imperial: 'Imperial',
+    appearance: 'Appearance',
     notifications: 'Notifications',
     morningReminder: 'Morning reminder',
     morningReminderDesc: 'Start the day with a nutrition check-in',
@@ -384,6 +385,7 @@ export const en = {
     privacyPolicyNotice: 'View our privacy policy at nexuskairos.com/coach/privacy',
     termsOfService: 'Terms of Service',
     termsNotice: 'View our terms of service at nexuskairos.com/coach/terms',
+    support: 'Support',
     deleteAccount: 'Delete Account',
     deleteAccountDesc: 'Permanently remove your account and all data',
     deleteConfirm:
