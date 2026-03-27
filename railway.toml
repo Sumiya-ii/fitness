@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api && npm run db:push --workspace=apps/api -- --skip-generate --accept-data-loss"
+buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api"
 
 [deploy]
-startCommand = "npm run start:prod --workspace=apps/api"
+startCommand = "npm run db:push --workspace=apps/api -- --skip-generate --accept-data-loss && npm run start:prod --workspace=apps/api"
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
