@@ -5,3 +5,4 @@ buildCommand = "npm ci && npm run build --workspace=packages/shared && npm run b
 [deploy]
 startCommand = "npm run start --workspace=apps/worker"
 restartPolicyType = "on_failure"
+numReplicas = 1
