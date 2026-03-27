@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, type ViewStyle } from 'react-native';
-import { themeColors } from '../../theme';
+import { useColors } from '../../theme';
 
 export type SkeletonVariant = 'rect' | 'circle';
 
@@ -19,6 +19,7 @@ export function SkeletonLoader({
   variant = 'rect',
   className = '',
 }: SkeletonLoaderProps) {
+  const c = useColors();
   const shimmer = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export function SkeletonLoader({
           duration: 800,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     animation.start();
     return () => animation.stop();
@@ -54,13 +55,8 @@ export function SkeletonLoader({
     width: typeof resolvedWidth === 'string' ? (resolvedWidth as `${number}%`) : resolvedWidth,
     height: typeof resolvedHeight === 'string' ? (resolvedHeight as `${number}%`) : resolvedHeight,
     borderRadius: resolvedBorderRadius,
-    backgroundColor: themeColors.surface.secondary,
+    backgroundColor: c.cardAlt,
   };
 
-  return (
-    <Animated.View
-      style={[baseStyle, { opacity }]}
-      className={className}
-    />
-  );
+  return <Animated.View style={[baseStyle, { opacity }]} className={className} />;
 }

@@ -28,12 +28,17 @@ interface ThemeState {
 
 export const useThemeStore = create<ThemeState>((set) => {
   const initial = getStoredMode();
+
+  // Sync React Native appearance so NativeWind CSS variables resolve correctly
+  Appearance.setColorScheme(initial === 'system' ? 'unspecified' : initial);
+
   return {
     mode: initial,
     scheme: resolveScheme(initial),
 
     setMode: (mode: ThemeMode) => {
       storage.set(THEME_KEY, mode);
+      Appearance.setColorScheme(mode === 'system' ? 'unspecified' : mode);
       set({ mode, scheme: resolveScheme(mode) });
     },
   };

@@ -19,7 +19,7 @@ import { Button, BottomSheet, Input, Badge, SkeletonLoader } from '../components
 import { useWeightStore, type WeightLogEntry } from '../stores/weight.store';
 import { useNutritionHistoryStore, type HistoryPeriod } from '../stores/nutrition-history.store';
 import { useLocale } from '../i18n';
-import { themeColors } from '../theme';
+import { useColors } from '../theme';
 import type { DayHistory } from '../api/dashboard';
 import { mealTimingApi, type MealTimingInsights } from '../api/meal-timing';
 import { useBodyCompositionStore } from '../stores/body-composition.store';
@@ -150,6 +150,7 @@ function SummaryCards({
   targetCalories: number | null;
   period: HistoryPeriod;
 }) {
+  const c = useColors();
   const logged = points.filter((p) => p.hasData);
   const avgCal =
     logged.length > 0 ? Math.round(logged.reduce((s, p) => s + p.calories, 0) / logged.length) : 0;
@@ -177,7 +178,7 @@ function SummaryCards({
         {goalDiff !== null && (
           <Text
             className="text-[10px] font-sans-medium mt-0.5"
-            style={{ color: goalDiff <= 0 ? themeColors.status.success : C.goal }}
+            style={{ color: goalDiff <= 0 ? c.success : C.goal }}
           >
             {goalDiff > 0 ? `+${goalDiff}` : goalDiff} kcal
           </Text>
@@ -206,7 +207,7 @@ function SummaryCards({
         </View>
         <Text
           className="text-[10px] font-sans-medium mt-0.5"
-          style={{ color: streak === 0 ? themeColors.status.warning : themeColors.text.tertiary }}
+          style={{ color: streak === 0 ? c.warning : c.textTertiary }}
         >
           {streak === 0 ? 'Start today!' : streak === 1 ? 'day' : 'days'}
         </Text>
@@ -226,6 +227,7 @@ function CalorieBarChart({
   targetCalories: number | null;
   chartWidth: number;
 }) {
+  const c = useColors();
   const CHART_H = 160;
   const PAD = { top: 16, bottom: 28 };
   const plotH = CHART_H - PAD.top - PAD.bottom;
@@ -355,12 +357,12 @@ function CalorieBarChart({
               borderColor: 'rgba(255,255,255,0.08)',
             }}
           >
-            <Ionicons name="sparkles-outline" size={12} color={themeColors.text.secondary} />
+            <Ionicons name="sparkles-outline" size={12} color={c.textSecondary} />
             <Text
               style={{
                 fontSize: 11,
                 fontFamily: 'Inter-SemiBold',
-                color: themeColors.text.secondary,
+                color: c.textSecondary,
               }}
             >
               Log meals to see your trends
@@ -376,7 +378,7 @@ function CalorieBarChart({
             <Text
               style={{
                 fontSize: 10,
-                color: themeColors.text.tertiary,
+                color: c.textTertiary,
                 fontFamily: 'Inter-Regular',
               }}
             >
@@ -602,6 +604,7 @@ function WaterBarChart({ points, chartWidth }: { points: ChartPoint[]; chartWidt
 // ─── Nutrition tab ────────────────────────────────────────────────────────────
 
 function NutritionTab({ chartWidth }: { chartWidth: number }) {
+  const c = useColors();
   const [period, setPeriod] = useState<HistoryPeriod>(7);
   const { data, isLoading, fetchHistory } = useNutritionHistoryStore();
 
@@ -629,14 +632,14 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
             colors={['#1c1c1e', '#2c2c2e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{ borderRadius: 20, borderWidth: 1, borderColor: themeColors.surface.border }}
+            style={{ borderRadius: 20, borderWidth: 1, borderColor: c.border }}
           >
             <View className="p-4 flex-row items-center gap-3">
               <View
                 className="h-11 w-11 rounded-2xl items-center justify-center"
                 style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
               >
-                <Ionicons name="nutrition" size={22} color={themeColors.primary['500']} />
+                <Ionicons name="nutrition" size={22} color={c.primary} />
               </View>
               <View className="flex-1">
                 <Text className="text-sm font-sans-bold text-text">Your trends start here</Text>
@@ -736,6 +739,7 @@ function fmtWindow(minutes: number): string {
 }
 
 function MealTimingCard() {
+  const c = useColors();
   const [insights, setInsights] = useState<MealTimingInsights | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -771,7 +775,7 @@ function MealTimingCard() {
         {/* Header */}
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center gap-2">
-            <Ionicons name="time-outline" size={16} color={themeColors.text.secondary} />
+            <Ionicons name="time-outline" size={16} color={c.textSecondary} />
             <Text className="text-sm font-sans-semibold text-text">Meal Timing</Text>
           </View>
           <Text className="text-[10px] text-text-tertiary font-sans-medium">
@@ -820,7 +824,7 @@ function MealTimingCard() {
               <Ionicons
                 name={breakfastOk ? 'checkmark-circle' : 'alert-circle'}
                 size={14}
-                color={breakfastOk ? themeColors.status.success : themeColors.status.warning}
+                color={breakfastOk ? c.success : c.warning}
               />
               <Text className="text-xs text-text-secondary font-sans-medium">
                 Breakfast on weekdays
@@ -829,7 +833,7 @@ function MealTimingCard() {
             <Text
               className="text-xs font-sans-bold"
               style={{
-                color: breakfastOk ? themeColors.status.success : themeColors.status.warning,
+                color: breakfastOk ? c.success : c.warning,
               }}
             >
               {insights.breakfastWeekdayRate}%
@@ -842,7 +846,7 @@ function MealTimingCard() {
               <Ionicons
                 name={lateNightOk ? 'checkmark-circle' : 'alert-circle'}
                 size={14}
-                color={lateNightOk ? themeColors.status.success : themeColors.status.warning}
+                color={lateNightOk ? c.success : c.warning}
               />
               <Text className="text-xs text-text-secondary font-sans-medium">
                 Late-night eating (after 20:00)
@@ -851,7 +855,7 @@ function MealTimingCard() {
             <Text
               className="text-xs font-sans-bold"
               style={{
-                color: lateNightOk ? themeColors.status.success : themeColors.status.warning,
+                color: lateNightOk ? c.success : c.warning,
               }}
             >
               {insights.lateNightEatingDays}d / 7
@@ -865,7 +869,7 @@ function MealTimingCard() {
                 <Ionicons
                   name={windowOk ? 'checkmark-circle' : 'alert-circle'}
                   size={14}
-                  color={windowOk ? themeColors.status.success : themeColors.status.warning}
+                  color={windowOk ? c.success : c.warning}
                 />
                 <Text className="text-xs text-text-secondary font-sans-medium">
                   Avg eating window
@@ -874,7 +878,7 @@ function MealTimingCard() {
               <Text
                 className="text-xs font-sans-bold"
                 style={{
-                  color: windowOk ? themeColors.status.success : themeColors.status.warning,
+                  color: windowOk ? c.success : c.warning,
                 }}
               >
                 {fmtWindow(insights.avgEatingWindowMinutes)}
@@ -914,6 +918,7 @@ function WeightChart({
   viewportWidth: number;
   trendHint: string;
 }) {
+  const c = useColors();
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const chartWidth = viewportWidth - 64;
   const height = 160;
@@ -923,7 +928,7 @@ function WeightChart({
     return (
       <View style={{ width: chartWidth, height }} className="items-center justify-center">
         <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-3">
-          <Ionicons name="trending-up-outline" size={24} color={themeColors.text.tertiary} />
+          <Ionicons name="trending-up-outline" size={24} color={c.textTertiary} />
         </View>
         <Text className="text-sm text-text-secondary font-sans-medium">{trendHint}</Text>
       </View>
@@ -968,12 +973,12 @@ function WeightChart({
       <Svg width={chartWidth} height={height}>
         <Defs>
           <SvgGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor={themeColors.primary['500']} stopOpacity={0.3} />
-            <Stop offset="100%" stopColor={themeColors.primary['500']} stopOpacity={0} />
+            <Stop offset="0%" stopColor={c.primary} stopOpacity={0.3} />
+            <Stop offset="100%" stopColor={c.primary} stopOpacity={0} />
           </SvgGradient>
           <SvgGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor={themeColors.primary['400']} />
-            <Stop offset="100%" stopColor={themeColors.primary['500']} />
+            <Stop offset="0%" stopColor={c.primaryMuted} />
+            <Stop offset="100%" stopColor={c.primary} />
           </SvgGradient>
         </Defs>
 
@@ -981,7 +986,7 @@ function WeightChart({
           <Path
             key={l.value}
             d={`M ${padding.left} ${l.y} L ${chartWidth - padding.right} ${l.y}`}
-            stroke={themeColors.surface.border}
+            stroke={c.border}
             strokeWidth={1}
             strokeDasharray="4,4"
           />
@@ -1003,8 +1008,8 @@ function WeightChart({
             cx={p.x}
             cy={p.y}
             r={3}
-            fill={themeColors.primary['500']}
-            stroke={themeColors.surface.tertiary}
+            fill={c.primary}
+            stroke={c.cardAlt}
             strokeWidth={2}
           />
         ))}
@@ -1068,6 +1073,7 @@ function useBfCategoryLabel(category: string): string {
 }
 
 function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => void }) {
+  const c = useColors();
   const { t } = useLocale();
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const { latest, history, fetchLatest, fetchHistory } = useBodyCompositionStore();
@@ -1086,7 +1092,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
       <Animated.View entering={FadeInDown.delay(300).duration(400)} className="mb-4">
         <View className="rounded-2xl bg-surface-card border border-surface-border p-5 items-center">
           <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-3">
-            <Ionicons name="body-outline" size={26} color={themeColors.text.tertiary} />
+            <Ionicons name="body-outline" size={26} color={c.textTertiary} />
           </View>
           <Text className="text-base font-sans-semibold text-text mb-1">
             {t('progress.noMeasurements')}
@@ -1108,8 +1114,8 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
     );
   }
 
-  const bfColor = BF_CATEGORY_COLORS[latest.bodyFatCategory] ?? themeColors.text.secondary;
-  const bmiColor = BMI_CATEGORY_COLORS[latest.bmiCategory] ?? themeColors.text.secondary;
+  const bfColor = BF_CATEGORY_COLORS[latest.bodyFatCategory] ?? c.textSecondary;
+  const bmiColor = BMI_CATEGORY_COLORS[latest.bmiCategory] ?? c.textSecondary;
 
   // Calculate delta from previous measurement
   const previous = history.length >= 2 ? history[history.length - 2] : null;
@@ -1121,7 +1127,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
     <Animated.View entering={FadeInDown.delay(300).duration(400)} className="mb-4">
       <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
         <View className="flex-row items-center gap-2 mb-3">
-          <Ionicons name="body-outline" size={16} color={themeColors.text.secondary} />
+          <Ionicons name="body-outline" size={16} color={c.textSecondary} />
           <Text className="text-sm font-sans-semibold text-text">
             {t('progress.bodyComposition')}
           </Text>
@@ -1144,7 +1150,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
             {bfDelta !== null && bfDelta !== 0 && (
               <Text
                 className="text-[10px] font-sans-medium"
-                style={{ color: bfDelta < 0 ? themeColors.status.success : '#f59e0b' }}
+                style={{ color: bfDelta < 0 ? c.success : '#f59e0b' }}
               >
                 {bfDelta > 0 ? '+' : ''}
                 {bfDelta}%
@@ -1204,6 +1210,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
 // ─── Weekly calorie budget card ───────────────────────────────────────────────
 
 function WeeklyBudgetCard() {
+  const c = useColors();
   const { t } = useLocale();
   const { weeklyBudget, fetchWeeklyBudget } = useBodyCompositionStore();
 
@@ -1221,7 +1228,7 @@ function WeeklyBudgetCard() {
     <Animated.View entering={FadeInDown.delay(400).duration(400)} className="mb-4">
       <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
         <View className="flex-row items-center gap-2 mb-3">
-          <Ionicons name="calendar-outline" size={16} color={themeColors.text.secondary} />
+          <Ionicons name="calendar-outline" size={16} color={c.textSecondary} />
           <Text className="text-sm font-sans-semibold text-text">{t('progress.weeklyBudget')}</Text>
         </View>
 
@@ -1231,7 +1238,7 @@ function WeeklyBudgetCard() {
             className="h-full rounded-full"
             style={{
               width: `${Math.min(100, progress)}%`,
-              backgroundColor: isOverBudget ? '#ef4444' : themeColors.primary['500'],
+              backgroundColor: isOverBudget ? '#ef4444' : c.primary,
             }}
           />
         </View>
@@ -1243,7 +1250,7 @@ function WeeklyBudgetCard() {
           </Text>
           <Text
             className="text-xs font-sans-semibold"
-            style={{ color: isOverBudget ? '#ef4444' : themeColors.status.success }}
+            style={{ color: isOverBudget ? '#ef4444' : c.success }}
           >
             {isOverBudget
               ? `${Math.abs(weeklyBudget.remaining).toLocaleString()} ${t('progress.surplus')}`
@@ -1268,7 +1275,7 @@ function WeeklyBudgetCard() {
                   className="w-full rounded-md overflow-hidden mb-1"
                   style={{
                     height: 40,
-                    backgroundColor: themeColors.surface.secondary,
+                    backgroundColor: c.cardAlt,
                   }}
                 >
                   {!isFuture && (
@@ -1281,8 +1288,8 @@ function WeeklyBudgetCard() {
                         backgroundColor: isOver
                           ? '#ef4444'
                           : isToday
-                            ? themeColors.primary['500']
-                            : themeColors.primary['400'] + '80',
+                            ? c.primary
+                            : c.primaryMuted + '80',
                         borderRadius: 4,
                       }}
                     />
@@ -1291,7 +1298,7 @@ function WeeklyBudgetCard() {
                 <Text
                   className="text-[9px] font-sans-medium"
                   style={{
-                    color: isToday ? themeColors.primary['500'] : themeColors.text.tertiary,
+                    color: isToday ? c.primary : c.textTertiary,
                   }}
                 >
                   {dayLabel}
@@ -1321,6 +1328,7 @@ function WeeklyBudgetCard() {
 // ─── Body (weight) tab ────────────────────────────────────────────────────────
 
 function BodyTab({ viewportWidth }: { viewportWidth: number }) {
+  const c = useColors();
   const { t } = useLocale();
   const navigation = useNavigation();
   const unitSystem = useSettingsStore((s) => s.unitSystem);
@@ -1414,7 +1422,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
       {/* Current Weight Hero */}
       <Animated.View entering={FadeInDown.duration(400)} className="mb-4">
         <LinearGradient
-          colors={[themeColors.surface.border, themeColors.surface.tertiary]}
+          colors={[c.border, c.cardAlt]}
           className="rounded-3xl border border-surface-border p-5"
         >
           <View className="items-center">
@@ -1479,7 +1487,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
             ) : (
               <View className="items-center py-4">
                 <View className="h-16 w-16 rounded-full bg-surface-secondary items-center justify-center mb-3">
-                  <Ionicons name="scale-outline" size={28} color={themeColors.text.tertiary} />
+                  <Ionicons name="scale-outline" size={28} color={c.textTertiary} />
                 </View>
                 <Text className="text-base font-sans-medium text-text-secondary">
                   {t('progress.noWeightEntries')}
@@ -1541,11 +1549,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           className="flex-row gap-3 mb-6"
         >
           <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
-            <Ionicons
-              name="arrow-down-circle-outline"
-              size={22}
-              color={themeColors.primary['500']}
-            />
+            <Ionicons name="arrow-down-circle-outline" size={22} color={c.primary} />
             <Text className="text-lg font-sans-bold text-text mt-2">
               {displayWeight(Math.min(...history.map((h) => h.weightKg)), unitSystem)}
             </Text>
@@ -1554,7 +1558,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
             </Text>
           </View>
           <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
-            <Ionicons name="arrow-up-circle-outline" size={22} color={themeColors.primary['400']} />
+            <Ionicons name="arrow-up-circle-outline" size={22} color={c.primaryMuted} />
             <Text className="text-lg font-sans-bold text-text mt-2">
               {displayWeight(Math.max(...history.map((h) => h.weightKg)), unitSystem)}
             </Text>
@@ -1563,7 +1567,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
             </Text>
           </View>
           <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
-            <Ionicons name="analytics-outline" size={22} color={themeColors.primary['400']} />
+            <Ionicons name="analytics-outline" size={22} color={c.primaryMuted} />
             <Text className="text-lg font-sans-bold text-text mt-2">{history.length}</Text>
             <Text className="text-xs text-text-secondary font-sans-medium">
               {t('progress.entries')}
@@ -1592,11 +1596,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
                   >
                     <View className="flex-row items-center gap-3">
                       <View className="h-10 w-10 rounded-full bg-surface-secondary items-center justify-center">
-                        <Ionicons
-                          name="scale-outline"
-                          size={18}
-                          color={themeColors.text.tertiary}
-                        />
+                        <Ionicons name="scale-outline" size={18} color={c.textTertiary} />
                       </View>
                       <Text className="font-sans-medium text-text-secondary">
                         {new Date(entry.loggedAt + 'T12:00:00').toLocaleDateString(undefined, {
@@ -1624,7 +1624,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
         ) : (
           <View className="rounded-2xl bg-surface-card border border-surface-border p-6 items-center">
             <View className="h-14 w-14 rounded-full bg-surface-secondary items-center justify-center mb-3">
-              <Ionicons name="heart-outline" size={24} color={themeColors.text.tertiary} />
+              <Ionicons name="heart-outline" size={24} color={c.textTertiary} />
             </View>
             <Text className="text-base font-sans-medium text-text mb-1">
               {t('progress.noWeightEntries')}
@@ -1676,7 +1676,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           accessibilityRole="button"
           accessibilityLabel={t('progress.logMeasurements')}
         >
-          <Ionicons name="body-outline" size={18} color={themeColors.text.secondary} />
+          <Ionicons name="body-outline" size={18} color={c.textSecondary} />
           <Text className="font-sans-semibold text-text-secondary text-sm">
             {t('progress.logMeasurements')}
           </Text>
@@ -1831,6 +1831,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
 // ─── Main ProgressScreen ──────────────────────────────────────────────────────
 
 function WorkoutProgressSection() {
+  const c = useColors();
   const { t } = useLocale();
   const navigation = useNavigation();
   const { summary, fetchSummary, summaryLoading } = useWorkoutStore();
@@ -1843,7 +1844,7 @@ function WorkoutProgressSection() {
     <View className="px-4 mt-5">
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center gap-2">
-          <Ionicons name="barbell-outline" size={18} color={themeColors.primary['500']} />
+          <Ionicons name="barbell-outline" size={18} color={c.primary} />
           <Text className="text-lg font-sans-bold text-text">{t('workout.title')}</Text>
         </View>
         <Pressable
@@ -1928,6 +1929,7 @@ function WorkoutProgressSection() {
 }
 
 export function ProgressScreen() {
+  const c = useColors();
   const { t } = useLocale();
   const { width } = useWindowDimensions();
   const navigation = useNavigation();
@@ -1956,7 +1958,7 @@ export function ProgressScreen() {
                 }
                 className="flex-row items-center gap-2 rounded-full bg-primary-500/15 px-4 py-2"
               >
-                <Ionicons name="calendar-outline" size={16} color={themeColors.primary['500']} />
+                <Ionicons name="calendar-outline" size={16} color={c.primary} />
                 <Text className="font-sans-medium text-primary-400 text-sm">
                   {t('progress.weekly')}
                 </Text>
@@ -1966,10 +1968,7 @@ export function ProgressScreen() {
 
           {/* Tab selector: Nutrition | Body */}
           <View className="px-4 mb-5">
-            <View
-              className="flex-row rounded-2xl p-1"
-              style={{ backgroundColor: themeColors.surface.secondary }}
-            >
+            <View className="flex-row rounded-2xl p-1" style={{ backgroundColor: c.cardAlt }}>
               {(['nutrition', 'body'] as const).map((tab) => (
                 <Pressable
                   key={tab}
@@ -1992,7 +1991,7 @@ export function ProgressScreen() {
                   <Ionicons
                     name={tab === 'nutrition' ? 'nutrition-outline' : 'body-outline'}
                     size={15}
-                    color={activeTab === tab ? themeColors.text.primary : themeColors.text.tertiary}
+                    color={activeTab === tab ? c.text : c.textTertiary}
                   />
                   <Text
                     className={`font-sans-semibold text-sm ${

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Animated, { useAnimatedProps, useSharedValue, withSpring } from 'react-native-reanimated';
-import { themeColors } from '../../theme';
+import { useColors } from '../../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -27,9 +27,9 @@ export interface ProgressRingProps {
 export function ProgressRing({
   progress,
   size = 120,
-  color = '#ffffff',
+  color,
   gradientEnd,
-  backgroundColor = '#2c2c2e',
+  backgroundColor,
   strokeWidth = 10,
   label,
   centerLabel,
@@ -37,6 +37,9 @@ export function ProgressRing({
   centerCaption,
   className = '',
 }: ProgressRingProps) {
+  const c = useColors();
+  const resolvedColor = color ?? c.primary;
+  const resolvedBg = backgroundColor ?? c.trackBg;
   const animatedProgress = useSharedValue(0);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -66,7 +69,7 @@ export function ProgressRing({
           {useGradient && (
             <Defs>
               <LinearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0%" stopColor={color} />
+                <Stop offset="0%" stopColor={resolvedColor} />
                 <Stop offset="100%" stopColor={gradientEnd} />
               </LinearGradient>
             </Defs>
@@ -75,7 +78,7 @@ export function ProgressRing({
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={backgroundColor}
+            stroke={resolvedBg}
             strokeWidth={strokeWidth}
             fill="none"
             opacity={0.3}
@@ -84,7 +87,7 @@ export function ProgressRing({
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={useGradient ? 'url(#ringGradient)' : color}
+            stroke={useGradient ? 'url(#ringGradient)' : resolvedColor}
             strokeWidth={strokeWidth}
             fill="none"
             strokeDasharray={circumference}
@@ -103,12 +106,12 @@ export function ProgressRing({
             justifyContent: 'center',
           }}
         >
-          <Text className="font-sans-bold text-white" style={{ fontSize: size * 0.2 }}>
+          <Text className="font-sans-bold text-text" style={{ fontSize: size * 0.2 }}>
             {centerText}
           </Text>
           {centerSubLabel ? (
             <Text
-              className="font-sans-medium text-zinc-400"
+              className="font-sans-medium text-text-tertiary"
               style={{ fontSize: size * 0.08, marginTop: 2 }}
             >
               {centerSubLabel}
@@ -116,7 +119,7 @@ export function ProgressRing({
           ) : null}
           {centerCaption ? (
             <Text
-              className="font-sans-medium text-zinc-500"
+              className="font-sans-medium text-text-tertiary"
               style={{ fontSize: size * 0.07, marginTop: 1 }}
             >
               {centerCaption}

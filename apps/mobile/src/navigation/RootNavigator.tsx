@@ -5,11 +5,12 @@ import { useOnboardingStore } from '../stores/onboarding.store';
 import { AuthStack } from './AuthStack';
 import { SetupStack } from './SetupStack';
 import { MainStack } from './MainStack';
-import { themeColors } from '../theme';
+import { useColors } from '../theme';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useSyncQueue } from '../hooks/useSyncQueue';
 
 function RootContent() {
+  const c = useColors();
   const profileSetupComplete = useOnboardingStore((s) => s.profileSetupComplete);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
@@ -17,7 +18,7 @@ function RootContent() {
   if (profileSetupComplete === null) {
     return (
       <View className="flex-1 bg-surface-app items-center justify-center">
-        <ActivityIndicator size="large" color={themeColors.primary['500']} />
+        <ActivityIndicator size="large" color={c.primary} />
       </View>
     );
   }
@@ -26,6 +27,7 @@ function RootContent() {
 }
 
 export function RootNavigator() {
+  const c = useColors();
   const loadOnboardingStatus = useOnboardingStore((s) => s.loadOnboardingStatus);
   const syncProfileSetupStatus = useOnboardingStore((s) => s.syncProfileSetupStatus);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -46,7 +48,7 @@ export function RootNavigator() {
   if (isLoading) {
     return (
       <View className="flex-1 bg-surface-app items-center justify-center">
-        <ActivityIndicator size="large" color={themeColors.primary['500']} />
+        <ActivityIndicator size="large" color={c.primary} />
       </View>
     );
   }

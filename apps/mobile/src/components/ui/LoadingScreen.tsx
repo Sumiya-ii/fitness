@@ -1,11 +1,13 @@
 import { View, Text, ActivityIndicator } from 'react-native';
-import { themeColors } from '../../theme';
+import { useColors } from '../../theme';
 
 export interface LoadingScreenProps {
   className?: string;
 }
 
 export function LoadingScreen({ className = '' }: LoadingScreenProps) {
+  const c = useColors();
+
   return (
     <View
       className={`
@@ -13,10 +15,8 @@ export function LoadingScreen({ className = '' }: LoadingScreenProps) {
         ${className}
       `}
     >
-      <ActivityIndicator size="large" color={themeColors.primary['500']} />
-      <Text className="mt-4 text-lg font-sans-semibold text-text-app">
-        Coach
-      </Text>
+      <ActivityIndicator size="large" color={c.primary} />
+      <Text className="mt-4 text-lg font-sans-semibold text-text-app">Coach</Text>
     </View>
   );
 }

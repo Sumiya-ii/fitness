@@ -1,3 +1,61 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Surface — light */
+    --color-surface-app: 244 247 251;
+    --color-surface-default: 255 255 255;
+    --color-surface-card: 255 255 255;
+    --color-surface-secondary: 240 244 249;
+    --color-surface-tertiary: 232 238 245;
+    --color-surface-border: 221 229 240;
+    --color-surface-muted: 195 206 223;
+
+    /* Text — light */
+    --color-text-primary: 11 18 32;
+    --color-text-secondary: 81 97 122;
+    --color-text-tertiary: 118 135 162;
+    --color-text-inverse: 255 255 255;
+    --color-text-app: 11 18 32;
+
+    /* Primary — light */
+    --color-primary-50: 240 244 249;
+    --color-primary-400: 71 85 105;
+    --color-primary-500: 15 23 42;
+    --color-primary-600: 15 23 42;
+
+    /* On-primary (text/icons on primary-500 bg) — light */
+    --color-on-primary: 255 255 255;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Surface — dark */
+      --color-surface-app: 0 0 0;
+      --color-surface-default: 28 28 30;
+      --color-surface-card: 28 28 30;
+      --color-surface-secondary: 44 44 46;
+      --color-surface-tertiary: 58 58 60;
+      --color-surface-border: 44 44 46;
+      --color-surface-muted: 72 72 74;
+
+      /* Text — dark */
+      --color-text-primary: 255 255 255;
+      --color-text-secondary: 161 161 170;
+      --color-text-tertiary: 113 113 122;
+      --color-text-inverse: 0 0 0;
+      --color-text-app: 255 255 255;
+
+      /* Primary — dark */
+      --color-primary-50: 248 250 252;
+      --color-primary-400: 148 163 184;
+      --color-primary-500: 255 255 255;
+      --color-primary-600: 226 232 240;
+
+      /* On-primary (text/icons on primary-500 bg) — dark */
+      --color-on-primary: 0 0 0;
+    }
+  }
+}

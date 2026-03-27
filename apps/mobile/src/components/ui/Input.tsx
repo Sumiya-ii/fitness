@@ -1,11 +1,6 @@
 import { forwardRef, useState } from 'react';
-import {
-  TextInput,
-  View,
-  Text,
-  type TextInputProps,
-} from 'react-native';
-import { themeColors } from '../../theme';
+import { TextInput, View, Text, type TextInputProps } from 'react-native';
+import { useColors } from '../../theme';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -31,8 +26,9 @@ export const Input = forwardRef<TextInput, InputProps>(
       onBlur,
       ...props
     },
-    ref
+    ref,
   ) => {
+    const c = useColors();
     const [isFocused, setIsFocused] = useState(false);
 
     const hasError = Boolean(error);
@@ -45,9 +41,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     return (
       <View className={`${containerClassName}`}>
         {label ? (
-          <Text className="mb-1.5 text-sm font-sans-medium text-text-secondary">
-            {label}
-          </Text>
+          <Text className="mb-1.5 text-sm font-sans-medium text-text-secondary">{label}</Text>
         ) : null}
         <View
           className={`
@@ -55,16 +49,14 @@ export const Input = forwardRef<TextInput, InputProps>(
             ${borderColor}
           `}
         >
-          {leftIcon ? (
-            <View className="mr-3">{leftIcon}</View>
-          ) : null}
+          {leftIcon ? <View className="mr-3">{leftIcon}</View> : null}
           <TextInput
             ref={ref}
             className={`
               flex-1 py-3 text-base text-text-app
               ${className}
             `}
-            placeholderTextColor={themeColors.text.secondary}
+            placeholderTextColor={c.textSecondary}
             onFocus={(e) => {
               setIsFocused(true);
               onFocus?.(e);
@@ -75,20 +67,16 @@ export const Input = forwardRef<TextInput, InputProps>(
             }}
             {...props}
           />
-          {rightIcon ? (
-            <View className="ml-3">{rightIcon}</View>
-          ) : null}
+          {rightIcon ? <View className="ml-3">{rightIcon}</View> : null}
         </View>
         {error ? (
           <Text className="mt-1.5 text-sm text-red-400">{error}</Text>
         ) : helperText ? (
-          <Text className="mt-1.5 text-sm text-text-tertiary">
-            {helperText}
-          </Text>
+          <Text className="mt-1.5 text-sm text-text-tertiary">{helperText}</Text>
         ) : null}
       </View>
     );
-  }
+  },
 );
 
 Input.displayName = 'Input';

@@ -1,13 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import { type ComponentProps, forwardRef, useCallback } from 'react';
 import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
-import { themeColors } from '../../theme';
+import { useColors } from '../../theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-white active:bg-zinc-200',
+  primary: 'bg-primary-500 active:opacity-80',
   secondary: 'bg-surface-default active:bg-surface-secondary border border-surface-border',
   outline: 'bg-transparent border-2 border-surface-border active:bg-surface-secondary',
   ghost: 'bg-transparent active:bg-surface-secondary',
@@ -15,7 +15,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const variantTextClasses: Record<ButtonVariant, string> = {
-  primary: 'text-black',
+  primary: 'text-on-primary',
   secondary: 'text-text',
   outline: 'text-text',
   ghost: 'text-text',
@@ -73,6 +73,8 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
     },
     ref,
   ) => {
+    const c = useColors();
+
     const handlePress = useCallback(
       (e: Parameters<NonNullable<ComponentProps<typeof Pressable>['onPress']>>[0]) => {
         if (disabled || loading) return;
@@ -105,11 +107,7 @@ export const Button = forwardRef<React.ElementRef<typeof Pressable>, ButtonProps
         {loading ? (
           <ActivityIndicator
             size="small"
-            color={
-              variant === 'primary' || variant === 'danger'
-                ? themeColors.text.inverse
-                : themeColors.primary['500']
-            }
+            color={variant === 'primary' || variant === 'danger' ? c.onPrimary : c.primary}
           />
         ) : (
           <Text

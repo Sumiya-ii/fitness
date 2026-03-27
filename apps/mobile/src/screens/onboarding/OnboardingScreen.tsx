@@ -15,11 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/ui/Button';
 import type { AuthStackParamList } from '../../navigation/types';
 import { useLocale } from '../../i18n';
-import { themeColors } from '../../theme';
+import { useColors, type ColorPalette } from '../../theme';
 
 type OnboardingPage = {
   id: string;
-  gradient: [string, string];
+  gradient: (c: ColorPalette) => [string, string];
   icon: keyof typeof Ionicons.glyphMap;
   titleKey: string;
   subtitleKey: string;
@@ -28,28 +28,28 @@ type OnboardingPage = {
 const PAGES: OnboardingPage[] = [
   {
     id: '1',
-    gradient: [themeColors.surface.border, themeColors.surface.muted],
+    gradient: (c) => [c.border, c.muted],
     icon: 'nutrition-outline',
     titleKey: 'onboarding.trackNutrition',
     subtitleKey: 'onboarding.trackNutritionSubtitle',
   },
   {
     id: '2',
-    gradient: [themeColors.surface.tertiary, themeColors.surface.border],
+    gradient: (c) => [c.cardAlt, c.border],
     icon: 'sparkles-outline',
     titleKey: 'onboarding.aiInsights',
     subtitleKey: 'onboarding.aiInsightsSubtitle',
   },
   {
     id: '3',
-    gradient: [themeColors.surface.border, themeColors.surface.tertiary],
+    gradient: (c) => [c.border, c.cardAlt],
     icon: 'chatbubbles-outline',
     titleKey: 'onboarding.telegramCoach',
     subtitleKey: 'onboarding.telegramCoachSubtitle',
   },
   {
     id: '4',
-    gradient: [themeColors.surface.tertiary, themeColors.surface.muted],
+    gradient: (c) => [c.cardAlt, c.muted],
     icon: 'trophy-outline',
     titleKey: 'onboarding.reachGoals',
     subtitleKey: 'onboarding.reachGoalsSubtitle',
@@ -60,17 +60,20 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Onboarding'>;
 
 export function OnboardingScreen({ navigation }: Props) {
   const { t } = useLocale();
+  const c = useColors();
   const { width } = useWindowDimensions();
   const setOnboardingComplete = useOnboardingStore((s) => s.setOnboardingComplete);
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const isLastPage = currentIndex === PAGES.length - 1;
 
-  const handleViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
-    if (viewableItems[0]?.index != null) {
-      setCurrentIndex(viewableItems[0].index);
-    }
-  }).current;
+  const handleViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
+      if (viewableItems[0]?.index != null) {
+        setCurrentIndex(viewableItems[0].index);
+      }
+    },
+  ).current;
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
@@ -93,11 +96,11 @@ export function OnboardingScreen({ navigation }: Props) {
       <View className="flex-1 justify-center">
         <View className="items-center mb-10">
           <LinearGradient
-            colors={item.gradient as [string, string]}
+            colors={item.gradient(c)}
             className="w-40 h-40 rounded-3xl items-center justify-center"
             style={{ borderRadius: 24 }}
           >
-            <Ionicons name={item.icon} size={80} color={themeColors.text.primary} />
+            <Ionicons name={item.icon} size={80} color={c.text} />
           </LinearGradient>
         </View>
         <Text className="text-2xl font-sans-bold text-text text-center mb-3">

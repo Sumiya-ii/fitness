@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import { Button } from './Button';
-import { themeColors } from '../../theme';
+import { useColors } from '../../theme';
 
 type EmptyStateIcon = 'nutrition' | 'search' | 'camera' | 'mic' | 'barcode' | 'heart' | 'list';
 
@@ -32,6 +32,7 @@ export function EmptyState({
   onAction,
   className = '',
 }: EmptyStateProps) {
+  const c = useColors();
   const iconName = iconMap[icon];
 
   return (
@@ -42,19 +43,11 @@ export function EmptyState({
       `}
     >
       <View className="mb-4 h-20 w-20 rounded-full bg-surface-card border border-surface-border items-center justify-center">
-        <Ionicons
-          name={iconName}
-          size={36}
-          color={themeColors.text.secondary}
-        />
+        <Ionicons name={iconName} size={36} color={c.textSecondary} />
       </View>
-      <Text className="mb-2 text-center text-lg font-sans-semibold text-text">
-        {title}
-      </Text>
+      <Text className="mb-2 text-center text-lg font-sans-semibold text-text">{title}</Text>
       {subtitle ? (
-        <Text className="mb-6 text-center text-base text-text-secondary">
-          {subtitle}
-        </Text>
+        <Text className="mb-6 text-center text-base text-text-secondary">{subtitle}</Text>
       ) : null}
       {actionLabel && onAction ? (
         <Button variant="primary" size="md" onPress={onAction}>

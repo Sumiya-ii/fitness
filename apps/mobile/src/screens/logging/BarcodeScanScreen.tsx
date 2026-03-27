@@ -15,7 +15,7 @@ import { BackButton, Button, BottomSheet } from '../../components/ui';
 import { mealsApi, type BarcodeLookupResult } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 import { useLocale } from '../../i18n';
-import { themeColors } from '../../theme';
+import { useColors } from '../../theme';
 
 type Props = LogStackScreenProps<'BarcodeScan'>;
 
@@ -88,10 +88,12 @@ export function BarcodeScanScreen() {
     }
   };
 
+  const c = useColors();
+
   if (!permission) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator size="large" color={themeColors.primary['500']} />
+        <ActivityIndicator size="large" color={c.primary} />
       </SafeAreaView>
     );
   }
