@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from '@coach/shared';
@@ -30,6 +35,8 @@ const DRAFT_TTL_DAYS = 7;
 
 @Injectable()
 export class VoiceService {
+  private readonly logger = new Logger(VoiceService.name);
+
   constructor(
     @InjectQueue(QUEUE_NAMES.STT_PROCESSING) private readonly sttQueue: Queue,
     private readonly prisma: PrismaService,
@@ -44,14 +51,26 @@ export class VoiceService {
     const expiresAt = new Date(Date.now() + DRAFT_TTL_DAYS * 24 * 60 * 60 * 1000);
 
     // Create VoiceDraft row to persist state beyond BullMQ job lifetime
-    const draft = await this.prisma.voiceDraft.create({
-      data: {
-        userId,
-        locale: locale ?? 'mn',
-        status: 'waiting',
-        expiresAt,
-      },
-    });
+    let draft: { id: string };
+    try {
+      draft = await this.prisma.voiceDraft.create({
+        data: {
+          userId,
+          locale: locale ?? 'mn',
+          status: 'waiting',
+          expiresAt,
+        },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to create voice draft: ${msg}`);
+      if (msg.includes("doesn't exist") || msg.includes('does not exist')) {
+        throw new InternalServerErrorException(
+          'Voice drafts table is not available. Please run database migrations.',
+        );
+      }
+      throw new InternalServerErrorException('Failed to create voice draft');
+    }
 
     // Upload audio to S3 when configured; fall back to base64-in-job for local dev
     let s3Key: string | undefined;
