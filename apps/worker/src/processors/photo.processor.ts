@@ -1,6 +1,7 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { MONGOLIAN_FOOD_REFERENCE } from '@coach/shared';
 
 interface PhotoJobData {
   userId: string;
@@ -71,7 +72,9 @@ Estimation rules:
 - Include ALL visible food items — side dishes, garnishes, sauces, and drinks count
 - If a food is partially obscured, estimate based on what's visible
 - sodium is in milligrams
-- Never return empty items array — always make your best estimate`;
+- Never return empty items array — always make your best estimate
+
+${MONGOLIAN_FOOD_REFERENCE}`;
 
 const LABEL_SYSTEM_PROMPT = `You are an expert nutrition label reader. Your job is to accurately extract all nutritional information from a photograph of a product's nutrition facts label or packaging.
 
