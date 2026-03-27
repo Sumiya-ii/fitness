@@ -1,38 +1,36 @@
 /**
  * Unit tests for RootNavigator (C-058).
- * Real E2E requires Detox/Maestro setup.
+ * Superseded by screens/root-navigator.test.tsx for comprehensive routing tests.
+ * This file kept for backwards compatibility — just verifies import works.
  */
 
-// Mock react-native first (hoisted)
-jest.mock('react-native', () => ({
-  View: ({ children }: { children?: unknown }) => children,
-  ActivityIndicator: () => null,
-  Platform: { OS: 'ios' },
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
+jest.mock('../services/firebase-auth.service', () => ({
+  configureGoogleSignIn: jest.fn(),
+  subscribeToTokenRefresh: jest.fn(() => jest.fn()),
+  signInWithEmailPassword: jest.fn(),
+  signUpWithEmailPassword: jest.fn(),
+  signInWithGoogle: jest.fn(),
+  signInWithApple: jest.fn(),
+  sendPasswordReset: jest.fn(),
+  signOutFirebase: jest.fn(),
 }));
 
-// Mock stores
-jest.mock('../stores/auth.store', () => ({
-  useAuthStore: (fn: (s: unknown) => unknown) => {
-    const state = { isAuthenticated: false, isLoading: false };
-    return fn(state);
-  },
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn() }),
+  useRoute: () => ({ params: {} }),
+  useFocusEffect: jest.fn(),
+  useIsFocused: () => true,
 }));
 
-jest.mock('../stores/onboarding.store', () => ({
-  useOnboardingStore: (fn: (s: unknown) => unknown) => {
-    const state = {
-      onboardingComplete: true,
-      profileSetupComplete: true,
-      loadOnboardingStatus: jest.fn(),
-    };
-    return fn(state);
-  },
-}));
-
-// Mock navigation stacks
 jest.mock('../navigation/AuthStack', () => ({ AuthStack: () => null }));
 jest.mock('../navigation/SetupStack', () => ({ SetupStack: () => null }));
 jest.mock('../navigation/MainStack', () => ({ MainStack: () => null }));
+jest.mock('../hooks/usePushNotifications', () => ({ usePushNotifications: jest.fn() }));
+jest.mock('../hooks/useSyncQueue', () => ({ useSyncQueue: jest.fn() }));
 
 import { RootNavigator } from '../navigation/RootNavigator';
 
