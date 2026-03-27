@@ -19,9 +19,7 @@ Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   sendDefaultPii: false,
   enableLogs: true,
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+  integrations: [Sentry.feedbackIntegration()],
 });
 
 export default Sentry.wrap(function App() {
