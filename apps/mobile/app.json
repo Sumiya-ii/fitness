@@ -96,6 +96,7 @@
         "NSHealthUpdateUsageDescription": "Allow $(PRODUCT_NAME) to update your health data in Apple Health."
       },
       "entitlements": {
+        "aps-environment": "production",
         "com.apple.developer.healthkit": true,
         "com.apple.developer.healthkit.access": [
           "HKQuantityTypeIdentifierStepCount",
