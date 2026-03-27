@@ -87,12 +87,15 @@ export function usePushNotifications() {
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, string>;
       if (data?.screen === 'CoachChat') {
-        const { tier, showPaywall } = useSubscriptionStore.getState();
-        if (tier !== 'pro') {
-          showPaywall();
-          return;
-        }
-        navigation.navigate('CoachChat');
+        const store = useSubscriptionStore.getState();
+        // Use ensureEntitlement to avoid blocking paid users due to stale state
+        void store.ensureEntitlement().then((isPro) => {
+          if (!isPro) {
+            store.showPaywall();
+            return;
+          }
+          navigation.navigate('CoachChat');
+        });
       }
     });
 

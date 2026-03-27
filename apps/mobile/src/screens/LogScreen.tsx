@@ -67,14 +67,14 @@ export function LogScreen() {
     }, []),
   );
 
-  const handleAction = (key: string) => {
+  const handleAction = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     switch (key) {
       case 'camera':
-        if (!requirePro()) return;
+        if (!(await requirePro())) return;
         return navigation.navigate('PhotoLog');
       case 'voice':
-        if (!requirePro()) return;
+        if (!(await requirePro())) return;
         return navigation.navigate('VoiceLog');
       case 'barcode':
         return navigation.navigate('BarcodeScan');
@@ -152,7 +152,7 @@ export function LogScreen() {
             {ACTIONS.map((action) => (
               <Pressable
                 key={action.key}
-                onPress={() => handleAction(action.key)}
+                onPress={() => void handleAction(action.key)}
                 className="flex-1 items-center py-3 rounded-2xl bg-white border border-surface-border"
               >
                 <View

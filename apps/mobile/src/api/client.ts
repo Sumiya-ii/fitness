@@ -52,11 +52,8 @@ async function clearToken(): Promise<void> {
 let _verifyPromise: Promise<boolean> | null = null;
 
 async function tryVerifyAndRetry(originalFetch: () => Promise<Response>): Promise<Response | null> {
-  if (!_shouldSuppressPaywall?.()) {
-    // Client doesn't think user is pro — no point verifying
-    return null;
-  }
-
+  // Always attempt verify on 403 — the store might have stale state
+  // (e.g. default 'free' before initial fetch, or webhook lag).
   // Deduplicate concurrent verify calls
   if (!_verifyPromise) {
     _verifyPromise = (async () => {

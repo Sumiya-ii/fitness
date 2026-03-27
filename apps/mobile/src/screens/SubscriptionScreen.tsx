@@ -1,4 +1,5 @@
-import { View, Text, Pressable, Linking, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, Pressable, Linking, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,40 @@ export function SubscriptionScreen() {
   const tier = useSubscriptionStore((s) => s.tier);
   const currentPeriodEnd = useSubscriptionStore((s) => s.currentPeriodEnd);
   const { t } = useLocale();
+  const [checking, setChecking] = useState(tier !== 'pro');
+
+  // If store says free, verify entitlement before showing paywall
+  useEffect(() => {
+    if (tier === 'pro') {
+      setChecking(false);
+      return;
+    }
+    let cancelled = false;
+    useSubscriptionStore
+      .getState()
+      .ensureEntitlement()
+      .finally(() => {
+        if (!cancelled) setChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tier]);
+
+  if (checking) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#0A0A0A',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator size="large" color="#22C55E" />
+      </View>
+    );
+  }
 
   if (tier !== 'pro') {
     return <PaywallContent onClose={() => navigation.goBack()} />;

@@ -9,6 +9,8 @@ interface SubscriptionState {
   currentPeriodEnd: string | null;
   /** True while an API fetch or RC check is in flight */
   isLoading: boolean;
+  /** True once the first fetchStatus call has resolved (success or failure) */
+  initialLoadDone: boolean;
   /** Controls the global paywall modal overlay */
   paywallVisible: boolean;
   /**
@@ -27,7 +29,9 @@ interface SubscriptionState {
    * Updates the store immediately for responsive UI, then syncs with server.
    */
   handleCustomerInfoUpdate: (info: CustomerInfo) => void;
-  /** Show the paywall modal overlay. */
+  /**
+   * Show the paywall modal overlay. No-op if user is already pro.
+   */
   showPaywall: () => void;
   /** Hide the paywall modal overlay. */
   hidePaywall: () => void;
@@ -35,16 +39,28 @@ interface SubscriptionState {
   reset: () => void;
   /** Start listening for AppState foreground transitions to refresh status. */
   startForegroundListener: () => () => void;
+  /**
+   * Resolves once the initial fetchStatus has completed (success or failure).
+   * Use this to avoid gating features on stale default state.
+   */
+  waitForInitialLoad: () => Promise<void>;
+  /**
+   * Ensures the user's entitlement is fresh before gating.
+   * Checks store → waits for in-flight load → checks RC directly → calls verify.
+   * Returns true if user has pro access.
+   */
+  ensureEntitlement: () => Promise<boolean>;
 }
 
 const DEFAULT: Pick<
   SubscriptionState,
-  'tier' | 'status' | 'currentPeriodEnd' | 'isLoading' | 'paywallVisible'
+  'tier' | 'status' | 'currentPeriodEnd' | 'isLoading' | 'paywallVisible' | 'initialLoadDone'
 > = {
   tier: 'free',
   status: 'active',
   currentPeriodEnd: null,
   isLoading: false,
+  initialLoadDone: false,
   paywallVisible: false,
 };
 
@@ -78,9 +94,20 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       set({ tier: data.tier, status: data.status, currentPeriodEnd: data.currentPeriodEnd });
     } catch {
-      // Silent — keep existing state; error surface is up to the calling screen
+      // Server unreachable — check RC as fallback so we don't block paid users
+      try {
+        const rcPro = await get().checkRcEntitlement();
+        if (rcPro) {
+          set({ tier: 'pro', status: 'active' });
+          // Fire-and-forget server sync attempt
+          subscriptionsApi.verify().catch(() => {});
+          return;
+        }
+      } catch {
+        // RC also failed — keep existing state
+      }
     } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, initialLoadDone: true });
     }
   },
 
@@ -105,7 +132,11 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
 
-  showPaywall: () => set({ paywallVisible: true }),
+  showPaywall: () => {
+    // Never show paywall if already known as pro
+    if (get().tier === 'pro') return;
+    set({ paywallVisible: true });
+  },
   hidePaywall: () => set({ paywallVisible: false }),
 
   reset: () => set(DEFAULT),
@@ -120,5 +151,42 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       previousState = nextState;
     });
     return () => subscription.remove();
+  },
+
+  waitForInitialLoad: () => {
+    const state = get();
+    if (state.initialLoadDone) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const unsub = useSubscriptionStore.subscribe((s) => {
+        if (s.initialLoadDone) {
+          unsub();
+          resolve();
+        }
+      });
+    });
+  },
+
+  ensureEntitlement: async () => {
+    // 1. Already known as pro
+    if (get().tier === 'pro') return true;
+
+    // 2. Initial load in flight — wait for it
+    if (!get().initialLoadDone) {
+      await get().waitForInitialLoad();
+      if (get().tier === 'pro') return true;
+    }
+
+    // 3. Store says free — but maybe RC has the entitlement (webhook lag).
+    //    Do a direct RC check + server verify.
+    const rcPro = await get().checkRcEntitlement();
+    if (rcPro) {
+      set({ tier: 'pro', status: 'active' });
+      // Sync server in background
+      subscriptionsApi.verify().catch(() => {});
+      return true;
+    }
+
+    // 4. Genuinely free
+    return false;
   },
 }));
