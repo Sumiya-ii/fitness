@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { dayBoundariesUTC } from '@coach/shared';
 import { PrismaService } from '../prisma';
 
 export interface DayHistory {
@@ -21,9 +22,7 @@ export class DashboardService {
   async getDailyDashboard(userId: string, dateStr?: string) {
     const dateKey = dateStr ?? new Date().toISOString().split('T')[0]!;
     // Use explicit UTC boundaries to avoid server-timezone day-boundary drift
-    const dayStart = new Date(dateKey + 'T00:00:00.000Z');
-    const dayEnd = new Date(dateKey + 'T00:00:00.000Z');
-    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+    const { dayStart, dayEnd } = dayBoundariesUTC(dateKey);
 
     const [mealLogs, target, waterLogs, profile, workoutEntries] = await Promise.all([
       this.prisma.mealLog.findMany({

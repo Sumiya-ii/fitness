@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { dayBoundariesUTC } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import {
   calculateCaloriesBurned,
@@ -45,9 +46,7 @@ export class WorkoutLogsService {
     const where: any = { userId };
 
     if (query.date) {
-      const dayStart = new Date(query.date + 'T00:00:00.000Z');
-      const dayEnd = new Date(query.date + 'T00:00:00.000Z');
-      dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+      const { dayStart, dayEnd } = dayBoundariesUTC(query.date);
       where.loggedAt = { gte: dayStart, lt: dayEnd };
     } else if (query.days) {
       const since = new Date();
@@ -233,9 +232,7 @@ export class WorkoutLogsService {
   // ── Helpers ─────────────────────────────────────────────────────────
 
   async getDailyBurn(userId: string, dateStr: string): Promise<number> {
-    const dayStart = new Date(dateStr + 'T00:00:00.000Z');
-    const dayEnd = new Date(dateStr + 'T00:00:00.000Z');
-    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+    const { dayStart, dayEnd } = dayBoundariesUTC(dateStr);
 
     const entries = await this.prisma.workoutLog.findMany({
       where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },

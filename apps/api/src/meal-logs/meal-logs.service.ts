@@ -1,4 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  dayBoundariesUTC,
+  computeItemSnapshot,
+  aggregateNutritionTotals,
+  FoodData,
+} from '@coach/shared';
 import { PrismaService } from '../prisma';
 import { CreateMealLogDto, QuickAddDto, MealLogQueryDto, UpdateMealLogDto } from './meal-logs.dto';
 
@@ -21,68 +27,23 @@ export class MealLogsService {
       const food = foodMap.get(item.foodId);
       if (!food) throw new NotFoundException(`Food ${item.foodId} not found`);
 
-      const serving = food.servings.find((s) => s.id === item.servingId);
-      if (!serving)
-        throw new BadRequestException(
-          `Serving ${item.servingId} not found for food ${item.foodId}`,
-        );
-
-      const nutrient = food.nutrients[0];
-      if (!nutrient) throw new BadRequestException(`Food ${item.foodId} has no nutrient data`);
-
-      const totalGrams = Number(serving.gramsPerUnit) * item.quantity;
-      const factor = totalGrams / 100;
-
-      return {
-        foodId: food.id,
-        quantity: item.quantity,
-        servingLabel: serving.label,
-        gramsPerUnit: Number(serving.gramsPerUnit),
-        snapshotFoodName: food.normalizedName,
-        snapshotCalories: Math.round(Number(nutrient.caloriesPer100g) * factor),
-        snapshotProtein: Number((Number(nutrient.proteinPer100g) * factor).toFixed(2)),
-        snapshotCarbs: Number((Number(nutrient.carbsPer100g) * factor).toFixed(2)),
-        snapshotFat: Number((Number(nutrient.fatPer100g) * factor).toFixed(2)),
-        snapshotFiber:
-          nutrient.fiberPer100g !== null && nutrient.fiberPer100g !== undefined
-            ? Number((Number(nutrient.fiberPer100g) * factor).toFixed(2))
-            : null,
-        snapshotSugar:
-          nutrient.sugarPer100g !== null && nutrient.sugarPer100g !== undefined
-            ? Number((Number(nutrient.sugarPer100g) * factor).toFixed(2))
-            : null,
-        snapshotSodium:
-          nutrient.sodiumPer100g !== null && nutrient.sodiumPer100g !== undefined
-            ? Number((Number(nutrient.sodiumPer100g) * factor).toFixed(2))
-            : null,
-        snapshotSaturatedFat:
-          nutrient.saturatedFatPer100g !== null && nutrient.saturatedFatPer100g !== undefined
-            ? Number((Number(nutrient.saturatedFatPer100g) * factor).toFixed(2))
-            : null,
-      };
+      try {
+        return computeItemSnapshot(food as FoodData, item.servingId, item.quantity);
+      } catch (e) {
+        throw new BadRequestException((e as Error).message);
+      }
     });
 
-    const totalCalories = itemSnapshots.reduce((sum, i) => sum + i.snapshotCalories, 0);
-    // Round after summing to prevent float accumulation (e.g. 5.40 + 2.70 → 8.100000000000001)
-    const totalProtein = Number(
-      itemSnapshots.reduce((sum, i) => sum + i.snapshotProtein, 0).toFixed(2),
-    );
-    const totalCarbs = Number(
-      itemSnapshots.reduce((sum, i) => sum + i.snapshotCarbs, 0).toFixed(2),
-    );
-    const totalFat = Number(itemSnapshots.reduce((sum, i) => sum + i.snapshotFat, 0).toFixed(2));
-    const totalFiber = itemSnapshots.some((i) => i.snapshotFiber !== null)
-      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotFiber ?? 0), 0).toFixed(2))
-      : null;
-    const totalSugar = itemSnapshots.some((i) => i.snapshotSugar !== null)
-      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotSugar ?? 0), 0).toFixed(2))
-      : null;
-    const totalSodium = itemSnapshots.some((i) => i.snapshotSodium !== null)
-      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotSodium ?? 0), 0).toFixed(2))
-      : null;
-    const totalSaturatedFat = itemSnapshots.some((i) => i.snapshotSaturatedFat !== null)
-      ? Number(itemSnapshots.reduce((sum, i) => sum + (i.snapshotSaturatedFat ?? 0), 0).toFixed(2))
-      : null;
+    const {
+      totalCalories,
+      totalProtein,
+      totalCarbs,
+      totalFat,
+      totalFiber,
+      totalSugar,
+      totalSodium,
+      totalSaturatedFat,
+    } = aggregateNutritionTotals(itemSnapshots);
 
     const mealLog = await this.prisma.mealLog.create({
       data: {
@@ -170,9 +131,7 @@ export class MealLogsService {
 
     if (query.date) {
       // Parse as UTC to avoid server-timezone day-boundary drift
-      const dayStart = new Date(query.date + 'T00:00:00.000Z');
-      const dayEnd = new Date(query.date + 'T00:00:00.000Z');
-      dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+      const { dayStart, dayEnd } = dayBoundariesUTC(query.date);
       where.loggedAt = { gte: dayStart, lt: dayEnd };
     }
 
