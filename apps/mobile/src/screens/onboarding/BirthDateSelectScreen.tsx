@@ -18,16 +18,14 @@ export function BirthDateSelectScreen({ navigation }: Props) {
   const [month, setMonth] = useState(
     stored ? (stored.getMonth() + 1).toString().padStart(2, '0') : '',
   );
-  const [day, setDay] = useState(
-    stored ? stored.getDate().toString().padStart(2, '0') : '',
-  );
+  const [day, setDay] = useState(stored ? stored.getDate().toString().padStart(2, '0') : '');
 
   const parsedDate = useMemo(() => {
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     const d = parseInt(day, 10);
     if (!y || !m || !d) return null;
-    if (y < 1900 || y > new Date().getFullYear() - 10) return null;
+    if (y < 1900 || y > new Date().getFullYear() - 13) return null;
     if (m < 1 || m > 12) return null;
     if (d < 1 || d > 31) return null;
     const date = new Date(y, m - 1, d);
@@ -37,9 +35,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
 
   const age = useMemo(() => {
     if (!parsedDate) return null;
-    return Math.floor(
-      (Date.now() - parsedDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
-    );
+    return Math.floor((Date.now() - parsedDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
   }, [parsedDate]);
 
   const handleContinue = () => {
@@ -66,9 +62,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
 
         <View className="flex-row items-center gap-3 mb-6">
           <View className="items-center">
-            <Text className="text-xs font-sans-medium text-text-secondary mb-1">
-              YEAR
-            </Text>
+            <Text className="text-xs font-sans-medium text-text-secondary mb-1">YEAR</Text>
             <TextInput
               value={year}
               onChangeText={(t) => setYear(t.replace(/\D/g, '').slice(0, 4))}
@@ -81,14 +75,10 @@ export function BirthDateSelectScreen({ navigation }: Props) {
             />
           </View>
 
-          <Text className="text-2xl font-sans-bold text-text-tertiary mt-4">
-            /
-          </Text>
+          <Text className="text-2xl font-sans-bold text-text-tertiary mt-4">/</Text>
 
           <View className="items-center">
-            <Text className="text-xs font-sans-medium text-text-secondary mb-1">
-              MONTH
-            </Text>
+            <Text className="text-xs font-sans-medium text-text-secondary mb-1">MONTH</Text>
             <TextInput
               value={month}
               onChangeText={(t) => setMonth(t.replace(/\D/g, '').slice(0, 2))}
@@ -100,14 +90,10 @@ export function BirthDateSelectScreen({ navigation }: Props) {
             />
           </View>
 
-          <Text className="text-2xl font-sans-bold text-text-tertiary mt-4">
-            /
-          </Text>
+          <Text className="text-2xl font-sans-bold text-text-tertiary mt-4">/</Text>
 
           <View className="items-center">
-            <Text className="text-xs font-sans-medium text-text-secondary mb-1">
-              DAY
-            </Text>
+            <Text className="text-xs font-sans-medium text-text-secondary mb-1">DAY</Text>
             <TextInput
               value={day}
               onChangeText={(t) => setDay(t.replace(/\D/g, '').slice(0, 2))}
@@ -122,9 +108,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
 
         {age !== null && age > 0 && (
           <Pressable disabled className="px-4 py-2 bg-primary-500/15 rounded-full">
-            <Text className="text-sm font-sans-medium text-primary-600">
-              {age} years old
-            </Text>
+            <Text className="text-sm font-sans-medium text-primary-600">{age} years old</Text>
           </Pressable>
         )}
       </View>
