@@ -29,7 +29,7 @@ model User {
   consents             Consent[]
   privacyRequests      PrivacyRequest[]
   favorites            Favorite[]
-  aiParseResults       AiParseResult[]
+
   qpayInvoices         QPayInvoice[]
   voiceDrafts          VoiceDraft[]
   waterLogs            WaterLog[]
@@ -104,7 +104,7 @@ model Food {
   aliases        FoodAlias[]
   localizations  FoodLocalization[]
   barcodes       Barcode[]
-  sources        FoodSource[]
+
   mealLogItems       MealLogItem[]
   mealTemplateItems  MealTemplateItem[]
 
@@ -170,18 +170,6 @@ model FoodLocalization {
   @@map("food_localizations")
 }
 
-model FoodSource {
-  id          String @id @default(uuid()) @db.Uuid
-  foodId      String @map("food_id") @db.Uuid
-  sourceType  String @map("source_type") @db.VarChar(30)
-  sourceRef   String? @map("source_ref")
-  importedAt  DateTime @default(now()) @map("imported_at")
-
-  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
-
-  @@index([foodId])
-  @@map("food_sources")
-}
 
 model Barcode {
   id     String @id @default(uuid()) @db.Uuid
@@ -531,42 +519,7 @@ model VoiceDraft {
   @@map("voice_drafts")
 }
 
-// ─── AI Parse ───────────────────────────────────────────────────
-
-model AiParseResult {
-  id            String   @id @default(uuid()) @db.Uuid
-  userId        String   @map("user_id") @db.Uuid
-  inputType     String   @map("input_type") @db.VarChar(20) // voice | photo | text
-  inputRef      String?  @map("input_ref") // S3 key or raw text hash
-  rawInput      String?  @map("raw_input")
-  parsedOutput  Json?    @map("parsed_output")
-  confidence    Decimal? @db.Decimal(3, 2)
-  modelVersion  String?  @map("model_version") @db.VarChar(50)
-  userEdits     Json?    @map("user_edits")
-  confirmed     Boolean  @default(false)
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("ai_parse_results")
-}
-
-// ─── Outbox & Events ────────────────────────────────────────────
-
-model OutboxEvent {
-  id          String   @id @default(uuid()) @db.Uuid
-  eventType   String   @map("event_type") @db.VarChar(100)
-  payload     Json
-  status      String   @default("pending") @db.VarChar(20) // pending | published | failed
-  attempts    Int      @default(0)
-  lastError   String?  @map("last_error")
-  createdAt   DateTime @default(now()) @map("created_at")
-  publishedAt DateTime? @map("published_at")
-
-  @@index([status, createdAt])
-  @@map("outbox_events")
-}
+// ─── Events & Audit ────────────────────────────────────────
 
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
