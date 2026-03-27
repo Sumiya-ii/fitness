@@ -97,7 +97,15 @@
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
-        "com.apple.developer.healthkit.access": []
+        "com.apple.developer.healthkit.access": [
+          "HKQuantityTypeIdentifierStepCount",
+          "HKQuantityTypeIdentifierActiveEnergyBurned",
+          "HKQuantityTypeIdentifierDietaryEnergyConsumed",
+          "HKQuantityTypeIdentifierDietaryProtein",
+          "HKQuantityTypeIdentifierDietaryCarbohydrates",
+          "HKQuantityTypeIdentifierDietaryFatTotal",
+          "HKQuantityTypeIdentifierBodyMass"
+        ]
       },
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
