@@ -2,6 +2,10 @@ import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 import { REQUEST_ID_HEADER } from './request-id.middleware';
 
+jest.mock('@sentry/node', () => ({
+  withScope: jest.fn((cb) => cb({ setTag: jest.fn(), setContext: jest.fn(), setUser: jest.fn() })),
+}));
+
 describe('AllExceptionsFilter', () => {
   type MockResponse = {
     headersSent: boolean;

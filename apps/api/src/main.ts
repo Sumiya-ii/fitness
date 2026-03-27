@@ -67,8 +67,39 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, document);
   }
 
+  // ── Graceful shutdown: flush Sentry before exit ──────────────────────────
+  const sentry = app.get((await import('./observability/sentry.provider')).SentryProvider);
+
+  const shutdown = async (signal: string) => {
+    console.log(`Received ${signal}, shutting down gracefully...`);
+    await sentry.close(2000);
+    await app.close();
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught exception:', error);
+    if (sentry.isAvailable) {
+      sentry.captureException(error);
+    }
+    sentry.close(2000).finally(() => process.exit(1));
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled rejection:', reason);
+    if (sentry.isAvailable) {
+      sentry.captureException(reason);
+    }
+  });
+
   await app.listen(port);
   console.log(`Coach API running on port ${port}`);
   console.log(`Bull Board available at ${BULL_BOARD_PATH}`);
 }
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Failed to bootstrap application:', error);
+  process.exit(1);
+});

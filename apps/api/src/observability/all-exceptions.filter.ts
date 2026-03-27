@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { Request, Response } from 'express';
 import { SentryProvider } from './sentry.provider';
 import { REQUEST_ID_HEADER } from './request-id.middleware';
@@ -23,9 +24,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const requestId = request.requestId ?? 'unknown';
     const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const message =
       exception instanceof HttpException
@@ -40,7 +39,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
     );
 
     if (this.sentry.isAvailable && status >= 500) {
-      this.sentry.captureException(exception);
+      Sentry.withScope((scope) => {
+        scope.setTag('requestId', requestId);
+        scope.setTag('statusCode', String(status));
+        scope.setContext('request', {
+          method: request.method,
+          url: request.url,
+          requestId,
+        });
+        const user = (request as unknown as Record<string, unknown>).user as
+          | { id?: string }
+          | undefined;
+        if (user?.id) {
+          scope.setUser({ id: user.id });
+        }
+        this.sentry.captureException(exception);
+      });
     }
 
     const body =
