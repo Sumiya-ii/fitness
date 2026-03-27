@@ -57,13 +57,22 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       const res = await subscriptionsApi.getStatus();
       const data: SubscriptionStatus = res.data;
 
-      // If server still says free, check RevenueCat directly as a fallback.
-      // This covers the window between purchase completion and webhook arrival.
+      // If server still says free, check RevenueCat directly. If RC says pro,
+      // call verify endpoint to sync the DB immediately (closes the webhook lag window).
       if (data.tier === 'free') {
         const rcPro = await get().checkRcEntitlement();
         if (rcPro) {
-          set({ tier: 'pro', status: 'active', currentPeriodEnd: data.currentPeriodEnd });
-          return;
+          try {
+            const verifyRes = await subscriptionsApi.verify();
+            if (verifyRes.data.tier === 'pro') {
+              set({ tier: 'pro', status: 'active', currentPeriodEnd: data.currentPeriodEnd });
+              return;
+            }
+          } catch {
+            // verify failed — still set optimistic state from RC
+            set({ tier: 'pro', status: 'active', currentPeriodEnd: data.currentPeriodEnd });
+            return;
+          }
         }
       }
 

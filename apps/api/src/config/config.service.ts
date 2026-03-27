@@ -76,4 +76,8 @@ export class ConfigService {
   get revenueCatWebhookSecret(): string | undefined {
     return this.config.REVENUECAT_WEBHOOK_SECRET;
   }
+
+  get revenueCatApiKey(): string | undefined {
+    return this.config.REVENUECAT_API_KEY;
+  }
 }

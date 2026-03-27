@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma';
+import { ConfigService } from '../config';
 import type { WebhookPayloadDto, RevenueCatWebhookDto } from './subscriptions.dto';
 
 export type Entitlement = 'free' | 'pro';
@@ -32,7 +33,10 @@ const STORE_MAP: Record<string, string> = {
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async getStatus(userId: string): Promise<{
     tier: Entitlement;
@@ -219,6 +223,107 @@ export class SubscriptionsService {
       .catch(() => {}); // race-safe: ignore duplicate key errors
 
     return { success: true };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Client-initiated verify — calls RevenueCat REST API to check entitlements
+  // and activates the subscription immediately if 'pro' is active.
+  // This closes the race window between purchase and webhook arrival.
+  // ---------------------------------------------------------------------------
+  async verifyAndActivate(userId: string): Promise<{ tier: Entitlement }> {
+    const apiKey = this.configService.revenueCatApiKey;
+    if (!apiKey) {
+      this.logger.warn('verifyAndActivate: REVENUECAT_API_KEY not configured, skipping');
+      return { tier: (await this.getStatus(userId)).tier };
+    }
+
+    let rcData: {
+      subscriber?: {
+        entitlements?: Record<string, { expires_date?: string | null; purchase_date?: string }>;
+      };
+    };
+    try {
+      const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) {
+        this.logger.warn(`verifyAndActivate: RC API returned ${res.status}`);
+        return { tier: (await this.getStatus(userId)).tier };
+      }
+      rcData = (await res.json()) as typeof rcData;
+    } catch (err) {
+      this.logger.warn(`verifyAndActivate: RC API call failed: ${err}`);
+      return { tier: (await this.getStatus(userId)).tier };
+    }
+
+    const proEntitlement = rcData.subscriber?.entitlements?.['pro'];
+    if (!proEntitlement) {
+      return { tier: (await this.getStatus(userId)).tier };
+    }
+
+    // Check if the entitlement is still active (not expired)
+    const expiresDate = proEntitlement.expires_date ? new Date(proEntitlement.expires_date) : null;
+    if (expiresDate && expiresDate < new Date()) {
+      return { tier: (await this.getStatus(userId)).tier };
+    }
+
+    // Entitlement is active — ensure our DB reflects it
+    const existing = await this.prisma.subscription.findUnique({ where: { userId } });
+
+    if (existing && existing.tier === 'pro' && existing.status === 'active') {
+      return { tier: 'pro' };
+    }
+
+    const periodStart = proEntitlement.purchase_date
+      ? new Date(proEntitlement.purchase_date)
+      : new Date();
+
+    if (existing) {
+      await this.prisma.subscription.update({
+        where: { id: existing.id },
+        data: {
+          tier: 'pro',
+          status: 'active',
+          provider: 'apple',
+          currentPeriodStart: periodStart,
+          ...(expiresDate && { currentPeriodEnd: expiresDate }),
+        },
+      });
+      await this.prisma.subscriptionLedger.create({
+        data: {
+          subscriptionId: existing.id,
+          event: 'started',
+          provider: 'apple',
+          providerEventId: `rc-verify-${userId}-${Date.now()}`,
+          metadata: { source: 'client_verify', rc_entitlement: proEntitlement },
+        },
+      });
+    } else {
+      const subscription = await this.prisma.subscription.create({
+        data: {
+          userId,
+          tier: 'pro',
+          status: 'active',
+          provider: 'apple',
+          currentPeriodStart: periodStart,
+          ...(expiresDate && { currentPeriodEnd: expiresDate }),
+        },
+      });
+      await this.prisma.subscriptionLedger.create({
+        data: {
+          subscriptionId: subscription.id,
+          event: 'started',
+          provider: 'apple',
+          providerEventId: `rc-verify-${userId}-${Date.now()}`,
+          metadata: { source: 'client_verify', rc_entitlement: proEntitlement },
+        },
+      });
+    }
+
+    return { tier: 'pro' };
   }
 
   // ---------------------------------------------------------------------------

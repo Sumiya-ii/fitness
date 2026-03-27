@@ -43,6 +43,53 @@ async function clearToken(): Promise<void> {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 
+// ---------------------------------------------------------------------------
+// Auto-verify: when a premium endpoint returns 403 but the client believes
+// the user is pro (RC entitlement arrived but webhook hasn't), call
+// POST /subscriptions/verify to sync the DB, then retry the original request.
+// Uses a singleton promise so concurrent 403s only trigger one verify call.
+// ---------------------------------------------------------------------------
+let _verifyPromise: Promise<boolean> | null = null;
+
+async function tryVerifyAndRetry(originalFetch: () => Promise<Response>): Promise<Response | null> {
+  if (!_shouldSuppressPaywall?.()) {
+    // Client doesn't think user is pro — no point verifying
+    return null;
+  }
+
+  // Deduplicate concurrent verify calls
+  if (!_verifyPromise) {
+    _verifyPromise = (async () => {
+      try {
+        const token = await getToken();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`${BASE_URL}/subscriptions/verify`, {
+          method: 'POST',
+          headers,
+        });
+        if (!res.ok) return false;
+        const json = (await res.json()) as { data?: { tier?: string } };
+        return json.data?.tier === 'pro';
+      } catch {
+        return false;
+      } finally {
+        // Clear after a short delay so rapid-fire 403s reuse the same result
+        setTimeout(() => {
+          _verifyPromise = null;
+        }, 2000);
+      }
+    })();
+  }
+
+  const verified = await _verifyPromise;
+  if (!verified) return null;
+
+  // Retry the original request now that the DB is synced
+  const retryRes = await originalFetch();
+  return retryRes;
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -66,12 +113,24 @@ async function request<T>(
   if (options?.body !== undefined) {
     init.body = JSON.stringify(options.body);
   }
-  const res = await fetch(url, init);
+
+  const doFetch = () => fetch(url, init);
+  const res = await doFetch();
+
   if (!res.ok) {
     const text = await res.text();
     if (res.status === 403 && text.includes('Pro subscription required')) {
-      // Don't show paywall if client already knows user is pro
-      // (server may lag behind due to webhook delay)
+      // Attempt auto-verify + retry before showing paywall
+      const retryRes = await tryVerifyAndRetry(doFetch);
+      if (retryRes?.ok) {
+        const contentType = retryRes.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          return retryRes.json() as Promise<T>;
+        }
+        return retryRes.text() as unknown as T;
+      }
+
+      // Verify failed or user is genuinely free — show paywall
       if (!_shouldSuppressPaywall?.()) {
         _onPaywallRequired?.();
       }
@@ -108,15 +167,30 @@ export const api = {
     const token = await getToken();
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
+
+    const doFetch = () =>
+      fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+    const res = await doFetch();
+
     if (!res.ok) {
       const text = await res.text();
       if (res.status === 403 && text.includes('Pro subscription required')) {
-        _onPaywallRequired?.();
+        const retryRes = await tryVerifyAndRetry(doFetch);
+        if (retryRes?.ok) {
+          const contentType = retryRes.headers.get('content-type');
+          if (contentType?.includes('application/json')) {
+            return retryRes.json() as Promise<T>;
+          }
+          return retryRes.text() as unknown as T;
+        }
+
+        if (!_shouldSuppressPaywall?.()) {
+          _onPaywallRequired?.();
+        }
       }
       throw new Error(`API error ${res.status}: ${text}`);
     }

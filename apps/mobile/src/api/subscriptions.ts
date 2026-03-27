@@ -8,4 +8,5 @@ export interface SubscriptionStatus {
 
 export const subscriptionsApi = {
   getStatus: () => api.get<{ data: SubscriptionStatus }>('/subscriptions/status'),
+  verify: () => api.post<{ data: { tier: 'free' | 'pro' } }>('/subscriptions/verify'),
 };

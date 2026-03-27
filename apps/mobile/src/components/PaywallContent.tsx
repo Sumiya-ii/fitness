@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import Purchases, { PurchasesPackage, PURCHASES_ERROR_CODE } from 'react-native-purchases';
 import { useSubscriptionStore } from '../stores/subscription.store';
+import { subscriptionsApi } from '../api/subscriptions';
 import { useLocale } from '../i18n';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -121,8 +122,13 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
           all: Object.keys(customerInfo.entitlements.all),
         });
       }
-      // Sync with server (source of truth) regardless of client-side entitlement state.
-      // In sandbox/dev the entitlement may not appear immediately on the client.
+      // Immediately verify with RevenueCat REST API to sync the DB before the webhook arrives.
+      // This ensures subsequent premium API calls won't get 403'd.
+      try {
+        await subscriptionsApi.verify();
+      } catch {
+        // Non-fatal — fetchStatus will retry via RC fallback
+      }
       await fetchStatus();
       setPurchaseSuccess(true);
     } catch (err: unknown) {

@@ -1,9 +1,11 @@
 import { SubscriptionsService } from './subscriptions.service';
 import { PrismaService } from '../prisma';
+import { ConfigService } from '../config';
 
 describe('SubscriptionsService', () => {
   let service: SubscriptionsService;
   let prisma: Record<string, Record<string, jest.Mock>>;
+  let configService: { revenueCatApiKey: string | undefined };
 
   const mockSubscription = {
     id: 'sub-uuid',
@@ -31,6 +33,7 @@ describe('SubscriptionsService', () => {
       subscription: {
         findUnique: jest.fn(),
         findFirst: jest.fn(),
+        create: jest.fn(),
         update: jest.fn(),
       },
       subscriptionLedger: {
@@ -45,7 +48,11 @@ describe('SubscriptionsService', () => {
         create: jest.fn().mockResolvedValue({}),
       },
     };
-    service = new SubscriptionsService(prisma as unknown as PrismaService);
+    configService = { revenueCatApiKey: undefined };
+    service = new SubscriptionsService(
+      prisma as unknown as PrismaService,
+      configService as unknown as ConfigService,
+    );
   });
 
   describe('getStatus', () => {
@@ -77,6 +84,103 @@ describe('SubscriptionsService', () => {
     it('should return pro for pro tier', async () => {
       prisma.subscription.findUnique.mockResolvedValue(mockProSubscription);
       expect(await service.checkEntitlement('user-uuid')).toBe('pro');
+    });
+  });
+
+  describe('verifyAndActivate', () => {
+    it('falls back to DB status when no API key configured', async () => {
+      prisma.subscription.findUnique.mockResolvedValue(null);
+
+      const result = await service.verifyAndActivate('user-uuid');
+      expect(result.tier).toBe('free');
+    });
+
+    it('activates subscription when RC says pro and no existing subscription', async () => {
+      configService.revenueCatApiKey = 'test-key';
+      const mockRcResponse = {
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          subscriber: {
+            entitlements: {
+              pro: {
+                purchase_date: '2026-03-01T00:00:00Z',
+                expires_date: '2026-04-01T00:00:00Z',
+              },
+            },
+          },
+        }),
+      };
+      jest.spyOn(global, 'fetch').mockResolvedValueOnce(mockRcResponse as unknown as Response);
+      prisma.subscription.findUnique.mockResolvedValue(null);
+      prisma.subscription.create.mockResolvedValue({ id: 'new-sub', userId: 'user-uuid' });
+
+      const result = await service.verifyAndActivate('user-uuid');
+
+      expect(result.tier).toBe('pro');
+      expect(prisma.subscription.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: 'user-uuid',
+          tier: 'pro',
+          status: 'active',
+          provider: 'apple',
+        }),
+      });
+      expect(prisma.subscriptionLedger.create).toHaveBeenCalled();
+      jest.restoreAllMocks();
+    });
+
+    it('skips activation when DB already shows pro', async () => {
+      configService.revenueCatApiKey = 'test-key';
+      const mockRcResponse = {
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          subscriber: {
+            entitlements: {
+              pro: {
+                purchase_date: '2026-03-01T00:00:00Z',
+                expires_date: '2026-04-01T00:00:00Z',
+              },
+            },
+          },
+        }),
+      };
+      jest.spyOn(global, 'fetch').mockResolvedValueOnce(mockRcResponse as unknown as Response);
+      prisma.subscription.findUnique.mockResolvedValue(mockProSubscription);
+
+      const result = await service.verifyAndActivate('user-uuid');
+
+      expect(result.tier).toBe('pro');
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
+      jest.restoreAllMocks();
+    });
+
+    it('returns DB status when RC has no pro entitlement', async () => {
+      configService.revenueCatApiKey = 'test-key';
+      const mockRcResponse = {
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          subscriber: { entitlements: {} },
+        }),
+      };
+      jest.spyOn(global, 'fetch').mockResolvedValueOnce(mockRcResponse as unknown as Response);
+      prisma.subscription.findUnique.mockResolvedValue(null);
+
+      const result = await service.verifyAndActivate('user-uuid');
+
+      expect(result.tier).toBe('free');
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
+      jest.restoreAllMocks();
+    });
+
+    it('returns DB status when RC API fails', async () => {
+      configService.revenueCatApiKey = 'test-key';
+      jest.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('network error'));
+      prisma.subscription.findUnique.mockResolvedValue(mockProSubscription);
+
+      const result = await service.verifyAndActivate('user-uuid');
+
+      expect(result.tier).toBe('pro');
+      jest.restoreAllMocks();
     });
   });
 

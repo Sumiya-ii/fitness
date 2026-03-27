@@ -27,6 +27,19 @@ export class SubscriptionsController {
   }
 
   /**
+   * Client-initiated entitlement verification.
+   * Calls RevenueCat REST API to check if the user has 'pro' entitlement,
+   * and activates the subscription in our DB immediately if so.
+   * This closes the race window between IAP purchase and webhook arrival.
+   */
+  @Post('verify')
+  async verify(@CurrentUser() user: AuthenticatedUser) {
+    return {
+      data: await this.subscriptionsService.verifyAndActivate(user.id),
+    };
+  }
+
+  /**
    * Generic (internal / QPay) webhook — kept for backwards compatibility.
    */
   @Public()

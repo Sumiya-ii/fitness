@@ -82,6 +82,7 @@ export const envSchema = z.object({
 
   // RevenueCat
   REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
+  REVENUECAT_API_KEY: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
