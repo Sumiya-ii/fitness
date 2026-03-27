@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
 import { api } from '../api/client';
+import { useSubscriptionStore } from '../stores/subscription.store';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -86,6 +87,11 @@ export function usePushNotifications() {
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, string>;
       if (data?.screen === 'CoachChat') {
+        const { tier, showPaywall } = useSubscriptionStore.getState();
+        if (tier !== 'pro') {
+          showPaywall();
+          return;
+        }
         navigation.navigate('CoachChat');
       }
     });

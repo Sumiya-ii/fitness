@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '../stores/auth.store';
 import { useSubscriptionStore } from '../stores/subscription.store';
+import { useProGate } from '../hooks/useProGate';
 import { useSettingsStore } from '../stores/settings.store';
 import { api } from '../api';
 import { useLocale, type Locale } from '../i18n';
@@ -164,6 +165,7 @@ export function SettingsScreen() {
   );
   const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
   const isPro = useSubscriptionStore((s) => s.tier === 'pro');
+  const { requirePro } = useProGate();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
@@ -431,7 +433,9 @@ export function SettingsScreen() {
               iconBg="bg-violet-500/15"
               label={t('settings.aiCoach')}
               subtitle={t('settings.personalizedGuidance')}
-              onPress={() => navigate('CoachChat')}
+              onPress={() => {
+                if (requirePro()) navigate('CoachChat');
+              }}
               isFirst
             />
             <SettingsRow
@@ -632,6 +636,13 @@ export function SettingsScreen() {
               iconBg="bg-surface-secondary"
               label={t('settings.termsOfService')}
               onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/terms')}
+            />
+            <SettingsRow
+              icon="help-circle-outline"
+              iconColor="#3b82f6"
+              iconBg="bg-blue-500/15"
+              label={t('settings.support')}
+              onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/support')}
               isLast
             />
           </SettingsSection>

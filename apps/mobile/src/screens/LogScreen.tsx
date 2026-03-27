@@ -12,6 +12,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
 import { useLocale } from '../i18n';
 import { useDashboardStore } from '../stores/dashboard.store';
+import { useProGate } from '../hooks/useProGate';
 
 type NavProp = NativeStackNavigationProp<LogStackParamList, 'LogHome'>;
 
@@ -53,6 +54,7 @@ export function LogScreen() {
   const [loadingRecents, setLoadingRecents] = useState(true);
   const [loggingId, setLoggingId] = useState<string | null>(null);
   const refreshDashboard = useDashboardStore((s) => s.fetchDashboard);
+  const { requirePro } = useProGate();
 
   useFocusEffect(
     useCallback(() => {
@@ -69,8 +71,10 @@ export function LogScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     switch (key) {
       case 'camera':
+        if (!requirePro()) return;
         return navigation.navigate('PhotoLog');
       case 'voice':
+        if (!requirePro()) return;
         return navigation.navigate('VoiceLog');
       case 'barcode':
         return navigation.navigate('BarcodeScan');
