@@ -140,7 +140,7 @@ export function WorkoutDetailScreen() {
                   className="h-9 w-9 rounded-full bg-surface-secondary items-center justify-center"
                   hitSlop={8}
                 >
-                  <Ionicons name="pencil" size={16} color="#51617a" />
+                  <Ionicons name="pencil" size={16} color="#a1a1aa" />
                 </Pressable>
               )}
               <Pressable
@@ -160,7 +160,7 @@ export function WorkoutDetailScreen() {
           >
             {/* Type card */}
             <Animated.View entering={FadeInDown.duration(300)} className="mx-5 mt-3">
-              <View className="bg-white rounded-2xl p-5 border border-surface-border items-center">
+              <View className="bg-surface-card rounded-2xl p-5 border border-surface-border items-center">
                 <Text className="text-4xl mb-2">{detail.icon ?? '🏋️'}</Text>
                 <Text className="text-xl font-sans-bold text-text-DEFAULT">{label}</Text>
                 <Text className="text-sm text-text-tertiary font-sans mt-1">
@@ -172,7 +172,7 @@ export function WorkoutDetailScreen() {
             {/* Stats grid */}
             <Animated.View entering={FadeInDown.delay(60).duration(300)} className="mx-5 mt-4">
               <View className="flex-row gap-3">
-                <View className="flex-1 bg-white rounded-2xl p-4 border border-surface-border items-center">
+                <View className="flex-1 bg-surface-card rounded-2xl p-4 border border-surface-border items-center">
                   <Ionicons name="time-outline" size={22} color="#8b5cf6" />
                   {editing ? (
                     <TextInput
@@ -181,7 +181,7 @@ export function WorkoutDetailScreen() {
                       onChangeText={(t) => setEditDuration(t.replace(/[^0-9]/g, ''))}
                       keyboardType="number-pad"
                       placeholder="—"
-                      placeholderTextColor="#c3cedf"
+                      placeholderTextColor="#3a3a3c"
                     />
                   ) : (
                     <Text className="text-2xl font-sans-bold text-text-DEFAULT mt-1">
@@ -193,7 +193,7 @@ export function WorkoutDetailScreen() {
                   </Text>
                 </View>
 
-                <View className="flex-1 bg-white rounded-2xl p-4 border border-surface-border items-center">
+                <View className="flex-1 bg-surface-card rounded-2xl p-4 border border-surface-border items-center">
                   <Ionicons name="flame-outline" size={22} color="#f97316" />
                   <Text className="text-2xl font-sans-bold text-text-DEFAULT mt-1">
                     {detail.calorieBurned ?? '—'}
@@ -209,7 +209,7 @@ export function WorkoutDetailScreen() {
                 {t('workout.note')}
               </Text>
               {editing ? (
-                <View className="bg-white rounded-2xl border border-surface-border">
+                <View className="bg-surface-card rounded-2xl border border-surface-border">
                   <TextInput
                     className="px-4 py-3 text-base font-sans text-text-DEFAULT min-h-[80px]"
                     value={editNote}
@@ -222,7 +222,7 @@ export function WorkoutDetailScreen() {
                   />
                 </View>
               ) : (
-                <View className="bg-white rounded-2xl p-4 border border-surface-border">
+                <View className="bg-surface-card rounded-2xl p-4 border border-surface-border">
                   <Text className="text-base font-sans text-text-DEFAULT">
                     {detail.note || t('workout.noNote')}
                   </Text>

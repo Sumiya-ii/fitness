@@ -31,7 +31,7 @@ export function IconButton({
   icon,
   size = 'md',
   variant = 'surface',
-  iconColor = '#0b1220',
+  iconColor = '#ffffff',
   className = '',
   accessibilityLabel,
   ...props

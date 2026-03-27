@@ -22,15 +22,15 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  cardio: { bg: '#eff6ff', text: '#2563eb' },
-  strength: { bg: '#fef3c7', text: '#d97706' },
-  hiit: { bg: '#fef2f2', text: '#dc2626' },
-  sports: { bg: '#f0fdf4', text: '#16a34a' },
-  flexibility: { bg: '#faf5ff', text: '#7c3aed' },
+  cardio: { bg: 'rgba(37,99,235,0.15)', text: '#2563eb' },
+  strength: { bg: 'rgba(217,119,6,0.15)', text: '#d97706' },
+  hiit: { bg: 'rgba(220,38,38,0.15)', text: '#dc2626' },
+  sports: { bg: 'rgba(22,163,74,0.15)', text: '#16a34a' },
+  flexibility: { bg: 'rgba(124,58,237,0.15)', text: '#7c3aed' },
 };
 
 const cardShadow = {
-  shadowColor: '#0b1220',
+  shadowColor: '#000000',
   shadowOpacity: 0.06,
   shadowRadius: 10,
   shadowOffset: { width: 0, height: 3 },
@@ -106,7 +106,7 @@ export function WorkoutHomeScreen() {
                 onPress={continueWorkout}
                 className="bg-primary-500 rounded-2xl p-4 flex-row items-center"
               >
-                <View className="h-12 w-12 rounded-xl bg-white/20 items-center justify-center mr-3">
+                <View className="h-12 w-12 rounded-xl bg-surface-card/20 items-center justify-center mr-3">
                   <Ionicons name="timer-outline" size={24} color="#ffffff" />
                 </View>
                 <View className="flex-1">
@@ -129,7 +129,7 @@ export function WorkoutHomeScreen() {
               className="bg-primary-500 rounded-2xl p-5 items-center"
               style={cardShadow}
             >
-              <View className="h-14 w-14 rounded-full bg-white/20 items-center justify-center mb-3">
+              <View className="h-14 w-14 rounded-full bg-surface-card/20 items-center justify-center mb-3">
                 <Ionicons name="add" size={32} color="#ffffff" />
               </View>
               <Text className="text-white font-sans-bold text-lg">{t('workout.startWorkout')}</Text>
@@ -151,12 +151,12 @@ export function WorkoutHomeScreen() {
             </View>
 
             {summaryLoading && !summary ? (
-              <View className="bg-white rounded-2xl p-4 border border-surface-border">
+              <View className="bg-surface-card rounded-2xl p-4 border border-surface-border">
                 <SkeletonLoader width="100%" height={60} borderRadius={12} />
               </View>
             ) : summary ? (
               <View
-                className="bg-white rounded-2xl p-4 border border-surface-border"
+                className="bg-surface-card rounded-2xl p-4 border border-surface-border"
                 style={cardShadow}
               >
                 <View className="flex-row">
@@ -204,10 +204,10 @@ export function WorkoutHomeScreen() {
               </View>
             ) : (
               <View
-                className="bg-white rounded-2xl p-5 items-center border border-surface-border"
+                className="bg-surface-card rounded-2xl p-5 items-center border border-surface-border"
                 style={cardShadow}
               >
-                <Ionicons name="barbell-outline" size={28} color="#c3cedf" />
+                <Ionicons name="barbell-outline" size={28} color="#3a3a3c" />
                 <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
                   {t('workout.noWorkoutsYet')}
                 </Text>
@@ -226,7 +226,7 @@ export function WorkoutHomeScreen() {
                 {Array.from({ length: 3 }).map((_, i) => (
                   <View
                     key={`sk-${i}`}
-                    className="bg-white rounded-2xl p-3.5 flex-row items-center gap-3 border border-surface-border"
+                    className="bg-surface-card rounded-2xl p-3.5 flex-row items-center gap-3 border border-surface-border"
                   >
                     <SkeletonLoader variant="rect" width={44} height={44} borderRadius={12} />
                     <View className="flex-1 gap-2">
@@ -237,8 +237,8 @@ export function WorkoutHomeScreen() {
                 ))}
               </View>
             ) : recents.length === 0 ? (
-              <View className="bg-white rounded-2xl p-5 items-center border border-surface-border">
-                <Ionicons name="time-outline" size={28} color="#c3cedf" />
+              <View className="bg-surface-card rounded-2xl p-5 items-center border border-surface-border">
+                <Ionicons name="time-outline" size={28} color="#3a3a3c" />
                 <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
                   {t('workout.noRecents')}
                 </Text>
@@ -256,12 +256,12 @@ export function WorkoutHomeScreen() {
                     >
                       <Pressable
                         onPress={() => quickLog(item.workoutType)}
-                        className="bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
+                        className="bg-surface-card rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
                       >
                         {/* Icon */}
                         <View
                           className="h-11 w-11 rounded-xl items-center justify-center mr-3"
-                          style={{ backgroundColor: '#f1f5f9' }}
+                          style={{ backgroundColor: '#2c2c2e' }}
                         >
                           <Text className="text-xl">{item.icon ?? '🏋️'}</Text>
                         </View>
@@ -283,7 +283,7 @@ export function WorkoutHomeScreen() {
 
                         {/* Quick-start */}
                         <View className="h-9 w-9 rounded-full bg-primary-50 items-center justify-center">
-                          <Ionicons name="play" size={16} color="#0f172a" />
+                          <Ionicons name="play" size={16} color="#ffffff" />
                         </View>
                       </Pressable>
                     </Animated.View>
@@ -300,7 +300,7 @@ export function WorkoutHomeScreen() {
             </Text>
             <View className="flex-row flex-wrap gap-3">
               {Object.entries(CATEGORY_ICONS).map(([cat, icon]) => {
-                const colors = CATEGORY_COLORS[cat] ?? { bg: '#f1f5f9', text: '#64748b' };
+                const colors = CATEGORY_COLORS[cat] ?? { bg: '#2c2c2e', text: '#64748b' };
                 return (
                   <Pressable
                     key={cat}

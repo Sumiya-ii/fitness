@@ -180,7 +180,7 @@ export function WorkoutActiveScreen() {
           <View className="flex-row items-center justify-between px-5 pt-3 pb-2">
             <View className="flex-row items-center">
               <Pressable onPress={handleDiscard} hitSlop={8}>
-                <Ionicons name="close" size={24} color="#0f172a" />
+                <Ionicons name="close" size={24} color="#ffffff" />
               </Pressable>
               <Text className="ml-3 text-xl font-sans-bold text-text-DEFAULT" numberOfLines={1}>
                 {label}
@@ -200,7 +200,7 @@ export function WorkoutActiveScreen() {
               <View className="flex-row bg-surface-secondary rounded-xl p-1 mb-5">
                 <Pressable
                   onPress={() => setTimerMode(true)}
-                  className={`flex-1 py-2.5 rounded-lg items-center ${timerMode ? 'bg-white' : ''}`}
+                  className={`flex-1 py-2.5 rounded-lg items-center ${timerMode ? 'bg-surface-card' : ''}`}
                   style={
                     timerMode
                       ? { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }
@@ -219,7 +219,7 @@ export function WorkoutActiveScreen() {
                     setTimerRunning(false);
                     if (intervalRef.current) clearInterval(intervalRef.current);
                   }}
-                  className={`flex-1 py-2.5 rounded-lg items-center ${!timerMode ? 'bg-white' : ''}`}
+                  className={`flex-1 py-2.5 rounded-lg items-center ${!timerMode ? 'bg-surface-card' : ''}`}
                   style={
                     !timerMode
                       ? { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }
@@ -238,9 +238,9 @@ export function WorkoutActiveScreen() {
                 /* Live timer */
                 <View className="items-center mb-6">
                   <View
-                    className="bg-white rounded-3xl px-10 py-8 items-center border border-surface-border"
+                    className="bg-surface-card rounded-3xl px-10 py-8 items-center border border-surface-border"
                     style={{
-                      shadowColor: '#0b1220',
+                      shadowColor: '#000000',
                       shadowOpacity: 0.06,
                       shadowRadius: 12,
                       elevation: 2,
@@ -268,7 +268,7 @@ export function WorkoutActiveScreen() {
               ) : (
                 /* Manual duration input */
                 <View className="items-center mb-6">
-                  <View className="bg-white rounded-2xl px-6 py-5 border border-surface-border w-full">
+                  <View className="bg-surface-card rounded-2xl px-6 py-5 border border-surface-border w-full">
                     <Text className="text-sm font-sans-medium text-text-secondary mb-2">
                       {t('workout.duration')}
                     </Text>
@@ -276,7 +276,7 @@ export function WorkoutActiveScreen() {
                       <TextInput
                         className="flex-1 text-4xl font-sans-bold text-text-DEFAULT text-center"
                         placeholder="30"
-                        placeholderTextColor="#c3cedf"
+                        placeholderTextColor="#3a3a3c"
                         value={manualDuration}
                         onChangeText={(t) => setManualDuration(t.replace(/[^0-9]/g, ''))}
                         keyboardType="number-pad"
@@ -291,7 +291,7 @@ export function WorkoutActiveScreen() {
 
             {/* Calorie Estimate Preview */}
             <Animated.View entering={FadeInDown.delay(60).duration(300)} className="mx-5 mb-5">
-              <View className="bg-white rounded-2xl p-4 border border-surface-border flex-row items-center">
+              <View className="bg-surface-card rounded-2xl p-4 border border-surface-border flex-row items-center">
                 <View className="h-11 w-11 rounded-xl bg-orange-50 items-center justify-center mr-3">
                   <Ionicons name="flame" size={22} color="#f97316" />
                 </View>
@@ -312,7 +312,7 @@ export function WorkoutActiveScreen() {
               <Text className="text-sm font-sans-medium text-text-secondary mb-2">
                 {t('workout.note')}
               </Text>
-              <View className="bg-white rounded-2xl border border-surface-border">
+              <View className="bg-surface-card rounded-2xl border border-surface-border">
                 <TextInput
                   className="px-4 py-3 text-base font-sans text-text-DEFAULT min-h-[80px]"
                   placeholder={t('workout.notePlaceholder')}
@@ -341,13 +341,13 @@ export function WorkoutActiveScreen() {
                   </View>
                   <View className="flex-row gap-4">
                     <View className="flex-row items-center">
-                      <Ionicons name="speedometer-outline" size={14} color="#7687a2" />
+                      <Ionicons name="speedometer-outline" size={14} color="#71717a" />
                       <Text className="text-xs text-text-tertiary font-sans ml-1">
                         {typeInfo.met} MET
                       </Text>
                     </View>
                     <View className="flex-row items-center">
-                      <Ionicons name="folder-outline" size={14} color="#7687a2" />
+                      <Ionicons name="folder-outline" size={14} color="#71717a" />
                       <Text className="text-xs text-text-tertiary font-sans ml-1 capitalize">
                         {typeInfo.category}
                       </Text>

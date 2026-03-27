@@ -27,7 +27,7 @@ export function AuthProviderButton({
       className={`flex-1 flex-row items-center justify-center rounded-2xl border py-3.5 active:opacity-80 ${toneClasses[tone]} ${className}`}
       {...props}
     >
-      <Ionicons name={icon} size={20} color="#0b1220" />
+      <Ionicons name={icon} size={20} color="#ffffff" />
       <Text className="ml-2 text-base leading-6 font-sans-medium text-text">{label}</Text>
     </Pressable>
   );

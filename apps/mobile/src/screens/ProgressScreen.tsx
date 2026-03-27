@@ -52,14 +52,14 @@ const HISTORY_PERIODS: HistoryPeriod[] = [7, 30, 90];
 // ─── Chart colors ─────────────────────────────────────────────────────────────
 
 const C = {
-  calories: '#0f172a',
-  caloriesLight: '#c8d4e8',
+  calories: '#ffffff',
+  caloriesLight: '#3a3a3c',
   goal: '#f97316',
   protein: '#3b82f6',
   carbs: '#f59e0b',
   fat: '#ec4899',
   water: '#06b6d4',
-  waterLight: '#cffafe',
+  waterLight: '#0c4a6e',
 };
 
 // ─── Ghost bar helpers ────────────────────────────────────────────────────────
@@ -347,12 +347,12 @@ function CalorieBarChart({
               flexDirection: 'row',
               alignItems: 'center',
               gap: 5,
-              backgroundColor: 'rgba(255,255,255,0.92)',
+              backgroundColor: 'rgba(44,44,46,0.92)',
               borderRadius: 20,
               paddingHorizontal: 12,
               paddingVertical: 6,
               borderWidth: 1,
-              borderColor: 'rgba(15,23,42,0.08)',
+              borderColor: 'rgba(255,255,255,0.08)',
             }}
           >
             <Ionicons name="sparkles-outline" size={12} color={themeColors.text.secondary} />
@@ -626,7 +626,7 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
       {!hasAnyData && (
         <Animated.View entering={FadeInDown.duration(400)} className="mb-4">
           <LinearGradient
-            colors={['#f0f4fb', '#eaf0f8']}
+            colors={['#1c1c1e', '#2c2c2e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ borderRadius: 20, borderWidth: 1, borderColor: themeColors.surface.border }}
@@ -634,7 +634,7 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
             <View className="p-4 flex-row items-center gap-3">
               <View
                 className="h-11 w-11 rounded-2xl items-center justify-center"
-                style={{ backgroundColor: 'rgba(15,23,42,0.07)' }}
+                style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
               >
                 <Ionicons name="nutrition" size={22} color={themeColors.primary['500']} />
               </View>
@@ -1869,7 +1869,7 @@ function WorkoutProgressSection() {
           }
           className="bg-surface-card rounded-2xl p-4 border border-surface-border"
           style={{
-            shadowColor: '#0b1220',
+            shadowColor: '#000000',
             shadowOpacity: 0.04,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 2 },
@@ -1914,7 +1914,7 @@ function WorkoutProgressSection() {
           }
           className="bg-surface-card rounded-2xl p-5 items-center border border-surface-border"
         >
-          <Ionicons name="barbell-outline" size={28} color="#c3cedf" />
+          <Ionicons name="barbell-outline" size={28} color="#3a3a3c" />
           <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
             {t('workout.noWorkoutsYet')}
           </Text>
@@ -1980,7 +1980,7 @@ export function ProgressScreen() {
                   style={
                     activeTab === tab
                       ? {
-                          shadowColor: '#0b1220',
+                          shadowColor: '#000000',
                           shadowOpacity: 0.08,
                           shadowRadius: 8,
                           shadowOffset: { width: 0, height: 2 },

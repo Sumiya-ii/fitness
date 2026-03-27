@@ -110,7 +110,7 @@ export function WorkoutHistoryScreen() {
             <Pressable
               key={opt.key}
               onPress={() => setDays(opt.key)}
-              className={`rounded-full px-4 py-2 ${days === opt.key ? 'bg-primary-500' : 'bg-white border border-surface-border'}`}
+              className={`rounded-full px-4 py-2 ${days === opt.key ? 'bg-primary-500' : 'bg-surface-card border border-surface-border'}`}
             >
               <Text
                 className={`text-sm font-sans-medium ${days === opt.key ? 'text-white' : 'text-text-secondary'}`}
@@ -138,7 +138,7 @@ export function WorkoutHistoryScreen() {
               {Array.from({ length: 5 }).map((_, i) => (
                 <View
                   key={`sk-${i}`}
-                  className="bg-white rounded-2xl p-4 flex-row items-center gap-3 border border-surface-border"
+                  className="bg-surface-card rounded-2xl p-4 flex-row items-center gap-3 border border-surface-border"
                 >
                   <SkeletonLoader variant="rect" width={44} height={44} borderRadius={12} />
                   <View className="flex-1 gap-2">
@@ -150,7 +150,7 @@ export function WorkoutHistoryScreen() {
             </View>
           ) : history.length === 0 ? (
             <View className="mx-5 mt-10 items-center">
-              <Ionicons name="barbell-outline" size={48} color="#c3cedf" />
+              <Ionicons name="barbell-outline" size={48} color="#3a3a3c" />
               <Text className="text-base font-sans-medium text-text-tertiary mt-3">
                 {t('workout.noHistory')}
               </Text>
@@ -173,7 +173,7 @@ export function WorkoutHistoryScreen() {
                       onPress={() =>
                         (navigation as any).navigate('WorkoutDetail', { id: workout.id })
                       }
-                      className="bg-white rounded-2xl flex-row items-center px-4 py-3.5 border border-surface-border"
+                      className="bg-surface-card rounded-2xl flex-row items-center px-4 py-3.5 border border-surface-border"
                     >
                       <View className="h-11 w-11 rounded-xl bg-surface-secondary items-center justify-center mr-3">
                         <Text className="text-xl">{workout.icon ?? '🏋️'}</Text>
@@ -201,7 +201,7 @@ export function WorkoutHistoryScreen() {
                           </Text>
                         </View>
                       </View>
-                      <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+                      <Ionicons name="chevron-forward" size={18} color="#3a3a3c" />
                     </Pressable>
                   ))}
                 </View>

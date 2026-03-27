@@ -76,7 +76,7 @@ export function WorkoutTypePickerScreen() {
 
         {/* Search */}
         <View className="mx-5 mt-2 mb-3">
-          <View className="bg-white rounded-2xl flex-row items-center px-4 py-3 border border-surface-border">
+          <View className="bg-surface-card rounded-2xl flex-row items-center px-4 py-3 border border-surface-border">
             <Ionicons name="search" size={20} color="#94a3b8" />
             <TextInput
               className="flex-1 ml-3 text-base font-sans text-text-DEFAULT"
@@ -105,7 +105,7 @@ export function WorkoutTypePickerScreen() {
         >
           <Pressable
             onPress={() => setActiveCategory(null)}
-            className={`rounded-full px-4 py-2 ${!activeCategory ? 'bg-primary-500' : 'bg-white border border-surface-border'}`}
+            className={`rounded-full px-4 py-2 ${!activeCategory ? 'bg-primary-500' : 'bg-surface-card border border-surface-border'}`}
           >
             <Text
               className={`text-sm font-sans-medium ${!activeCategory ? 'text-white' : 'text-text-secondary'}`}
@@ -117,7 +117,7 @@ export function WorkoutTypePickerScreen() {
             <Pressable
               key={cat}
               onPress={() => setActiveCategory(activeCategory === cat ? null : cat)}
-              className={`rounded-full px-4 py-2 ${activeCategory === cat ? 'bg-primary-500' : 'bg-white border border-surface-border'}`}
+              className={`rounded-full px-4 py-2 ${activeCategory === cat ? 'bg-primary-500' : 'bg-surface-card border border-surface-border'}`}
             >
               <Text
                 className={`text-sm font-sans-medium capitalize ${activeCategory === cat ? 'text-white' : 'text-text-secondary'}`}
@@ -139,7 +139,7 @@ export function WorkoutTypePickerScreen() {
               {Array.from({ length: 8 }).map((_, i) => (
                 <View
                   key={`sk-${i}`}
-                  className="bg-white rounded-2xl p-3.5 flex-row items-center gap-3 border border-surface-border"
+                  className="bg-surface-card rounded-2xl p-3.5 flex-row items-center gap-3 border border-surface-border"
                 >
                   <SkeletonLoader variant="rect" width={44} height={44} borderRadius={12} />
                   <View className="flex-1 gap-2">
@@ -153,8 +153,8 @@ export function WorkoutTypePickerScreen() {
             // Flat filtered results
             <View className="mx-5 gap-2">
               {filtered.length === 0 ? (
-                <View className="bg-white rounded-2xl p-6 items-center border border-surface-border mt-4">
-                  <Ionicons name="search-outline" size={28} color="#c3cedf" />
+                <View className="bg-surface-card rounded-2xl p-6 items-center border border-surface-border mt-4">
+                  <Ionicons name="search-outline" size={28} color="#3a3a3c" />
                   <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
                     {t('workout.noResults')}
                   </Text>
@@ -220,7 +220,7 @@ function TypeRow({
   return (
     <Pressable
       onPress={() => onPress(type)}
-      className="bg-white rounded-xl flex-row items-center px-3.5 py-3 border border-surface-border"
+      className="bg-surface-card rounded-xl flex-row items-center px-3.5 py-3 border border-surface-border"
     >
       <View className="h-10 w-10 rounded-lg bg-surface-secondary items-center justify-center mr-3">
         <Text className="text-lg">{type.icon}</Text>
@@ -231,7 +231,7 @@ function TypeRow({
           {type.met} MET · {type.category}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+      <Ionicons name="chevron-forward" size={18} color="#3a3a3c" />
     </Pressable>
   );
 }

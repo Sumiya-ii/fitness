@@ -6,7 +6,7 @@ export interface BackButtonProps {
   /** Custom handler. Defaults to navigation.goBack(). */
   onPress?: () => void;
   /**
-   * 'default' — white rounded square, dark icon (light-bg screens)
+   * 'default' — dark rounded square, light icon (standard screens)
    * 'overlay' — semi-transparent black circle, white icon (camera/dark-bg screens)
    */
   variant?: 'default' | 'overlay';
@@ -43,14 +43,14 @@ export function BackButton({ onPress, variant = 'default' }: BackButtonProps) {
         height: 40,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#dde5f0',
-        backgroundColor: '#ffffff',
+        borderColor: '#2c2c2e',
+        backgroundColor: '#1c1c1e',
         alignItems: 'center',
         justifyContent: 'center',
         opacity: pressed ? 0.6 : 1,
       })}
     >
-      <Ionicons name="chevron-back" size={20} color="#0b1220" />
+      <Ionicons name="chevron-back" size={20} color="#ffffff" />
     </Pressable>
   );
 }
