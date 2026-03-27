@@ -123,6 +123,7 @@ model FoodServing {
   food              Food               @relation(fields: [foodId], references: [id], onDelete: Cascade)
   mealTemplateItems MealTemplateItem[]
 
+  @@index([foodId])
   @@map("food_servings")
 }
 
@@ -141,6 +142,7 @@ model FoodNutrient {
 
   food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 
+  @@index([foodId])
   @@map("food_nutrients")
 }
 
@@ -152,6 +154,7 @@ model FoodAlias {
 
   food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 
+  @@index([foodId])
   @@map("food_aliases")
 }
 
@@ -176,6 +179,7 @@ model FoodSource {
 
   food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 
+  @@index([foodId])
   @@map("food_sources")
 }
 
@@ -186,6 +190,7 @@ model Barcode {
 
   food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 
+  @@index([foodId])
   @@map("barcodes")
 }
 
@@ -243,6 +248,7 @@ model MealLogItem {
   food    Food?   @relation(fields: [foodId], references: [id], onDelete: SetNull)
 
   @@index([mealLogId, createdAt])
+  @@index([foodId])
   @@map("meal_log_items")
 }
 
@@ -364,6 +370,7 @@ model DeviceToken {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("device_tokens")
 }
 
@@ -398,6 +405,7 @@ model SubscriptionLedger {
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
+  @@index([subscriptionId])
   @@map("subscription_ledger")
 }
 
@@ -458,6 +466,7 @@ model Consent {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("consents")
 }
 
@@ -473,6 +482,7 @@ model PrivacyRequest {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("privacy_requests")
 }
 
@@ -538,6 +548,7 @@ model AiParseResult {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("ai_parse_results")
 }
 
@@ -620,6 +631,8 @@ model MealTemplateItem {
   serving  FoodServing  @relation(fields: [servingId], references: [id], onDelete: Cascade)
 
   @@index([templateId, sortOrder])
+  @@index([foodId])
+  @@index([servingId])
   @@map("meal_template_items")
 }
 
