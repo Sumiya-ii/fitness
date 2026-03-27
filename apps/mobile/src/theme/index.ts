@@ -1,20 +1,9 @@
 import type { Theme } from '@react-navigation/native';
-import tokens from './tokens.json';
 import { lightPalette, darkPalette, type ColorPalette } from './colors';
 import { useThemeStore } from '../stores/theme.store';
 
-const { colors } = tokens;
-
 export type { ColorPalette };
 export { lightPalette, darkPalette };
-
-export const themeColors = {
-  primary: colors.brand.primary,
-  accent: colors.accent,
-  surface: colors.surface,
-  text: colors.text,
-  status: colors.status,
-} as const;
 
 /** Returns the active color palette based on theme mode. */
 export function useColors(): ColorPalette {
@@ -47,14 +36,11 @@ export function buildNavigationTheme(palette: ColorPalette): Theme {
     fonts: navigationFonts,
     colors: {
       primary: palette.primary,
-      background: palette.navBg,
-      card: palette.navCard,
-      border: palette.navBorder,
-      text: palette.navText,
-      notification: palette.streak,
+      background: palette.bg,
+      card: palette.card,
+      border: palette.border,
+      text: palette.text,
+      notification: palette.warning,
     },
   };
 }
-
-// Keep a static export for backward compat (defaults to dark)
-export const appNavigationTheme = buildNavigationTheme(darkPalette);

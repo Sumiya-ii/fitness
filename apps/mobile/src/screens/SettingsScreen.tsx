@@ -14,6 +14,7 @@ import { useThemeStore, type ThemeMode } from '../stores/theme.store';
 import { api } from '../api';
 import { useLocale, type Locale } from '../i18n';
 import { requestAndRegisterPushToken } from '../hooks/usePushNotifications';
+import { useColors } from '../theme';
 
 interface ProfileData {
   displayName: string | null;
@@ -50,8 +51,9 @@ function Pill({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const c = useColors();
   return (
-    <View className="flex-row rounded-xl p-[3px]" style={{ backgroundColor: '#2c2c2e' }}>
+    <View className="flex-row rounded-xl p-[3px] bg-surface-secondary">
       {options.map((opt) => {
         const active = value === opt.value;
         return (
@@ -62,10 +64,10 @@ function Pill({
               onChange(opt.value);
             }}
             className={`px-4 py-1.5 rounded-[10px]`}
-            style={active ? { backgroundColor: '#48484a' } : undefined}
+            style={active ? { backgroundColor: c.muted } : undefined}
           >
             <Text
-              className={`text-[13px] font-sans-semibold ${active ? 'text-white' : 'text-zinc-500'}`}
+              className={`text-[13px] font-sans-semibold ${active ? 'text-text' : 'text-text-tertiary'}`}
             >
               {opt.label}
             </Text>
@@ -91,6 +93,7 @@ function Row({
   onPress?: () => void;
   danger?: boolean;
 }) {
+  const c = useColors();
   return (
     <Pressable
       onPress={() => {
@@ -101,12 +104,7 @@ function Row({
       }}
       className="flex-row items-center py-[14px]"
     >
-      <Ionicons
-        name={icon}
-        size={20}
-        color={danger ? '#ef4444' : '#7687a2'}
-        style={{ width: 28 }}
-      />
+      <Ionicons name={icon} size={20} color={danger ? c.danger : '#7687a2'} style={{ width: 28 }} />
       <Text
         className={`flex-1 text-[15px] font-sans-medium ${danger ? 'text-red-500' : 'text-text'}`}
       >
@@ -116,7 +114,7 @@ function Row({
         <Text className="text-[13px] text-text-tertiary font-sans-medium mr-1">{value}</Text>
       )}
       {right}
-      {onPress && !right && <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />}
+      {onPress && !right && <Ionicons name="chevron-forward" size={16} color={c.muted} />}
     </Pressable>
   );
 }
@@ -136,6 +134,7 @@ function Divider() {
 /* ─── Main screen ─── */
 
 export function SettingsScreen() {
+  const c = useColors();
   const navigation = useNavigation();
   const signOut = useAuthStore((s) => s.signOut);
   const { locale: currentLocale, setLocale, t } = useLocale();
@@ -314,7 +313,7 @@ export function SettingsScreen() {
                   {profile?.displayName ?? t('settings.user')}
                 </Text>
                 {isPro && (
-                  <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: '#2c2c2e' }}>
+                  <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: c.cardAlt }}>
                     <Text className="text-[10px] font-sans-bold text-cyan-400">PRO</Text>
                   </View>
                 )}
@@ -323,7 +322,7 @@ export function SettingsScreen() {
                 {t('settings.account')}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#3a3a3c" />
+            <Ionicons name="chevron-forward" size={18} color={c.muted} />
           </Pressable>
 
           {/* ── Name edit overlay ── */}
@@ -337,14 +336,14 @@ export function SettingsScreen() {
                   autoFocus
                   onSubmitEditing={handleSaveName}
                   returnKeyType="done"
-                  placeholderTextColor="#71717a"
+                  placeholderTextColor={c.textTertiary}
                   placeholder={t('settings.yourName')}
                 />
                 <Pressable onPress={handleSaveName}>
-                  <Ionicons name="checkmark-circle" size={26} color="#16a34a" />
+                  <Ionicons name="checkmark-circle" size={26} color={c.success} />
                 </Pressable>
                 <Pressable onPress={() => setEditingName(false)}>
-                  <Ionicons name="close-circle" size={26} color="#3a3a3c" />
+                  <Ionicons name="close-circle" size={26} color={c.muted} />
                 </Pressable>
               </View>
             </Section>
@@ -360,7 +359,7 @@ export function SettingsScreen() {
               className="mb-3"
             >
               <LinearGradient
-                colors={['#2c2c2e', '#3a3a3c']}
+                colors={[c.cardAlt, c.muted]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 className="rounded-2xl px-4 py-4 flex-row items-center"
@@ -372,7 +371,7 @@ export function SettingsScreen() {
                   </Text>
                   <Text className="text-xs text-zinc-500 mt-0.5">{t('settings.unlockDesc')}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#71717a" />
+                <Ionicons name="chevron-forward" size={16} color={c.textTertiary} />
               </LinearGradient>
             </Pressable>
           )}
@@ -380,7 +379,12 @@ export function SettingsScreen() {
           {/* ── Preferences ── */}
           <Section>
             <View className="flex-row items-center py-[14px]">
-              <Ionicons name="language-outline" size={20} color="#71717a" style={{ width: 28 }} />
+              <Ionicons
+                name="language-outline"
+                size={20}
+                color={c.textTertiary}
+                style={{ width: 28 }}
+              />
               <Text className="flex-1 text-[15px] font-sans-medium text-text">
                 {t('settings.language')}
               </Text>
@@ -395,7 +399,12 @@ export function SettingsScreen() {
             </View>
             <Divider />
             <View className="flex-row items-center py-[14px]">
-              <Ionicons name="resize-outline" size={20} color="#71717a" style={{ width: 28 }} />
+              <Ionicons
+                name="resize-outline"
+                size={20}
+                color={c.textTertiary}
+                style={{ width: 28 }}
+              />
               <Text className="flex-1 text-[15px] font-sans-medium text-text">
                 {t('settings.units')}
               </Text>
@@ -410,7 +419,12 @@ export function SettingsScreen() {
             </View>
             <Divider />
             <View className="flex-row items-center py-[14px]">
-              <Ionicons name="moon-outline" size={20} color="#71717a" style={{ width: 28 }} />
+              <Ionicons
+                name="moon-outline"
+                size={20}
+                color={c.textTertiary}
+                style={{ width: 28 }}
+              />
               <Text className="flex-1 text-[15px] font-sans-medium text-text">
                 {t('settings.appearance')}
               </Text>
@@ -442,7 +456,7 @@ export function SettingsScreen() {
                   <View
                     className={`h-2 w-2 rounded-full ${telegramStatus?.linked ? 'bg-green-500' : 'bg-surface-muted'}`}
                   />
-                  <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />
+                  <Ionicons name="chevron-forward" size={16} color={c.muted} />
                 </View>
               }
               onPress={() => navigate('TelegramConnect')}
@@ -473,7 +487,7 @@ export function SettingsScreen() {
                 <Ionicons
                   name="notifications-off-outline"
                   size={20}
-                  color="#ef4444"
+                  color={c.danger}
                   style={{ width: 28 }}
                 />
                 <Text className="flex-1 text-[15px] font-sans-medium text-text">
@@ -482,7 +496,7 @@ export function SettingsScreen() {
                 <Text className="text-[13px] text-red-400 font-sans-medium mr-1">
                   {t('settings.openSettings')}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />
+                <Ionicons name="chevron-forward" size={16} color={c.muted} />
               </Pressable>
             ) : osPermission === 'undetermined' ? (
               <Pressable
@@ -496,7 +510,7 @@ export function SettingsScreen() {
                 <Ionicons
                   name="notifications-outline"
                   size={20}
-                  color="#f59e0b"
+                  color={c.warning}
                   style={{ width: 28 }}
                 />
                 <Text className="flex-1 text-[15px] font-sans-medium text-text">
@@ -505,12 +519,17 @@ export function SettingsScreen() {
                 <Text className="text-[13px] text-primary-500 font-sans-medium mr-1">
                   {t('settings.turnOnNotifications')}
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color="#3a3a3c" />
+                <Ionicons name="chevron-forward" size={16} color={c.muted} />
               </Pressable>
             ) : (
               <>
                 <View className="flex-row items-center py-[14px]">
-                  <Ionicons name="sunny-outline" size={20} color="#71717a" style={{ width: 28 }} />
+                  <Ionicons
+                    name="sunny-outline"
+                    size={20}
+                    color={c.textTertiary}
+                    style={{ width: 28 }}
+                  />
                   <Text className="flex-1 text-[15px] font-sans-medium text-text">
                     {t('settings.morningReminder')}
                   </Text>
@@ -520,13 +539,18 @@ export function SettingsScreen() {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       updateNotifPref('morningReminder', v);
                     }}
-                    trackColor={{ false: '#3a3a3c', true: '#ffffff' }}
-                    thumbColor="#ffffff"
+                    trackColor={{ false: c.border, true: c.primary }}
+                    thumbColor={c.primary}
                   />
                 </View>
                 <Divider />
                 <View className="flex-row items-center py-[14px]">
-                  <Ionicons name="moon-outline" size={20} color="#71717a" style={{ width: 28 }} />
+                  <Ionicons
+                    name="moon-outline"
+                    size={20}
+                    color={c.textTertiary}
+                    style={{ width: 28 }}
+                  />
                   <Text className="flex-1 text-[15px] font-sans-medium text-text">
                     {t('settings.eveningReminder')}
                   </Text>
@@ -536,8 +560,8 @@ export function SettingsScreen() {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       updateNotifPref('eveningReminder', v);
                     }}
-                    trackColor={{ false: '#3a3a3c', true: '#ffffff' }}
-                    thumbColor="#ffffff"
+                    trackColor={{ false: c.border, true: c.primary }}
+                    thumbColor={c.primary}
                   />
                 </View>
               </>

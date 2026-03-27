@@ -102,7 +102,7 @@ export default Sentry.wrap(function App() {
           <RootNavigator />
           <SyncBanner />
           <PaywallModal />
-          <StatusBar style={colors.statusBarStyle} />
+          <StatusBar style={navTheme.dark ? 'light' : 'dark'} />
         </NavigationContainer>
       </SafeAreaProvider>
     </GestureHandlerRootView>

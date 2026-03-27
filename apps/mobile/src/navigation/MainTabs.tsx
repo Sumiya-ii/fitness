@@ -71,8 +71,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
               accessibilityRole="button"
               accessibilityLabel={label}
             >
-              <View style={[styles.logButton, { backgroundColor: c.logButton }]}>
-                <Ionicons name="add" size={24} color={c.logButtonIcon} />
+              <View style={[styles.logButton, { backgroundColor: c.primary }]}>
+                <Ionicons name="add" size={24} color={c.onPrimary} />
               </View>
             </Pressable>
           );
@@ -90,9 +90,9 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
             <Ionicons
               name={isFocused ? icons.active : icons.inactive}
               size={22}
-              color={isFocused ? c.tabActive : c.tabInactive}
+              color={isFocused ? c.primary : c.tabInactive}
             />
-            <Text style={[styles.label, { color: isFocused ? c.tabActive : c.tabInactive }]}>
+            <Text style={[styles.label, { color: isFocused ? c.primary : c.tabInactive }]}>
               {label}
             </Text>
           </Pressable>
