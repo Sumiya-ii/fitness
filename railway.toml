@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api && npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate --accept-data-loss"
+buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api && npm run db:push --workspace=apps/api -- --skip-generate --accept-data-loss"
 
 [deploy]
 startCommand = "npm run start:prod --workspace=apps/api"
