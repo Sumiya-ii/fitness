@@ -98,31 +98,6 @@ describe('processJob routing', () => {
     expect(mockStt).not.toHaveBeenCalled();
   });
 
-  it('returns undefined and logs for food-index-sync (stub queue)', async () => {
-    const result = await processJob(QUEUE_NAMES.FOOD_INDEX_SYNC, fakeJob);
-    expect(result).toBeUndefined();
-    expect(console.log).toHaveBeenCalled();
-    expect(mockStt).not.toHaveBeenCalled();
-  });
-
-  it('returns undefined and logs for data-export (stub queue)', async () => {
-    const result = await processJob(QUEUE_NAMES.DATA_EXPORT, fakeJob);
-    expect(result).toBeUndefined();
-    expect(console.log).toHaveBeenCalled();
-  });
-
-  it('returns undefined and logs for webhook-retry (stub queue)', async () => {
-    const result = await processJob(QUEUE_NAMES.WEBHOOK_RETRY, fakeJob);
-    expect(result).toBeUndefined();
-    expect(console.log).toHaveBeenCalled();
-  });
-
-  it('returns undefined and logs for analytics (stub queue)', async () => {
-    const result = await processJob(QUEUE_NAMES.ANALYTICS, fakeJob);
-    expect(result).toBeUndefined();
-    expect(console.log).toHaveBeenCalled();
-  });
-
   it('routes adaptive-target to processAdaptiveTargetJob', async () => {
     mockAdaptiveTarget.mockResolvedValue(undefined);
     await processJob(QUEUE_NAMES.ADAPTIVE_TARGET, fakeJob);

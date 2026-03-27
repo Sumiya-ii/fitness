@@ -1,13 +1,9 @@
 export const QUEUE_NAMES = {
   STT_PROCESSING: 'stt-processing',
   PHOTO_PARSING: 'photo-parsing',
-  FOOD_INDEX_SYNC: 'food-index-sync',
   REMINDERS: 'reminders',
   COACH_MESSAGES: 'coach-messages',
   WEEKLY_REPORT: 'weekly-report',
-  WEBHOOK_RETRY: 'webhook-retry',
-  DATA_EXPORT: 'data-export',
-  ANALYTICS: 'analytics',
   ADAPTIVE_TARGET: 'adaptive-target',
   MEAL_TIMING_INSIGHTS: 'meal-timing-insights',
   COACH_MEMORY: 'coach-memory',

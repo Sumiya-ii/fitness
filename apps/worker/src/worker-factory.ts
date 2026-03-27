@@ -58,8 +58,6 @@ function getConcurrency(queueName: QueueName): number {
     case QUEUE_NAMES.STT_PROCESSING:
     case QUEUE_NAMES.PHOTO_PARSING:
       return 2;
-    case QUEUE_NAMES.ANALYTICS:
-      return 10;
     default:
       return 5;
   }

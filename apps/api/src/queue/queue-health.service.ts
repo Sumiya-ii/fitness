@@ -20,35 +20,22 @@ export class QueueHealthService {
   constructor(
     @Inject(getQueueToken(QUEUE_NAMES.STT_PROCESSING)) sttQueue: Queue,
     @Inject(getQueueToken(QUEUE_NAMES.PHOTO_PARSING)) photoQueue: Queue,
-    @Inject(getQueueToken(QUEUE_NAMES.FOOD_INDEX_SYNC)) foodIndexQueue: Queue,
     @Inject(getQueueToken(QUEUE_NAMES.REMINDERS)) reminderQueue: Queue,
-    @Inject(getQueueToken(QUEUE_NAMES.WEBHOOK_RETRY)) webhookQueue: Queue,
-    @Inject(getQueueToken(QUEUE_NAMES.DATA_EXPORT)) dataExportQueue: Queue,
-    @Inject(getQueueToken(QUEUE_NAMES.ANALYTICS)) analyticsQueue: Queue,
   ) {
-    this.queues = [
-      sttQueue,
-      photoQueue,
-      foodIndexQueue,
-      reminderQueue,
-      webhookQueue,
-      dataExportQueue,
-      analyticsQueue,
-    ];
+    this.queues = [sttQueue, photoQueue, reminderQueue];
   }
 
   async getHealth(): Promise<QueueHealthStatus[]> {
     return Promise.all(
       this.queues.map(async (queue) => {
-        const [waiting, active, completed, failed, delayed, isPaused] =
-          await Promise.all([
-            queue.getWaitingCount(),
-            queue.getActiveCount(),
-            queue.getCompletedCount(),
-            queue.getFailedCount(),
-            queue.getDelayedCount(),
-            queue.isPaused(),
-          ]);
+        const [waiting, active, completed, failed, delayed, isPaused] = await Promise.all([
+          queue.getWaitingCount(),
+          queue.getActiveCount(),
+          queue.getCompletedCount(),
+          queue.getFailedCount(),
+          queue.getDelayedCount(),
+          queue.isPaused(),
+        ]);
 
         return {
           name: queue.name,
