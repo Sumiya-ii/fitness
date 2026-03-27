@@ -9,7 +9,6 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '../stores/auth.store';
 import { useSubscriptionStore } from '../stores/subscription.store';
-import { useProGate } from '../hooks/useProGate';
 import { useSettingsStore } from '../stores/settings.store';
 import { api } from '../api';
 import { useLocale, type Locale } from '../i18n';
@@ -39,86 +38,9 @@ function getInitials(name: string | null | undefined): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-/* ─── Reusable building blocks ─── */
+/* ─── Building blocks ─── */
 
-interface SettingsRowProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor?: string;
-  iconBg?: string;
-  label: string;
-  subtitle?: string;
-  value?: string;
-  right?: React.ReactNode;
-  onPress?: () => void;
-  danger?: boolean;
-  isFirst?: boolean;
-  isLast?: boolean;
-}
-
-function SettingsRow({
-  icon,
-  iconColor = '#7687a2',
-  iconBg = 'bg-surface-secondary',
-  label,
-  subtitle,
-  value,
-  right,
-  onPress,
-  danger,
-  isFirst,
-  isLast,
-}: SettingsRowProps) {
-  return (
-    <>
-      {!isFirst && <View className="h-px bg-surface-secondary ml-14" />}
-      <Pressable
-        onPress={() => {
-          if (onPress) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onPress();
-          }
-        }}
-        className={`flex-row items-center px-4 ${isFirst ? 'pt-3' : 'pt-3'} ${isLast ? 'pb-3' : 'pb-3'}`}
-      >
-        <View className={`h-8 w-8 rounded-lg ${iconBg} items-center justify-center mr-3`}>
-          <Ionicons name={icon} size={17} color={iconColor} />
-        </View>
-        <View className="flex-1 mr-2">
-          <Text className={`text-[15px] ${danger ? 'text-red-500' : 'text-text'} font-sans-medium`}>
-            {label}
-          </Text>
-          {subtitle && (
-            <Text className="text-xs text-text-tertiary mt-0.5" numberOfLines={1}>
-              {subtitle}
-            </Text>
-          )}
-        </View>
-        {value && (
-          <Text className="text-sm text-text-tertiary font-sans-medium mr-1.5">{value}</Text>
-        )}
-        {right}
-        {onPress && !right && <Ionicons name="chevron-forward" size={16} color="#c3cedf" />}
-      </Pressable>
-    </>
-  );
-}
-
-function SettingsSection({ title, children }: { title?: string; children: React.ReactNode }) {
-  return (
-    <View className="mb-6">
-      {title && (
-        <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-widest mb-1.5 ml-4">
-          {title}
-        </Text>
-      )}
-      <View className="rounded-2xl bg-surface-card border border-surface-border overflow-hidden">
-        {children}
-      </View>
-    </View>
-  );
-}
-
-function SegmentedControl({
+function Pill({
   options,
   value,
   onChange,
@@ -128,25 +50,85 @@ function SegmentedControl({
   onChange: (v: string) => void;
 }) {
   return (
-    <View className="flex-row bg-surface-secondary rounded-lg p-0.5">
-      {options.map((opt) => (
-        <Pressable
-          key={opt.value}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onChange(opt.value);
-          }}
-          className={`px-3 py-1.5 rounded-md ${value === opt.value ? 'bg-surface-card' : ''}`}
-        >
-          <Text
-            className={`text-xs font-sans-semibold ${value === opt.value ? 'text-text' : 'text-text-tertiary'}`}
+    <View className="flex-row bg-surface-tertiary rounded-xl p-[3px]">
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onChange(opt.value);
+            }}
+            className={`px-4 py-1.5 rounded-[10px] ${active ? 'bg-surface-card shadow-sm' : ''}`}
           >
-            {opt.label}
-          </Text>
-        </Pressable>
-      ))}
+            <Text
+              className={`text-[13px] font-sans-semibold ${active ? 'text-text' : 'text-text-tertiary'}`}
+            >
+              {opt.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
+}
+
+function Row({
+  icon,
+  label,
+  value,
+  right,
+  onPress,
+  danger,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value?: string;
+  right?: React.ReactNode;
+  onPress?: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={() => {
+        if (onPress) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }
+      }}
+      className="flex-row items-center py-[14px]"
+    >
+      <Ionicons
+        name={icon}
+        size={20}
+        color={danger ? '#ef4444' : '#7687a2'}
+        style={{ width: 28 }}
+      />
+      <Text
+        className={`flex-1 text-[15px] font-sans-medium ${danger ? 'text-red-500' : 'text-text'}`}
+      >
+        {label}
+      </Text>
+      {value && (
+        <Text className="text-[13px] text-text-tertiary font-sans-medium mr-1">{value}</Text>
+      )}
+      {right}
+      {onPress && !right && <Ionicons name="chevron-forward" size={16} color="#c3cedf" />}
+    </Pressable>
+  );
+}
+
+function Section({ children }: { children: React.ReactNode }) {
+  return (
+    <View className="bg-surface-card rounded-2xl px-4 mb-3 border border-surface-border">
+      {children}
+    </View>
+  );
+}
+
+function Divider() {
+  return <View className="h-px bg-surface-secondary" />;
 }
 
 /* ─── Main screen ─── */
@@ -165,7 +147,6 @@ export function SettingsScreen() {
   );
   const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
   const isPro = useSubscriptionStore((s) => s.tier === 'pro');
-  const { requirePro } = useProGate();
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
@@ -305,27 +286,48 @@ export function SettingsScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Profile header ── */}
-          <View className="items-center pt-6 pb-6">
+          {/* ── Profile ── */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleEditProfile();
+            }}
+            className="flex-row items-center py-8"
+          >
             <LinearGradient
               colors={['#667eea', '#764ba2']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              className="h-[72px] w-[72px] rounded-full items-center justify-center mb-3"
+              className="h-14 w-14 rounded-full items-center justify-center mr-4"
             >
-              {editingName ? (
-                <Ionicons name="person" size={28} color="#ffffff" />
-              ) : (
-                <Text className="text-white text-2xl font-sans-bold">
-                  {getInitials(profile?.displayName)}
-                </Text>
-              )}
+              <Text className="text-white text-lg font-sans-bold">
+                {getInitials(profile?.displayName)}
+              </Text>
             </LinearGradient>
+            <View className="flex-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-lg font-sans-bold text-text">
+                  {profile?.displayName ?? t('settings.user')}
+                </Text>
+                {isPro && (
+                  <View className="bg-primary-500 rounded-full px-2 py-0.5">
+                    <Text className="text-[10px] font-sans-bold text-cyan-400">PRO</Text>
+                  </View>
+                )}
+              </View>
+              <Text className="text-[13px] text-text-tertiary font-sans-medium mt-0.5">
+                {t('settings.account')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#c3cedf" />
+          </Pressable>
 
-            {editingName ? (
-              <View className="flex-row items-center gap-2 px-8">
+          {/* ── Name edit overlay ── */}
+          {editingName && (
+            <Section>
+              <View className="flex-row items-center py-3 gap-2">
                 <TextInput
-                  className="flex-1 text-text font-sans-medium text-base text-center border-b border-primary-500 pb-1"
+                  className="flex-1 text-text font-sans-medium text-[15px] border-b border-primary-500 pb-1"
                   value={nameInput}
                   onChangeText={setNameInput}
                   autoFocus
@@ -334,47 +336,24 @@ export function SettingsScreen() {
                   placeholderTextColor="#9a9caa"
                   placeholder={t('settings.yourName')}
                 />
-                <Pressable onPress={handleSaveName} className="ml-1">
+                <Pressable onPress={handleSaveName}>
                   <Ionicons name="checkmark-circle" size={26} color="#16a34a" />
                 </Pressable>
                 <Pressable onPress={() => setEditingName(false)}>
                   <Ionicons name="close-circle" size={26} color="#c3cedf" />
                 </Pressable>
               </View>
-            ) : (
-              <>
-                <View className="flex-row items-center gap-2 mb-0.5">
-                  <Text className="text-lg font-sans-bold text-text">
-                    {profile?.displayName ?? t('settings.user')}
-                  </Text>
-                  {isPro && (
-                    <View className="bg-primary-500 rounded-full px-2 py-0.5">
-                      <Text className="text-[10px] font-sans-bold text-cyan-400">PRO</Text>
-                    </View>
-                  )}
-                </View>
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    handleEditProfile();
-                  }}
-                >
-                  <Text className="text-sm text-text-tertiary font-sans-medium">
-                    {t('common.edit')}
-                  </Text>
-                </Pressable>
-              </>
-            )}
-          </View>
+            </Section>
+          )}
 
-          {/* ── Upgrade banner (free users only) ── */}
+          {/* ── Upgrade banner ── */}
           {!isPro && (
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 navigate('Subscription');
               }}
-              className="mb-6"
+              className="mb-3"
             >
               <LinearGradient
                 colors={['#0f172a', '#1e293b']}
@@ -382,101 +361,26 @@ export function SettingsScreen() {
                 end={{ x: 1, y: 0 }}
                 className="rounded-2xl px-4 py-4 flex-row items-center"
               >
-                <View className="h-10 w-10 rounded-xl bg-white/10 items-center justify-center mr-3">
-                  <Ionicons name="diamond" size={20} color="#22d3ee" />
-                </View>
+                <Ionicons name="diamond" size={20} color="#22d3ee" style={{ marginRight: 12 }} />
                 <View className="flex-1">
                   <Text className="text-[15px] font-sans-bold text-white">
                     {t('settings.upgradeToPro')}
                   </Text>
                   <Text className="text-xs text-slate-400 mt-0.5">{t('settings.unlockDesc')}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#475569" />
+                <Ionicons name="chevron-forward" size={16} color="#475569" />
               </LinearGradient>
             </Pressable>
           )}
 
-          {/* ── Pro status (pro users) ── */}
-          {isPro && (
-            <SettingsSection>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigate('Subscription');
-                }}
-                className="flex-row items-center px-4 py-3"
-              >
-                <View className="h-8 w-8 rounded-lg bg-cyan-500/15 items-center justify-center mr-3">
-                  <Ionicons name="diamond" size={17} color="#06b6d4" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[15px] font-sans-medium text-text">
-                    {t('settings.proMember')}
-                  </Text>
-                  <Text className="text-xs text-text-tertiary mt-0.5">
-                    {t('settings.allFeaturesUnlocked')}
-                  </Text>
-                </View>
-                <Text className="text-sm text-text-tertiary font-sans-medium mr-1.5">
-                  {t('settings.manage')}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
-              </Pressable>
-            </SettingsSection>
-          )}
-
-          {/* ── Features ── */}
-          <SettingsSection title={t('settings.integrations')}>
-            <SettingsRow
-              icon="sparkles"
-              iconColor="#8b5cf6"
-              iconBg="bg-violet-500/15"
-              label={t('settings.aiCoach')}
-              subtitle={t('settings.personalizedGuidance')}
-              onPress={() => {
-                if (requirePro()) navigate('CoachChat');
-              }}
-              isFirst
-            />
-            <SettingsRow
-              icon="paper-plane"
-              iconColor="#3b82f6"
-              iconBg="bg-blue-500/15"
-              label={t('settings.telegramCoach')}
-              subtitle={
-                telegramStatus?.linked
-                  ? `@${telegramStatus.telegramUsername ?? 'connected'}`
-                  : t('settings.logMealsViaChat')
-              }
-              right={
-                <View className="flex-row items-center gap-2">
-                  <View
-                    className={`px-2 py-0.5 rounded-full ${telegramStatus?.linked ? 'bg-green-500/15' : 'bg-amber-500/15'}`}
-                  >
-                    <Text
-                      className={`text-[10px] font-sans-semibold ${telegramStatus?.linked ? 'text-green-600' : 'text-amber-600'}`}
-                    >
-                      {telegramStatus?.linked ? t('settings.active') : t('settings.connect')}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
-                </View>
-              }
-              onPress={() => navigate('TelegramConnect')}
-              isLast
-            />
-          </SettingsSection>
-
           {/* ── Preferences ── */}
-          <SettingsSection title={t('settings.preferences')}>
-            <View className="flex-row items-center px-4 py-3">
-              <View className="h-8 w-8 rounded-lg bg-blue-500/15 items-center justify-center mr-3">
-                <Ionicons name="language-outline" size={17} color="#3b82f6" />
-              </View>
+          <Section>
+            <View className="flex-row items-center py-[14px]">
+              <Ionicons name="language-outline" size={20} color="#7687a2" style={{ width: 28 }} />
               <Text className="flex-1 text-[15px] font-sans-medium text-text">
                 {t('settings.language')}
               </Text>
-              <SegmentedControl
+              <Pill
                 options={[
                   { label: 'EN', value: 'en' },
                   { label: 'МН', value: 'mn' },
@@ -485,15 +389,13 @@ export function SettingsScreen() {
                 onChange={handleLanguageSelect}
               />
             </View>
-            <View className="h-px bg-surface-secondary ml-14" />
-            <View className="flex-row items-center px-4 py-3">
-              <View className="h-8 w-8 rounded-lg bg-violet-500/15 items-center justify-center mr-3">
-                <Ionicons name="resize-outline" size={17} color="#8b5cf6" />
-              </View>
+            <Divider />
+            <View className="flex-row items-center py-[14px]">
+              <Ionicons name="resize-outline" size={20} color="#7687a2" style={{ width: 28 }} />
               <Text className="flex-1 text-[15px] font-sans-medium text-text">
                 {t('settings.units')}
               </Text>
-              <SegmentedControl
+              <Pill
                 options={[
                   { label: t('settings.metric'), value: 'metric' },
                   { label: t('settings.imperial'), value: 'imperial' },
@@ -502,79 +404,96 @@ export function SettingsScreen() {
                 onChange={handleUnitsSelect}
               />
             </View>
-          </SettingsSection>
+          </Section>
+
+          {/* ── Integrations ── */}
+          <Section>
+            <Row
+              icon="sparkles-outline"
+              label={t('settings.aiCoach')}
+              onPress={() => navigate('CoachChat')}
+            />
+            <Divider />
+            <Row
+              icon="paper-plane-outline"
+              label={t('settings.telegramCoach')}
+              right={
+                <View className="flex-row items-center gap-2">
+                  <View
+                    className={`h-2 w-2 rounded-full ${telegramStatus?.linked ? 'bg-green-500' : 'bg-surface-muted'}`}
+                  />
+                  <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
+                </View>
+              }
+              onPress={() => navigate('TelegramConnect')}
+            />
+            {isPro && (
+              <>
+                <Divider />
+                <Row
+                  icon="diamond-outline"
+                  label={t('settings.proMember')}
+                  value={t('settings.manage')}
+                  onPress={() => navigate('Subscription')}
+                />
+              </>
+            )}
+          </Section>
 
           {/* ── Notifications ── */}
-          <SettingsSection title={t('settings.notifications')}>
+          <Section>
             {osPermission === 'denied' ? (
-              <View className="px-4 py-4">
-                <View className="flex-row items-start mb-3">
-                  <View className="h-8 w-8 rounded-lg bg-red-500/15 items-center justify-center mr-3 mt-0.5">
-                    <Ionicons name="notifications-off-outline" size={17} color="#ef4444" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-[15px] font-sans-medium text-text">
-                      {t('settings.notificationsBlocked')}
-                    </Text>
-                    <Text className="text-xs text-text-tertiary mt-0.5 leading-4">
-                      {t('settings.notificationsBlockedDesc')}
-                    </Text>
-                  </View>
-                </View>
-                <Pressable
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    Linking.openSettings();
-                  }}
-                  className="rounded-xl bg-primary-500 py-2.5 items-center"
-                >
-                  <Text className="text-sm font-sans-semibold text-white">
-                    {t('settings.openSettings')}
-                  </Text>
-                </Pressable>
-              </View>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  Linking.openSettings();
+                }}
+                className="flex-row items-center py-[14px]"
+              >
+                <Ionicons
+                  name="notifications-off-outline"
+                  size={20}
+                  color="#ef4444"
+                  style={{ width: 28 }}
+                />
+                <Text className="flex-1 text-[15px] font-sans-medium text-text">
+                  {t('settings.notifications')}
+                </Text>
+                <Text className="text-[13px] text-red-400 font-sans-medium mr-1">
+                  {t('settings.openSettings')}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
+              </Pressable>
             ) : osPermission === 'undetermined' ? (
-              <View className="px-4 py-4">
-                <View className="flex-row items-start mb-3">
-                  <View className="h-8 w-8 rounded-lg bg-amber-500/15 items-center justify-center mr-3 mt-0.5">
-                    <Ionicons name="notifications-outline" size={17} color="#f59e0b" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-[15px] font-sans-medium text-text">
-                      {t('settings.enableNotifications')}
-                    </Text>
-                    <Text className="text-xs text-text-tertiary mt-0.5 leading-4">
-                      {t('settings.enableNotificationsDesc')}
-                    </Text>
-                  </View>
-                </View>
-                <Pressable
-                  onPress={async () => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    const granted = await requestAndRegisterPushToken();
-                    setOsPermission(granted ? 'granted' : 'denied');
-                  }}
-                  className="rounded-xl bg-primary-500 py-2.5 items-center"
-                >
-                  <Text className="text-sm font-sans-semibold text-white">
-                    {t('settings.turnOnNotifications')}
-                  </Text>
-                </Pressable>
-              </View>
+              <Pressable
+                onPress={async () => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  const granted = await requestAndRegisterPushToken();
+                  setOsPermission(granted ? 'granted' : 'denied');
+                }}
+                className="flex-row items-center py-[14px]"
+              >
+                <Ionicons
+                  name="notifications-outline"
+                  size={20}
+                  color="#f59e0b"
+                  style={{ width: 28 }}
+                />
+                <Text className="flex-1 text-[15px] font-sans-medium text-text">
+                  {t('settings.notifications')}
+                </Text>
+                <Text className="text-[13px] text-primary-500 font-sans-medium mr-1">
+                  {t('settings.turnOnNotifications')}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color="#c3cedf" />
+              </Pressable>
             ) : (
               <>
-                <View className="flex-row items-center px-4 py-3">
-                  <View className="h-8 w-8 rounded-lg bg-amber-500/15 items-center justify-center mr-3">
-                    <Ionicons name="sunny-outline" size={17} color="#f59e0b" />
-                  </View>
-                  <View className="flex-1 mr-3">
-                    <Text className="text-[15px] font-sans-medium text-text">
-                      {t('settings.morningReminder')}
-                    </Text>
-                    <Text className="text-xs text-text-tertiary mt-0.5">
-                      {t('settings.morningReminderDesc')}
-                    </Text>
-                  </View>
+                <View className="flex-row items-center py-[14px]">
+                  <Ionicons name="sunny-outline" size={20} color="#7687a2" style={{ width: 28 }} />
+                  <Text className="flex-1 text-[15px] font-sans-medium text-text">
+                    {t('settings.morningReminder')}
+                  </Text>
                   <Switch
                     value={notifPrefs.morningReminder}
                     onValueChange={(v) => {
@@ -585,19 +504,12 @@ export function SettingsScreen() {
                     thumbColor="#ffffff"
                   />
                 </View>
-                <View className="h-px bg-surface-secondary ml-14" />
-                <View className="flex-row items-center px-4 py-3">
-                  <View className="h-8 w-8 rounded-lg bg-indigo-500/15 items-center justify-center mr-3">
-                    <Ionicons name="moon-outline" size={17} color="#818cf8" />
-                  </View>
-                  <View className="flex-1 mr-3">
-                    <Text className="text-[15px] font-sans-medium text-text">
-                      {t('settings.eveningReminder')}
-                    </Text>
-                    <Text className="text-xs text-text-tertiary mt-0.5">
-                      {t('settings.eveningReminderDesc')}
-                    </Text>
-                  </View>
+                <Divider />
+                <View className="flex-row items-center py-[14px]">
+                  <Ionicons name="moon-outline" size={20} color="#7687a2" style={{ width: 28 }} />
+                  <Text className="flex-1 text-[15px] font-sans-medium text-text">
+                    {t('settings.eveningReminder')}
+                  </Text>
                   <Switch
                     value={notifPrefs.eveningReminder}
                     onValueChange={(v) => {
@@ -610,67 +522,50 @@ export function SettingsScreen() {
                 </View>
               </>
             )}
-          </SettingsSection>
+          </Section>
 
-          {/* ── Support ── */}
-          <SettingsSection title={t('settings.privacyLegal')}>
-            <SettingsRow
+          {/* ── Support & Legal ── */}
+          <Section>
+            <Row
               icon="download-outline"
-              iconColor="#06b6d4"
-              iconBg="bg-cyan-500/15"
               label={t('settings.exportMyData')}
-              subtitle={t('settings.exportMyDataDesc')}
               onPress={handleExportData}
-              isFirst
             />
-            <SettingsRow
+            <Divider />
+            <Row
               icon="shield-checkmark-outline"
-              iconColor="#7687a2"
-              iconBg="bg-surface-secondary"
               label={t('settings.privacyPolicy')}
               onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/privacy')}
             />
-            <SettingsRow
+            <Divider />
+            <Row
               icon="document-text-outline"
-              iconColor="#7687a2"
-              iconBg="bg-surface-secondary"
               label={t('settings.termsOfService')}
               onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/terms')}
             />
-            <SettingsRow
+            <Divider />
+            <Row
               icon="help-circle-outline"
-              iconColor="#3b82f6"
-              iconBg="bg-blue-500/15"
               label={t('settings.support')}
               onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/support')}
-              isLast
             />
-          </SettingsSection>
+          </Section>
 
-          {/* ── Account ── */}
-          <SettingsSection title={t('settings.account')}>
-            <SettingsRow
-              icon="log-out-outline"
-              iconColor="#f59e0b"
-              iconBg="bg-amber-500/10"
-              label={t('settings.signOut')}
-              onPress={handleSignOut}
-              isFirst
-            />
-            <SettingsRow
+          {/* ── Danger zone ── */}
+          <Section>
+            <Row icon="log-out-outline" label={t('settings.signOut')} onPress={handleSignOut} />
+            <Divider />
+            <Row
               icon="trash-outline"
-              iconColor="#ef4444"
-              iconBg="bg-red-500/10"
               label={t('settings.deleteAccount')}
               danger
               onPress={handleDeleteAccount}
-              isLast
             />
-          </SettingsSection>
+          </Section>
 
-          {/* ── Footer ── */}
-          <Text className="text-center text-xs text-text-tertiary font-sans-medium mt-1 mb-2">
-            Coach v{appVersion}
+          {/* ── Version ── */}
+          <Text className="text-center text-xs text-text-tertiary/50 font-sans-medium mt-4 mb-2">
+            v{appVersion}
           </Text>
         </ScrollView>
       </SafeAreaView>
