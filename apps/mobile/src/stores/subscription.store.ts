@@ -114,14 +114,14 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   checkRcEntitlement: async () => {
     try {
       const customerInfo = await Purchases.getCustomerInfo();
-      return typeof customerInfo.entitlements.active['pro'] !== 'undefined';
+      return typeof customerInfo.entitlements.active['Coach Pro'] !== 'undefined';
     } catch {
       return false;
     }
   },
 
   handleCustomerInfoUpdate: (info: CustomerInfo) => {
-    const rcPro = typeof info.entitlements.active['pro'] !== 'undefined';
+    const rcPro = typeof info.entitlements.active['Coach Pro'] !== 'undefined';
     if (rcPro && get().tier !== 'pro') {
       // Entitlement appeared — update UI immediately, then confirm with server
       set({ tier: 'pro', status: 'active' });

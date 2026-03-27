@@ -259,7 +259,7 @@ export class SubscriptionsService {
       return { tier: (await this.getStatus(userId)).tier };
     }
 
-    const proEntitlement = rcData.subscriber?.entitlements?.['pro'];
+    const proEntitlement = rcData.subscriber?.entitlements?.['Coach Pro'];
     if (!proEntitlement) {
       return { tier: (await this.getStatus(userId)).tier };
     }

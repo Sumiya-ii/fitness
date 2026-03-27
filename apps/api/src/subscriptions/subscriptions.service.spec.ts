@@ -102,7 +102,7 @@ describe('SubscriptionsService', () => {
         json: jest.fn().mockResolvedValue({
           subscriber: {
             entitlements: {
-              pro: {
+              'Coach Pro': {
                 purchase_date: '2026-03-01T00:00:00Z',
                 expires_date: '2026-04-01T00:00:00Z',
               },
@@ -136,7 +136,7 @@ describe('SubscriptionsService', () => {
         json: jest.fn().mockResolvedValue({
           subscriber: {
             entitlements: {
-              pro: {
+              'Coach Pro': {
                 purchase_date: '2026-03-01T00:00:00Z',
                 expires_date: '2026-04-01T00:00:00Z',
               },

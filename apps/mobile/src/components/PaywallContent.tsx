@@ -146,7 +146,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
     setRestoring(true);
     try {
       const customerInfo = await Purchases.restorePurchases();
-      const isPro = typeof customerInfo.entitlements.active['pro'] !== 'undefined';
+      const isPro = typeof customerInfo.entitlements.active['Coach Pro'] !== 'undefined';
       if (isPro) {
         await fetchStatus();
         Alert.alert(t('subscription.restoreSuccessTitle'), t('subscription.restoreSuccessDesc'));

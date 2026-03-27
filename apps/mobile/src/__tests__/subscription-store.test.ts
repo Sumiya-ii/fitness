@@ -47,7 +47,7 @@ function resetStore() {
   });
 }
 
-const PRO_CUSTOMER_INFO = { entitlements: { active: { pro: { isActive: true } } } };
+const PRO_CUSTOMER_INFO = { entitlements: { active: { 'Coach Pro': { isActive: true } } } };
 const FREE_CUSTOMER_INFO = { entitlements: { active: {} } };
 
 describe('subscription store', () => {
