@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm ci --prefix ../.. && npm run build --workspace=packages/shared && npm run build --workspace=apps/worker"
+buildCommand = "npm run build --workspace=packages/shared && npm run build --workspace=apps/worker"
 
 [deploy]
 startCommand = "npm run start --workspace=apps/worker"
