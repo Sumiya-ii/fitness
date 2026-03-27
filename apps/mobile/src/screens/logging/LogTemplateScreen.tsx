@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from '../../components/ui';
 import { mealsApi, type MealTemplateDetailItem } from '../../api/meals';
 import { useDashboardStore } from '../../stores/dashboard.store';
+import { useColors } from '../../theme';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'LogTemplate'>;
@@ -35,6 +36,7 @@ export function LogTemplateScreen() {
   const route = useRoute<Props['route']>();
   const { templateId } = route.params;
   const refreshDashboard = useDashboardStore((s) => s.fetchDashboard);
+  const c = useColors();
 
   const [templateName, setTemplateName] = useState('');
   const [items, setItems] = useState<StagedItem[]>([]);
@@ -120,22 +122,22 @@ export function LogTemplateScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-black items-center justify-center" edges={['top']}>
-        <ActivityIndicator size="large" color="#ffffff" />
+      <SafeAreaView className="flex-1 bg-surface-app items-center justify-center" edges={['top']}>
+        <ActivityIndicator size="large" color={c.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-black" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface-app" edges={['top']}>
       {/* Header */}
-      <View className="flex-row items-center border-b border-[#2c2c2e] px-4 py-3">
+      <View className="flex-row items-center border-b border-surface-border px-4 py-3">
         <BackButton />
         <View className="ml-3 flex-1">
-          <Text className="text-lg font-sans-semibold text-white" numberOfLines={1}>
+          <Text className="text-lg font-sans-semibold text-text" numberOfLines={1}>
             {templateName}
           </Text>
-          <Text className="text-xs text-[#71717a] font-sans-medium">
+          <Text className="text-xs text-text-tertiary font-sans-medium">
             Adjust items before logging
           </Text>
         </View>
@@ -148,7 +150,7 @@ export function LogTemplateScreen() {
       >
         {/* Meal type selector */}
         <View className="px-4 pt-4 pb-2">
-          <Text className="text-xs font-sans-semibold text-[#71717a] uppercase tracking-wider mb-2">
+          <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
             Meal Type
           </Text>
           <View className="flex-row gap-2">
@@ -157,17 +159,17 @@ export function LogTemplateScreen() {
                 key={mt.key}
                 onPress={() => setMealType(mt.key)}
                 className={`flex-1 items-center py-2.5 rounded-xl ${
-                  mealType === mt.key ? 'bg-white' : 'bg-[#1c1c1e]'
+                  mealType === mt.key ? 'bg-primary-500' : 'bg-surface-card'
                 }`}
               >
                 <Ionicons
                   name={mt.icon}
                   size={16}
-                  color={mealType === mt.key ? '#000000' : '#71717a'}
+                  color={mealType === mt.key ? c.onPrimary : c.textTertiary}
                 />
                 <Text
                   className={`text-xs font-sans-medium mt-0.5 ${
-                    mealType === mt.key ? 'text-black' : 'text-[#71717a]'
+                    mealType === mt.key ? 'text-on-primary' : 'text-text-tertiary'
                   }`}
                 >
                   {mt.label}
@@ -179,7 +181,7 @@ export function LogTemplateScreen() {
 
         {/* Items */}
         <View className="px-4 pt-4">
-          <Text className="text-xs font-sans-semibold text-[#71717a] uppercase tracking-wider mb-2">
+          <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
             Items ({activeItems.length})
           </Text>
 
@@ -194,8 +196,8 @@ export function LogTemplateScreen() {
                 key={item.id}
                 className={`rounded-2xl p-4 mb-2 ${item.removed ? 'opacity-40' : ''}`}
                 style={{
-                  backgroundColor: '#1c1c1e',
-                  shadowColor: '#000000',
+                  backgroundColor: c.card,
+                  shadowColor: c.shadow,
                   shadowOpacity: 0.04,
                   shadowRadius: 8,
                   shadowOffset: { width: 0, height: 2 },
@@ -204,10 +206,10 @@ export function LogTemplateScreen() {
               >
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-1 mr-3">
-                    <Text className="text-sm font-sans-bold text-white" numberOfLines={1}>
+                    <Text className="text-sm font-sans-bold text-text" numberOfLines={1}>
                       {item.foodName}
                     </Text>
-                    <Text className="text-xs text-[#71717a] font-sans-medium">
+                    <Text className="text-xs text-text-tertiary font-sans-medium">
                       {item.servingLabel} · {itemCal} kcal
                     </Text>
                   </View>
@@ -232,18 +234,18 @@ export function LogTemplateScreen() {
                   <View className="flex-row items-center justify-center gap-4">
                     <Pressable
                       onPress={() => adjustQuantity(item.id, -0.5)}
-                      className="h-9 w-9 rounded-xl bg-black items-center justify-center"
+                      className="h-9 w-9 rounded-xl bg-surface-app items-center justify-center"
                     >
-                      <Ionicons name="remove" size={18} color="#ffffff" />
+                      <Ionicons name="remove" size={18} color={c.text} />
                     </Pressable>
-                    <Text className="text-lg font-sans-bold text-white min-w-[48px] text-center">
+                    <Text className="text-lg font-sans-bold text-text min-w-[48px] text-center">
                       {item.adjustedQuantity}
                     </Text>
                     <Pressable
                       onPress={() => adjustQuantity(item.id, 0.5)}
-                      className="h-9 w-9 rounded-xl bg-black items-center justify-center"
+                      className="h-9 w-9 rounded-xl bg-surface-app items-center justify-center"
                     >
-                      <Ionicons name="add" size={18} color="#ffffff" />
+                      <Ionicons name="add" size={18} color={c.text} />
                     </Pressable>
                   </View>
                 )}
@@ -255,10 +257,10 @@ export function LogTemplateScreen() {
 
       {/* Bottom bar with totals + log button */}
       <View
-        className="absolute bottom-0 left-0 right-0 border-t border-[#2c2c2e] px-5 pb-8 pt-4"
+        className="absolute bottom-0 left-0 right-0 border-t border-surface-border px-5 pb-8 pt-4"
         style={{
-          backgroundColor: '#1c1c1e',
-          shadowColor: '#000000',
+          backgroundColor: c.card,
+          shadowColor: c.shadow,
           shadowOpacity: 0.1,
           shadowRadius: 16,
           shadowOffset: { width: 0, height: -4 },
@@ -268,24 +270,24 @@ export function LogTemplateScreen() {
         {/* Macro summary */}
         <View className="flex-row justify-between mb-4">
           <View className="items-center flex-1">
-            <Text className="text-lg font-sans-bold text-white">{totals.calories}</Text>
-            <Text className="text-xs text-[#71717a] font-sans-medium">kcal</Text>
+            <Text className="text-lg font-sans-bold text-text">{totals.calories}</Text>
+            <Text className="text-xs text-text-tertiary font-sans-medium">kcal</Text>
           </View>
           <View className="items-center flex-1">
             <Text className="text-lg font-sans-bold text-[#3b5bdb]">
               {totals.protein.toFixed(0)}g
             </Text>
-            <Text className="text-xs text-[#71717a] font-sans-medium">Protein</Text>
+            <Text className="text-xs text-text-tertiary font-sans-medium">Protein</Text>
           </View>
           <View className="items-center flex-1">
             <Text className="text-lg font-sans-bold text-[#f59e0b]">
               {totals.carbs.toFixed(0)}g
             </Text>
-            <Text className="text-xs text-[#71717a] font-sans-medium">Carbs</Text>
+            <Text className="text-xs text-text-tertiary font-sans-medium">Carbs</Text>
           </View>
           <View className="items-center flex-1">
             <Text className="text-lg font-sans-bold text-[#ef4444]">{totals.fat.toFixed(0)}g</Text>
-            <Text className="text-xs text-[#71717a] font-sans-medium">Fat</Text>
+            <Text className="text-xs text-text-tertiary font-sans-medium">Fat</Text>
           </View>
         </View>
 
@@ -293,13 +295,13 @@ export function LogTemplateScreen() {
           onPress={handleLog}
           disabled={logging || activeItems.length === 0}
           className={`rounded-2xl py-4 items-center ${
-            logging || activeItems.length === 0 ? 'bg-[#3a3a3c]' : 'bg-white'
+            logging || activeItems.length === 0 ? 'bg-surface-tertiary' : 'bg-primary-500'
           }`}
         >
           {logging ? (
-            <ActivityIndicator color="#ffffff" />
+            <ActivityIndicator color={c.text} />
           ) : (
-            <Text className="text-base font-sans-bold text-black">Log Meal</Text>
+            <Text className="text-base font-sans-bold text-on-primary">Log Meal</Text>
           )}
         </Pressable>
       </View>
