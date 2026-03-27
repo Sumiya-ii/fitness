@@ -1,10 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { CoachMemoryService } from './coach-memory.service';
+import { SentryProvider } from '../observability';
 
 @Injectable()
 export class CoachMemoryCron {
-  constructor(private readonly coachMemoryService: CoachMemoryService) {}
+  private readonly logger = new Logger(CoachMemoryCron.name);
+
+  constructor(
+    private readonly coachMemoryService: CoachMemoryService,
+    private readonly sentry: SentryProvider,
+  ) {}
 
   /**
    * Every Sunday at 02:00 UTC (= 10:00 Asia/Ulaanbaatar).
@@ -13,9 +19,14 @@ export class CoachMemoryCron {
    */
   @Cron('0 2 * * 0')
   async handleWeeklyMemoryRefresh(): Promise<void> {
-    const count = await this.coachMemoryService.scheduleRefresh();
-    if (count > 0) {
-      console.log(`[CoachMemory] Enqueued memory refresh for ${count} user(s)`);
+    try {
+      const count = await this.coachMemoryService.scheduleRefresh();
+      if (count > 0) {
+        this.logger.log(`Enqueued memory refresh for ${count} user(s)`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to schedule memory refresh', error);
+      this.sentry.captureException(error);
     }
   }
 }

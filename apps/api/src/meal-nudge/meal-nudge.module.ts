@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MealNudgeService } from './meal-nudge.service';
 import { MealNudgeCron } from './meal-nudge.cron';
+import { ObservabilityModule } from '../observability';
 
 @Module({
-  imports: [ScheduleModule.forRoot()],
+  imports: [ScheduleModule.forRoot(), ObservabilityModule],
   providers: [MealNudgeService, MealNudgeCron],
   exports: [MealNudgeService],
 })

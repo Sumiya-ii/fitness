@@ -3,8 +3,10 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { VoiceController } from './voice.controller';
 import { VoiceService } from './voice.service';
 import { VoiceCleanupService } from './voice-cleanup.service';
+import { ObservabilityModule } from '../observability';
+
 @Module({
-  imports: [ScheduleModule.forRoot()],
+  imports: [ScheduleModule.forRoot(), ObservabilityModule],
   controllers: [VoiceController],
   providers: [VoiceService, VoiceCleanupService],
   exports: [VoiceService],

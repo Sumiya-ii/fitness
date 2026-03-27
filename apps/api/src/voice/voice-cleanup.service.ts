@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma';
+import { SentryProvider } from '../observability';
 
 @Injectable()
 export class VoiceCleanupService {
   private readonly logger = new Logger(VoiceCleanupService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sentry: SentryProvider,
+  ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async deleteExpiredDrafts(): Promise<void> {
@@ -19,6 +23,7 @@ export class VoiceCleanupService {
       }
     } catch (err) {
       this.logger.error('Failed to clean up expired voice drafts', err);
+      this.sentry.captureException(err);
     }
   }
 }
