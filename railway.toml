@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api"
+buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api && prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate --accept-data-loss"
 
 [deploy]
-startCommand = "npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate --accept-data-loss && npm run start:prod --workspace=apps/api"
+startCommand = "npm run start:prod --workspace=apps/api"
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
