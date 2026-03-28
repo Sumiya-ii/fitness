@@ -30,8 +30,8 @@ export class StreaksService {
     // Cast to text so the driver always returns a plain 'YYYY-MM-DD' string.
     const rows = await this.prisma.$queryRaw<{ log_date: string }[]>`
       SELECT DISTINCT DATE(logged_at)::text AS log_date
-      FROM "MealLog"
-      WHERE "userId" = ${userId}
+      FROM "meal_logs"
+      WHERE "user_id" = ${userId}
       ORDER BY log_date
     `;
 
