@@ -53,6 +53,7 @@ export const envSchema = z.object({
   STT_API_KEY: z.string().optional(),
   GOOGLE_STT_CREDENTIALS: z.string().optional(),
   GOOGLE_STT_API_KEY: z.string().optional(),
+  GOOGLE_CLOUD_PROJECT: z.string().optional(),
   CHIMEGE_API_KEY: z.string().optional(),
 
   // Vision provider for food photo analysis

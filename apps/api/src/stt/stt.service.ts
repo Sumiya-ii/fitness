@@ -11,10 +11,7 @@ export interface TranscribeResult {
 export class SttService {
   constructor(private readonly config: ConfigService) {}
 
-  async transcribe(
-    audioBuffer: Buffer,
-    locale?: string,
-  ): Promise<TranscribeResult> {
+  async transcribe(audioBuffer: Buffer, locale?: string): Promise<TranscribeResult> {
     const provider = this.config.get('STT_PROVIDER');
     const googleApiKey = this.config.get('GOOGLE_STT_API_KEY');
 
@@ -40,20 +37,26 @@ export class SttService {
       };
     }
 
+    const googleProjectId = this.config.get('GOOGLE_CLOUD_PROJECT');
+    const recognizerPath = googleProjectId
+      ? `projects/${googleProjectId}/locations/global/recognizers/_`
+      : 'projects/-/locations/global/recognizers/_';
+
+    const languageCode = locale === 'en' ? 'en-US' : 'mn-MN';
+
     const requestBody = {
       config: {
-        encoding: 'LINEAR16' as const,
-        languageCode: locale ?? 'mn-MN',
-        alternativeLanguageCodes: locale ? undefined : ['en-US'],
-        model: 'default',
-        enableAutomaticPunctuation: true,
+        autoDecodingConfig: {},
+        languageCodes: [languageCode],
+        model: 'chirp_2',
+        features: {
+          enableAutomaticPunctuation: true,
+        },
       },
-      audio: {
-        content: audioBuffer.toString('base64'),
-      },
+      content: audioBuffer.toString('base64'),
     };
 
-    const url = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
+    const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${apiKey}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,8 +65,8 @@ export class SttService {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('[STT] Google API error:', response.status, errorBody);
-      throw new Error(`Google STT failed: ${response.status}`);
+      console.error('[STT] Google STT V2 error:', response.status, errorBody);
+      throw new Error(`Google STT V2 failed: ${response.status}`);
     }
 
     const data = (await response.json()) as {

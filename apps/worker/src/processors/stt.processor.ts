@@ -1,6 +1,5 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
-import { toFile } from 'openai/uploads';
 import { STT_NUTRITION_SYSTEM_PROMPT } from '@coach/shared';
 import { downloadFromS3, deleteFromS3 } from '../s3';
 import { setVoiceDraftActive, setVoiceDraftCompleted, setVoiceDraftFailed } from '../db';
@@ -52,9 +51,27 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     await setVoiceDraftActive(draftId);
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    const msg = 'OPENAI_API_KEY not set';
+  const googleApiKey = process.env.GOOGLE_STT_API_KEY;
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+
+  if (!googleApiKey) {
+    const msg = 'GOOGLE_STT_API_KEY not set';
+    console.warn(`[STT] ${msg}`);
+    if (draftId) await markFailed(draftId, msg);
+    return {
+      text: '',
+      locale,
+      mealType: null,
+      items: [],
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+    };
+  }
+
+  if (!openaiApiKey) {
+    const msg = 'OPENAI_API_KEY not set (needed for nutrition parsing)';
     console.warn(`[STT] ${msg}`);
     if (draftId) await markFailed(draftId, msg);
     return {
@@ -86,24 +103,59 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     throw err;
   }
 
-  const client = new OpenAI({ apiKey });
-
-  // Step 1: Transcribe with Whisper
+  // Step 1: Transcribe with Google Cloud Speech-to-Text V2 (chirp_2)
   let text: string;
   try {
-    const audioFile = await toFile(buffer, 'recording.m4a', { type: 'audio/m4a' });
-    const transcription = await client.audio.transcriptions.create({
-      file: audioFile,
-      model: 'whisper-1',
-      language: locale ?? 'mn',
+    const googleProjectId = process.env.GOOGLE_CLOUD_PROJECT;
+    const recognizerPath = googleProjectId
+      ? `projects/${googleProjectId}/locations/global/recognizers/_`
+      : 'projects/-/locations/global/recognizers/_';
+
+    const languageCode = locale === 'en' ? 'en-US' : 'mn-MN';
+
+    const requestBody = {
+      config: {
+        autoDecodingConfig: {},
+        languageCodes: [languageCode],
+        model: 'chirp_2',
+        features: {
+          enableAutomaticPunctuation: true,
+        },
+      },
+      content: buffer.toString('base64'),
+    };
+
+    const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${googleApiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
     });
-    text = transcription.text.trim();
-    console.log('[STT] Transcribed:', text);
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Google STT V2 HTTP ${response.status}: ${errorBody}`);
+    }
+
+    const data = (await response.json()) as {
+      results?: Array<{
+        alternatives?: Array<{
+          transcript?: string;
+          confidence?: number;
+        }>;
+      }>;
+    };
+
+    text = (data.results ?? [])
+      .map((r) => r.alternatives?.[0]?.transcript ?? '')
+      .join(' ')
+      .trim();
+
+    console.log('[STT] Transcribed (chirp_2):', text);
   } catch (err) {
     const msg = `Transcription failed: ${String(err)}`;
     console.error(`[STT] ${msg}`);
     if (draftId) await markFailed(draftId, msg);
-    // Cleanup S3 even on failure
     if (s3Key && process.env.S3_BUCKET) await deleteFromS3(s3Key);
     throw err;
   }
@@ -135,6 +187,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
   }
 
   // Step 2: Parse nutrition with GPT-4o-mini
+  const client = new OpenAI({ apiKey: openaiApiKey });
   let items: ParsedFoodItem[] = [];
   let detectedMealType: string | null = null;
   try {
