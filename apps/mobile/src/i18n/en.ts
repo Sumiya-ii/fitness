@@ -44,6 +44,8 @@ export const en = {
     todaysMeals: "Today's Meals",
     noMeals: 'No meals logged yet',
     noMealsDesc: 'Start tracking your meals to see your daily progress',
+    recentlyUploaded: 'Recently uploaded',
+    tapToAddFirst: 'Tap + to add your first meal of the day',
     weeklySummary: 'Weekly Summary',
     breakfast: 'Breakfast',
     lunch: 'Lunch',

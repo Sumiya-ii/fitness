@@ -44,6 +44,8 @@ export const mn = {
     todaysMeals: 'Өнөөдрийн хоол',
     noMeals: 'Хоол бүртгэгдээгүй',
     noMealsDesc: 'Хоолоо бүртгэж өдрийн дэвшлээ харна уу',
+    recentlyUploaded: 'Сүүлд нэмсэн',
+    tapToAddFirst: '+ дарж өнөөдрийн анхны хоолоо нэмнэ үү',
     weeklySummary: 'Долоо хоногийн тойм',
     breakfast: 'Өглөөний хоол',
     lunch: 'Өдрийн хоол',

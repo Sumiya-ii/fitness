@@ -678,16 +678,16 @@ export function HomeScreen() {
   } = useStepsStore();
   const { summary: workoutSummary, fetchSummary: fetchWorkoutSummary } = useWorkoutStore();
 
-  // 7 days: 5 past, today (6th), 1 future
+  // Current week: Sun–Sat
   const weekDays = useMemo(() => {
     const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=Sun
+    const sunday = addDays(today, -dayOfWeek);
     return Array.from({ length: 7 }, (_, i) => {
-      const d = addDays(today, i - 5);
+      const d = addDays(sunday, i);
       return { date: d, key: toDateKey(d) };
     });
   }, []);
-
-  const cellSize = Math.floor((screenWidth - 32) / 7);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -837,12 +837,10 @@ export function HomeScreen() {
       <SafeAreaView edges={['top']}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-3 pb-1">
-          <View className="flex-row items-center gap-2.5">
-            <View className="h-9 w-9 rounded-2xl bg-surface-secondary items-center justify-center">
-              <Ionicons name="nutrition" size={20} color={c.text} />
-            </View>
+          <View className="flex-row items-center gap-2">
+            <Text style={{ fontSize: 28 }}>🍏</Text>
             <Text className="text-2xl font-sans-bold text-text">
-              {displayName ? displayName : 'Coach'}
+              {displayName ? displayName : 'Cal AI'}
             </Text>
           </View>
           <Pressable
@@ -857,150 +855,56 @@ export function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Week Calendar Strip with Calorie Rings */}
-        <View className="px-4 pb-2 pt-1">
-          <Text
-            style={{
-              fontSize: 11,
-              fontFamily: 'Inter-SemiBold',
-              color: c.textTertiary,
-              letterSpacing: 0.8,
-              textTransform: 'uppercase',
-              marginBottom: 8,
-            }}
-          >
-            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </Text>
+        {/* Week Calendar Strip */}
+        <View className="px-4 pb-2 pt-2">
           <View style={{ flexDirection: 'row' }}>
             {weekDays.map(({ date, key }) => {
               const isSelected = selectedDateKey === key;
               const isToday = todayKey === key;
-              const isPast = key < todayKey;
-              const ringSize = Math.min(cellSize - 4, 44);
-              const ringStroke = 3;
-              const ringRadius = (ringSize - ringStroke) / 2;
-              const ringCirc = 2 * Math.PI * ringRadius;
-
-              // Get calorie data for this day from history
-              const dayHistory = history7?.history?.find((h) => h.date === key);
-              const dayTarget = history7?.target?.calories ?? targets.calories;
-              const dayCals = dayHistory?.calories ?? 0;
-              const dayRatio = dayTarget > 0 ? dayCals / dayTarget : 0;
-              const hasData = dayCals > 0;
-              const exceeded = dayRatio > 1;
-              const ringProgress = Math.min(dayRatio, 1);
-
-              // Ring color: green if on track, amber if >80%, red if exceeded
-              const ringColor = !hasData
-                ? 'transparent'
-                : exceeded
-                  ? '#ef4444'
-                  : dayRatio >= 0.8
-                    ? '#22c55e'
-                    : dayRatio >= 0.5
-                      ? '#f59e0b'
-                      : '#3a3a3c';
-
-              const trackColor = hasData ? '#2c2c2e' : '#1c1c1e';
+              const isFuture = key > todayKey;
+              const circleSize = 40;
 
               return (
                 <Pressable
                   key={key}
                   onPress={() => setSelectedDateKey(key)}
-                  style={{ width: cellSize, alignItems: 'center', paddingVertical: 2 }}
+                  style={{ flex: 1, alignItems: 'center', paddingVertical: 2 }}
                 >
                   <Text
                     style={{
-                      fontSize: 10,
+                      fontSize: 11,
                       fontFamily: 'Inter-Medium',
-                      color: isSelected || isToday ? '#ffffff' : isPast ? '#52525b' : '#3a3a3c',
-                      marginBottom: 4,
-                      letterSpacing: 0.3,
+                      color: isSelected ? c.text : c.textTertiary,
+                      marginBottom: 6,
                     }}
                   >
                     {WEEKDAY_LABELS[date.getDay()]}
                   </Text>
                   <View
                     style={{
-                      width: ringSize,
-                      height: ringSize,
+                      width: circleSize,
+                      height: circleSize,
+                      borderRadius: circleSize / 2,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      ...(isSelected
+                        ? { backgroundColor: c.text }
+                        : {
+                            borderWidth: 1.5,
+                            borderColor: isFuture ? c.border : c.textTertiary,
+                            borderStyle: 'dashed',
+                          }),
                     }}
                   >
-                    <Svg
-                      width={ringSize}
-                      height={ringSize}
-                      style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}
-                    >
-                      {/* Track circle */}
-                      <Circle
-                        cx={ringSize / 2}
-                        cy={ringSize / 2}
-                        r={ringRadius}
-                        stroke={trackColor}
-                        strokeWidth={ringStroke}
-                        fill="none"
-                      />
-                      {/* Progress circle */}
-                      {hasData && (
-                        <Circle
-                          cx={ringSize / 2}
-                          cy={ringSize / 2}
-                          r={ringRadius}
-                          stroke={ringColor}
-                          strokeWidth={ringStroke}
-                          fill="none"
-                          strokeDasharray={ringCirc}
-                          strokeDashoffset={ringCirc * (1 - ringProgress)}
-                          strokeLinecap="round"
-                        />
-                      )}
-                    </Svg>
-                    {/* Inner fill for selected state */}
-                    <View
+                    <Text
                       style={{
-                        width: ringSize - ringStroke * 2 - 4,
-                        height: ringSize - ringStroke * 2 - 4,
-                        borderRadius: (ringSize - ringStroke * 2 - 4) / 2,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        ...(isSelected
-                          ? { backgroundColor: c.text }
-                          : isToday
-                            ? { backgroundColor: c.card }
-                            : {}),
+                        fontSize: 14,
+                        fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
+                        color: isSelected ? c.bg : isToday ? c.text : c.textTertiary,
                       }}
                     >
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
-                          color: isSelected
-                            ? c.bg
-                            : isToday
-                              ? c.text
-                              : isPast
-                                ? c.textTertiary
-                                : c.textSecondary,
-                        }}
-                      >
-                        {date.getDate()}
-                      </Text>
-                    </View>
-                    {/* Exceeded indicator: small dot below */}
-                    {exceeded && (
-                      <View
-                        style={{
-                          position: 'absolute',
-                          bottom: -2,
-                          width: 5,
-                          height: 5,
-                          borderRadius: 2.5,
-                          backgroundColor: '#ef4444',
-                        }}
-                      />
-                    )}
+                      {date.getDate()}
+                    </Text>
                   </View>
                 </Pressable>
               );
@@ -1061,17 +965,23 @@ export function HomeScreen() {
                       {showEaten ? t('dashboard.caloriesEaten') : t('dashboard.caloriesLeft')}{' '}
                       &#x25C7;
                     </Text>
-                    <View className="flex-row items-center gap-3 mt-2.5">
-                      <View className="flex-row items-center gap-1.5">
-                        <View className="h-2 w-2 rounded-full bg-[#f97316]" />
-                        <Text className="text-xs text-text-tertiary font-sans-medium">
-                          +{consumed.calories} {t('dashboard.eaten')}
+                    <View className="flex-row items-center gap-2 mt-2.5">
+                      <View
+                        className="flex-row items-center gap-1 px-2.5 py-1 rounded-full"
+                        style={{ backgroundColor: c.cardAlt }}
+                      >
+                        <Ionicons name="time-outline" size={13} color={c.textTertiary} />
+                        <Text className="text-xs font-sans-semibold text-text-tertiary">
+                          +{caloriesBurned}
                         </Text>
                       </View>
-                      <View className="flex-row items-center gap-1.5">
-                        <View className="h-2 w-2 rounded-full bg-surface-muted" />
-                        <Text className="text-xs text-text-tertiary font-sans-medium">
-                          {targets.calories} goal
+                      <View
+                        className="flex-row items-center gap-1 px-2.5 py-1 rounded-full"
+                        style={{ backgroundColor: c.cardAlt }}
+                      >
+                        <Ionicons name="restaurant-outline" size={13} color={c.textTertiary} />
+                        <Text className="text-xs font-sans-semibold text-text-tertiary">
+                          +{workoutSummary?.totalCaloriesBurned ?? 0}
                         </Text>
                       </View>
                     </View>
@@ -1405,236 +1315,19 @@ export function HomeScreen() {
               </View>
             </View>
 
-            {/* ── Page 3: Streak & Consistency ── */}
-            <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
-              {/* Row 1: Current streak + Longest streak */}
-              <View className="flex-row gap-3 mb-3">
-                {/* Current streak — hero card */}
-                <Pressable
-                  className="flex-[2] rounded-3xl p-4"
-                  style={{ backgroundColor: c.card }}
-                  onPress={() => setStreakModalVisible(true)}
-                >
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-1 mr-2">
-                      <Text
-                        style={{
-                          fontSize: 44,
-                          fontFamily: 'Inter-Bold',
-                          color: (streakData?.currentStreak ?? 0) > 0 ? '#f97316' : '#ffffff',
-                          lineHeight: 48,
-                        }}
-                      >
-                        {streakData?.currentStreak ?? 0}
-                      </Text>
-                      <Text className="text-sm text-text-tertiary font-sans-medium mt-1">
-                        {t('dashboard.streak')}
-                      </Text>
-                      <View className="flex-row items-center gap-2 mt-2.5">
-                        <View
-                          className="px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: streakData?.todayLogged ? '#22c55e20' : '#2c2c2e',
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 11,
-                              fontFamily: 'Inter-Bold',
-                              color: streakData?.todayLogged ? '#22c55e' : '#71717a',
-                            }}
-                          >
-                            {streakData?.todayLogged ? '✓ Today' : '– Today'}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                    <ProgressArc
-                      progress={
-                        streakData && streakData.longestStreak > 0
-                          ? Math.min((streakData.currentStreak ?? 0) / streakData.longestStreak, 1)
-                          : 0
-                      }
-                      size={80}
-                      strokeWidth={7}
-                      color="#f97316"
-                      trackColor="#f9731620"
-                    >
-                      <Text style={{ fontSize: 26 }}>🔥</Text>
-                    </ProgressArc>
-                  </View>
-                </Pressable>
-
-                {/* Best streak */}
-                <View
-                  className="flex-1 rounded-3xl p-4 justify-between"
-                  style={{ backgroundColor: c.card }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontFamily: 'Inter-SemiBold',
-                      color: c.textTertiary,
-                      letterSpacing: 0.8,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {t('dashboard.streakLongest')}
-                  </Text>
-                  <View>
-                    <Text
-                      style={{
-                        fontSize: 20,
-                        fontFamily: 'Inter-Bold',
-                        color: c.text,
-                        lineHeight: 24,
-                      }}
-                    >
-                      {streakData?.longestStreak ?? 0}
-                    </Text>
-                    <Text
-                      style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                    >
-                      {t('dashboard.streakDays')}
-                    </Text>
-                  </View>
-                  <Text style={{ fontSize: 22 }}>🏆</Text>
-                </View>
-              </View>
-
-              {/* Row 2: Consistency bars */}
-              <View className="rounded-3xl p-4 mb-3" style={{ backgroundColor: c.card }}>
-                {/* 7-day */}
-                <View className="mb-3">
-                  <View className="flex-row items-center justify-between mb-1.5">
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.text }}>
-                      {t('dashboard.streakWeek')}
-                    </Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: c.text }}>
-                      {streakData?.weekConsistency ?? 0}%
-                    </Text>
-                  </View>
-                  <View
-                    className="h-2 rounded-full overflow-hidden"
-                    style={{ backgroundColor: c.cardAlt }}
-                  >
-                    <View
-                      style={{
-                        height: '100%',
-                        width: `${streakData?.weekConsistency ?? 0}%`,
-                        backgroundColor:
-                          (streakData?.weekConsistency ?? 0) >= 80
-                            ? '#22c55e'
-                            : (streakData?.weekConsistency ?? 0) >= 50
-                              ? '#f59e0b'
-                              : '#ef4444',
-                        borderRadius: 4,
-                      }}
-                    />
-                  </View>
-                </View>
-                {/* 30-day */}
-                <View>
-                  <View className="flex-row items-center justify-between mb-1.5">
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.text }}>
-                      {t('dashboard.streakMonth')}
-                    </Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Inter-Bold', color: c.text }}>
-                      {streakData?.monthConsistency ?? 0}%
-                    </Text>
-                  </View>
-                  <View
-                    className="h-2 rounded-full overflow-hidden"
-                    style={{ backgroundColor: c.cardAlt }}
-                  >
-                    <View
-                      style={{
-                        height: '100%',
-                        width: `${streakData?.monthConsistency ?? 0}%`,
-                        backgroundColor:
-                          (streakData?.monthConsistency ?? 0) >= 80
-                            ? '#22c55e'
-                            : (streakData?.monthConsistency ?? 0) >= 50
-                              ? '#f59e0b'
-                              : '#ef4444',
-                        borderRadius: 4,
-                      }}
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Row 3: Workouts */}
-              <Pressable
-                className="rounded-3xl p-4"
-                style={{ backgroundColor: c.card }}
-                onPress={() =>
-                  (navigation as { navigate: (s: string, p?: object) => void }).navigate(
-                    'WorkoutHome',
-                  )
-                }
-              >
-                <View className="flex-row items-center justify-between">
-                  <View>
-                    <Text
-                      style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.textTertiary }}
-                    >
-                      {t('dashboard.workouts')}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 28,
-                        fontFamily: 'Inter-Bold',
-                        color: c.text,
-                        marginTop: 2,
-                      }}
-                    >
-                      {workoutSummary?.workoutCount ?? 0}
-                    </Text>
-                    <Text
-                      style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                    >
-                      {t('dashboard.thisWeek')}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center gap-3">
-                    <View className="items-center">
-                      <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#f97316' }}>
-                        {workoutSummary?.totalDurationMin ?? 0}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                      >
-                        min
-                      </Text>
-                    </View>
-                    <View className="items-center">
-                      <Text style={{ fontSize: 18, fontFamily: 'Inter-Bold', color: '#22c55e' }}>
-                        {workoutSummary?.totalCaloriesBurned ?? 0}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                      >
-                        cal
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={c.textTertiary} />
-                  </View>
-                </View>
-              </Pressable>
-            </View>
+            {/* Page 3 removed — streak info lives in header badge */}
           </ScrollView>
 
           {/* Carousel Dots */}
           <View className="flex-row items-center justify-center gap-1.5 mt-3 mb-1">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2].map((i) => (
               <View
                 key={i}
                 style={{
-                  width: carouselPage === i ? 16 : 6,
+                  width: 6,
                   height: 6,
                   borderRadius: 3,
-                  backgroundColor: carouselPage === i ? '#ffffff' : '#3a3a3c',
+                  backgroundColor: carouselPage === i ? c.text : c.border,
                 }}
               />
             ))}
@@ -1667,19 +1360,17 @@ export function HomeScreen() {
           </Animated.View>
         )}
 
-        {/* ── Meals Today ── */}
+        {/* ── Recently Uploaded ── */}
         <Animated.View entering={FadeInDown.duration(350).delay(150)} className="px-4">
           <Text
             style={{
-              fontSize: 11,
-              fontFamily: 'Inter-SemiBold',
-              color: c.textTertiary,
-              letterSpacing: 0.8,
-              textTransform: 'uppercase',
-              marginBottom: 10,
+              fontSize: 18,
+              fontFamily: 'Inter-Bold',
+              color: c.text,
+              marginBottom: 12,
             }}
           >
-            {t('dashboard.mealsToday')}
+            {t('dashboard.recentlyUploaded')}
           </Text>
           {hasMeals ? (
             mealOrder
@@ -1695,20 +1386,27 @@ export function HomeScreen() {
           ) : (
             <Pressable
               onPress={handleLogMeal}
-              className="rounded-3xl p-6 items-center"
+              className="rounded-3xl p-5"
               style={{ backgroundColor: c.card }}
             >
               <View
-                className="h-12 w-12 rounded-2xl items-center justify-center mb-3"
+                className="rounded-2xl p-4 mb-4 flex-row items-center gap-3"
                 style={{ backgroundColor: c.cardAlt }}
               >
-                <Ionicons name="restaurant-outline" size={22} color={c.textTertiary} />
+                <Text style={{ fontSize: 32 }}>🥗</Text>
+                <View className="flex-1">
+                  <View
+                    className="h-2.5 rounded-full mb-2"
+                    style={{ backgroundColor: c.border, width: '80%' }}
+                  />
+                  <View
+                    className="h-2.5 rounded-full"
+                    style={{ backgroundColor: c.border, width: '55%' }}
+                  />
+                </View>
               </View>
-              <Text className="text-sm font-sans-semibold text-text mb-1">
-                {t('dashboard.noMeals')}
-              </Text>
-              <Text className="text-xs text-text-tertiary text-center">
-                {t('dashboard.tapToLog')}
+              <Text className="text-sm text-text-tertiary text-center font-sans-medium">
+                {t('dashboard.tapToAddFirst')}
               </Text>
             </Pressable>
           )}
