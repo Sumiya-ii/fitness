@@ -40,7 +40,7 @@ export type LogStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Log: undefined;
+  Log: NavigatorScreenParams<LogStackParamList> | undefined;
   Progress: undefined;
   Settings: undefined;
 };
