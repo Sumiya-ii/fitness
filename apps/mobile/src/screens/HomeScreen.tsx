@@ -225,27 +225,58 @@ function HistoryBarChart({
 interface MacroCardProps {
   label: string;
   leftAmount: number;
+  eatenAmount: number;
+  targetAmount: number;
   unit: string;
   progress: number;
   color: string;
   icon: string;
+  showEaten: boolean;
+  onToggle: () => void;
 }
 
-function MacroCard({ label, leftAmount, unit, progress, color, icon }: MacroCardProps) {
+function MacroCard({
+  label,
+  leftAmount,
+  eatenAmount,
+  targetAmount,
+  unit,
+  progress,
+  color,
+  icon,
+  showEaten,
+  onToggle,
+}: MacroCardProps) {
   const c = useColors();
+  const { t } = useLocale();
   return (
-    <View className="flex-1 rounded-3xl p-4" style={{ backgroundColor: c.card }}>
-      <Text className="text-xl font-sans-bold text-white leading-tight">
-        {leftAmount}
-        {unit}
-      </Text>
-      <Text className="text-xs text-zinc-500 font-sans-medium mb-3" numberOfLines={1}>
-        {label} left
+    <Pressable
+      className="flex-1 rounded-3xl p-4"
+      style={{ backgroundColor: c.card }}
+      onPress={onToggle}
+    >
+      {showEaten ? (
+        <Text className="text-xl font-sans-bold text-text leading-tight">
+          {eatenAmount}
+          <Text className="text-sm font-sans-medium text-text-tertiary">
+            {' '}
+            /{targetAmount}
+            {unit}
+          </Text>
+        </Text>
+      ) : (
+        <Text className="text-xl font-sans-bold text-text leading-tight">
+          {leftAmount}
+          {unit}
+        </Text>
+      )}
+      <Text className="text-xs text-text-tertiary font-sans-medium mb-3" numberOfLines={1}>
+        {label} {showEaten ? t('dashboard.eaten') : 'left'}
       </Text>
       <ProgressArc progress={progress} size={52} strokeWidth={5} color={color}>
         <Text style={{ fontSize: 18 }}>{icon}</Text>
       </ProgressArc>
-    </View>
+    </Pressable>
   );
 }
 
@@ -319,7 +350,7 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
             size={14}
             color={c.textTertiary}
           />
-          <Text className="ml-2 text-xs font-sans-semibold text-zinc-500 uppercase tracking-widest">
+          <Text className="ml-2 text-xs font-sans-semibold text-text-tertiary uppercase tracking-widest">
             {typeLabel}
           </Text>
         </View>
@@ -340,14 +371,14 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
           style={idx > 0 ? { borderTopWidth: 1, borderTopColor: c.border } : undefined}
         >
           <View className="flex-row items-center gap-3 flex-1 mr-3">
-            <View className="h-9 w-9 rounded-xl bg-[#2c2c2e] items-center justify-center">
+            <View className="h-9 w-9 rounded-xl bg-surface-secondary items-center justify-center">
               <Text style={{ fontSize: 18 }}>🍽️</Text>
             </View>
-            <Text className="text-sm font-sans-medium text-white flex-1" numberOfLines={1}>
+            <Text className="text-sm font-sans-medium text-text flex-1" numberOfLines={1}>
               {item.snapshotFoodName}
             </Text>
           </View>
-          <Text className="text-sm font-sans-bold text-white">{item.snapshotCalories} kcal</Text>
+          <Text className="text-sm font-sans-bold text-text">{item.snapshotCalories} kcal</Text>
         </View>
       ))}
       {items.length > 1 && (
@@ -355,8 +386,8 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
           className="flex-row justify-between pt-2 mt-1"
           style={{ borderTopWidth: 1, borderTopColor: c.border }}
         >
-          <Text className="text-xs text-zinc-500">Total</Text>
-          <Text className="text-xs font-sans-semibold text-white">{totalCal} kcal</Text>
+          <Text className="text-xs text-text-tertiary">Total</Text>
+          <Text className="text-xs font-sans-semibold text-text">{totalCal} kcal</Text>
         </View>
       )}
     </View>
@@ -626,6 +657,7 @@ export function HomeScreen() {
   const [displayName, setDisplayName] = useState('');
   const [carouselPage, setCarouselPage] = useState(0);
   const [streakModalVisible, setStreakModalVisible] = useState(false);
+  const [showEaten, setShowEaten] = useState(false);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
   const { data, isLoading, fetchDashboard } = useDashboardStore();
   const { data: historyData, fetchHistory } = useNutritionHistoryStore();
@@ -806,10 +838,10 @@ export function HomeScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-3 pb-1">
           <View className="flex-row items-center gap-2.5">
-            <View className="h-9 w-9 rounded-2xl bg-white items-center justify-center">
-              <Ionicons name="nutrition" size={20} color="#000000" />
+            <View className="h-9 w-9 rounded-2xl bg-surface-secondary items-center justify-center">
+              <Ionicons name="nutrition" size={20} color={c.text} />
             </View>
-            <Text className="text-2xl font-sans-bold text-white">
+            <Text className="text-2xl font-sans-bold text-text">
               {displayName ? displayName : 'Coach'}
             </Text>
           </View>
@@ -819,7 +851,7 @@ export function HomeScreen() {
             style={{ backgroundColor: c.card }}
           >
             <Text style={{ fontSize: 15 }}>🔥</Text>
-            <Text className="font-sans-bold text-white text-sm">
+            <Text className="font-sans-bold text-text text-sm">
               {streakData?.currentStreak ?? 0}
             </Text>
           </Pressable>
@@ -1004,28 +1036,41 @@ export function HomeScreen() {
             <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
               {/* Calorie Card */}
               <Pressable
-                onPress={handleLogMeal}
+                onPress={() => setShowEaten((v) => !v)}
                 className="rounded-3xl p-4 mb-3"
                 style={{ backgroundColor: c.card }}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 mr-2">
-                    <Text className="text-5xl font-sans-bold text-white leading-none">
-                      {remaining}
-                    </Text>
-                    <Text className="text-sm text-zinc-500 font-sans-medium mt-1.5">
-                      {t('dashboard.caloriesLeft')}
+                    {showEaten ? (
+                      <View className="flex-row items-baseline">
+                        <Text className="text-5xl font-sans-bold text-text leading-none">
+                          {consumed.calories}
+                        </Text>
+                        <Text className="text-2xl font-sans-medium text-text-tertiary leading-none">
+                          {' '}
+                          /{targets.calories}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text className="text-5xl font-sans-bold text-text leading-none">
+                        {remaining}
+                      </Text>
+                    )}
+                    <Text className="text-sm text-text-tertiary font-sans-medium mt-1.5">
+                      {showEaten ? t('dashboard.caloriesEaten') : t('dashboard.caloriesLeft')}{' '}
+                      &#x25C7;
                     </Text>
                     <View className="flex-row items-center gap-3 mt-2.5">
                       <View className="flex-row items-center gap-1.5">
                         <View className="h-2 w-2 rounded-full bg-[#f97316]" />
-                        <Text className="text-xs text-zinc-500 font-sans-medium">
-                          {consumed.calories} {t('dashboard.eaten')}
+                        <Text className="text-xs text-text-tertiary font-sans-medium">
+                          +{consumed.calories} {t('dashboard.eaten')}
                         </Text>
                       </View>
                       <View className="flex-row items-center gap-1.5">
-                        <View className="h-2 w-2 rounded-full bg-[#3a3a3c]" />
-                        <Text className="text-xs text-zinc-500 font-sans-medium">
+                        <View className="h-2 w-2 rounded-full bg-surface-muted" />
+                        <Text className="text-xs text-text-tertiary font-sans-medium">
                           {targets.calories} goal
                         </Text>
                       </View>
@@ -1042,26 +1087,38 @@ export function HomeScreen() {
                 <MacroCard
                   label={t('dashboard.protein')}
                   leftAmount={proteinLeft}
+                  eatenAmount={Math.round(consumed.protein)}
+                  targetAmount={Math.round(targets.protein)}
                   unit="g"
                   progress={proteinProg}
                   color="#f97316"
                   icon="🍗"
+                  showEaten={showEaten}
+                  onToggle={() => setShowEaten((v) => !v)}
                 />
                 <MacroCard
                   label={t('dashboard.carbs')}
                   leftAmount={carbsLeft}
+                  eatenAmount={Math.round(consumed.carbs)}
+                  targetAmount={Math.round(targets.carbs)}
                   unit="g"
                   progress={carbsProg}
                   color="#f59e0b"
                   icon="🌾"
+                  showEaten={showEaten}
+                  onToggle={() => setShowEaten((v) => !v)}
                 />
                 <MacroCard
                   label={t('dashboard.fat')}
                   leftAmount={fatLeft}
+                  eatenAmount={Math.round(consumed.fat)}
+                  targetAmount={Math.round(targets.fat)}
                   unit="g"
                   progress={fatProg}
                   color="#3b82f6"
                   icon="🫐"
+                  showEaten={showEaten}
+                  onToggle={() => setShowEaten((v) => !v)}
                 />
               </View>
             </View>
@@ -1084,7 +1141,7 @@ export function HomeScreen() {
                       >
                         {healthScore ?? '–'}
                       </Text>
-                      <Text className="text-sm text-zinc-500 font-sans-medium mt-1">
+                      <Text className="text-sm text-text-tertiary font-sans-medium mt-1">
                         {t('dashboard.healthScore')}
                       </Text>
                       <View className="flex-row items-center gap-2 mt-2.5">
@@ -1102,7 +1159,7 @@ export function HomeScreen() {
                             {healthGrade}
                           </Text>
                         </View>
-                        <Text className="text-xs text-zinc-500 font-sans-medium">/ 100</Text>
+                        <Text className="text-xs text-text-tertiary font-sans-medium">/ 100</Text>
                       </View>
                     </View>
                     <ProgressArc
@@ -1229,7 +1286,7 @@ export function HomeScreen() {
                         >
                           {steps.toLocaleString()}
                         </Text>
-                        <Text className="text-sm text-zinc-500 font-sans-medium mt-1">
+                        <Text className="text-sm text-text-tertiary font-sans-medium mt-1">
                           {t('dashboard.steps')}
                         </Text>
                         <Text
@@ -1289,9 +1346,9 @@ export function HomeScreen() {
                     </Text>
                     <Pressable
                       onPress={requestStepsPermission}
-                      className="bg-white px-5 py-2 rounded-full"
+                      className="bg-primary-500 px-5 py-2 rounded-full"
                     >
-                      <Text style={{ color: '#000', fontFamily: 'Inter-SemiBold', fontSize: 13 }}>
+                      <Text className="text-on-primary font-sans-semibold text-[13px]">
                         {t('dashboard.connect')}
                       </Text>
                     </Pressable>
@@ -1370,7 +1427,7 @@ export function HomeScreen() {
                       >
                         {streakData?.currentStreak ?? 0}
                       </Text>
-                      <Text className="text-sm text-zinc-500 font-sans-medium mt-1">
+                      <Text className="text-sm text-text-tertiary font-sans-medium mt-1">
                         {t('dashboard.streak')}
                       </Text>
                       <View className="flex-row items-center gap-2 mt-2.5">
@@ -1647,10 +1704,12 @@ export function HomeScreen() {
               >
                 <Ionicons name="restaurant-outline" size={22} color={c.textTertiary} />
               </View>
-              <Text className="text-sm font-sans-semibold text-white mb-1">
+              <Text className="text-sm font-sans-semibold text-text mb-1">
                 {t('dashboard.noMeals')}
               </Text>
-              <Text className="text-xs text-zinc-500 text-center">{t('dashboard.tapToLog')}</Text>
+              <Text className="text-xs text-text-tertiary text-center">
+                {t('dashboard.tapToLog')}
+              </Text>
             </Pressable>
           )}
         </Animated.View>
