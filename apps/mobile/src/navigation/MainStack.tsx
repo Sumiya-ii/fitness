@@ -5,6 +5,10 @@ import { WeeklySummaryScreen } from '../screens/WeeklySummaryScreen';
 import { TelegramConnectScreen } from '../screens/TelegramConnectScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { CoachChatScreen } from '../screens/CoachChatScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { PersonalDetailsScreen } from '../screens/PersonalDetailsScreen';
+import { AppSettingsScreen } from '../screens/AppSettingsScreen';
+import { RemindersScreen } from '../screens/RemindersScreen';
 import {
   WorkoutHomeScreen,
   WorkoutTypePickerScreen,
@@ -30,6 +34,10 @@ export function MainStack() {
       <Stack.Screen name="TelegramConnect" component={TelegramConnectScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
       <Stack.Screen name="CoachChat" component={CoachChatScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
+      <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
+      <Stack.Screen name="Reminders" component={RemindersScreen} />
       <Stack.Screen name="WorkoutHome" component={WorkoutHomeScreen} />
       <Stack.Screen name="WorkoutTypePicker" component={WorkoutTypePickerScreen} />
       <Stack.Screen name="WorkoutActive" component={WorkoutActiveScreen} />

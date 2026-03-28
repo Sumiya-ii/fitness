@@ -1,31 +1,20 @@
 import { useCallback, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Switch, Alert, TextInput, Linking } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '../stores/auth.store';
 import { useSubscriptionStore } from '../stores/subscription.store';
-import { useSettingsStore } from '../stores/settings.store';
-import { useThemeStore, type ThemeMode } from '../stores/theme.store';
 import { api } from '../api';
-import { useLocale, type Locale } from '../i18n';
-import { requestAndRegisterPushToken } from '../hooks/usePushNotifications';
+import { useLocale } from '../i18n';
 import { useColors } from '../theme';
 
 interface ProfileData {
   displayName: string | null;
-  locale: string;
-  unitSystem: string;
   id: string;
-}
-
-interface NotificationPrefs {
-  morningReminder: boolean;
-  eveningReminder: boolean;
 }
 
 interface TelegramStatus {
@@ -41,42 +30,6 @@ function getInitials(name: string | null | undefined): string {
 }
 
 /* ─── Building blocks ─── */
-
-function Pill({
-  options,
-  value,
-  onChange,
-}: {
-  options: { label: string; value: string }[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const c = useColors();
-  return (
-    <View className="flex-row rounded-xl p-[3px] bg-surface-secondary">
-      {options.map((opt) => {
-        const active = value === opt.value;
-        return (
-          <Pressable
-            key={opt.value}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onChange(opt.value);
-            }}
-            className={`px-4 py-1.5 rounded-[10px]`}
-            style={active ? { backgroundColor: c.muted } : undefined}
-          >
-            <Text
-              className={`text-[13px] font-sans-semibold ${active ? 'text-text' : 'text-text-tertiary'}`}
-            >
-              {opt.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
 
 function Row({
   icon,
@@ -104,7 +57,12 @@ function Row({
       }}
       className="flex-row items-center py-[14px]"
     >
-      <Ionicons name={icon} size={20} color={danger ? c.danger : '#7687a2'} style={{ width: 28 }} />
+      <View
+        className="h-8 w-8 rounded-lg items-center justify-center mr-3"
+        style={{ backgroundColor: danger ? '#fee2e2' : c.cardAlt }}
+      >
+        <Ionicons name={icon} size={18} color={danger ? c.danger : c.textTertiary} />
+      </View>
       <Text
         className={`flex-1 text-[15px] font-sans-medium ${danger ? 'text-red-500' : 'text-text'}`}
       >
@@ -119,10 +77,17 @@ function Row({
   );
 }
 
-function Section({ children }: { children: React.ReactNode }) {
+function Section({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
-    <View className="bg-surface-card rounded-2xl px-4 mb-3 border border-surface-border">
-      {children}
+    <View className="mb-4">
+      {title && (
+        <Text className="text-xs text-text-tertiary font-sans-semibold uppercase tracking-wider ml-1 mb-2">
+          {title}
+        </Text>
+      )}
+      <View className="bg-surface-card rounded-2xl px-4 border border-surface-border">
+        {children}
+      </View>
     </View>
   );
 }
@@ -137,44 +102,21 @@ export function SettingsScreen() {
   const c = useColors();
   const navigation = useNavigation();
   const signOut = useAuthStore((s) => s.signOut);
-  const { locale: currentLocale, setLocale, t } = useLocale();
+  const { t } = useLocale();
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({
-    morningReminder: true,
-    eveningReminder: true,
-  });
-  const [osPermission, setOsPermission] = useState<'granted' | 'denied' | 'undetermined'>(
-    'undetermined',
-  );
   const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
-  const themeMode = useThemeStore((s) => s.mode);
-  const setThemeMode = useThemeStore((s) => s.setMode);
   const isPro = useSubscriptionStore((s) => s.tier === 'pro');
-  const [editingName, setEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState('');
 
   const loadData = useCallback(async () => {
     try {
-      const [profileRes, notifRes, telegramRes, permResult] = await Promise.all([
+      const [profileRes, telegramRes] = await Promise.all([
         api.get<{ data: ProfileData }>('/profile'),
-        api.get<{ data: NotificationPrefs }>('/notifications/preferences'),
         api.get<TelegramStatus>('/telegram/status'),
-        Notifications.getPermissionsAsync(),
       ]);
       setProfile(profileRes.data);
-      setNotifPrefs(notifRes.data);
       setTelegramStatus(telegramRes);
-      setOsPermission(
-        permResult.status === 'granted'
-          ? 'granted'
-          : permResult.status === 'denied'
-            ? 'denied'
-            : 'undetermined',
-      );
     } catch {
-      setProfile(null);
-      setNotifPrefs({ morningReminder: true, eveningReminder: true });
-      setTelegramStatus(null);
+      /* keep previous state */
     }
   }, []);
 
@@ -184,55 +126,8 @@ export function SettingsScreen() {
     }, [loadData]),
   );
 
-  /* ── Handlers ── */
-
-  const updateNotifPref = async (key: keyof NotificationPrefs, value: boolean) => {
-    const prev = { ...notifPrefs };
-    const next = { ...notifPrefs, [key]: value };
-    setNotifPrefs(next);
-    try {
-      await api.put('/notifications/preferences', next);
-    } catch {
-      setNotifPrefs(prev);
-    }
-  };
-
-  const handleLanguageSelect = async (locale: string) => {
-    await setLocale(locale as Locale);
-    try {
-      await api.put('/profile', { locale });
-      setProfile((p) => (p ? { ...p, locale } : p));
-    } catch {
-      /* keep local */
-    }
-  };
-
-  const setUnitSystem = useSettingsStore((s) => s.setUnitSystem);
-  const currentUnitsFromStore = useSettingsStore((s) => s.unitSystem);
-
-  const handleUnitsSelect = async (unitSystem: string) => {
-    if (unitSystem === 'metric' || unitSystem === 'imperial') {
-      await setUnitSystem(unitSystem);
-      setProfile((p) => (p ? { ...p, unitSystem } : p));
-    }
-  };
-
-  const handleEditProfile = () => {
-    setNameInput(profile?.displayName ?? '');
-    setEditingName(true);
-  };
-
-  const handleSaveName = async () => {
-    const trimmed = nameInput.trim();
-    if (!trimmed) return;
-    try {
-      await api.put('/profile', { displayName: trimmed });
-      setProfile((p) => (p ? { ...p, displayName: trimmed } : p));
-    } catch {
-      /* ignore */
-    }
-    setEditingName(false);
-  };
+  const navigate = (screen: string) =>
+    (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(screen);
 
   const handleSignOut = () => {
     Alert.alert(t('settings.signOut'), t('settings.signOutConfirm'), [
@@ -274,12 +169,7 @@ export function SettingsScreen() {
     ]);
   };
 
-  const navigate = (screen: string) =>
-    (navigation.getParent() as { navigate: (s: string) => void } | undefined)?.navigate(screen);
-
   const appVersion = Constants.expoConfig?.version ?? '0.0.1';
-  const currentLang = profile?.locale ?? currentLocale;
-  const currentUnits = currentUnitsFromStore;
 
   return (
     <View className="flex-1 bg-surface-app">
@@ -289,167 +179,72 @@ export function SettingsScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Profile ── */}
+          {/* ── Profile card ── */}
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              handleEditProfile();
+              navigate('EditProfile');
             }}
-            className="flex-row items-center py-8"
+            className="mt-4 mb-6"
           >
-            <LinearGradient
-              colors={['#667eea', '#764ba2']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="h-14 w-14 rounded-full items-center justify-center mr-4"
-            >
-              <Text className="text-white text-lg font-sans-bold">
-                {getInitials(profile?.displayName)}
-              </Text>
-            </LinearGradient>
-            <View className="flex-1">
-              <View className="flex-row items-center gap-2">
-                <Text className="text-lg font-sans-bold text-text">
-                  {profile?.displayName ?? t('settings.user')}
+            <View className="bg-surface-card rounded-2xl px-5 py-5 border border-surface-border flex-row items-center">
+              <LinearGradient
+                colors={['#667eea', '#764ba2']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="h-14 w-14 rounded-full items-center justify-center"
+              >
+                <Text className="text-white text-lg font-sans-bold">
+                  {getInitials(profile?.displayName)}
                 </Text>
-                {isPro && (
-                  <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: c.cardAlt }}>
-                    <Text className="text-[10px] font-sans-bold text-cyan-400">PRO</Text>
-                  </View>
-                )}
+              </LinearGradient>
+              <View className="flex-1 ml-4">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-[17px] font-sans-bold text-text">
+                    {profile?.displayName ?? t('settings.user')}
+                  </Text>
+                  {isPro && (
+                    <LinearGradient
+                      colors={['#667eea', '#764ba2']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      className="rounded-full px-2.5 py-0.5"
+                    >
+                      <Text className="text-[10px] font-sans-bold text-white">PRO</Text>
+                    </LinearGradient>
+                  )}
+                </View>
+                <Text className="text-[13px] text-text-tertiary font-sans-medium mt-0.5">
+                  {t('settings.tapToEdit')}
+                </Text>
               </View>
-              <Text className="text-[13px] text-text-tertiary font-sans-medium mt-0.5">
-                {t('settings.account')}
-              </Text>
+              <Ionicons name="chevron-forward" size={18} color={c.muted} />
             </View>
-            <Ionicons name="chevron-forward" size={18} color={c.muted} />
           </Pressable>
 
-          {/* ── Name edit overlay ── */}
-          {editingName && (
-            <Section>
-              <View className="flex-row items-center py-3 gap-2">
-                <TextInput
-                  className="flex-1 text-text font-sans-medium text-[15px] border-b border-primary-500 pb-1"
-                  value={nameInput}
-                  onChangeText={setNameInput}
-                  autoFocus
-                  onSubmitEditing={handleSaveName}
-                  returnKeyType="done"
-                  placeholderTextColor={c.textTertiary}
-                  placeholder={t('settings.yourName')}
-                />
-                <Pressable onPress={handleSaveName}>
-                  <Ionicons name="checkmark-circle" size={26} color={c.success} />
-                </Pressable>
-                <Pressable onPress={() => setEditingName(false)}>
-                  <Ionicons name="close-circle" size={26} color={c.muted} />
-                </Pressable>
-              </View>
-            </Section>
-          )}
-
-          {/* ── Upgrade banner ── */}
-          {!isPro && (
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                navigate('Subscription');
-              }}
-              className="mb-3"
-            >
-              <LinearGradient
-                colors={[c.cardAlt, c.muted]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="rounded-2xl px-4 py-4 flex-row items-center"
-              >
-                <Ionicons name="diamond" size={20} color="#22d3ee" style={{ marginRight: 12 }} />
-                <View className="flex-1">
-                  <Text className="text-[15px] font-sans-bold text-text">
-                    {t('settings.upgradeToPro')}
-                  </Text>
-                  <Text className="text-xs text-text-tertiary mt-0.5">
-                    {t('settings.unlockDesc')}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={c.textTertiary} />
-              </LinearGradient>
-            </Pressable>
-          )}
-
-          {/* ── Preferences ── */}
-          <Section>
-            <View className="flex-row items-center py-[14px]">
-              <Ionicons
-                name="language-outline"
-                size={20}
-                color={c.textTertiary}
-                style={{ width: 28 }}
-              />
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                {t('settings.language')}
-              </Text>
-              <Pill
-                options={[
-                  { label: 'EN', value: 'en' },
-                  { label: 'МН', value: 'mn' },
-                ]}
-                value={currentLang}
-                onChange={handleLanguageSelect}
-              />
-            </View>
+          {/* ── General ── */}
+          <Section title={t('settings.general')}>
+            <Row
+              icon="person-outline"
+              label={t('personalDetails.title')}
+              onPress={() => navigate('PersonalDetails')}
+            />
             <Divider />
-            <View className="flex-row items-center py-[14px]">
-              <Ionicons
-                name="resize-outline"
-                size={20}
-                color={c.textTertiary}
-                style={{ width: 28 }}
-              />
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                {t('settings.units')}
-              </Text>
-              <Pill
-                options={[
-                  { label: t('settings.metric'), value: 'metric' },
-                  { label: t('settings.imperial'), value: 'imperial' },
-                ]}
-                value={currentUnits}
-                onChange={handleUnitsSelect}
-              />
-            </View>
+            <Row
+              icon="settings-outline"
+              label={t('settings.preferences')}
+              onPress={() => navigate('AppSettings')}
+            />
             <Divider />
-            <View className="flex-row items-center py-[14px]">
-              <Ionicons
-                name="moon-outline"
-                size={20}
-                color={c.textTertiary}
-                style={{ width: 28 }}
-              />
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                {t('settings.appearance')}
-              </Text>
-              <Pill
-                options={[
-                  { label: '☀️', value: 'light' },
-                  { label: '🌙', value: 'dark' },
-                  { label: '⚙️', value: 'system' },
-                ]}
-                value={themeMode}
-                onChange={(v) => setThemeMode(v as ThemeMode)}
-              />
-            </View>
+            <Row
+              icon="notifications-outline"
+              label={t('settings.reminders')}
+              onPress={() => navigate('Reminders')}
+            />
           </Section>
 
           {/* ── Integrations ── */}
-          <Section>
-            <Row
-              icon="sparkles-outline"
-              label={t('settings.aiCoach')}
-              onPress={() => navigate('CoachChat')}
-            />
-            <Divider />
+          <Section title={t('settings.integrations')}>
             <Row
               icon="paper-plane-outline"
               label={t('settings.telegramCoach')}
@@ -463,115 +258,10 @@ export function SettingsScreen() {
               }
               onPress={() => navigate('TelegramConnect')}
             />
-            {isPro && (
-              <>
-                <Divider />
-                <Row
-                  icon="diamond-outline"
-                  label={t('settings.proMember')}
-                  value={t('settings.manage')}
-                  onPress={() => navigate('Subscription')}
-                />
-              </>
-            )}
-          </Section>
-
-          {/* ── Notifications ── */}
-          <Section>
-            {osPermission === 'denied' ? (
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  Linking.openSettings();
-                }}
-                className="flex-row items-center py-[14px]"
-              >
-                <Ionicons
-                  name="notifications-off-outline"
-                  size={20}
-                  color={c.danger}
-                  style={{ width: 28 }}
-                />
-                <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                  {t('settings.notifications')}
-                </Text>
-                <Text className="text-[13px] text-red-400 font-sans-medium mr-1">
-                  {t('settings.openSettings')}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={c.muted} />
-              </Pressable>
-            ) : osPermission === 'undetermined' ? (
-              <Pressable
-                onPress={async () => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  const granted = await requestAndRegisterPushToken();
-                  setOsPermission(granted ? 'granted' : 'denied');
-                }}
-                className="flex-row items-center py-[14px]"
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={20}
-                  color={c.warning}
-                  style={{ width: 28 }}
-                />
-                <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                  {t('settings.notifications')}
-                </Text>
-                <Text className="text-[13px] text-primary-500 font-sans-medium mr-1">
-                  {t('settings.turnOnNotifications')}
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={c.muted} />
-              </Pressable>
-            ) : (
-              <>
-                <View className="flex-row items-center py-[14px]">
-                  <Ionicons
-                    name="sunny-outline"
-                    size={20}
-                    color={c.textTertiary}
-                    style={{ width: 28 }}
-                  />
-                  <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                    {t('settings.morningReminder')}
-                  </Text>
-                  <Switch
-                    value={notifPrefs.morningReminder}
-                    onValueChange={(v) => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      updateNotifPref('morningReminder', v);
-                    }}
-                    trackColor={{ false: c.border, true: c.primary }}
-                    thumbColor={c.primary}
-                  />
-                </View>
-                <Divider />
-                <View className="flex-row items-center py-[14px]">
-                  <Ionicons
-                    name="moon-outline"
-                    size={20}
-                    color={c.textTertiary}
-                    style={{ width: 28 }}
-                  />
-                  <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                    {t('settings.eveningReminder')}
-                  </Text>
-                  <Switch
-                    value={notifPrefs.eveningReminder}
-                    onValueChange={(v) => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      updateNotifPref('eveningReminder', v);
-                    }}
-                    trackColor={{ false: c.border, true: c.primary }}
-                    thumbColor={c.primary}
-                  />
-                </View>
-              </>
-            )}
           </Section>
 
           {/* ── Support & Legal ── */}
-          <Section>
+          <Section title={t('settings.privacyLegal')}>
             <Row
               icon="download-outline"
               label={t('settings.exportMyData')}
@@ -597,7 +287,7 @@ export function SettingsScreen() {
             />
           </Section>
 
-          {/* ── Danger zone ── */}
+          {/* ── Account actions ── */}
           <Section>
             <Row icon="log-out-outline" label={t('settings.signOut')} onPress={handleSignOut} />
             <Divider />
@@ -610,7 +300,7 @@ export function SettingsScreen() {
           </Section>
 
           {/* ── Version ── */}
-          <Text className="text-center text-xs text-text-tertiary/50 font-sans-medium mt-4 mb-2">
+          <Text className="text-center text-xs text-text-tertiary/50 font-sans-medium mt-2 mb-2">
             v{appVersion}
           </Text>
         </ScrollView>
