@@ -9,6 +9,7 @@ import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { PersonalDetailsScreen } from '../screens/PersonalDetailsScreen';
 import { AppSettingsScreen } from '../screens/AppSettingsScreen';
 import { RemindersScreen } from '../screens/RemindersScreen';
+import { RingColorsExplainedScreen } from '../screens/RingColorsExplainedScreen';
 import {
   WorkoutHomeScreen,
   WorkoutTypePickerScreen,
@@ -38,6 +39,7 @@ export function MainStack() {
       <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
       <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
       <Stack.Screen name="Reminders" component={RemindersScreen} />
+      <Stack.Screen name="RingColorsExplained" component={RingColorsExplainedScreen} />
       <Stack.Screen name="WorkoutHome" component={WorkoutHomeScreen} />
       <Stack.Screen name="WorkoutTypePicker" component={WorkoutTypePickerScreen} />
       <Stack.Screen name="WorkoutActive" component={WorkoutActiveScreen} />

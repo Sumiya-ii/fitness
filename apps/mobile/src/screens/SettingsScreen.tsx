@@ -241,6 +241,12 @@ export function SettingsScreen() {
               label={t('settings.reminders')}
               onPress={() => navigate('Reminders')}
             />
+            <Divider />
+            <Row
+              icon="color-palette-outline"
+              label={t('ringColors.settingsLabel')}
+              onPress={() => navigate('RingColorsExplained')}
+            />
           </Section>
 
           {/* ── Integrations ── */}

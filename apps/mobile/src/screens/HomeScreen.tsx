@@ -564,6 +564,8 @@ export function HomeScreen() {
   const [carouselPage, setCarouselPage] = useState(0);
   const [streakModalVisible, setStreakModalVisible] = useState(false);
   const [showEaten, setShowEaten] = useState(false);
+  const [weekHistory, setWeekHistory] = useState<Map<string, number>>(new Map());
+  const [weekCalorieTarget, setWeekCalorieTarget] = useState<number | null>(null);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
   const { data, isLoading, fetchDashboard } = useDashboardStore();
   const {
@@ -602,19 +604,50 @@ export function HomeScreen() {
     }
   }, []);
 
+  const loadWeekHistory = useCallback(async () => {
+    try {
+      const res = await api.get<{
+        data: {
+          history: { date: string; calories: number }[];
+          target: { calories: number } | null;
+        };
+      }>('/dashboard/history?days=7');
+      const map = new Map<string, number>();
+      for (const day of res.data.history) {
+        map.set(day.date, day.calories);
+      }
+      setWeekHistory(map);
+      if (res.data.target) {
+        setWeekCalorieTarget(res.data.target.calories);
+      }
+    } catch {
+      /* keep previous state */
+    }
+  }, []);
+
   useEffect(() => {
     loadProfile();
-  }, [loadProfile]);
+    loadWeekHistory();
+  }, [loadProfile, loadWeekHistory]);
 
   useFocusEffect(
     useCallback(() => {
       fetchDashboard(selectedDateKey);
+      loadWeekHistory();
       if (selectedDateKey === todayKey) {
         fetchWater();
         fetchStreaks();
         fetchWorkoutSummary();
       }
-    }, [fetchDashboard, fetchWater, fetchStreaks, fetchWorkoutSummary, selectedDateKey, todayKey]),
+    }, [
+      fetchDashboard,
+      fetchWater,
+      fetchStreaks,
+      fetchWorkoutSummary,
+      loadWeekHistory,
+      selectedDateKey,
+      todayKey,
+    ]),
   );
 
   useEffect(() => {
@@ -624,6 +657,7 @@ export function HomeScreen() {
   const onRefresh = useCallback(() => {
     loadProfile();
     fetchDashboard(selectedDateKey);
+    loadWeekHistory();
     if (selectedDateKey === todayKey) {
       fetchWater();
       fetchTodaySteps();
@@ -632,6 +666,7 @@ export function HomeScreen() {
   }, [
     loadProfile,
     fetchDashboard,
+    loadWeekHistory,
     fetchWater,
     fetchTodaySteps,
     fetchStreaks,
@@ -757,6 +792,24 @@ export function HomeScreen() {
               const isFuture = key > todayKey;
               const circleSize = 40;
 
+              // Determine ring color based on calorie proximity to goal
+              const dayCals = weekHistory.get(key);
+              const calTarget = weekCalorieTarget ?? targets.calories;
+              let ringColor: string | null = null;
+              let hasMeals = false;
+
+              if (!isFuture && dayCals !== undefined && dayCals > 0) {
+                hasMeals = true;
+                const diff = Math.abs(dayCals - calTarget);
+                if (diff <= 200) {
+                  ringColor = '#22c55e'; // green
+                } else if (diff <= 500) {
+                  ringColor = '#eab308'; // yellow
+                } else {
+                  ringColor = '#ef4444'; // red
+                }
+              }
+
               return (
                 <Pressable
                   key={key}
@@ -782,18 +835,24 @@ export function HomeScreen() {
                       justifyContent: 'center',
                       ...(isSelected
                         ? { backgroundColor: c.text }
-                        : {
-                            borderWidth: 1.5,
-                            borderColor: isFuture ? c.border : c.textTertiary,
-                            borderStyle: 'dashed',
-                          }),
+                        : hasMeals && ringColor
+                          ? {
+                              borderWidth: 2,
+                              borderColor: ringColor,
+                              borderStyle: 'solid' as const,
+                            }
+                          : {
+                              borderWidth: 1.5,
+                              borderColor: isFuture ? c.border : c.textTertiary,
+                              borderStyle: 'dashed' as const,
+                            }),
                     }}
                   >
                     <Text
                       style={{
                         fontSize: 14,
                         fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
-                        color: isSelected ? c.bg : isToday ? c.text : c.textTertiary,
+                        color: isSelected ? c.bg : isToday || hasMeals ? c.text : c.textTertiary,
                       }}
                     >
                       {date.getDate()}

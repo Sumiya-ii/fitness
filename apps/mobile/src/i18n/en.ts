@@ -607,6 +607,20 @@ export const en = {
     nameRequiredDesc: 'Please enter a name for this meal template.',
     saveFailed: 'Failed to save meal template. Please try again.',
   },
+  ringColors: {
+    title: 'Ring Colors Explained',
+    description:
+      'On the homepage calendar, the colored rings around each date show how close you were to your daily calorie goal:',
+    greenTitle: 'Green',
+    greenDesc: 'Within 200 calories of your daily goal',
+    yellowTitle: 'Yellow',
+    yellowDesc: '200-500 calories away from your goal',
+    redTitle: 'Red',
+    redDesc: 'More than 500 calories away from your goal',
+    dottedTitle: 'Dotted',
+    dottedDesc: 'No meals logged that day',
+    settingsLabel: 'Ring Colors Explained',
+  },
 } as const;
 
 export type EnTranslations = typeof en;

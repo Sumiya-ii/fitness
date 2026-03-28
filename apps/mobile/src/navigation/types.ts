@@ -55,6 +55,7 @@ export type MainStackParamList = {
   PersonalDetails: undefined;
   AppSettings: undefined;
   Reminders: undefined;
+  RingColorsExplained: undefined;
   WorkoutHome: undefined;
   WorkoutTypePicker: { category?: string } | undefined;
   WorkoutActive: { workoutType: string };
