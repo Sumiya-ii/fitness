@@ -1,7 +1,12 @@
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import Animated, { useAnimatedProps, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useColors } from '../../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -45,9 +50,9 @@ export function ProgressRing({
   const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
-    animatedProgress.value = withSpring(Math.min(Math.max(progress, 0), 1), {
-      damping: 15,
-      stiffness: 100,
+    animatedProgress.value = withTiming(Math.min(Math.max(progress, 0), 1), {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
     });
   }, [progress, animatedProgress]);
 

@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 
 export interface MacroBarProps {
   label: string;
@@ -26,9 +31,9 @@ export function MacroBar({
   const animatedWidth = useSharedValue(0);
 
   useEffect(() => {
-    animatedWidth.value = withSpring(progress, {
-      damping: 15,
-      stiffness: 100,
+    animatedWidth.value = withTiming(progress, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
     });
   }, [progress, animatedWidth]);
 

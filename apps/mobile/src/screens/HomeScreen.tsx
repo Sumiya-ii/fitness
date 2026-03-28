@@ -15,7 +15,8 @@ import Svg, { Circle } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
   useSharedValue,
-  withSpring,
+  withTiming,
+  Easing,
   FadeInDown,
 } from 'react-native-reanimated';
 import { SkeletonLoader } from '../components/ui';
@@ -85,9 +86,9 @@ function ProgressArc({
   const circ = 2 * Math.PI * radius;
 
   useEffect(() => {
-    anim.value = withSpring(Math.min(Math.max(progress, 0), 1), {
-      damping: 15,
-      stiffness: 100,
+    anim.value = withTiming(Math.min(Math.max(progress, 0), 1), {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
     });
   }, [progress, anim]);
 
