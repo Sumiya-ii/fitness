@@ -21,28 +21,28 @@ const ACTIONS = [
     icon: 'camera' as const,
     labelKey: 'logging.photo' as const,
     color: '#ffffff',
-    bg: '#2c2c2e',
+    bg: undefined,
   },
   {
     key: 'voice',
     icon: 'mic' as const,
     labelKey: 'logging.voice' as const,
     color: '#f97316',
-    bg: '#2c2c2e',
+    bg: undefined,
   },
   {
     key: 'barcode',
     icon: 'barcode-outline' as const,
     labelKey: 'logging.scan' as const,
     color: '#22c55e',
-    bg: '#2c2c2e',
+    bg: undefined,
   },
   {
     key: 'quick',
     icon: 'flash' as const,
     labelKey: 'logging.quick' as const,
     color: '#a78bfa',
-    bg: '#2c2c2e',
+    bg: undefined,
   },
 ];
 
@@ -127,17 +127,13 @@ export function LogScreen() {
           <Animated.View entering={FadeInDown.duration(300)} className="mx-5 mt-3 mb-5">
             <Pressable
               onPress={() => navigation.navigate('TextSearch')}
-              className="rounded-2xl flex-row items-center px-4 py-3.5 border border-surface-border"
-              style={{ backgroundColor: '#1c1c1e' }}
+              className="rounded-2xl flex-row items-center px-4 py-3.5 border border-surface-border bg-surface-card"
             >
               <Ionicons name="search" size={20} color="#71717a" />
               <Text className="flex-1 ml-3 text-base text-text-tertiary font-sans">
                 {t('logging.findFoods')}
               </Text>
-              <View
-                className="h-7 px-2.5 rounded-lg items-center justify-center"
-                style={{ backgroundColor: '#2c2c2e' }}
-              >
+              <View className="h-7 px-2.5 rounded-lg items-center justify-center bg-surface-secondary">
                 <Text className="text-xs font-sans-medium text-text-tertiary">
                   {t('logging.textSearch')}
                 </Text>
@@ -156,10 +152,7 @@ export function LogScreen() {
                 onPress={() => void handleAction(action.key)}
                 className="flex-1 items-center py-3 rounded-2xl bg-surface-card border border-surface-border"
               >
-                <View
-                  className="h-11 w-11 rounded-xl items-center justify-center mb-1.5"
-                  style={{ backgroundColor: action.bg }}
-                >
+                <View className="h-11 w-11 rounded-xl items-center justify-center mb-1.5 bg-surface-secondary">
                   <Ionicons name={action.icon} size={22} color={action.color} />
                 </View>
                 <Text className="text-xs font-sans-semibold text-text-DEFAULT">
@@ -184,10 +177,10 @@ export function LogScreen() {
                 <Ionicons name="barbell-outline" size={22} color="#ffffff" />
               </View>
               <View className="flex-1">
-                <Text className="text-white font-sans-semibold text-sm">
+                <Text className="text-text font-sans-semibold text-sm">
                   {t('workout.logWorkout')}
                 </Text>
-                <Text className="text-zinc-500 font-sans text-xs mt-0.5">
+                <Text className="text-text-tertiary font-sans text-xs mt-0.5">
                   {t('workout.logWorkoutDesc')}
                 </Text>
               </View>

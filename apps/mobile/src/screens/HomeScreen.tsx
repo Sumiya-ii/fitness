@@ -966,7 +966,7 @@ export function HomeScreen() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         ...(isSelected
-                          ? { backgroundColor: '#ffffff' }
+                          ? { backgroundColor: c.text }
                           : isToday
                             ? { backgroundColor: c.card }
                             : {}),
@@ -977,12 +977,12 @@ export function HomeScreen() {
                           fontSize: 13,
                           fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
                           color: isSelected
-                            ? '#000000'
+                            ? c.bg
                             : isToday
-                              ? '#ffffff'
+                              ? c.text
                               : isPast
-                                ? '#a1a1aa'
-                                : '#3a3a3c',
+                                ? c.textTertiary
+                                : c.textSecondary,
                         }}
                       >
                         {date.getDate()}

@@ -100,9 +100,8 @@ function InputModal({
       <Pressable onPress={onCancel} className="flex-1 bg-black/40 items-center justify-center px-8">
         <Pressable
           onPress={() => {}}
-          className="w-full rounded-2xl p-5"
+          className="w-full rounded-2xl p-5 bg-surface-card"
           style={{
-            backgroundColor: '#1c1c1e',
             shadowColor: '#000',
             shadowOpacity: 0.15,
             shadowRadius: 20,
@@ -129,7 +128,7 @@ function InputModal({
               onPress={() => onSubmit(inputValue)}
               className="bg-text px-5 py-2 rounded-xl"
             >
-              <Text className="text-sm font-sans-semibold text-white">Save</Text>
+              <Text className="text-sm font-sans-semibold text-text-inverse">Save</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -710,7 +709,7 @@ export function PhotoLogScreen() {
                           >
                             <Text
                               className={`text-xs font-sans-medium ${
-                                mealType === type ? 'text-white' : 'text-text-secondary'
+                                mealType === type ? 'text-text-inverse' : 'text-text-secondary'
                               }`}
                             >
                               {t(`mealTypes.${type}`)}

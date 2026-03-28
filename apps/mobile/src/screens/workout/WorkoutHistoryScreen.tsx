@@ -113,7 +113,7 @@ export function WorkoutHistoryScreen() {
               className={`rounded-full px-4 py-2 ${days === opt.key ? 'bg-primary-500' : 'bg-surface-card border border-surface-border'}`}
             >
               <Text
-                className={`text-sm font-sans-medium ${days === opt.key ? 'text-white' : 'text-text-secondary'}`}
+                className={`text-sm font-sans-medium ${days === opt.key ? 'text-on-primary' : 'text-text-secondary'}`}
               >
                 {opt.label}
               </Text>
@@ -223,8 +223,8 @@ export function WorkoutHistoryScreen() {
 function MiniStat({ value, label }: { value: string; label: string }) {
   return (
     <View className="flex-1 items-center">
-      <Text className="text-base font-sans-bold text-white">{value}</Text>
-      <Text className="text-[10px] font-sans-medium text-white/70 mt-0.5">{label}</Text>
+      <Text className="text-base font-sans-bold text-on-primary">{value}</Text>
+      <Text className="text-[10px] font-sans-medium text-on-primary/70 mt-0.5">{label}</Text>
     </View>
   );
 }

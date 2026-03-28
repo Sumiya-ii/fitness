@@ -366,10 +366,12 @@ export function SettingsScreen() {
               >
                 <Ionicons name="diamond" size={20} color="#22d3ee" style={{ marginRight: 12 }} />
                 <View className="flex-1">
-                  <Text className="text-[15px] font-sans-bold text-white">
+                  <Text className="text-[15px] font-sans-bold text-text">
                     {t('settings.upgradeToPro')}
                   </Text>
-                  <Text className="text-xs text-zinc-500 mt-0.5">{t('settings.unlockDesc')}</Text>
+                  <Text className="text-xs text-text-tertiary mt-0.5">
+                    {t('settings.unlockDesc')}
+                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={c.textTertiary} />
               </LinearGradient>

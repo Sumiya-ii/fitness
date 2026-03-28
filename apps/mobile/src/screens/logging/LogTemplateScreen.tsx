@@ -215,7 +215,7 @@ export function LogTemplateScreen() {
                   <Pressable
                     onPress={() => toggleRemove(item.id)}
                     className={`h-8 w-8 rounded-full items-center justify-center ${
-                      item.removed ? 'bg-[#2c2c2e]' : 'bg-[#3a1515]'
+                      item.removed ? 'bg-surface-secondary' : 'bg-danger/10'
                     }`}
                   >
                     <Ionicons

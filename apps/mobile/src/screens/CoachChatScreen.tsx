@@ -37,7 +37,7 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
             : 'bg-surface-card border border-surface-border rounded-tl-sm'
         }`}
       >
-        <Text className={`text-sm leading-relaxed ${isUser ? 'text-white' : 'text-text'}`}>
+        <Text className={`text-sm leading-relaxed ${isUser ? 'text-on-primary' : 'text-text'}`}>
           {message.content}
         </Text>
       </View>

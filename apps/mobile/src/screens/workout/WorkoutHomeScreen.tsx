@@ -110,10 +110,10 @@ export function WorkoutHomeScreen() {
                   <Ionicons name="timer-outline" size={24} color="#ffffff" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-white font-sans-bold text-base">
+                  <Text className="text-on-primary font-sans-bold text-base">
                     {t('workout.inProgress')}
                   </Text>
-                  <Text className="text-white/70 font-sans text-sm mt-0.5">
+                  <Text className="text-on-primary/70 font-sans text-sm mt-0.5">
                     {t('workout.tapToContinue')}
                   </Text>
                 </View>
@@ -132,8 +132,12 @@ export function WorkoutHomeScreen() {
               <View className="h-14 w-14 rounded-full bg-surface-card/20 items-center justify-center mb-3">
                 <Ionicons name="add" size={32} color="#ffffff" />
               </View>
-              <Text className="text-white font-sans-bold text-lg">{t('workout.startWorkout')}</Text>
-              <Text className="text-white/70 font-sans text-sm mt-1">{t('workout.startDesc')}</Text>
+              <Text className="text-on-primary font-sans-bold text-lg">
+                {t('workout.startWorkout')}
+              </Text>
+              <Text className="text-on-primary/70 font-sans text-sm mt-1">
+                {t('workout.startDesc')}
+              </Text>
             </Pressable>
           </Animated.View>
 
@@ -259,10 +263,7 @@ export function WorkoutHomeScreen() {
                         className="bg-surface-card rounded-2xl flex-row items-center px-4 py-3 border border-surface-border"
                       >
                         {/* Icon */}
-                        <View
-                          className="h-11 w-11 rounded-xl items-center justify-center mr-3"
-                          style={{ backgroundColor: '#2c2c2e' }}
-                        >
+                        <View className="h-11 w-11 rounded-xl items-center justify-center mr-3 bg-surface-secondary">
                           <Text className="text-xl">{item.icon ?? '🏋️'}</Text>
                         </View>
 

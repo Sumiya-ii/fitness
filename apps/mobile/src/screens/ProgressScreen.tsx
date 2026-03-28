@@ -1105,7 +1105,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
             className="flex-row items-center gap-2 rounded-full bg-primary-500 px-5 py-2.5"
           >
             <Ionicons name="add-circle-outline" size={18} color="white" />
-            <Text className="font-sans-semibold text-white text-sm">
+            <Text className="font-sans-semibold text-on-primary text-sm">
               {t('progress.logMeasurements')}
             </Text>
           </Pressable>
@@ -1661,7 +1661,9 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           accessibilityLabel={t('progress.logWeight')}
         >
           <Ionicons name="scale-outline" size={18} color="white" />
-          <Text className="font-sans-semibold text-white text-sm">{t('progress.logWeight')}</Text>
+          <Text className="font-sans-semibold text-on-primary text-sm">
+            {t('progress.logWeight')}
+          </Text>
         </Pressable>
         <Pressable
           onPress={() => {
@@ -1716,7 +1718,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
                     className={`rounded-full px-4 py-2 border ${isActive ? 'bg-primary-500 border-primary-500' : 'bg-surface-card border-surface-border'}`}
                   >
                     <Text
-                      className={`text-sm font-sans-medium ${isActive ? 'text-white' : 'text-text-secondary'}`}
+                      className={`text-sm font-sans-medium ${isActive ? 'text-on-primary' : 'text-text-secondary'}`}
                     >
                       {label}
                     </Text>

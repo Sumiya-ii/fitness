@@ -108,7 +108,7 @@ export function WorkoutTypePickerScreen() {
             className={`rounded-full px-4 py-2 ${!activeCategory ? 'bg-primary-500' : 'bg-surface-card border border-surface-border'}`}
           >
             <Text
-              className={`text-sm font-sans-medium ${!activeCategory ? 'text-white' : 'text-text-secondary'}`}
+              className={`text-sm font-sans-medium ${!activeCategory ? 'text-on-primary' : 'text-text-secondary'}`}
             >
               {t('workout.allTypes')}
             </Text>
@@ -120,7 +120,7 @@ export function WorkoutTypePickerScreen() {
               className={`rounded-full px-4 py-2 ${activeCategory === cat ? 'bg-primary-500' : 'bg-surface-card border border-surface-border'}`}
             >
               <Text
-                className={`text-sm font-sans-medium capitalize ${activeCategory === cat ? 'text-white' : 'text-text-secondary'}`}
+                className={`text-sm font-sans-medium capitalize ${activeCategory === cat ? 'text-on-primary' : 'text-text-secondary'}`}
               >
                 {t(`workout.cat.${cat}`)}
               </Text>
