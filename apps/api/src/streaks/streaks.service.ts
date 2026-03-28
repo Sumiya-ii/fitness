@@ -31,7 +31,7 @@ export class StreaksService {
     const rows = await this.prisma.$queryRaw<{ log_date: string }[]>`
       SELECT DISTINCT DATE(logged_at)::text AS log_date
       FROM "meal_logs"
-      WHERE "user_id" = ${userId}
+      WHERE "user_id" = ${userId}::uuid
       ORDER BY log_date
     `;
 
