@@ -131,59 +131,36 @@ export class TelegramFoodParserService implements OnModuleDestroy {
   }
 
   /**
-   * Transcribe a voice audio buffer using Google Cloud Speech-to-Text V2 (chirp_2).
-   * Mongolian (mn-MN) is the default language.
+   * Transcribe a voice audio buffer using OpenAI Whisper.
+   * Mongolian is the default language.
    * Returns the transcribed text, or empty string if transcription fails.
    */
   async transcribeVoice(audioBuffer: Buffer): Promise<string> {
-    const googleApiKey = this.config.get('GOOGLE_STT_API_KEY');
-    if (!googleApiKey) {
-      this.logger.warn('GOOGLE_STT_API_KEY not set — voice transcription disabled');
+    const openaiKey = this.config.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      this.logger.warn('OPENAI_API_KEY not set — voice transcription disabled');
       return '';
     }
 
     try {
-      const googleProjectId = this.config.get('GOOGLE_CLOUD_PROJECT');
-      const recognizerPath = googleProjectId
-        ? `projects/${googleProjectId}/locations/global/recognizers/_`
-        : 'projects/-/locations/global/recognizers/_';
+      const formData = new FormData();
+      formData.append('file', new Blob([audioBuffer], { type: 'audio/ogg' }), 'audio.ogg');
+      formData.append('model', 'whisper-1');
+      // Mongolian is not in Whisper's ISO-639-1 list; auto-detect handles it well
 
-      const requestBody = {
-        config: {
-          autoDecodingConfig: {},
-          languageCodes: ['mn-MN'],
-          model: 'chirp_2',
-          features: {
-            enableAutomaticPunctuation: true,
-          },
-        },
-        audio: {
-          content: audioBuffer.toString('base64'),
-        },
-      };
-
-      const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${googleApiKey}`;
-      const response = await fetch(url, {
+      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
+        headers: { Authorization: `Bearer ${openaiKey}` },
+        body: formData,
       });
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`Google STT V2 HTTP ${response.status}: ${errorBody}`);
+        throw new Error(`Whisper HTTP ${response.status}: ${errorBody}`);
       }
 
-      const data = (await response.json()) as {
-        results?: Array<{
-          alternatives?: Array<{ transcript?: string }>;
-        }>;
-      };
-
-      return (data.results ?? [])
-        .map((r) => r.alternatives?.[0]?.transcript ?? '')
-        .join(' ')
-        .trim();
+      const data = (await response.json()) as { text?: string };
+      return data.text?.trim() ?? '';
     } catch (err) {
       this.logger.error(
         'Voice transcription failed',

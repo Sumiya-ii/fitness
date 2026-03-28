@@ -51,27 +51,10 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     await setVoiceDraftActive(draftId);
   }
 
-  const googleApiKey = process.env.GOOGLE_STT_API_KEY;
   const openaiApiKey = process.env.OPENAI_API_KEY;
 
-  if (!googleApiKey) {
-    const msg = 'GOOGLE_STT_API_KEY not set';
-    console.warn(`[STT] ${msg}`);
-    if (draftId) await markFailed(draftId, msg);
-    return {
-      text: '',
-      locale,
-      mealType: null,
-      items: [],
-      totalCalories: 0,
-      totalProtein: 0,
-      totalCarbs: 0,
-      totalFat: 0,
-    };
-  }
-
   if (!openaiApiKey) {
-    const msg = 'OPENAI_API_KEY not set (needed for nutrition parsing)';
+    const msg = 'OPENAI_API_KEY not set (needed for transcription and nutrition parsing)';
     console.warn(`[STT] ${msg}`);
     if (draftId) await markFailed(draftId, msg);
     return {
@@ -103,57 +86,33 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     throw err;
   }
 
-  // Step 1: Transcribe with Google Cloud Speech-to-Text V2 (chirp_2)
+  // Step 1: Transcribe with OpenAI Whisper
   let text: string;
   try {
-    const googleProjectId = process.env.GOOGLE_CLOUD_PROJECT;
-    const recognizerPath = googleProjectId
-      ? `projects/${googleProjectId}/locations/global/recognizers/_`
-      : 'projects/-/locations/global/recognizers/_';
+    const formData = new FormData();
+    formData.append('file', new Blob([buffer], { type: 'audio/m4a' }), 'audio.m4a');
+    formData.append('model', 'whisper-1');
+    // Only set language for English; Mongolian is not in Whisper's ISO-639-1 list,
+    // but auto-detect handles it well
+    if (locale === 'en') {
+      formData.append('language', 'en');
+    }
 
-    const languageCode = locale === 'en' ? 'en-US' : 'mn-MN';
-
-    const requestBody = {
-      config: {
-        autoDecodingConfig: {},
-        languageCodes: [languageCode],
-        model: 'chirp_2',
-        features: {
-          enableAutomaticPunctuation: true,
-        },
-      },
-      audio: {
-        content: buffer.toString('base64'),
-      },
-    };
-
-    const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${googleApiKey}`;
-    const response = await fetch(url, {
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+      headers: { Authorization: `Bearer ${openaiApiKey}` },
+      body: formData,
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      throw new Error(`Google STT V2 HTTP ${response.status}: ${errorBody}`);
+      throw new Error(`Whisper HTTP ${response.status}: ${errorBody}`);
     }
 
-    const data = (await response.json()) as {
-      results?: Array<{
-        alternatives?: Array<{
-          transcript?: string;
-          confidence?: number;
-        }>;
-      }>;
-    };
+    const data = (await response.json()) as { text?: string };
+    text = data.text?.trim() ?? '';
 
-    text = (data.results ?? [])
-      .map((r) => r.alternatives?.[0]?.transcript ?? '')
-      .join(' ')
-      .trim();
-
-    console.log('[STT] Transcribed (chirp_2):', text);
+    console.log('[STT] Transcribed (whisper):', text);
   } catch (err) {
     const msg = `Transcription failed: ${String(err)}`;
     console.error(`[STT] ${msg}`);

@@ -12,21 +12,11 @@ jest.mock('ioredis', () => {
   }));
 });
 
-// Mock openai/uploads
-jest.mock('openai/uploads', () => ({
-  toFile: jest.fn().mockResolvedValue('mock-audio-file'),
-}));
-
 // Mock openai
 jest.mock('openai', () => {
   return jest.fn().mockImplementation(() => ({
     chat: {
       completions: {
-        create: jest.fn(),
-      },
-    },
-    audio: {
-      transcriptions: {
         create: jest.fn(),
       },
     },
@@ -36,8 +26,6 @@ jest.mock('openai', () => {
 const mockConfigService = {
   get: jest.fn((key: string) => {
     if (key === 'OPENAI_API_KEY') return 'test-key';
-    if (key === 'GOOGLE_STT_API_KEY') return 'test-google-key';
-    if (key === 'GOOGLE_CLOUD_PROJECT') return 'test-project';
     if (key === 'REDIS_URL') return 'redis://localhost:6379';
     return undefined;
   }),
@@ -46,7 +34,6 @@ const mockConfigService = {
 describe('TelegramFoodParserService', () => {
   let service: TelegramFoodParserService;
   let openaiCreateMock: jest.Mock;
-  let openaiTranscribeMock: jest.Mock;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -61,8 +48,6 @@ describe('TelegramFoodParserService', () => {
     // Access the openai mock through the service instance
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     openaiCreateMock = (service as any).openai?.chat?.completions?.create;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    openaiTranscribeMock = (service as any).openai?.audio?.transcriptions?.create;
   });
 
   afterEach(() => {
@@ -368,24 +353,22 @@ describe('TelegramFoodParserService', () => {
       fetchSpy?.mockRestore();
     });
 
-    it('returns transcribed text from Google STT V2 chirp_2', async () => {
+    it('returns transcribed text from Whisper API', async () => {
       fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          results: [{ alternatives: [{ transcript: '3 буузт идлээ' }] }],
-        }),
+        json: async () => ({ text: '3 буузт идлээ' }),
       } as Response);
 
       const result = await service.transcribeVoice(Buffer.from('fake-audio'));
 
       expect(result).toBe('3 буузт идлээ');
       expect(fetchSpy).toHaveBeenCalledWith(
-        expect.stringContaining('speech.googleapis.com/v2/'),
+        'https://api.openai.com/v1/audio/transcriptions',
         expect.objectContaining({ method: 'POST' }),
       );
     });
 
-    it('returns empty string when Google STT fails', async () => {
+    it('returns empty string when Whisper fails', async () => {
       fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -397,23 +380,7 @@ describe('TelegramFoodParserService', () => {
       expect(result).toBe('');
     });
 
-    it('joins multiple result segments and trims whitespace', async () => {
-      fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          results: [
-            { alternatives: [{ transcript: '  I ate ' }] },
-            { alternatives: [{ transcript: 'pizza  ' }] },
-          ],
-        }),
-      } as Response);
-
-      const result = await service.transcribeVoice(Buffer.from('fake-audio'));
-
-      expect(result).toBe('I ate  pizza');
-    });
-
-    it('returns empty string when GOOGLE_STT_API_KEY is not configured', async () => {
+    it('returns empty string when OPENAI_API_KEY is not configured', async () => {
       const moduleNoKey: TestingModule = await Test.createTestingModule({
         providers: [
           TelegramFoodParserService,
@@ -421,8 +388,7 @@ describe('TelegramFoodParserService', () => {
             provide: ConfigService,
             useValue: {
               get: jest.fn((key: string) => {
-                if (key === 'OPENAI_API_KEY') return 'test-key';
-                if (key === 'GOOGLE_STT_API_KEY') return undefined;
+                if (key === 'OPENAI_API_KEY') return undefined;
                 if (key === 'REDIS_URL') return 'redis://localhost:6379';
                 return undefined;
               }),

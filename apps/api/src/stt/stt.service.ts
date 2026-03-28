@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '../config';
 
 export interface TranscribeResult {
@@ -9,14 +9,14 @@ export interface TranscribeResult {
 
 @Injectable()
 export class SttService {
+  private readonly logger = new Logger(SttService.name);
+
   constructor(private readonly config: ConfigService) {}
 
   async transcribe(audioBuffer: Buffer, locale?: string): Promise<TranscribeResult> {
-    const provider = this.config.get('STT_PROVIDER');
-    const googleApiKey = this.config.get('GOOGLE_STT_API_KEY');
-
-    if (provider === 'google' || googleApiKey) {
-      return this.transcribeWithGoogle(audioBuffer, locale, googleApiKey);
+    const openaiKey = this.config.get('OPENAI_API_KEY');
+    if (openaiKey) {
+      return this.transcribeWithWhisper(audioBuffer, locale, openaiKey);
     }
 
     return {
@@ -25,70 +25,49 @@ export class SttService {
     };
   }
 
-  private async transcribeWithGoogle(
+  private async transcribeWithWhisper(
     audioBuffer: Buffer,
     locale?: string,
     apiKey?: string,
   ): Promise<TranscribeResult> {
     if (!apiKey) {
       return {
-        text: 'transcription not available (GOOGLE_STT_API_KEY missing)',
+        text: 'transcription not available (OPENAI_API_KEY missing)',
         locale,
       };
     }
 
-    const googleProjectId = this.config.get('GOOGLE_CLOUD_PROJECT');
-    const recognizerPath = googleProjectId
-      ? `projects/${googleProjectId}/locations/global/recognizers/_`
-      : 'projects/-/locations/global/recognizers/_';
+    const formData = new FormData();
+    formData.append('file', new Blob([audioBuffer], { type: 'audio/wav' }), 'audio.wav');
+    formData.append('model', 'whisper-1');
+    // Only set language for English; Mongolian is not in Whisper's ISO-639-1 list,
+    // but auto-detect handles it well
+    if (locale === 'en') {
+      formData.append('language', 'en');
+    }
 
-    const languageCode = locale === 'en' ? 'en-US' : 'mn-MN';
-
-    const requestBody = {
-      config: {
-        autoDecodingConfig: {},
-        languageCodes: [languageCode],
-        model: 'chirp_2',
-        features: {
-          enableAutomaticPunctuation: true,
-        },
-      },
-      audio: {
-        content: audioBuffer.toString('base64'),
-      },
-    };
-
-    const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${apiKey}`;
-    const response = await fetch(url, {
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: formData,
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error('[STT] Google STT V2 error:', response.status, errorBody);
-      throw new Error(`Google STT V2 failed: ${response.status}`);
+      this.logger.error(`Whisper error: ${response.status} ${errorBody}`);
+      throw new Error(`Whisper STT failed: ${response.status}`);
     }
 
-    const data = (await response.json()) as {
-      results?: Array<{
-        alternatives?: Array<{
-          transcript?: string;
-          confidence?: number;
-        }>;
-      }>;
-    };
+    const data = (await response.json()) as { text?: string };
 
-    const topResult = data.results?.[0]?.alternatives?.[0];
-    if (!topResult?.transcript) {
+    if (!data.text?.trim()) {
       return { text: '', locale, confidence: 0 };
     }
 
     return {
-      text: topResult.transcript,
+      text: data.text.trim(),
       locale,
-      confidence: topResult.confidence,
+      confidence: 0.9,
     };
   }
 }

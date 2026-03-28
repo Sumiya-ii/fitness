@@ -22,20 +22,6 @@ describe('SttService', () => {
   });
 
   describe('transcribe', () => {
-    it('should return transcription result when provider is configured', async () => {
-      configGet.mockImplementation((key: string) => {
-        if (key === 'STT_PROVIDER') return 'google';
-        return undefined;
-      });
-
-      const result = await service.transcribe(Buffer.from('fake-audio'), 'en-US');
-
-      expect(result).toEqual({
-        text: 'transcription not available (GOOGLE_STT_API_KEY missing)',
-        locale: 'en-US',
-      });
-    });
-
     it('should return fallback when no provider configured', async () => {
       configGet.mockImplementation(() => undefined);
 
@@ -47,19 +33,29 @@ describe('SttService', () => {
       });
     });
 
-    it('should call Google STT V2 with chirp_2 model and correct audio structure', async () => {
+    it('should return fallback when OPENAI_API_KEY is missing', async () => {
       configGet.mockImplementation((key: string) => {
-        if (key === 'STT_PROVIDER') return 'google';
-        if (key === 'GOOGLE_STT_API_KEY') return 'test-key';
-        if (key === 'GOOGLE_CLOUD_PROJECT') return 'test-project';
+        if (key === 'OPENAI_API_KEY') return undefined;
+        return undefined;
+      });
+
+      const result = await service.transcribe(Buffer.from('fake-audio'), 'mn');
+
+      expect(result).toEqual({
+        text: 'transcription not available (no STT provider configured)',
+        locale: 'mn',
+      });
+    });
+
+    it('should call Whisper API with correct parameters for Mongolian', async () => {
+      configGet.mockImplementation((key: string) => {
+        if (key === 'OPENAI_API_KEY') return 'test-key';
         return undefined;
       });
 
       const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
         ok: true,
-        json: async () => ({
-          results: [{ alternatives: [{ transcript: 'Би бууз идлээ', confidence: 0.95 }] }],
-        }),
+        json: async () => ({ text: 'Би бууз идлээ' }),
       } as Response);
 
       const result = await service.transcribe(Buffer.from('fake-audio'), 'mn');
@@ -67,20 +63,37 @@ describe('SttService', () => {
       expect(result).toEqual({
         text: 'Би бууз идлээ',
         locale: 'mn',
-        confidence: 0.95,
+        confidence: 0.9,
       });
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        expect.stringContaining('speech.googleapis.com/v2/'),
+        'https://api.openai.com/v1/audio/transcriptions',
         expect.objectContaining({ method: 'POST' }),
       );
 
-      // Verify the request body has correct structure with audio.content (not top-level content)
+      // Verify auth header
       const callArgs = fetchSpy.mock.calls[0];
-      const body = JSON.parse((callArgs[1] as RequestInit).body as string);
-      expect(body).toHaveProperty('audio.content');
-      expect(body.config.model).toBe('chirp_2');
-      expect(body.config.languageCodes).toEqual(['mn-MN']);
+      const headers = (callArgs[1] as RequestInit).headers as Record<string, string>;
+      expect(headers['Authorization']).toBe('Bearer test-key');
+
+      fetchSpy.mockRestore();
+    });
+
+    it('should use English language code when locale is en', async () => {
+      configGet.mockImplementation((key: string) => {
+        if (key === 'OPENAI_API_KEY') return 'test-key';
+        return undefined;
+      });
+
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ text: 'I ate two buuz' }),
+      } as Response);
+
+      const result = await service.transcribe(Buffer.from('fake-audio'), 'en');
+
+      expect(result.text).toBe('I ate two buuz');
+      expect(result.locale).toBe('en');
 
       fetchSpy.mockRestore();
     });
