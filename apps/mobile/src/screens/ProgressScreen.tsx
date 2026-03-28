@@ -139,6 +139,87 @@ function avgPoint(label: string, days: DayHistory[]): ChartPoint {
   };
 }
 
+// ─── Week history (macro-stacked bars) ────────────────────────────────────────
+
+const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const BAR_MAX_H = 96;
+
+function WeekHistoryChart({
+  history,
+  targetCalories,
+}: {
+  history: DayHistory[];
+  targetCalories: number | null;
+}) {
+  const c = useColors();
+  const maxCal = Math.max(...history.map((d) => d.calories), targetCalories ?? 0, 1);
+  const targetLineBottom = targetCalories != null ? (targetCalories / maxCal) * BAR_MAX_H : null;
+
+  return (
+    <View style={{ position: 'relative' }}>
+      {targetLineBottom != null && (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 20 + targetLineBottom,
+            height: 1,
+            borderTopWidth: 1,
+            borderStyle: 'dashed',
+            borderColor: c.border,
+          }}
+        />
+      )}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: BAR_MAX_H + 20 }}>
+        {history.map((day) => {
+          const hasData = day.calories > 0;
+          const barH = hasData ? Math.max((day.calories / maxCal) * BAR_MAX_H, 6) : 6;
+          const pcal = day.protein * 4;
+          const ccal = day.carbs * 4;
+          const fcal = day.fat * 9;
+          const dayLabel = DAY_LABELS[new Date(day.date + 'T12:00:00').getDay()];
+
+          return (
+            <View
+              key={day.date}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                height: BAR_MAX_H + 20,
+              }}
+            >
+              <View style={{ width: '55%', height: barH, borderRadius: 4, overflow: 'hidden' }}>
+                {hasData ? (
+                  <>
+                    <View style={{ flex: pcal || 0.001, backgroundColor: '#f97316' }} />
+                    <View style={{ flex: ccal || 0.001, backgroundColor: '#f59e0b' }} />
+                    <View style={{ flex: fcal || 0.001, backgroundColor: '#3b82f6' }} />
+                  </>
+                ) : (
+                  <View style={{ flex: 1, backgroundColor: c.cardAlt }} />
+                )}
+              </View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: 'Inter-Medium',
+                  color: '#71717a',
+                  marginTop: 5,
+                  height: 14,
+                }}
+              >
+                {dayLabel}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 // ─── Summary cards ────────────────────────────────────────────────────────────
 
 function SummaryCards({
@@ -610,9 +691,11 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
 
   useEffect(() => {
     fetchHistory(period);
+    if (period !== 7) fetchHistory(7); // always fetch 7-day for week history
   }, [period, fetchHistory]);
 
   const historyData = data[period];
+  const history7 = data[7];
   const points = historyData ? toChartPoints(historyData.history, period) : [];
   const target = historyData?.target ?? null;
   const hasAnyData = points.some((p) => p.hasData);
@@ -649,6 +732,30 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
               </View>
             </View>
           </LinearGradient>
+        </Animated.View>
+      )}
+
+      {/* Week history (macro bars) */}
+      {history7?.history && history7.history.length > 0 && (
+        <Animated.View entering={FadeInDown.duration(350)} className="mb-4">
+          <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: 'Inter-SemiBold',
+                color: c.textTertiary,
+                letterSpacing: 0.8,
+                textTransform: 'uppercase',
+                marginBottom: 12,
+              }}
+            >
+              This week
+            </Text>
+            <WeekHistoryChart
+              history={history7.history}
+              targetCalories={history7.target?.calories ?? null}
+            />
+          </View>
         </Animated.View>
       )}
 

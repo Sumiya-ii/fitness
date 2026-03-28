@@ -23,9 +23,7 @@ import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store
 import { useWaterStore } from '../stores/water.store';
 import { useStepsStore, STEPS_GOAL, KCAL_PER_STEP } from '../stores/steps.store';
 import { useStreakStore } from '../stores/streak.store';
-import { useNutritionHistoryStore } from '../stores/nutrition-history.store';
 import { useWorkoutStore } from '../stores/workout.store';
-import { type DayHistory } from '../api/dashboard';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 import { useColors, type ColorPalette } from '../theme';
@@ -125,99 +123,6 @@ function ProgressArc({
         />
       </Svg>
       {children}
-    </View>
-  );
-}
-
-const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const BAR_MAX_H = 96;
-
-function HistoryBarChart({
-  history,
-  targetCalories,
-  onDayPress,
-  selectedDateKey,
-}: {
-  history: DayHistory[];
-  targetCalories: number | null;
-  onDayPress: (dateKey: string) => void;
-  selectedDateKey: string;
-}) {
-  const c = useColors();
-  const maxCal = Math.max(...history.map((d) => d.calories), targetCalories ?? 0, 1);
-  const targetLineBottom = targetCalories != null ? (targetCalories / maxCal) * BAR_MAX_H : null;
-
-  return (
-    <View style={{ position: 'relative' }}>
-      {targetLineBottom != null && (
-        <View
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 20 + targetLineBottom,
-            height: 1,
-            borderTopWidth: 1,
-            borderStyle: 'dashed',
-            borderColor: c.border,
-          }}
-        />
-      )}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: BAR_MAX_H + 20 }}>
-        {history.map((day) => {
-          const hasData = day.calories > 0;
-          const barH = hasData ? Math.max((day.calories / maxCal) * BAR_MAX_H, 6) : 6;
-          const pcal = day.protein * 4;
-          const ccal = day.carbs * 4;
-          const fcal = day.fat * 9;
-          const isSelected = day.date === selectedDateKey;
-          const dayLabel = DAY_LABELS[new Date(day.date + 'T12:00:00').getDay()];
-
-          return (
-            <Pressable
-              key={day.date}
-              onPress={() => onDayPress(day.date)}
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                height: BAR_MAX_H + 20,
-              }}
-            >
-              <View
-                style={{
-                  width: '55%',
-                  height: barH,
-                  borderRadius: 4,
-                  overflow: 'hidden',
-                  opacity: isSelected ? 1 : 0.7,
-                }}
-              >
-                {hasData ? (
-                  <>
-                    <View style={{ flex: pcal || 0.001, backgroundColor: '#f97316' }} />
-                    <View style={{ flex: ccal || 0.001, backgroundColor: '#f59e0b' }} />
-                    <View style={{ flex: fcal || 0.001, backgroundColor: '#3b82f6' }} />
-                  </>
-                ) : (
-                  <View style={{ flex: 1, backgroundColor: c.cardAlt }} />
-                )}
-              </View>
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontFamily: isSelected ? 'Inter-Bold' : 'Inter-Medium',
-                  color: isSelected ? '#ffffff' : '#71717a',
-                  marginTop: 5,
-                  height: 14,
-                }}
-              >
-                {dayLabel}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
     </View>
   );
 }
@@ -660,8 +565,6 @@ export function HomeScreen() {
   const [showEaten, setShowEaten] = useState(false);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
   const { data, isLoading, fetchDashboard } = useDashboardStore();
-  const { data: historyData, fetchHistory } = useNutritionHistoryStore();
-  const history7 = historyData[7];
   const {
     consumed: waterConsumed,
     target: waterTarget,
@@ -705,21 +608,12 @@ export function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchDashboard(selectedDateKey);
-      fetchHistory(7);
       if (selectedDateKey === todayKey) {
         fetchWater();
         fetchStreaks();
         fetchWorkoutSummary();
       }
-    }, [
-      fetchDashboard,
-      fetchWater,
-      fetchStreaks,
-      fetchHistory,
-      fetchWorkoutSummary,
-      selectedDateKey,
-      todayKey,
-    ]),
+    }, [fetchDashboard, fetchWater, fetchStreaks, fetchWorkoutSummary, selectedDateKey, todayKey]),
   );
 
   useEffect(() => {
@@ -729,7 +623,6 @@ export function HomeScreen() {
   const onRefresh = useCallback(() => {
     loadProfile();
     fetchDashboard(selectedDateKey);
-    fetchHistory(7);
     if (selectedDateKey === todayKey) {
       fetchWater();
       fetchTodaySteps();
@@ -741,7 +634,6 @@ export function HomeScreen() {
     fetchWater,
     fetchTodaySteps,
     fetchStreaks,
-    fetchHistory,
     selectedDateKey,
     todayKey,
   ]);
@@ -1333,32 +1225,6 @@ export function HomeScreen() {
             ))}
           </View>
         </Animated.View>
-
-        {/* ── 7-Day History Chart ── */}
-        {history7?.history && history7.history.length > 0 && (
-          <Animated.View entering={FadeInDown.duration(350).delay(100)} className="px-4 mb-4">
-            <View className="rounded-3xl p-4" style={{ backgroundColor: c.card }}>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontFamily: 'Inter-SemiBold',
-                  color: c.textTertiary,
-                  letterSpacing: 0.8,
-                  textTransform: 'uppercase',
-                  marginBottom: 12,
-                }}
-              >
-                {t('dashboard.weekHistory')}
-              </Text>
-              <HistoryBarChart
-                history={history7.history}
-                targetCalories={history7.target?.calories ?? null}
-                onDayPress={setSelectedDateKey}
-                selectedDateKey={selectedDateKey}
-              />
-            </View>
-          </Animated.View>
-        )}
 
         {/* ── Recently Uploaded ── */}
         <Animated.View entering={FadeInDown.duration(350).delay(150)} className="px-4">
