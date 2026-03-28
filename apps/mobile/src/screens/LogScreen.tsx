@@ -11,7 +11,6 @@ import type { LogStackParamList } from '../navigation/types';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
 import { useLocale } from '../i18n';
-import { useDashboardStore } from '../stores/dashboard.store';
 import { useProGate } from '../hooks/useProGate';
 
 type NavProp = NativeStackNavigationProp<LogStackParamList, 'LogHome'>;
@@ -53,7 +52,6 @@ export function LogScreen() {
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const [loadingRecents, setLoadingRecents] = useState(true);
   const [loggingId, setLoggingId] = useState<string | null>(null);
-  const refreshDashboard = useDashboardStore((s) => s.fetchDashboard);
   const { requirePro } = useProGate();
 
   useFocusEffect(
@@ -99,7 +97,6 @@ export function LogScreen() {
         source: 'quick_relog',
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      refreshDashboard();
       mealsApi
         .getRecents(15)
         .then((res) => setRecents(res.data))

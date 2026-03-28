@@ -9,7 +9,7 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
@@ -670,23 +670,25 @@ export function HomeScreen() {
     loadProfile();
   }, [loadProfile]);
 
-  useEffect(() => {
-    fetchDashboard(selectedDateKey);
-    fetchHistory(7);
-    if (selectedDateKey === todayKey) {
-      fetchWater();
-      fetchStreaks();
-      fetchWorkoutSummary();
-    }
-  }, [
-    fetchDashboard,
-    fetchWater,
-    fetchStreaks,
-    fetchHistory,
-    fetchWorkoutSummary,
-    selectedDateKey,
-    todayKey,
-  ]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboard(selectedDateKey);
+      fetchHistory(7);
+      if (selectedDateKey === todayKey) {
+        fetchWater();
+        fetchStreaks();
+        fetchWorkoutSummary();
+      }
+    }, [
+      fetchDashboard,
+      fetchWater,
+      fetchStreaks,
+      fetchHistory,
+      fetchWorkoutSummary,
+      selectedDateKey,
+      todayKey,
+    ]),
+  );
 
   useEffect(() => {
     checkStepsPermission();

@@ -5,7 +5,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from '../../components/ui';
 import { mealsApi, type MealTemplateDetailItem } from '../../api/meals';
-import { useDashboardStore } from '../../stores/dashboard.store';
 import { useColors } from '../../theme';
 import type { LogStackScreenProps } from '../../navigation/types';
 
@@ -35,7 +34,6 @@ export function LogTemplateScreen() {
   const navigation = useNavigation<Props['navigation']>();
   const route = useRoute<Props['route']>();
   const { templateId } = route.params;
-  const refreshDashboard = useDashboardStore((s) => s.fetchDashboard);
   const c = useColors();
 
   const [templateName, setTemplateName] = useState('');
@@ -111,7 +109,6 @@ export function LogTemplateScreen() {
           quantity: item.adjustedQuantity,
         })),
       });
-      refreshDashboard();
       navigation.getParent()?.goBack();
     } catch {
       Alert.alert('Error', 'Failed to log meal. Please try again.');
