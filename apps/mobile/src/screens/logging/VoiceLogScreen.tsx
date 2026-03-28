@@ -27,6 +27,7 @@ import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
 import { trackEvent, EVENTS } from '../../utils/analytics';
 import { useLocale } from '../../i18n';
+import { useDashboardStore } from '../../stores/dashboard.store';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'VoiceLog'>;
@@ -195,6 +196,7 @@ function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
   const { t } = useLocale();
+  const refreshDashboard = useDashboardStore((s) => s.fetchDashboard);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [screenState, setScreenState] = useState<ScreenState>('idle');
@@ -387,6 +389,7 @@ export function VoiceLogScreen() {
       });
 
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      refreshDashboard();
 
       // Show success animation then go back
       setScreenState('success');
