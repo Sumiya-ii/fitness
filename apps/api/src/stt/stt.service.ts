@@ -53,7 +53,9 @@ export class SttService {
           enableAutomaticPunctuation: true,
         },
       },
-      content: audioBuffer.toString('base64'),
+      audio: {
+        content: audioBuffer.toString('base64'),
+      },
     };
 
     const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${apiKey}`;

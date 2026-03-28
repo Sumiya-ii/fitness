@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '../config';
 import OpenAI from 'openai';
-import { toFile } from 'openai/uploads';
 import Redis from 'ioredis';
 import { TELEGRAM_FOOD_PARSER_PROMPT } from '@coach/shared';
 
@@ -132,25 +131,59 @@ export class TelegramFoodParserService implements OnModuleDestroy {
   }
 
   /**
-   * Transcribe a voice audio buffer using OpenAI Whisper.
-   * Supports Mongolian and English — Whisper auto-detects language.
+   * Transcribe a voice audio buffer using Google Cloud Speech-to-Text V2 (chirp_2).
+   * Mongolian (mn-MN) is the default language.
    * Returns the transcribed text, or empty string if transcription fails.
    */
   async transcribeVoice(audioBuffer: Buffer): Promise<string> {
-    if (!this.openai) {
-      this.logger.warn('OPENAI_API_KEY not set — voice transcription disabled');
+    const googleApiKey = this.config.get('GOOGLE_STT_API_KEY');
+    if (!googleApiKey) {
+      this.logger.warn('GOOGLE_STT_API_KEY not set — voice transcription disabled');
       return '';
     }
 
     try {
-      // Telegram voice messages are OGG/Opus (.oga)
-      const audioFile = await toFile(audioBuffer, 'voice.oga', { type: 'audio/ogg' });
-      const transcription = await this.openai.audio.transcriptions.create({
-        file: audioFile,
-        model: 'whisper-1',
-        // No language hint — Whisper auto-detects MN/EN reliably
+      const googleProjectId = this.config.get('GOOGLE_CLOUD_PROJECT');
+      const recognizerPath = googleProjectId
+        ? `projects/${googleProjectId}/locations/global/recognizers/_`
+        : 'projects/-/locations/global/recognizers/_';
+
+      const requestBody = {
+        config: {
+          autoDecodingConfig: {},
+          languageCodes: ['mn-MN'],
+          model: 'chirp_2',
+          features: {
+            enableAutomaticPunctuation: true,
+          },
+        },
+        audio: {
+          content: audioBuffer.toString('base64'),
+        },
+      };
+
+      const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${googleApiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
       });
-      return transcription.text.trim();
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`Google STT V2 HTTP ${response.status}: ${errorBody}`);
+      }
+
+      const data = (await response.json()) as {
+        results?: Array<{
+          alternatives?: Array<{ transcript?: string }>;
+        }>;
+      };
+
+      return (data.results ?? [])
+        .map((r) => r.alternatives?.[0]?.transcript ?? '')
+        .join(' ')
+        .trim();
     } catch (err) {
       this.logger.error(
         'Voice transcription failed',

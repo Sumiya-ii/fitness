@@ -36,6 +36,8 @@ jest.mock('openai', () => {
 const mockConfigService = {
   get: jest.fn((key: string) => {
     if (key === 'OPENAI_API_KEY') return 'test-key';
+    if (key === 'GOOGLE_STT_API_KEY') return 'test-google-key';
+    if (key === 'GOOGLE_CLOUD_PROJECT') return 'test-project';
     if (key === 'REDIS_URL') return 'redis://localhost:6379';
     return undefined;
   }),
@@ -360,34 +362,58 @@ describe('TelegramFoodParserService', () => {
   });
 
   describe('transcribeVoice()', () => {
-    it('returns transcribed text from Whisper', async () => {
-      openaiTranscribeMock.mockResolvedValueOnce({ text: '  3 буузт идлээ  ' });
+    let fetchSpy: jest.SpyInstance;
+
+    afterEach(() => {
+      fetchSpy?.mockRestore();
+    });
+
+    it('returns transcribed text from Google STT V2 chirp_2', async () => {
+      fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [{ alternatives: [{ transcript: '3 буузт идлээ' }] }],
+        }),
+      } as Response);
 
       const result = await service.transcribeVoice(Buffer.from('fake-audio'));
 
       expect(result).toBe('3 буузт идлээ');
-      expect(openaiTranscribeMock).toHaveBeenCalledWith(
-        expect.objectContaining({ model: 'whisper-1' }),
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining('speech.googleapis.com/v2/'),
+        expect.objectContaining({ method: 'POST' }),
       );
     });
 
-    it('returns empty string when Whisper fails', async () => {
-      openaiTranscribeMock.mockRejectedValueOnce(new Error('Whisper API error'));
+    it('returns empty string when Google STT fails', async () => {
+      fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: async () => 'Internal Server Error',
+      } as Response);
 
       const result = await service.transcribeVoice(Buffer.from('fake-audio'));
 
       expect(result).toBe('');
     });
 
-    it('returns trimmed text (removes leading/trailing whitespace)', async () => {
-      openaiTranscribeMock.mockResolvedValueOnce({ text: '\n  I ate pizza  \n' });
+    it('joins multiple result segments and trims whitespace', async () => {
+      fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            { alternatives: [{ transcript: '  I ate ' }] },
+            { alternatives: [{ transcript: 'pizza  ' }] },
+          ],
+        }),
+      } as Response);
 
       const result = await service.transcribeVoice(Buffer.from('fake-audio'));
 
-      expect(result).toBe('I ate pizza');
+      expect(result).toBe('I ate  pizza');
     });
 
-    it('returns empty string when OpenAI is not configured', async () => {
+    it('returns empty string when GOOGLE_STT_API_KEY is not configured', async () => {
       const moduleNoKey: TestingModule = await Test.createTestingModule({
         providers: [
           TelegramFoodParserService,
@@ -395,7 +421,8 @@ describe('TelegramFoodParserService', () => {
             provide: ConfigService,
             useValue: {
               get: jest.fn((key: string) => {
-                if (key === 'OPENAI_API_KEY') return undefined; // no key
+                if (key === 'OPENAI_API_KEY') return 'test-key';
+                if (key === 'GOOGLE_STT_API_KEY') return undefined;
                 if (key === 'REDIS_URL') return 'redis://localhost:6379';
                 return undefined;
               }),

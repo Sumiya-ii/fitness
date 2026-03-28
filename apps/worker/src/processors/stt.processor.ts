@@ -122,7 +122,9 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
           enableAutomaticPunctuation: true,
         },
       },
-      content: buffer.toString('base64'),
+      audio: {
+        content: buffer.toString('base64'),
+      },
     };
 
     const url = `https://speech.googleapis.com/v2/${recognizerPath}:recognize?key=${googleApiKey}`;
