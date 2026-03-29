@@ -14,14 +14,22 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Button } from '../../components/ui';
 import { useWorkoutStore } from '../../stores/workout.store';
 import { useLocale } from '../../i18n';
+import { useColors } from '../../theme';
 import type { MainStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<MainStackParamList>;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function formatTimer(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -36,6 +44,7 @@ export function WorkoutActiveScreen() {
   const route = useRoute<RouteProp<MainStackParamList, 'WorkoutActive'>>();
   const workoutType = (route.params as { workoutType?: string } | undefined)?.workoutType ?? '';
   const { t, locale } = useLocale();
+  const c = useColors();
   const {
     catalogFlat,
     fetchCatalog,
@@ -50,17 +59,17 @@ export function WorkoutActiveScreen() {
     activeWorkoutType,
   } = useWorkoutStore();
 
-  // ─── Local state ─────────────────────────────────────────────────────────────
+  // Local state
   const [manualDuration, setManualDuration] = useState('');
   const [note, setNote] = useState('');
-  const [timerMode, setTimerMode] = useState(true); // true = use timer, false = manual input
+  const [timerMode, setTimerMode] = useState(true);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ─── Workout type info ───────────────────────────────────────────────────────
+  // Workout type info
   const typeInfo = useMemo(
-    () => catalogFlat.find((t) => t.key === workoutType),
+    () => catalogFlat.find((item) => item.key === workoutType),
     [catalogFlat, workoutType],
   );
 
@@ -71,12 +80,10 @@ export function WorkoutActiveScreen() {
   // Auto-start timer on mount if no active timer
   useEffect(() => {
     if (activeStartTime && activeWorkoutType === workoutType) {
-      // Resume existing timer
       const elapsed = Math.floor((Date.now() - activeStartTime) / 1000);
       setTimerSeconds(elapsed);
       setTimerRunning(true);
     } else if (!activeStartTime && workoutType) {
-      // Start new timer
       startTimer(workoutType);
       setTimerRunning(true);
     }
@@ -119,9 +126,9 @@ export function WorkoutActiveScreen() {
       : typeInfo.label.en
     : workoutType.replace(/_/g, ' ');
 
-  // ─── Actions ─────────────────────────────────────────────────────────────────
-
+  // Actions
   const toggleTimer = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (timerRunning) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       setTimerRunning(false);
@@ -131,6 +138,7 @@ export function WorkoutActiveScreen() {
   };
 
   const handleDiscard = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(t('workout.discardTitle'), t('workout.discardMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -165,7 +173,7 @@ export function WorkoutActiveScreen() {
 
     if (result) {
       navigation.goBack();
-      navigation.goBack(); // Go back past type picker too
+      navigation.goBack();
     }
   };
 
@@ -178,15 +186,28 @@ export function WorkoutActiveScreen() {
         >
           {/* Header */}
           <View className="flex-row items-center justify-between px-5 pt-3 pb-2">
-            <View className="flex-row items-center">
-              <Pressable onPress={handleDiscard} hitSlop={8}>
-                <Ionicons name="close" size={24} color="#ffffff" />
+            <View className="flex-row items-center flex-1 mr-3">
+              <Pressable
+                onPress={handleDiscard}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={t('workout.discardTitle')}
+                className="h-11 w-11 rounded-full bg-surface-default border border-surface-border items-center justify-center active:opacity-70"
+              >
+                <Ionicons name="close" size={22} color={c.text} />
               </Pressable>
-              <Text className="ml-3 text-xl font-sans-bold text-text-DEFAULT" numberOfLines={1}>
+              <Text
+                className="ml-3 text-xl font-sans-bold text-text-DEFAULT leading-7"
+                numberOfLines={1}
+              >
                 {label}
               </Text>
             </View>
-            {typeInfo && <Text className="text-2xl">{typeInfo.icon}</Text>}
+            {typeInfo && (
+              <Text className="text-2xl" accessibilityLabel={label}>
+                {typeInfo.icon}
+              </Text>
+            )}
           </View>
 
           <ScrollView
@@ -197,90 +218,62 @@ export function WorkoutActiveScreen() {
             {/* Timer / Duration Section */}
             <Animated.View entering={FadeInDown.duration(300)} className="mx-5 mt-4">
               {/* Mode toggle */}
-              <View className="flex-row bg-surface-secondary rounded-xl p-1 mb-5">
-                <Pressable
-                  onPress={() => setTimerMode(true)}
-                  className={`flex-1 py-2.5 rounded-lg items-center ${timerMode ? 'bg-surface-card' : ''}`}
-                  style={
-                    timerMode
-                      ? { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }
-                      : undefined
-                  }
-                >
-                  <Text
-                    className={`text-sm font-sans-medium ${timerMode ? 'text-text-DEFAULT' : 'text-text-tertiary'}`}
-                  >
-                    {t('workout.timer')}
-                  </Text>
-                </Pressable>
-                <Pressable
+              <View className="flex-row bg-surface-secondary rounded-2xl p-1 mb-5">
+                <ModeTab
+                  label={t('workout.timer')}
+                  active={timerMode}
                   onPress={() => {
+                    Haptics.selectionAsync();
+                    setTimerMode(true);
+                  }}
+                />
+                <ModeTab
+                  label={t('workout.manual')}
+                  active={!timerMode}
+                  onPress={() => {
+                    Haptics.selectionAsync();
                     setTimerMode(false);
                     setTimerRunning(false);
                     if (intervalRef.current) clearInterval(intervalRef.current);
                   }}
-                  className={`flex-1 py-2.5 rounded-lg items-center ${!timerMode ? 'bg-surface-card' : ''}`}
-                  style={
-                    !timerMode
-                      ? { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }
-                      : undefined
-                  }
-                >
-                  <Text
-                    className={`text-sm font-sans-medium ${!timerMode ? 'text-text-DEFAULT' : 'text-text-tertiary'}`}
-                  >
-                    {t('workout.manual')}
-                  </Text>
-                </Pressable>
+                />
               </View>
 
               {timerMode ? (
                 /* Live timer */
                 <View className="items-center mb-6">
-                  <View
-                    className="bg-surface-card rounded-3xl px-10 py-8 items-center border border-surface-border"
-                    style={{
-                      shadowColor: '#000000',
-                      shadowOpacity: 0.06,
-                      shadowRadius: 12,
-                      elevation: 2,
-                    }}
-                  >
-                    <Text className="text-5xl font-sans-bold text-text-DEFAULT tracking-wider">
+                  <View className="bg-surface-default rounded-3xl px-10 py-8 items-center border border-surface-border w-full">
+                    <Text className="text-5xl font-sans-bold text-text-DEFAULT tracking-wider leading-[60px]">
                       {formatTimer(timerSeconds)}
                     </Text>
-                    <Text className="text-sm text-text-tertiary font-sans mt-2">
+                    <Text className="text-sm text-text-tertiary font-sans mt-2 leading-5">
                       {t('workout.elapsed')}
                     </Text>
                   </View>
 
                   {/* Pause / Resume */}
-                  <Pressable
-                    onPress={toggleTimer}
-                    className={`mt-5 h-14 w-14 rounded-full items-center justify-center ${timerRunning ? 'bg-orange-500' : 'bg-primary-500'}`}
-                  >
-                    <Ionicons name={timerRunning ? 'pause' : 'play'} size={24} color="#ffffff" />
-                  </Pressable>
-                  <Text className="text-xs text-text-tertiary font-sans mt-2">
+                  <TimerControlButton running={timerRunning} onPress={toggleTimer} />
+                  <Text className="text-xs text-text-tertiary font-sans mt-2 leading-4">
                     {timerRunning ? t('workout.tapPause') : t('workout.tapResume')}
                   </Text>
                 </View>
               ) : (
                 /* Manual duration input */
                 <View className="items-center mb-6">
-                  <View className="bg-surface-card rounded-2xl px-6 py-5 border border-surface-border w-full">
-                    <Text className="text-sm font-sans-medium text-text-secondary mb-2">
+                  <View className="bg-surface-default rounded-3xl px-6 py-6 border border-surface-border w-full">
+                    <Text className="text-sm font-sans-medium text-text-secondary mb-3 leading-5">
                       {t('workout.duration')}
                     </Text>
-                    <View className="flex-row items-center">
+                    <View className="flex-row items-center justify-center">
                       <TextInput
                         className="flex-1 text-4xl font-sans-bold text-text-DEFAULT text-center"
                         placeholder="30"
-                        placeholderTextColor="#3a3a3c"
+                        placeholderTextColor={c.textTertiary}
                         value={manualDuration}
-                        onChangeText={(t) => setManualDuration(t.replace(/[^0-9]/g, ''))}
+                        onChangeText={(val) => setManualDuration(val.replace(/[^0-9]/g, ''))}
                         keyboardType="number-pad"
                         maxLength={4}
+                        accessibilityLabel={t('workout.duration')}
                       />
                       <Text className="text-lg font-sans-medium text-text-tertiary ml-2">min</Text>
                     </View>
@@ -291,40 +284,43 @@ export function WorkoutActiveScreen() {
 
             {/* Calorie Estimate Preview */}
             <Animated.View entering={FadeInDown.delay(60).duration(300)} className="mx-5 mb-5">
-              <View className="bg-surface-card rounded-2xl p-4 border border-surface-border flex-row items-center">
-                <View className="h-11 w-11 rounded-xl bg-orange-50 items-center justify-center mr-3">
-                  <Ionicons name="flame" size={22} color="#f97316" />
+              <View className="bg-surface-default rounded-3xl p-4 border border-surface-border flex-row items-center">
+                <View className="h-11 w-11 rounded-xl bg-surface-secondary items-center justify-center mr-3">
+                  <Ionicons name="flame" size={22} color={c.warning} />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-xs font-sans-medium text-text-tertiary">
+                  <Text className="text-xs font-sans-medium text-text-tertiary leading-4">
                     {t('workout.estimatedBurn')}
                   </Text>
-                  <Text className="text-xl font-sans-bold text-text-DEFAULT">
-                    {estimate && currentDuration > 0 ? `${estimate.calorieBurned} kcal` : '— kcal'}
+                  <Text className="text-xl font-sans-bold text-text-DEFAULT leading-7">
+                    {estimate && currentDuration > 0 ? `${estimate.calorieBurned} kcal` : '-- kcal'}
                   </Text>
                 </View>
-                {estimateLoading && <Ionicons name="hourglass-outline" size={16} color="#94a3b8" />}
+                {estimateLoading && (
+                  <Ionicons name="hourglass-outline" size={16} color={c.textTertiary} />
+                )}
               </View>
             </Animated.View>
 
             {/* Note */}
             <Animated.View entering={FadeInDown.delay(120).duration(300)} className="mx-5 mb-5">
-              <Text className="text-sm font-sans-medium text-text-secondary mb-2">
+              <Text className="text-sm font-sans-medium text-text-secondary mb-2 leading-5">
                 {t('workout.note')}
               </Text>
-              <View className="bg-surface-card rounded-2xl border border-surface-border">
+              <View className="bg-surface-default rounded-2xl border border-surface-border">
                 <TextInput
                   className="px-4 py-3 text-base font-sans text-text-DEFAULT min-h-[80px]"
                   placeholder={t('workout.notePlaceholder')}
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={c.textTertiary}
                   value={note}
                   onChangeText={setNote}
                   multiline
                   textAlignVertical="top"
                   maxLength={500}
+                  accessibilityLabel={t('workout.note')}
                 />
               </View>
-              <Text className="text-xs text-text-tertiary font-sans mt-1 text-right">
+              <Text className="text-xs text-text-tertiary font-sans mt-1.5 text-right leading-4">
                 {note.length}/500
               </Text>
             </Animated.View>
@@ -335,20 +331,20 @@ export function WorkoutActiveScreen() {
                 <View className="bg-surface-secondary rounded-2xl p-4">
                   <View className="flex-row items-center mb-2">
                     <Text className="text-lg mr-2">{typeInfo.icon}</Text>
-                    <Text className="text-sm font-sans-bold text-text-DEFAULT">
+                    <Text className="text-sm font-sans-bold text-text-DEFAULT leading-5">
                       {locale === 'mn' ? typeInfo.label.mn : typeInfo.label.en}
                     </Text>
                   </View>
                   <View className="flex-row gap-4">
                     <View className="flex-row items-center">
-                      <Ionicons name="speedometer-outline" size={14} color="#71717a" />
-                      <Text className="text-xs text-text-tertiary font-sans ml-1">
+                      <Ionicons name="speedometer-outline" size={14} color={c.textTertiary} />
+                      <Text className="text-xs text-text-tertiary font-sans ml-1 leading-4">
                         {typeInfo.met} MET
                       </Text>
                     </View>
                     <View className="flex-row items-center">
-                      <Ionicons name="folder-outline" size={14} color="#71717a" />
-                      <Text className="text-xs text-text-tertiary font-sans ml-1 capitalize">
+                      <Ionicons name="folder-outline" size={14} color={c.textTertiary} />
+                      <Text className="text-xs text-text-tertiary font-sans ml-1 capitalize leading-4">
                         {typeInfo.category}
                       </Text>
                     </View>
@@ -359,13 +355,87 @@ export function WorkoutActiveScreen() {
           </ScrollView>
 
           {/* Bottom Action */}
-          <View className="px-5 pb-4 pt-2 border-t border-surface-border bg-surface-app">
-            <Button onPress={handleFinish} disabled={saving} variant="primary" size="lg">
-              {saving ? t('common.loading') : t('workout.finishWorkout')}
+          <View className="px-5 pb-4 pt-3 border-t border-surface-border bg-surface-app">
+            <Button
+              onPress={handleFinish}
+              disabled={saving}
+              loading={saving}
+              variant="primary"
+              size="lg"
+              accessibilityLabel={t('workout.finishWorkout')}
+            >
+              {t('workout.finishWorkout')}
             </Button>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
+  );
+}
+
+/* ── Mode Tab ──────────────────────────────────────────────────────────────── */
+
+function ModeTab({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={label}
+      className={`flex-1 py-2.5 rounded-xl items-center min-h-[40px] justify-center ${
+        active ? 'bg-surface-default' : ''
+      }`}
+    >
+      <Text
+        className={`text-sm font-sans-medium leading-5 ${
+          active ? 'text-text-DEFAULT' : 'text-text-tertiary'
+        }`}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/* ── Timer Control Button ──────────────────────────────────────────────────── */
+
+function TimerControlButton({ running, onPress }: { running: boolean; onPress: () => void }) {
+  const c = useColors();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={() => {
+        scale.value = withSpring(0.9, { damping: 15, stiffness: 400 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+      }}
+      style={animatedStyle}
+      accessibilityRole="button"
+      accessibilityLabel={running ? 'Pause timer' : 'Resume timer'}
+      className={`mt-5 h-14 w-14 rounded-full items-center justify-center ${
+        running ? 'bg-warning' : 'bg-primary-500'
+      }`}
+    >
+      <Ionicons
+        name={running ? 'pause' : 'play'}
+        size={24}
+        color={running ? '#ffffff' : c.onPrimary}
+      />
+    </AnimatedPressable>
   );
 }

@@ -1,12 +1,14 @@
 import { Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useColors } from '../../theme';
 
 export interface BackButtonProps {
   /** Custom handler. Defaults to navigation.goBack(). */
   onPress?: () => void;
   /**
-   * 'default' — dark rounded square, light icon (standard screens)
+   * 'default' — rounded square with card bg (standard screens)
    * 'overlay' — semi-transparent black circle, white icon (camera/dark-bg screens)
    */
   variant?: 'default' | 'overlay';
@@ -14,8 +16,16 @@ export interface BackButtonProps {
 
 export function BackButton({ onPress, variant = 'default' }: BackButtonProps) {
   const navigation = useNavigation();
+  const c = useColors();
 
-  const handlePress = onPress ?? (() => navigation.goBack());
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (onPress) {
+      onPress();
+    } else {
+      navigation.goBack();
+    }
+  };
 
   if (variant === 'overlay') {
     return (
@@ -24,8 +34,7 @@ export function BackButton({ onPress, variant = 'default' }: BackButtonProps) {
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel="Go back"
-        className="h-10 w-10 rounded-full bg-black/50 items-center justify-center"
-        style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+        className="h-11 w-11 rounded-full bg-black/50 items-center justify-center active:opacity-70"
       >
         <Ionicons name="chevron-back" size={22} color="#ffffff" />
       </Pressable>
@@ -38,19 +47,9 @@ export function BackButton({ onPress, variant = 'default' }: BackButtonProps) {
       hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel="Go back"
-      style={({ pressed }) => ({
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#2c2c2e',
-        backgroundColor: '#1c1c1e',
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: pressed ? 0.6 : 1,
-      })}
+      className="h-11 w-11 rounded-full bg-surface-default border border-surface-border items-center justify-center active:opacity-70"
     >
-      <Ionicons name="chevron-back" size={20} color="#ffffff" />
+      <Ionicons name="chevron-back" size={20} color={c.text} />
     </Pressable>
   );
 }

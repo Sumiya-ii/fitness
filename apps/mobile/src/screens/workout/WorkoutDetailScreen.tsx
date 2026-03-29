@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
   Alert,
   TextInput,
   KeyboardAvoidingView,
@@ -16,15 +15,16 @@ import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { BackButton, Button, SkeletonLoader } from '../../components/ui';
+import { BackButton, Button, IconButton, SkeletonLoader } from '../../components/ui';
 import { useWorkoutStore } from '../../stores/workout.store';
 import { useLocale } from '../../i18n';
+import { useColors } from '../../theme';
 import type { MainStackParamList } from '../../navigation/types';
 
 type Nav = NativeStackNavigationProp<MainStackParamList>;
 
-function formatDateFull(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+function formatDateFull(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale === 'mn' ? 'mn-MN' : 'en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -41,6 +41,7 @@ export function WorkoutDetailScreen() {
   const route = useRoute<RouteProp<MainStackParamList, 'WorkoutDetail'>>();
   const id = (route.params as { id: string }).id;
   const { t, locale } = useLocale();
+  const c = useColors();
   const { detail, detailLoading, fetchDetail, updateWorkout, deleteWorkout, saving } =
     useWorkoutStore();
 
@@ -82,6 +83,7 @@ export function WorkoutDetailScreen() {
   };
 
   const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(t('workout.deleteTitle'), t('workout.deleteMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -98,6 +100,7 @@ export function WorkoutDetailScreen() {
     ]);
   };
 
+  // Loading state
   if (detailLoading || !detail) {
     return (
       <View className="flex-1 bg-surface-app">
@@ -109,9 +112,16 @@ export function WorkoutDetailScreen() {
             </Text>
           </View>
           <View className="mx-5 mt-4 gap-4">
-            <SkeletonLoader width="100%" height={120} borderRadius={16} />
+            <SkeletonLoader width="100%" height={140} borderRadius={24} />
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <SkeletonLoader width="100%" height={100} borderRadius={16} />
+              </View>
+              <View className="flex-1">
+                <SkeletonLoader width="100%" height={100} borderRadius={16} />
+              </View>
+            </View>
             <SkeletonLoader width="100%" height={80} borderRadius={16} />
-            <SkeletonLoader width="100%" height={60} borderRadius={16} />
           </View>
         </SafeAreaView>
       </View>
@@ -135,21 +145,24 @@ export function WorkoutDetailScreen() {
             </View>
             <View className="flex-row gap-2">
               {!editing && (
-                <Pressable
-                  onPress={() => setEditing(true)}
-                  className="h-9 w-9 rounded-full bg-surface-secondary items-center justify-center"
-                  hitSlop={8}
-                >
-                  <Ionicons name="pencil" size={16} color="#a1a1aa" />
-                </Pressable>
+                <IconButton
+                  icon="pencil"
+                  variant="surface"
+                  iconColor={c.textSecondary}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setEditing(true);
+                  }}
+                  accessibilityLabel={t('common.edit')}
+                />
               )}
-              <Pressable
+              <IconButton
+                icon="trash-outline"
+                variant="surface"
+                iconColor={c.danger}
                 onPress={handleDelete}
-                className="h-9 w-9 rounded-full bg-red-50 items-center justify-center"
-                hitSlop={8}
-              >
-                <Ionicons name="trash-outline" size={16} color="#e11d48" />
-              </Pressable>
+                accessibilityLabel={t('common.delete')}
+              />
             </View>
           </View>
 
@@ -160,11 +173,14 @@ export function WorkoutDetailScreen() {
           >
             {/* Type card */}
             <Animated.View entering={FadeInDown.duration(300)} className="mx-5 mt-3">
-              <View className="bg-surface-card rounded-2xl p-5 border border-surface-border items-center">
-                <Text className="text-4xl mb-2">{detail.icon ?? '🏋️'}</Text>
-                <Text className="text-xl font-sans-bold text-text-DEFAULT">{label}</Text>
-                <Text className="text-sm text-text-tertiary font-sans mt-1">
-                  {formatDateFull(detail.loggedAt)} · {formatTime(detail.loggedAt)}
+              <View className="bg-surface-default rounded-3xl p-6 border border-surface-border items-center">
+                <Text className="text-4xl mb-3">{detail.icon ?? '🏋️'}</Text>
+                <Text className="text-xl font-sans-bold text-text-DEFAULT leading-7">{label}</Text>
+                <Text className="text-sm text-text-tertiary font-sans mt-1.5 leading-5 text-center">
+                  {formatDateFull(detail.loggedAt, locale)}
+                </Text>
+                <Text className="text-xs text-text-tertiary font-sans mt-0.5 leading-4">
+                  {formatTime(detail.loggedAt)}
                 </Text>
               </View>
             </Animated.View>
@@ -172,44 +188,51 @@ export function WorkoutDetailScreen() {
             {/* Stats grid */}
             <Animated.View entering={FadeInDown.delay(60).duration(300)} className="mx-5 mt-4">
               <View className="flex-row gap-3">
-                <View className="flex-1 bg-surface-card rounded-2xl p-4 border border-surface-border items-center">
-                  <Ionicons name="time-outline" size={22} color="#8b5cf6" />
+                {/* Duration */}
+                <View className="flex-1 bg-surface-default rounded-2xl p-4 border border-surface-border items-center">
+                  <View className="h-9 w-9 rounded-full bg-surface-secondary items-center justify-center mb-2">
+                    <Ionicons name="time-outline" size={20} color={c.success} />
+                  </View>
                   {editing ? (
                     <TextInput
                       className="text-2xl font-sans-bold text-text-DEFAULT text-center mt-1"
                       value={editDuration}
-                      onChangeText={(t) => setEditDuration(t.replace(/[^0-9]/g, ''))}
+                      onChangeText={(val) => setEditDuration(val.replace(/[^0-9]/g, ''))}
                       keyboardType="number-pad"
-                      placeholder="—"
-                      placeholderTextColor="#3a3a3c"
+                      placeholder="--"
+                      placeholderTextColor={c.textTertiary}
+                      accessibilityLabel={t('workout.minutes')}
                     />
                   ) : (
-                    <Text className="text-2xl font-sans-bold text-text-DEFAULT mt-1">
-                      {detail.durationMin ?? '—'}
+                    <Text className="text-2xl font-sans-bold text-text-DEFAULT mt-1 leading-8">
+                      {detail.durationMin ?? '--'}
                     </Text>
                   )}
-                  <Text className="text-xs text-text-tertiary font-sans mt-0.5">
+                  <Text className="text-xs text-text-tertiary font-sans mt-1 leading-4">
                     {t('workout.minutes')}
                   </Text>
                 </View>
 
-                <View className="flex-1 bg-surface-card rounded-2xl p-4 border border-surface-border items-center">
-                  <Ionicons name="flame-outline" size={22} color="#f97316" />
-                  <Text className="text-2xl font-sans-bold text-text-DEFAULT mt-1">
-                    {detail.calorieBurned ?? '—'}
+                {/* Calories */}
+                <View className="flex-1 bg-surface-default rounded-2xl p-4 border border-surface-border items-center">
+                  <View className="h-9 w-9 rounded-full bg-surface-secondary items-center justify-center mb-2">
+                    <Ionicons name="flame-outline" size={20} color={c.warning} />
+                  </View>
+                  <Text className="text-2xl font-sans-bold text-text-DEFAULT mt-1 leading-8">
+                    {detail.calorieBurned ?? '--'}
                   </Text>
-                  <Text className="text-xs text-text-tertiary font-sans mt-0.5">kcal</Text>
+                  <Text className="text-xs text-text-tertiary font-sans mt-1 leading-4">kcal</Text>
                 </View>
               </View>
             </Animated.View>
 
             {/* Note */}
             <Animated.View entering={FadeInDown.delay(120).duration(300)} className="mx-5 mt-4">
-              <Text className="text-sm font-sans-medium text-text-secondary mb-2">
+              <Text className="text-sm font-sans-medium text-text-secondary mb-2 leading-5">
                 {t('workout.note')}
               </Text>
               {editing ? (
-                <View className="bg-surface-card rounded-2xl border border-surface-border">
+                <View className="bg-surface-default rounded-2xl border border-surface-border">
                   <TextInput
                     className="px-4 py-3 text-base font-sans text-text-DEFAULT min-h-[80px]"
                     value={editNote}
@@ -218,12 +241,13 @@ export function WorkoutDetailScreen() {
                     textAlignVertical="top"
                     maxLength={500}
                     placeholder={t('workout.notePlaceholder')}
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor={c.textTertiary}
+                    accessibilityLabel={t('workout.note')}
                   />
                 </View>
               ) : (
-                <View className="bg-surface-card rounded-2xl p-4 border border-surface-border">
-                  <Text className="text-base font-sans text-text-DEFAULT">
+                <View className="bg-surface-default rounded-2xl p-4 border border-surface-border">
+                  <Text className="text-base font-sans text-text-DEFAULT leading-6">
                     {detail.note || t('workout.noNote')}
                   </Text>
                 </View>
@@ -233,26 +257,38 @@ export function WorkoutDetailScreen() {
 
           {/* Bottom action (when editing) */}
           {editing && (
-            <View className="px-5 pb-4 pt-2 border-t border-surface-border bg-surface-app flex-row gap-3">
+            <Animated.View
+              entering={FadeInDown.duration(200)}
+              className="px-5 pb-4 pt-3 border-t border-surface-border bg-surface-app flex-row gap-3"
+            >
               <View className="flex-1">
                 <Button
                   onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setEditing(false);
                     setEditDuration(detail.durationMin != null ? String(detail.durationMin) : '');
                     setEditNote(detail.note ?? '');
                   }}
                   variant="secondary"
                   size="lg"
+                  accessibilityLabel={t('common.cancel')}
                 >
                   {t('common.cancel')}
                 </Button>
               </View>
               <View className="flex-1">
-                <Button onPress={handleSave} disabled={saving} variant="primary" size="lg">
-                  {saving ? t('common.loading') : t('common.save')}
+                <Button
+                  onPress={handleSave}
+                  disabled={saving}
+                  loading={saving}
+                  variant="primary"
+                  size="lg"
+                  accessibilityLabel={t('common.save')}
+                >
+                  {t('common.save')}
                 </Button>
               </View>
-            </View>
+            </Animated.View>
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
