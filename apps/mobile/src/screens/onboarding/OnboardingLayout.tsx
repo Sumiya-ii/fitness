@@ -1,7 +1,10 @@
 import { View, Text, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 
 interface OnboardingLayoutProps {
   step: number;
@@ -23,118 +26,92 @@ export function OnboardingLayout({
   subtitle,
   onBack,
   onContinue,
-  continueLabel = 'Continue',
+  continueLabel,
   continueDisabled = false,
   children,
 }: OnboardingLayoutProps) {
   const c = useColors();
+  const { t } = useLocale();
   const progress = step / totalSteps;
+  const label = continueLabel ?? t('onboarding.next');
+
+  const handleContinue = () => {
+    if (continueDisabled) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onContinue();
+  };
+
+  const handleBack = () => {
+    if (!onBack) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onBack();
+  };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
+      className="flex-1"
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
+      <SafeAreaView className="flex-1 bg-surface-app">
         {/* Header: back button + progress bar */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 20,
-            paddingTop: 16,
-            paddingBottom: 8,
-            gap: 14,
-          }}
-        >
+        <View className="flex-row items-center px-5 pt-4 pb-2 gap-3.5">
           {onBack ? (
             <Pressable
-              onPress={onBack}
-              style={({ pressed }) => ({
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: c.border,
-                backgroundColor: c.bg,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: pressed ? 0.6 : 1,
-                flexShrink: 0,
-              })}
+              onPress={handleBack}
+              className="w-11 h-11 rounded-full border border-surface-border bg-surface-app items-center justify-center active:opacity-60"
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.back')}
             >
               <Ionicons name="chevron-back" size={20} color={c.text} />
             </Pressable>
           ) : (
-            <View style={{ width: 40, height: 40 }} />
+            <View className="w-11 h-11" />
           )}
 
           {/* Progress bar */}
-          <View style={{ flex: 1, height: 3, backgroundColor: c.border, borderRadius: 2 }}>
-            <View
-              style={{
-                height: '100%',
-                width: `${progress * 100}%`,
-                backgroundColor: c.primary,
-                borderRadius: 2,
-              }}
+          <View className="flex-1 h-1 bg-surface-border rounded-full overflow-hidden">
+            <Animated.View
+              className="h-full rounded-full bg-primary-500"
+              style={{ width: `${progress * 100}%` }}
             />
           </View>
         </View>
 
         {/* Title + subtitle */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 }}>
+        <Animated.View entering={FadeInDown.duration(400).delay(100)} className="px-6 pt-5 pb-6">
           <Text
-            style={{
-              fontSize: 28,
-              fontWeight: '800',
-              color: c.text,
-              marginBottom: 8,
-              lineHeight: 34,
-            }}
+            className="text-[28px] font-sans-bold text-text leading-[34px] mb-2"
+            accessibilityRole="header"
           >
             {title}
           </Text>
           {subtitle ? (
-            <Text
-              style={{
-                fontSize: 15,
-                color: c.textTertiary,
-                lineHeight: 22,
-              }}
-            >
-              {subtitle}
-            </Text>
+            <Text className="text-[15px] text-text-tertiary leading-[22px]">{subtitle}</Text>
           ) : null}
-        </View>
+        </Animated.View>
 
         {/* Content */}
-        <View style={{ flex: 1, paddingHorizontal: 24 }}>{children}</View>
+        <View className="flex-1 px-6">{children}</View>
 
         {/* Continue button */}
-        <View style={{ paddingHorizontal: 24, paddingBottom: 40, paddingTop: 16 }}>
+        <View className="px-6 pb-10 pt-4">
           <Pressable
-            onPress={continueDisabled ? undefined : onContinue}
+            onPress={handleContinue}
             disabled={continueDisabled}
-            style={({ pressed }) => ({
-              backgroundColor: continueDisabled ? c.muted : c.primary,
-              borderRadius: 100,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 18,
-              opacity: pressed && !continueDisabled ? 0.88 : 1,
-            })}
+            className={`rounded-full items-center justify-center py-[18px] ${
+              continueDisabled ? 'bg-surface-muted' : 'bg-primary-500 active:opacity-90'
+            }`}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: continueDisabled }}
           >
             <Text
-              style={{
-                fontSize: 17,
-                fontWeight: '700',
-                color: continueDisabled ? c.textTertiary : c.onPrimary,
-                letterSpacing: 0.2,
-              }}
+              className={`text-[17px] font-sans-bold tracking-wide ${
+                continueDisabled ? 'text-text-tertiary' : 'text-on-primary'
+              }`}
             >
-              {continueLabel}
+              {label}
             </Text>
           </Pressable>
         </View>
