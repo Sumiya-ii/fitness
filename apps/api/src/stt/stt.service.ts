@@ -40,11 +40,9 @@ export class SttService {
     const formData = new FormData();
     formData.append('file', new Blob([audioBuffer], { type: 'audio/wav' }), 'audio.wav');
     formData.append('model', 'whisper-1');
-    // Only set language for English; Mongolian is not in Whisper's ISO-639-1 list,
-    // but auto-detect handles it well
-    if (locale === 'en') {
-      formData.append('language', 'en');
-    }
+    // Explicitly set language to improve transcription accuracy
+    const whisperLang = locale === 'en' ? 'en' : 'mn';
+    formData.append('language', whisperLang);
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',

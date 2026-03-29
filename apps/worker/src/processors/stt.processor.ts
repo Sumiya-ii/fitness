@@ -92,11 +92,9 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     const formData = new FormData();
     formData.append('file', new Blob([buffer], { type: 'audio/m4a' }), 'audio.m4a');
     formData.append('model', 'whisper-1');
-    // Only set language for English; Mongolian is not in Whisper's ISO-639-1 list,
-    // but auto-detect handles it well
-    if (locale === 'en') {
-      formData.append('language', 'en');
-    }
+    // Explicitly set language to improve transcription accuracy
+    const whisperLang = locale === 'en' ? 'en' : 'mn';
+    formData.append('language', whisperLang);
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
@@ -112,7 +110,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     const data = (await response.json()) as { text?: string };
     text = data.text?.trim() ?? '';
 
-    console.log('[STT] Transcribed (whisper):', text);
+    console.log(`[STT] Transcribed (whisper, lang=${whisperLang}):`, text);
   } catch (err) {
     const msg = `Transcription failed: ${String(err)}`;
     console.error(`[STT] ${msg}`);
@@ -163,6 +161,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
       response_format: { type: 'json_object' },
     });
     const content = nutritionResponse.choices[0]?.message?.content ?? '{}';
+    console.log('[STT] GPT nutrition parse result:', content);
     const parsed = JSON.parse(content) as { mealType?: string | null; items?: ParsedFoodItem[] };
     detectedMealType = parsed.mealType ?? null;
     items = (parsed.items ?? []).map((item) => ({

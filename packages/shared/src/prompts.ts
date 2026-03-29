@@ -95,7 +95,7 @@ export const MONGOLIAN_NUMBER_WORDS = `Mongolian number words: neg=1, khoyor=2, 
 
 /** Additional parsing rules for Mongolian food context */
 export const MONGOLIAN_PARSING_RULES = `Additional rules:
-- Always return at least one item, even if the description is vague
+- IMPORTANT: If the text does NOT describe any food or meal (e.g. it is gibberish, random words, non-food conversation, or unintelligible), return {"mealType": null, "items": []}. Do NOT invent food items from nonsensical input.
 - For combo meals, break out each component as a separate item if possible
 - If user says "tsai" without qualifier, assume suutei tsai (milk tea, 35 cal)
 - If user says "makh" without qualifier, assume khoniny makh (mutton)
