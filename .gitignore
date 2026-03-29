@@ -31,10 +31,8 @@ npm-debug.log*
 
 # Expo prebuild / generated
 .expo/
-ios/
-app.json
 
-# Mobile
+# Mobile — ios/ is committed for EAS Build target name consistency
 apps/mobile/ios/Pods/
 apps/mobile/android/.gradle/
 apps/mobile/android/app/build/
@@ -46,7 +44,6 @@ tmp/
 temp/
 
 # Firebase / secrets
-GoogleService-Info.plist
 google-services.json
 *.p8
 *.p12

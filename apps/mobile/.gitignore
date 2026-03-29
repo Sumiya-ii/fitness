@@ -37,6 +37,7 @@ yarn-error.*
 *.tsbuildinfo
 
 # generated native folders
-/ios
 /android
+# Note: /ios is committed to fix EAS Build monorepo target name mismatch
+# Run `npx expo prebuild --clean --platform ios` after native dependency changes
 .env.local
