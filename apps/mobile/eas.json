@@ -7,14 +7,16 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "scheme": "Coach"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "scheme": "Coach"
       },
       "env": {
         "SENTRY_ORG": "nexus-kairos",
@@ -24,8 +26,10 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
+      "prebuildCommand": "echo 'Using committed ios/ — skipping prebuild'",
       "ios": {
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "scheme": "Coach"
       },
       "android": {
         "buildType": "app-bundle"
