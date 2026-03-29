@@ -3,6 +3,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from '../config';
 import { SentryProvider } from './sentry.provider';
 import { RequestIdMiddleware } from './request-id.middleware';
+import { RequestLoggerMiddleware } from './request-logger.middleware';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 
 @Module({
@@ -18,6 +19,6 @@ import { AllExceptionsFilter } from './all-exceptions.filter';
 })
 export class ObservabilityModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestIdMiddleware).forRoutes('*');
+    consumer.apply(RequestIdMiddleware, RequestLoggerMiddleware).forRoutes('*');
   }
 }
