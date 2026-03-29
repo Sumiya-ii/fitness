@@ -161,6 +161,7 @@ CREATE TABLE "meal_logs" (
 CREATE TABLE "meal_log_items" (
     "id" UUID NOT NULL,
     "meal_log_id" UUID NOT NULL,
+    "user_id" UUID NOT NULL,
     "food_id" UUID,
     "quantity" DECIMAL(8,2) NOT NULL,
     "serving_label" VARCHAR(100) NOT NULL,
@@ -478,7 +479,7 @@ CREATE TABLE "meal_template_items" (
 CREATE TABLE "favorites" (
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
-    "food_id" UUID,
+    "food_id" UUID NOT NULL,
     "meal_log_id" UUID,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -567,6 +568,9 @@ CREATE INDEX "meal_logs_user_id_logged_at_idx" ON "meal_logs"("user_id", "logged
 
 -- CreateIndex
 CREATE INDEX "meal_log_items_meal_log_id_created_at_idx" ON "meal_log_items"("meal_log_id", "created_at");
+
+-- CreateIndex
+CREATE INDEX "meal_log_items_user_id_created_at_idx" ON "meal_log_items"("user_id", "created_at" DESC);
 
 -- CreateIndex
 CREATE INDEX "meal_log_items_food_id_idx" ON "meal_log_items"("food_id");
@@ -719,6 +723,9 @@ ALTER TABLE "meal_logs" ADD CONSTRAINT "meal_logs_user_id_fkey" FOREIGN KEY ("us
 ALTER TABLE "meal_log_items" ADD CONSTRAINT "meal_log_items_meal_log_id_fkey" FOREIGN KEY ("meal_log_id") REFERENCES "meal_logs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "meal_log_items" ADD CONSTRAINT "meal_log_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "meal_log_items" ADD CONSTRAINT "meal_log_items_food_id_fkey" FOREIGN KEY ("food_id") REFERENCES "foods"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -774,6 +781,9 @@ ALTER TABLE "meal_template_items" ADD CONSTRAINT "meal_template_items_serving_id
 
 -- AddForeignKey
 ALTER TABLE "favorites" ADD CONSTRAINT "favorites_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "favorites" ADD CONSTRAINT "favorites_food_id_fkey" FOREIGN KEY ("food_id") REFERENCES "foods"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "favorites" ADD CONSTRAINT "favorites_meal_log_id_fkey" FOREIGN KEY ("meal_log_id") REFERENCES "meal_logs"("id") ON DELETE SET NULL ON UPDATE CASCADE;

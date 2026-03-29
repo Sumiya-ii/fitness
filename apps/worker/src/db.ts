@@ -42,7 +42,8 @@ export async function setVoiceDraftCompleted(
          total_fat = $8,
          total_sugar = $9,
          total_sodium = $10,
-         total_saturated_fat = $11
+         total_saturated_fat = $11,
+         updated_at = NOW()
      WHERE id = $1`,
     [
       draftId,
@@ -62,7 +63,7 @@ export async function setVoiceDraftCompleted(
 
 export async function setVoiceDraftFailed(draftId: string, errorMessage: string): Promise<void> {
   await getPool().query(
-    `UPDATE voice_drafts SET status = 'failed', error_message = $2 WHERE id = $1`,
+    `UPDATE voice_drafts SET status = 'failed', error_message = $2, updated_at = NOW() WHERE id = $1`,
     [draftId, errorMessage],
   );
 }

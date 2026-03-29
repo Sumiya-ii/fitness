@@ -40,9 +40,9 @@ export async function logMessage(params: LogParams): Promise<void> {
       `INSERT INTO outbound_messages
          (id, user_id, channel, message_type, content, status, error_message,
           ai_model, prompt_tokens, completion_tokens, generation_ms, delivery_ms,
-          job_id, metadata, sent_at)
+          job_id, metadata, sent_at, updated_at)
        VALUES
-         (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,
+         (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now(), now())`,
       [
         params.userId,
         params.channel,
