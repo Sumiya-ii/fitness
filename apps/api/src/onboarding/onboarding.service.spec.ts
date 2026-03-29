@@ -11,6 +11,7 @@ const mockPrisma = {
   },
   target: {
     create: jest.fn(),
+    updateMany: jest.fn(),
   },
   $transaction: jest.fn(),
 };
@@ -55,15 +56,47 @@ describe('OnboardingService', () => {
       );
     });
 
-    it('should throw if onboarding already completed', async () => {
+    it('should allow re-onboarding when already completed', async () => {
+      const existingDate = new Date('2025-01-01');
       mockPrisma.profile.findUnique.mockResolvedValue({
         id: 'p-1',
         userId: 'user-1',
-        onboardingCompletedAt: new Date(),
+        onboardingCompletedAt: existingDate,
+        locale: 'mn',
       });
-      await expect(service.completeOnboarding('user-1', validDto)).rejects.toThrow(
-        'Onboarding already completed',
-      );
+      mockPrisma.target.updateMany.mockResolvedValue({ count: 1 });
+
+      const mockProfile = {
+        id: 'p-1',
+        gender: 'male',
+        birthDate: new Date('1995-06-15'),
+        heightCm: 175,
+        weightKg: 85,
+        goalWeightKg: 70,
+        activityLevel: 'moderately_active',
+        dietPreference: 'standard',
+      };
+      const mockTarget = {
+        id: 't-2',
+        goalType: 'lose_fat',
+        calorieTarget: 2100,
+        proteinGrams: 170,
+        carbsGrams: 200,
+        fatGrams: 60,
+        weeklyRateKg: 0.5,
+      };
+
+      mockPrisma.$transaction.mockResolvedValue([mockProfile, mockTarget]);
+
+      const result = await service.completeOnboarding('user-1', validDto);
+
+      // Should deactivate old targets before creating new one
+      expect(mockPrisma.target.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', effectiveTo: null },
+        data: { effectiveTo: expect.any(Date) },
+      });
+      expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(result.target.goalType).toBe('lose_fat');
     });
 
     it('should create profile and target in a transaction', async () => {

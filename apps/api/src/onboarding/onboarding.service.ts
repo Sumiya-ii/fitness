@@ -22,9 +22,7 @@ export class OnboardingService {
       throw new BadRequestException('Profile not found. User may not be fully registered.');
     }
 
-    if (profile.onboardingCompletedAt) {
-      throw new BadRequestException('Onboarding already completed.');
-    }
+    const isReOnboarding = !!profile.onboardingCompletedAt;
 
     const targets = calculateTargets({
       gender: dto.gender,
@@ -40,6 +38,14 @@ export class OnboardingService {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
+    // Deactivate any existing targets before creating the new one
+    if (isReOnboarding) {
+      await this.prisma.target.updateMany({
+        where: { userId, effectiveTo: null },
+        data: { effectiveTo: today },
+      });
+    }
+
     const [updatedProfile, target] = await this.prisma.$transaction([
       this.prisma.profile.update({
         where: { userId },
@@ -51,7 +57,7 @@ export class OnboardingService {
           goalWeightKg: dto.goalWeightKg,
           activityLevel: dto.activityLevel,
           dietPreference: dto.dietPreference,
-          onboardingCompletedAt: new Date(),
+          onboardingCompletedAt: profile.onboardingCompletedAt ?? new Date(),
         },
       }),
       this.prisma.target.create({

@@ -568,7 +568,7 @@ export function HomeScreen() {
   const [weekHistory, setWeekHistory] = useState<Map<string, number>>(new Map());
   const [weekCalorieTarget, setWeekCalorieTarget] = useState<number | null>(null);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
-  const { data, isLoading, fetchDashboard } = useDashboardStore();
+  const { data, isLoading, fetchDashboard, loadCachedDashboard } = useDashboardStore();
   const {
     consumed: waterConsumed,
     target: waterTarget,
@@ -641,9 +641,10 @@ export function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    loadCachedDashboard();
     loadProfile();
     loadWeekHistory();
-  }, [loadProfile, loadWeekHistory]);
+  }, [loadCachedDashboard, loadProfile, loadWeekHistory]);
 
   useFocusEffect(
     useCallback(() => {
@@ -697,16 +698,20 @@ export function HomeScreen() {
     return <HomeSkeleton />;
   }
 
-  const targets = data?.targets ?? { calories: 2000, protein: 150, carbs: 200, fat: 65 };
+  const targets = data?.targets ?? null;
   const consumed = data?.consumed ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  const remaining = Math.max(targets.calories - consumed.calories, 0);
-  const calProg = targets.calories > 0 ? Math.min(consumed.calories / targets.calories, 1) : 0;
-  const proteinLeft = Math.max(Math.round(targets.protein - consumed.protein), 0);
-  const carbsLeft = Math.max(Math.round(targets.carbs - consumed.carbs), 0);
-  const fatLeft = Math.max(Math.round(targets.fat - consumed.fat), 0);
-  const proteinProg = targets.protein > 0 ? Math.min(consumed.protein / targets.protein, 1) : 0;
-  const carbsProg = targets.carbs > 0 ? Math.min(consumed.carbs / targets.carbs, 1) : 0;
-  const fatProg = targets.fat > 0 ? Math.min(consumed.fat / targets.fat, 1) : 0;
+  const hasTargets = targets !== null;
+  const remaining = hasTargets ? Math.max(targets.calories - consumed.calories, 0) : 0;
+  const calProg =
+    hasTargets && targets.calories > 0 ? Math.min(consumed.calories / targets.calories, 1) : 0;
+  const proteinLeft = hasTargets ? Math.max(Math.round(targets.protein - consumed.protein), 0) : 0;
+  const carbsLeft = hasTargets ? Math.max(Math.round(targets.carbs - consumed.carbs), 0) : 0;
+  const fatLeft = hasTargets ? Math.max(Math.round(targets.fat - consumed.fat), 0) : 0;
+  const proteinProg =
+    hasTargets && targets.protein > 0 ? Math.min(consumed.protein / targets.protein, 1) : 0;
+  const carbsProg =
+    hasTargets && targets.carbs > 0 ? Math.min(consumed.carbs / targets.carbs, 1) : 0;
+  const fatProg = hasTargets && targets.fat > 0 ? Math.min(consumed.fat / targets.fat, 1) : 0;
 
   const mealsByType = (data?.meals ?? []).reduce<Record<string, DashboardMeal[]>>((acc, m) => {
     const type = m.mealType || 'snack';
@@ -731,7 +736,7 @@ export function HomeScreen() {
 
   // Health score: calorie adherence (40 pts) + protein adherence (35 pts) + hydration (25 pts)
   const healthScore = (() => {
-    if (!data?.targets || targets.calories === 0) return null;
+    if (!hasTargets || !targets || targets.calories === 0) return null;
     const calRatio = consumed.calories > 0 ? consumed.calories / targets.calories : 0;
     const calScore =
       calRatio === 0
@@ -829,19 +834,21 @@ export function HomeScreen() {
 
                   // Determine ring color based on calorie proximity to goal
                   const dayCals = weekHistory.get(key);
-                  const calTarget = weekCalorieTarget ?? targets.calories;
+                  const calTarget = weekCalorieTarget ?? targets?.calories ?? null;
                   let ringColor: string | null = null;
                   let dayHasMeals = false;
 
                   if (!isFuture && dayCals !== undefined && dayCals > 0) {
                     dayHasMeals = true;
-                    const diff = Math.abs(dayCals - calTarget);
-                    if (diff <= 200) {
-                      ringColor = '#22c55e'; // green
-                    } else if (diff <= 500) {
-                      ringColor = '#eab308'; // yellow
-                    } else {
-                      ringColor = '#ef4444'; // red
+                    if (calTarget !== null) {
+                      const diff = Math.abs(dayCals - calTarget);
+                      if (diff <= 200) {
+                        ringColor = '#22c55e'; // green
+                      } else if (diff <= 500) {
+                        ringColor = '#eab308'; // yellow
+                      } else {
+                        ringColor = '#ef4444'; // red
+                      }
                     }
                   }
 
@@ -932,19 +939,29 @@ export function HomeScreen() {
                         <Text className="text-5xl font-sans-bold text-text leading-none">
                           {consumed.calories}
                         </Text>
-                        <Text className="text-2xl font-sans-medium text-text-tertiary leading-none">
-                          {' '}
-                          /{targets.calories}
-                        </Text>
+                        {hasTargets && (
+                          <Text className="text-2xl font-sans-medium text-text-tertiary leading-none">
+                            {' '}
+                            /{targets.calories}
+                          </Text>
+                        )}
                       </View>
-                    ) : (
+                    ) : hasTargets ? (
                       <Text className="text-5xl font-sans-bold text-text leading-none">
                         {remaining}
                       </Text>
+                    ) : (
+                      <Text className="text-5xl font-sans-bold text-text leading-none">
+                        {consumed.calories}
+                      </Text>
                     )}
                     <Text className="text-sm text-text-tertiary font-sans-medium mt-1.5">
-                      {showEaten ? t('dashboard.caloriesEaten') : t('dashboard.caloriesLeft')}{' '}
-                      &#x25C7;
+                      {!hasTargets
+                        ? t('dashboard.caloriesEaten')
+                        : showEaten
+                          ? t('dashboard.caloriesEaten')
+                          : t('dashboard.caloriesLeft')}{' '}
+                      {hasTargets && '◇'}
                     </Text>
                     <View className="flex-row items-center gap-2 mt-2.5">
                       <View
@@ -979,7 +996,7 @@ export function HomeScreen() {
                   label={t('dashboard.protein')}
                   leftAmount={proteinLeft}
                   eatenAmount={Math.round(consumed.protein)}
-                  targetAmount={Math.round(targets.protein)}
+                  targetAmount={hasTargets ? Math.round(targets.protein) : 0}
                   unit="g"
                   progress={proteinProg}
                   color="#f97316"
@@ -991,7 +1008,7 @@ export function HomeScreen() {
                   label={t('dashboard.carbs')}
                   leftAmount={carbsLeft}
                   eatenAmount={Math.round(consumed.carbs)}
-                  targetAmount={Math.round(targets.carbs)}
+                  targetAmount={hasTargets ? Math.round(targets.carbs) : 0}
                   unit="g"
                   progress={carbsProg}
                   color="#f59e0b"
@@ -1003,7 +1020,7 @@ export function HomeScreen() {
                   label={t('dashboard.fat')}
                   leftAmount={fatLeft}
                   eatenAmount={Math.round(consumed.fat)}
-                  targetAmount={Math.round(targets.fat)}
+                  targetAmount={hasTargets ? Math.round(targets.fat) : 0}
                   unit="g"
                   progress={fatProg}
                   color="#3b82f6"

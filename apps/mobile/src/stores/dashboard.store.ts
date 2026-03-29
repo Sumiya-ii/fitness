@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import { toLocalDateKey } from '@coach/shared';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../api';
 import { getDeviceTimezone } from '../utils/timezone';
+
+const DASHBOARD_CACHE_KEY = 'dashboard_last';
+
+async function cacheDashboard(data: DashboardData): Promise<void> {
+  await AsyncStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data));
+}
 
 export interface DashboardMealItem {
   id: string;
@@ -57,9 +64,10 @@ interface DashboardState {
   isLoading: boolean;
   error: string | null;
   fetchDashboard: (date?: string) => Promise<void>;
+  loadCachedDashboard: () => Promise<void>;
 }
 
-export const useDashboardStore = create<DashboardState>((set) => ({
+export const useDashboardStore = create<DashboardState>((set, get) => ({
   data: null,
   isLoading: false,
   error: null,
@@ -73,12 +81,31 @@ export const useDashboardStore = create<DashboardState>((set) => ({
         `/dashboard?date=${dateStr}&tz=${encodeURIComponent(tz)}`,
       );
       set({ data: res.data, isLoading: false, error: null });
+      // Cache successful response for resilience across restarts
+      cacheDashboard(res.data).catch(() => undefined);
     } catch (e) {
+      // Keep previous data on error (stale-while-revalidate)
+      const prev = get().data;
       set({
-        data: null,
+        data: prev,
         isLoading: false,
         error: e instanceof Error ? e.message : 'Failed to load dashboard',
       });
+    }
+  },
+
+  loadCachedDashboard: async () => {
+    try {
+      const cached = await AsyncStorage.getItem(DASHBOARD_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached) as DashboardData;
+        const current = get().data;
+        if (!current) {
+          set({ data: parsed });
+        }
+      }
+    } catch {
+      // Cache miss is fine
     }
   },
 }));

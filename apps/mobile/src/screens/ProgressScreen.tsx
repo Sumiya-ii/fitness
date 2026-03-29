@@ -318,8 +318,8 @@ function CalorieBarChart({
   const barW = Math.max(4, (chartWidth - gap * (count - 1)) / count);
 
   const allEmpty = points.every((p) => !p.hasData);
-  // When no data exists, use goal (or 2000 kcal default) as the reference scale
-  const ghostBase = targetCalories ?? 2000;
+  // When no data exists, use goal (or 1500 kcal baseline) as the reference scale
+  const ghostBase = targetCalories ?? 1500;
   const maxVal = allEmpty
     ? ghostBase * 1.05
     : Math.max(...points.map((p) => p.calories), targetCalories ?? 0, 500);
