@@ -9,8 +9,10 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter as BullBoardExpressAdapter } from '@bull-board/express';
 import { Queue } from 'bullmq';
 import { Request, Response, NextFunction } from 'express';
+import { createAdminDashboardRouter } from './admin/admin-dashboard';
 
 const BULL_BOARD_PATH = '/admin/queues';
+const ADMIN_DASHBOARD_PATH = '/admin/dashboard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -54,6 +56,10 @@ async function bootstrap() {
 
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.use(BULL_BOARD_PATH, basicAuth, boardAdapter.getRouter());
+
+  // ── Compact admin dashboard ──────────────────────────────────────────────
+  const dashboardRouter = createAdminDashboardRouter(config.redisUrl);
+  expressApp.use(ADMIN_DASHBOARD_PATH, basicAuth, dashboardRouter);
   // ─────────────────────────────────────────────────────────────────────────
 
   if (!config.isProduction) {
