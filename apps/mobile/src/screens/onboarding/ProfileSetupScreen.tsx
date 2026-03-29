@@ -8,8 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import type { Gender, ActivityLevel } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
-import { useSettingsStore } from '../../stores/settings.store';
-import { inputToKg, inputToCm, weightUnit, heightUnit } from '../../utils/units';
+import { inputToKg, inputToCm } from '../../utils/units';
 import type { OnboardingStackParamList } from '../../navigation/types';
 
 const ACTIVITY_LEVELS: { id: ActivityLevel; label: string }[] = [
@@ -30,7 +29,6 @@ export function ProfileSetupScreen({ navigation }: Props) {
   const setHeightCmValue = useProfileStore((s) => s.setHeightCm);
   const setWeightKgValue = useProfileStore((s) => s.setWeightKg);
   const setActivityLevelValue = useProfileStore((s) => s.setActivityLevel);
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
 
   const initProfile = useProfileStore.getState();
   const [gender, setGender] = useState<Gender | null>(initProfile.gender ?? null);
@@ -58,8 +56,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
 
     setGenderValue(gender);
     setBirthDate(dob);
-    setHeightCmValue(unitSystem === 'imperial' ? inputToCm(h, unitSystem) : h);
-    setWeightKgValue(inputToKg(w, unitSystem));
+    setHeightCmValue(inputToCm(h));
+    setWeightKgValue(inputToKg(w));
     setActivityLevelValue(activityLevel);
     navigation.navigate('TargetReview');
   };
@@ -143,8 +141,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
         <View className="flex-row gap-4 mb-4">
           <View className="flex-1">
             <Input
-              label={`Height (${heightUnit(unitSystem)})`}
-              placeholder={unitSystem === 'imperial' ? '5\'8"' : '170'}
+              label="Height (cm)"
+              placeholder="170"
               value={heightCm}
               onChangeText={setHeightCm}
               keyboardType="numeric"
@@ -152,8 +150,8 @@ export function ProfileSetupScreen({ navigation }: Props) {
           </View>
           <View className="flex-1">
             <Input
-              label={`Weight (${weightUnit(unitSystem)})`}
-              placeholder={unitSystem === 'imperial' ? '154' : '70'}
+              label="Weight (kg)"
+              placeholder="70"
               value={weightKg}
               onChangeText={setWeightKg}
               keyboardType="decimal-pad"

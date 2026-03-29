@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BackButton } from '../components/ui';
-import { useSettingsStore } from '../stores/settings.store';
 import { useThemeStore, type ThemeMode } from '../stores/theme.store';
 import { api } from '../api';
 import { useLocale, type Locale } from '../i18n';
@@ -14,7 +13,6 @@ import { useColors } from '../theme';
 
 interface ProfileData {
   locale: string;
-  unitSystem: string;
 }
 
 function Pill({
@@ -90,8 +88,6 @@ export function AppSettingsScreen() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const themeMode = useThemeStore((s) => s.mode);
   const setThemeMode = useThemeStore((s) => s.setMode);
-  const setUnitSystem = useSettingsStore((s) => s.setUnitSystem);
-  const currentUnits = useSettingsStore((s) => s.unitSystem);
 
   useFocusEffect(
     useCallback(() => {
@@ -109,13 +105,6 @@ export function AppSettingsScreen() {
       setProfile((p) => (p ? { ...p, locale } : p));
     } catch {
       /* keep local */
-    }
-  };
-
-  const handleUnitsSelect = async (unitSystem: string) => {
-    if (unitSystem === 'metric' || unitSystem === 'imperial') {
-      await setUnitSystem(unitSystem);
-      setProfile((p) => (p ? { ...p, unitSystem } : p));
     }
   };
 
@@ -144,20 +133,6 @@ export function AppSettingsScreen() {
                   ]}
                   value={currentLang}
                   onChange={handleLanguageSelect}
-                />
-              </SettingRow>
-
-              <Divider />
-
-              {/* Units */}
-              <SettingRow icon="resize-outline" label={t('settings.units')}>
-                <Pill
-                  options={[
-                    { label: t('settings.metric'), value: 'metric' },
-                    { label: t('settings.imperial'), value: 'imperial' },
-                  ]}
-                  value={currentUnits}
-                  onChange={handleUnitsSelect}
                 />
               </SettingRow>
 

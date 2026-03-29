@@ -16,7 +16,6 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BackButton, Button, SkeletonLoader } from '../components/ui';
-import { useSettingsStore } from '../stores/settings.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
@@ -25,7 +24,6 @@ const STEP_GOAL_KEY = 'daily_step_goal';
 
 interface ProfileData {
   displayName: string | null;
-  unitSystem: string;
   gender: string | null;
   birthDate: string | null;
   heightCm: number | null;
@@ -33,39 +31,15 @@ interface ProfileData {
   goalWeightKg: number | null;
 }
 
-/* -- Unit conversion helpers -- */
+/* -- Format helpers -- */
 
-function kgToLbs(kg: number): number {
-  return Math.round(kg * 2.20462 * 10) / 10;
-}
-
-function lbsToKg(lbs: number): number {
-  return Math.round((lbs / 2.20462) * 10) / 10;
-}
-
-function cmToFtIn(cm: number): { ft: number; inches: number } {
-  const totalInches = cm / 2.54;
-  const ft = Math.floor(totalInches / 12);
-  const inches = Math.round(totalInches % 12);
-  return { ft, inches };
-}
-
-function ftInToCm(ft: number, inches: number): number {
-  return Math.round((ft * 12 + inches) * 2.54 * 10) / 10;
-}
-
-function formatWeight(kg: number | null, imperial: boolean): string {
+function formatWeight(kg: number | null): string {
   if (kg === null) return '--';
-  if (imperial) return `${kgToLbs(kg)} lbs`;
   return `${kg} kg`;
 }
 
-function formatHeight(cm: number | null, imperial: boolean): string {
+function formatHeight(cm: number | null): string {
   if (cm === null) return '--';
-  if (imperial) {
-    const { ft, inches } = cmToFtIn(cm);
-    return `${ft} ft ${inches} in`;
-  }
   return `${cm} cm`;
 }
 
@@ -131,8 +105,6 @@ export function PersonalDetailsScreen() {
   const c = useColors();
   const { t } = useLocale();
   const insets = useSafeAreaInsets();
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
-  const imperial = unitSystem === 'imperial';
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stepGoal, setStepGoal] = useState<number>(10000);
@@ -140,9 +112,7 @@ export function PersonalDetailsScreen() {
   const [editField, setEditField] = useState<EditField>(null);
   const [saving, setSaving] = useState(false);
 
-  // Edit state
   const [editValue, setEditValue] = useState('');
-  const [editValue2, setEditValue2] = useState(''); // for ft/in second field
 
   useEffect(() => {
     AsyncStorage.getItem(STEP_GOAL_KEY).then((v) => {
@@ -168,27 +138,13 @@ export function PersonalDetailsScreen() {
 
     switch (field) {
       case 'weight':
-        if (imperial && profile?.weightKg) {
-          setEditValue(String(kgToLbs(profile.weightKg)));
-        } else {
-          setEditValue(profile?.weightKg ? String(profile.weightKg) : '');
-        }
+        setEditValue(profile?.weightKg ? String(profile.weightKg) : '');
         break;
       case 'goalWeight':
-        if (imperial && profile?.goalWeightKg) {
-          setEditValue(String(kgToLbs(profile.goalWeightKg)));
-        } else {
-          setEditValue(profile?.goalWeightKg ? String(profile.goalWeightKg) : '');
-        }
+        setEditValue(profile?.goalWeightKg ? String(profile.goalWeightKg) : '');
         break;
       case 'height':
-        if (imperial && profile?.heightCm) {
-          const { ft, inches } = cmToFtIn(profile.heightCm);
-          setEditValue(String(ft));
-          setEditValue2(String(inches));
-        } else {
-          setEditValue(profile?.heightCm ? String(profile.heightCm) : '');
-        }
+        setEditValue(profile?.heightCm ? String(profile.heightCm) : '');
         break;
       case 'birthDate':
         setEditValue(profile?.birthDate ? profile.birthDate.replace(/-/g, '.') : '');
@@ -226,22 +182,15 @@ export function PersonalDetailsScreen() {
     switch (editField) {
       case 'weight':
         if (isNaN(num) || num <= 0) return;
-        saveProfileField({ weightKg: imperial ? lbsToKg(num) : num });
+        saveProfileField({ weightKg: num });
         break;
       case 'goalWeight':
         if (isNaN(num) || num <= 0) return;
-        saveProfileField({ goalWeightKg: imperial ? lbsToKg(num) : num });
+        saveProfileField({ goalWeightKg: num });
         break;
       case 'height':
-        if (imperial) {
-          const ft = parseInt(editValue, 10);
-          const inches = parseInt(editValue2, 10) || 0;
-          if (isNaN(ft) || ft <= 0) return;
-          saveProfileField({ heightCm: ftInToCm(ft, inches) });
-        } else {
-          if (isNaN(num) || num <= 0) return;
-          saveProfileField({ heightCm: num });
-        }
+        if (isNaN(num) || num <= 0) return;
+        saveProfileField({ heightCm: num });
         break;
       case 'birthDate': {
         // Accept YYYY.MM.DD or YYYY-MM-DD
@@ -294,7 +243,7 @@ export function PersonalDetailsScreen() {
       case 'height':
         return 'cm';
       default:
-        return imperial ? 'lbs' : 'kg';
+        return 'kg';
     }
   };
 
@@ -359,7 +308,7 @@ export function PersonalDetailsScreen() {
                     {t('personalDetails.goalWeight')}
                   </Text>
                   <Text className="text-xl leading-7 font-sans-bold text-text mt-1">
-                    {formatWeight(profile?.goalWeightKg ?? null, imperial)}
+                    {formatWeight(profile?.goalWeightKg ?? null)}
                   </Text>
                 </View>
                 <Button
@@ -381,12 +330,12 @@ export function PersonalDetailsScreen() {
               <View className="bg-surface-card rounded-2xl px-4 border border-surface-border">
                 <DetailRow
                   label={t('personalDetails.currentWeight')}
-                  value={formatWeight(profile?.weightKg ?? null, imperial)}
+                  value={formatWeight(profile?.weightKg ?? null)}
                   onEdit={() => startEdit('weight')}
                 />
                 <DetailRow
                   label={t('personalDetails.height')}
-                  value={formatHeight(profile?.heightCm ?? null, imperial)}
+                  value={formatHeight(profile?.heightCm ?? null)}
                   onEdit={() => startEdit('height')}
                 />
                 <DetailRow
@@ -419,63 +368,29 @@ export function PersonalDetailsScreen() {
                     {getEditorLabel()}
                   </Text>
 
-                  {editField === 'height' && imperial ? (
-                    <View className="flex-row items-center gap-3">
-                      <View className="flex-1 flex-row items-center">
-                        <TextInput
-                          className="flex-1 text-base leading-6 font-sans-medium text-text bg-surface-secondary rounded-xl px-4 py-3"
-                          value={editValue}
-                          onChangeText={setEditValue}
-                          keyboardType="number-pad"
-                          autoFocus
-                          placeholder="ft"
-                          placeholderTextColor={c.textTertiary}
-                          accessibilityLabel="Feet"
-                        />
-                        <Text className="font-sans-medium ml-2" style={{ color: c.textTertiary }}>
-                          ft
-                        </Text>
-                      </View>
-                      <View className="flex-1 flex-row items-center">
-                        <TextInput
-                          className="flex-1 text-base leading-6 font-sans-medium text-text bg-surface-secondary rounded-xl px-4 py-3"
-                          value={editValue2}
-                          onChangeText={setEditValue2}
-                          keyboardType="number-pad"
-                          placeholder="in"
-                          placeholderTextColor={c.textTertiary}
-                          accessibilityLabel="Inches"
-                        />
-                        <Text className="font-sans-medium ml-2" style={{ color: c.textTertiary }}>
-                          in
-                        </Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <View className="flex-row items-center">
-                      <TextInput
-                        className="flex-1 text-base leading-6 font-sans-medium text-text bg-surface-secondary rounded-xl px-4 py-3"
-                        value={editValue}
-                        onChangeText={setEditValue}
-                        keyboardType={
-                          editField === 'stepGoal'
-                            ? 'number-pad'
-                            : editField === 'birthDate'
-                              ? 'numbers-and-punctuation'
-                              : 'decimal-pad'
-                        }
-                        autoFocus
-                        placeholder={editField === 'birthDate' ? 'YYYY.MM.DD' : undefined}
-                        placeholderTextColor={c.textTertiary}
-                        accessibilityLabel={getEditorLabel()}
-                      />
-                      {editField !== 'birthDate' ? (
-                        <Text className="font-sans-medium ml-3" style={{ color: c.textTertiary }}>
-                          {getUnitLabel()}
-                        </Text>
-                      ) : null}
-                    </View>
-                  )}
+                  <View className="flex-row items-center">
+                    <TextInput
+                      className="flex-1 text-base leading-6 font-sans-medium text-text bg-surface-secondary rounded-xl px-4 py-3"
+                      value={editValue}
+                      onChangeText={setEditValue}
+                      keyboardType={
+                        editField === 'stepGoal'
+                          ? 'number-pad'
+                          : editField === 'birthDate'
+                            ? 'numbers-and-punctuation'
+                            : 'decimal-pad'
+                      }
+                      autoFocus
+                      placeholder={editField === 'birthDate' ? 'YYYY.MM.DD' : undefined}
+                      placeholderTextColor={c.textTertiary}
+                      accessibilityLabel={getEditorLabel()}
+                    />
+                    {editField !== 'birthDate' ? (
+                      <Text className="font-sans-medium ml-3" style={{ color: c.textTertiary }}>
+                        {getUnitLabel()}
+                      </Text>
+                    ) : null}
+                  </View>
 
                   <View className="flex-row gap-3 mt-4">
                     <View className="flex-1">

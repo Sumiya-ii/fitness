@@ -5,8 +5,8 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 export const DEFAULT_LOCALE: SupportedLocale = 'mn';
 
-export const UNIT_SYSTEMS = ['metric', 'imperial'] as const;
-export type UnitSystem = (typeof UNIT_SYSTEMS)[number];
+export const UNIT_SYSTEMS = ['metric'] as const;
+export type UnitSystem = 'metric';
 
 export const DEFAULT_UNIT_SYSTEM: UnitSystem = 'metric';
 

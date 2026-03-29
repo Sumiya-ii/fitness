@@ -25,15 +25,12 @@ import type { DayHistory } from '../api/dashboard';
 import { mealTimingApi, type MealTimingInsights } from '../api/meal-timing';
 import { useBodyCompositionStore } from '../stores/body-composition.store';
 import { useProfileStore } from '../stores/profile.store';
-import { useSettingsStore } from '../stores/settings.store';
 import { useWorkoutStore } from '../stores/workout.store';
 import {
   displayWeight,
   inputToKg,
-  weightUnit,
   displayMeasurement,
   inputToCm,
-  measurementUnit,
   weightRange,
 } from '../utils/units';
 
@@ -1054,7 +1051,6 @@ function WeightChart({
   trendHint: string;
 }) {
   const c = useColors();
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
   const chartWidth = viewportWidth - 64;
   const height = 160;
   const padding = { top: 20, right: 16, bottom: 30, left: 48 };
@@ -1073,7 +1069,7 @@ function WeightChart({
   const sorted = [...data].sort(
     (a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime(),
   );
-  const weights = sorted.map((d) => displayWeight(d.weightKg, unitSystem));
+  const weights = sorted.map((d) => displayWeight(d.weightKg));
   const minW = Math.min(...weights) - 0.5;
   const maxW = Math.max(...weights) + 0.5;
   const range = maxW - minW || 1;
@@ -1081,7 +1077,7 @@ function WeightChart({
   const chartH = height - padding.top - padding.bottom;
 
   const points = sorted.map((d, i) => {
-    const w = displayWeight(d.weightKg, unitSystem);
+    const w = displayWeight(d.weightKg);
     const x = padding.left + (i / (sorted.length - 1)) * chartW;
     const y = padding.top + chartH - ((w - minW) / range) * chartH;
     return { x, y, weight: w };
@@ -1210,7 +1206,6 @@ function useBfCategoryLabel(category: string): string {
 function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => void }) {
   const c = useColors();
   const { t } = useLocale();
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
   const { latest, history, fetchLatest, fetchHistory } = useBodyCompositionStore();
 
   useEffect(() => {
@@ -1325,7 +1320,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
               {t('progress.fatMass')}
             </Text>
             <Text className="text-sm font-sans-bold text-text mt-0.5">
-              {displayWeight(latest.fatMassKg, unitSystem)} {weightUnit(unitSystem)}
+              {displayWeight(latest.fatMassKg)} kg
             </Text>
           </View>
           <View className="flex-1 items-center rounded-xl bg-surface-secondary p-2.5">
@@ -1333,7 +1328,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
               {t('progress.leanMass')}
             </Text>
             <Text className="text-sm font-sans-bold text-text mt-0.5">
-              {displayWeight(latest.leanMassKg, unitSystem)} {weightUnit(unitSystem)}
+              {displayWeight(latest.leanMassKg)} kg
             </Text>
           </View>
         </View>
@@ -1466,10 +1461,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
   const c = useColors();
   const { t } = useLocale();
   const _navigation = useNavigation();
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
-  const wUnit = weightUnit(unitSystem);
-  const mUnit = measurementUnit(unitSystem);
-  const wRange = weightRange(unitSystem);
+  const wRange = weightRange();
   const [period, setPeriod] = useState<WeightPeriod>('week');
   const [sheetVisible, setSheetVisible] = useState(false);
   const [measureSheetVisible, setMeasureSheetVisible] = useState(false);
@@ -1502,7 +1494,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
   const handleLogWeight = async () => {
     const parsed = parseFloat(weightInput.replace(',', '.'));
     if (isNaN(parsed) || parsed < wRange.min || parsed > wRange.max) return;
-    const w = inputToKg(parsed, unitSystem);
+    const w = inputToKg(parsed);
     setSaving(true);
     try {
       await logWeight(w, dateInput);
@@ -1523,9 +1515,9 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
     if (isNaN(neckRaw) || neckRaw <= 0) return;
     if (isFemale && (hipRaw === undefined || isNaN(hipRaw) || hipRaw <= 0)) return;
 
-    const waist = inputToCm(waistRaw, unitSystem);
-    const neck = inputToCm(neckRaw, unitSystem);
-    const hip = hipRaw !== undefined ? inputToCm(hipRaw, unitSystem) : undefined;
+    const waist = inputToCm(waistRaw);
+    const neck = inputToCm(neckRaw);
+    const hip = hipRaw !== undefined ? inputToCm(hipRaw) : undefined;
 
     setMeasureSaving(true);
     setMeasureError(null);
@@ -1568,9 +1560,9 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
                 </Text>
                 <View className="flex-row items-baseline">
                   <Text className="text-5xl font-sans-bold text-text">
-                    {displayWeight(currentWeight, unitSystem)}
+                    {displayWeight(currentWeight)}
                   </Text>
-                  <Text className="text-xl font-sans-medium text-text-secondary ml-1">{wUnit}</Text>
+                  <Text className="text-xl font-sans-medium text-text-secondary ml-1">kg</Text>
                 </View>
                 <View className="flex-row gap-3 mt-3">
                   {weeklyDelta !== null && weeklyDelta !== undefined && (
@@ -1610,14 +1602,14 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
                         }}
                       >
                         {weeklyDelta > 0 ? '+' : weeklyDelta < 0 ? '-' : ''}
-                        {displayWeight(Math.abs(weeklyDelta), unitSystem)} {wUnit}
+                        {displayWeight(Math.abs(weeklyDelta))} kg
                       </Text>
                     </View>
                   )}
                   {weeklyAvg !== null && weeklyAvg !== undefined && (
                     <View className="flex-row items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1.5">
                       <Text className="text-sm font-sans-medium text-text-secondary">
-                        Avg: {displayWeight(weeklyAvg, unitSystem)} {wUnit}
+                        Avg: {displayWeight(weeklyAvg)} kg
                       </Text>
                     </View>
                   )}
@@ -1690,7 +1682,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
             <Ionicons name="arrow-down-circle-outline" size={22} color={c.primary} />
             <Text className="text-lg font-sans-bold text-text mt-2">
-              {displayWeight(Math.min(...history.map((h) => h.weightKg)), unitSystem)}
+              {displayWeight(Math.min(...history.map((h) => h.weightKg)))}
             </Text>
             <Text className="text-xs text-text-secondary font-sans-medium">
               {t('progress.lowest')}
@@ -1699,7 +1691,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-4 items-center">
             <Ionicons name="arrow-up-circle-outline" size={22} color={c.primaryMuted} />
             <Text className="text-lg font-sans-bold text-text mt-2">
-              {displayWeight(Math.max(...history.map((h) => h.weightKg)), unitSystem)}
+              {displayWeight(Math.max(...history.map((h) => h.weightKg)))}
             </Text>
             <Text className="text-xs text-text-secondary font-sans-medium">
               {t('progress.highest')}
@@ -1753,7 +1745,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
                         </Badge>
                       )}
                       <Text className="font-sans-bold text-text text-base">
-                        {displayWeight(entry.weightKg, unitSystem)} {wUnit}
+                        {displayWeight(entry.weightKg)} kg
                       </Text>
                     </View>
                   </View>
@@ -1780,9 +1772,9 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
         onLogMeasurements={() => {
           // Pre-fill with last values for easier re-entry
           if (latest) {
-            setWaistInput(String(displayMeasurement(latest.waistCm, unitSystem)));
-            setNeckInput(String(displayMeasurement(latest.neckCm, unitSystem)));
-            if (latest.hipCm) setHipInput(String(displayMeasurement(latest.hipCm, unitSystem)));
+            setWaistInput(String(displayMeasurement(latest.waistCm)));
+            setNeckInput(String(displayMeasurement(latest.neckCm)));
+            if (latest.hipCm) setHipInput(String(displayMeasurement(latest.hipCm)));
           }
           setMeasureSheetVisible(true);
         }}
@@ -1807,9 +1799,9 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
         <Pressable
           onPress={() => {
             if (latest) {
-              setWaistInput(String(displayMeasurement(latest.waistCm, unitSystem)));
-              setNeckInput(String(displayMeasurement(latest.neckCm, unitSystem)));
-              if (latest.hipCm) setHipInput(String(displayMeasurement(latest.hipCm, unitSystem)));
+              setWaistInput(String(displayMeasurement(latest.waistCm)));
+              setNeckInput(String(displayMeasurement(latest.neckCm)));
+              if (latest.hipCm) setHipInput(String(displayMeasurement(latest.hipCm)));
             }
             setMeasureSheetVisible(true);
           }}
@@ -1830,7 +1822,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           <Text className="mb-1 text-lg font-sans-bold text-text">{t('progress.logWeight')}</Text>
           <Text className="mb-5 text-sm text-text-secondary">{t('progress.logWeightDesc')}</Text>
           <Input
-            label={`${t('progress.currentWeight')} (${wUnit})`}
+            label={`${t('progress.currentWeight')} (kg)`}
             placeholder={wRange.placeholder}
             value={weightInput}
             onChangeText={setWeightInput}
@@ -1930,16 +1922,16 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           )}
 
           <Input
-            label={`${t('progress.waistCm').replace(/\(.*\)/, `(${mUnit})`)}`}
-            placeholder={unitSystem === 'imperial' ? 'e.g. 32' : t('progress.waistPlaceholder')}
+            label={`${t('progress.waistCm').replace(/\(.*\)/, '(cm)')}`}
+            placeholder={t('progress.waistPlaceholder')}
             value={waistInput}
             onChangeText={setWaistInput}
             keyboardType="decimal-pad"
             containerClassName="mb-4"
           />
           <Input
-            label={`${t('progress.neckCm').replace(/\(.*\)/, `(${mUnit})`)}`}
-            placeholder={unitSystem === 'imperial' ? 'e.g. 15' : t('progress.neckPlaceholder')}
+            label={`${t('progress.neckCm').replace(/\(.*\)/, '(cm)')}`}
+            placeholder={t('progress.neckPlaceholder')}
             value={neckInput}
             onChangeText={setNeckInput}
             keyboardType="decimal-pad"
@@ -1947,8 +1939,8 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           />
           {isFemale && (
             <Input
-              label={`${t('progress.hipCm').replace(/\(.*\)/, `(${mUnit})`)}`}
-              placeholder={unitSystem === 'imperial' ? 'e.g. 37' : t('progress.hipPlaceholder')}
+              label={`${t('progress.hipCm').replace(/\(.*\)/, '(cm)')}`}
+              placeholder={t('progress.hipPlaceholder')}
               value={hipInput}
               onChangeText={setHipInput}
               keyboardType="decimal-pad"

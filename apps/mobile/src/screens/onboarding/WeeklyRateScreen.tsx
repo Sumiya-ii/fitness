@@ -5,8 +5,7 @@ import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
-import { useSettingsStore } from '../../stores/settings.store';
-import { displayWeeklyRate, weeklyRateUnit } from '../../utils/units';
+import { displayWeeklyRate } from '../../utils/units';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
@@ -38,12 +37,10 @@ export function WeeklyRateScreen({ navigation }: Props) {
   const goalType = useProfileStore((s) => s.goalType);
   const stored = useProfileStore((s) => s.weeklyRateKg);
   const setWeeklyRateKg = useProfileStore((s) => s.setWeeklyRateKg);
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
   const c = useColors();
   const { t } = useLocale();
   const [selected, setSelected] = useState<number | null>(stored);
 
-  const rateLabel = weeklyRateUnit(unitSystem);
   const rates = goalType === 'gain' ? GAIN_RATES : LOSE_RATES;
   const isMaintain = goalType === 'maintain';
 
@@ -106,7 +103,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
           {rates.map((rate) => {
             const isSelected = selected === rate.value;
             const isRecommended = rate.value === 0.5;
-            const label = `${displayWeeklyRate(rate.value, unitSystem)} ${rateLabel}`;
+            const label = `${displayWeeklyRate(rate.value)} kg/week`;
 
             return (
               <Pressable

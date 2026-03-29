@@ -3,8 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
-import { useSettingsStore } from '../../stores/settings.store';
-import { displayWeight, displayWeeklyRate, weightUnit, weeklyRateUnit } from '../../utils/units';
+import { displayWeight, displayWeeklyRate } from '../../utils/units';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
@@ -21,7 +20,6 @@ export function MotivationScreen({ navigation }: Props) {
   const c = useColors();
   const { t } = useLocale();
 
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
   const diff = weightKg && goalWeightKg ? Math.abs(weightKg - goalWeightKg) : null;
   const weeks = diff && weeklyRateKg && weeklyRateKg > 0 ? Math.ceil(diff / weeklyRateKg) : null;
 
@@ -74,9 +72,8 @@ export function MotivationScreen({ navigation }: Props) {
                 {t('onboarding.motivationWeeks').replace('{{weeks}}', weeks.toString())}
               </Text>
               <Text className="text-xs text-text-tertiary text-center mt-1">
-                {diff ? displayWeight(diff, unitSystem) : ''} {weightUnit(unitSystem)} {'\u00b7'}{' '}
-                {weeklyRateKg ? displayWeeklyRate(weeklyRateKg, unitSystem) : ''}{' '}
-                {weeklyRateUnit(unitSystem)}
+                {diff ? displayWeight(diff) : ''} kg {'\u00b7'}{' '}
+                {weeklyRateKg ? displayWeeklyRate(weeklyRateKg) : ''} kg/week
               </Text>
             </View>
           )}
