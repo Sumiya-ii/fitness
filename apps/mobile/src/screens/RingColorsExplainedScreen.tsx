@@ -3,17 +3,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle as SvgCircle } from 'react-native-svg';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
-
-const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** Ring icon used in the legend rows */
 function RingIcon({ color, dashed }: { color: string; dashed?: boolean }) {
   const size = 44;
   const strokeWidth = 2.5;
   const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
 
   return (
     <Svg width={size} height={size}>
@@ -34,11 +33,10 @@ function RingIcon({ color, dashed }: { color: string; dashed?: boolean }) {
 function CalendarPreview() {
   const c = useColors();
 
-  // Sample data matching the screenshot: Sun=red, Mon=dashed, Tue=green, Wed=today(selected), Thu-Sat=future
   const days = [
-    { label: 'Sun', num: 10, ring: '#ef4444' as string | null },
-    { label: 'Mon', num: 11, ring: null }, // dashed — no meals
-    { label: 'Tue', num: 12, ring: '#22c55e' },
+    { label: 'Sun', num: 10, ring: c.danger as string | null },
+    { label: 'Mon', num: 11, ring: null },
+    { label: 'Tue', num: 12, ring: c.success },
     { label: 'Wed', num: 13, ring: null, isToday: true },
     { label: 'Thu', num: 14, ring: null, isFuture: true },
     { label: 'Fri', num: 15, ring: null, isFuture: true },
@@ -46,24 +44,21 @@ function CalendarPreview() {
   ];
 
   return (
-    <View className="mx-6 rounded-3xl px-4 pt-4 pb-5" style={{ backgroundColor: c.card }}>
+    <View className="mx-6 rounded-3xl p-4 pb-5 bg-surface-card">
       {/* App header row */}
       <View className="flex-row items-center justify-between mb-4">
         <View className="flex-row items-center gap-2">
-          <Text style={{ fontSize: 16 }}>🍏</Text>
-          <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: c.text }}>Cal AI</Text>
+          <Text className="text-base">{'🍏'}</Text>
+          <Text className="text-lg font-sans-bold text-text">Cal AI</Text>
         </View>
-        <View
-          className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
-          style={{ backgroundColor: c.cardAlt }}
-        >
-          <Text style={{ fontSize: 13 }}>🔥</Text>
-          <Text style={{ fontFamily: 'Inter-Bold', fontSize: 13, color: c.text }}>15</Text>
+        <View className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5 bg-surface-secondary">
+          <Text className="text-sm">{'🔥'}</Text>
+          <Text className="text-sm font-sans-bold text-text">15</Text>
         </View>
       </View>
 
       {/* Week strip */}
-      <View style={{ flexDirection: 'row' }}>
+      <View className="flex-row">
         {days.map((day) => {
           const circleSize = 38;
           const isToday = day.isToday;
@@ -71,14 +66,9 @@ function CalendarPreview() {
           const hasRing = !!day.ring;
 
           return (
-            <View key={day.label} style={{ flex: 1, alignItems: 'center' }}>
+            <View key={day.label} className="flex-1 items-center">
               <Text
-                style={{
-                  fontSize: 11,
-                  fontFamily: 'Inter-Medium',
-                  color: isToday ? c.text : c.textTertiary,
-                  marginBottom: 6,
-                }}
+                className={`text-xs font-sans-medium mb-1.5 ${isToday ? 'text-text' : 'text-text-tertiary'}`}
               >
                 {day.label}
               </Text>
@@ -99,11 +89,8 @@ function CalendarPreview() {
                 }}
               >
                 <Text
-                  style={{
-                    fontSize: 14,
-                    fontFamily: isToday ? 'Inter-Bold' : 'Inter-Medium',
-                    color: isToday ? c.bg : hasRing ? c.text : c.textTertiary,
-                  }}
+                  className={`text-sm ${isToday ? 'font-sans-bold' : 'font-sans-medium'}`}
+                  style={{ color: isToday ? c.bg : hasRing ? c.text : c.textTertiary }}
                 >
                   {day.num}
                 </Text>
@@ -128,25 +115,17 @@ function LegendRow({
   description: string;
   dashed?: boolean;
 }) {
-  const c = useColors();
-
   return (
-    <View className="flex-row items-center px-6 mb-5">
+    <Animated.View
+      entering={FadeInDown.delay(dashed ? 300 : 0).duration(350)}
+      className="flex-row items-center px-6 mb-5"
+    >
       <RingIcon color={color} dashed={dashed} />
       <View className="ml-4 flex-1">
-        <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 16, color: c.text }}>{title}</Text>
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 14,
-            color: c.textTertiary,
-            marginTop: 2,
-          }}
-        >
-          {description}
-        </Text>
+        <Text className="text-base font-sans-semibold text-text leading-6">{title}</Text>
+        <Text className="text-sm text-text-tertiary font-sans mt-0.5 leading-5">{description}</Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -156,14 +135,18 @@ export function RingColorsExplainedScreen() {
   const { t } = useLocale();
 
   return (
-    <View className="flex-1" style={{ backgroundColor: c.bg }}>
+    <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Back button */}
-        <View className="px-4 pt-2 pb-2">
+        <View className="px-5 pt-2 pb-2">
           <Pressable
-            onPress={() => navigation.goBack()}
-            className="h-10 w-10 rounded-full items-center justify-center"
-            style={{ backgroundColor: c.card }}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.goBack();
+            }}
+            className="h-11 w-11 rounded-full items-center justify-center bg-surface-card"
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
           >
             <Ionicons name="arrow-back" size={20} color={c.text} />
           </Pressable>
@@ -174,49 +157,37 @@ export function RingColorsExplainedScreen() {
           contentContainerStyle={{ paddingBottom: 48 }}
         >
           {/* Title */}
-          <Text
-            style={{
-              fontFamily: 'Inter-Bold',
-              fontSize: 28,
-              color: c.text,
-              paddingHorizontal: 24,
-              marginBottom: 24,
-            }}
-          >
-            {t('ringColors.title')}
-          </Text>
+          <Animated.View entering={FadeInDown.duration(350)}>
+            <Text className="text-2xl font-sans-bold text-text px-6 mb-6 leading-8">
+              {t('ringColors.title')}
+            </Text>
+          </Animated.View>
 
           {/* Calendar preview card */}
-          <CalendarPreview />
+          <Animated.View entering={FadeInDown.delay(50).duration(350)}>
+            <CalendarPreview />
+          </Animated.View>
 
           {/* Description */}
-          <Text
-            style={{
-              fontFamily: 'Inter-Regular',
-              fontSize: 15,
-              color: c.textSecondary,
-              lineHeight: 22,
-              paddingHorizontal: 24,
-              marginTop: 24,
-              marginBottom: 28,
-            }}
-          >
-            {t('ringColors.description')}
-          </Text>
+          <Animated.View entering={FadeInDown.delay(100).duration(350)}>
+            <Text className="text-base text-text-secondary font-sans leading-6 px-6 mt-6 mb-7">
+              {t('ringColors.description')}
+            </Text>
+          </Animated.View>
 
           {/* Legend */}
           <LegendRow
-            color="#22c55e"
+            color={c.success}
             title={t('ringColors.greenTitle')}
             description={t('ringColors.greenDesc')}
           />
           <LegendRow
-            color="#eab308"
+            color={c.warning}
             title={t('ringColors.yellowTitle')}
             description={t('ringColors.yellowDesc')}
           />
           <LegendRow
-            color="#ef4444"
+            color={c.danger}
             title={t('ringColors.redTitle')}
             description={t('ringColors.redDesc')}
           />

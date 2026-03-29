@@ -19,6 +19,7 @@ import Animated, {
   Easing,
   FadeInDown,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { SkeletonLoader } from '../components/ui';
 import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
 import { useWaterStore } from '../stores/water.store';
@@ -27,7 +28,7 @@ import { useStreakStore } from '../stores/streak.store';
 import { useWorkoutStore } from '../stores/workout.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
-import { useColors, type ColorPalette } from '../theme';
+import { useColors } from '../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -231,6 +232,7 @@ interface MealSectionProps {
 
 function MealSection({ type, meals, typeLabel }: MealSectionProps) {
   const c = useColors();
+  const { t } = useLocale();
   const navigation = useNavigation();
   const totalCal = meals.reduce((s, m) => s + m.totalCalories, 0);
   const items = meals.flatMap((m) => m.items);
@@ -266,8 +268,10 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
             onPress={handleSaveAsTemplate}
             className="flex-row items-center gap-1 px-2 py-1"
           >
-            <Ionicons name="bookmark-outline" size={14} color="#38bdf8" />
-            <Text className="text-xs font-sans-medium text-[#38bdf8]">Save</Text>
+            <Ionicons name="bookmark-outline" size={14} color={c.primaryMuted} />
+            <Text className="text-xs font-sans-medium" style={{ color: c.primaryMuted }}>
+              {t('progressTab.save')}
+            </Text>
           </Pressable>
         )}
       </View>
@@ -386,7 +390,7 @@ function StreakCalendarModal({
               className="flex-1 rounded-3xl p-4 items-center"
               style={{ backgroundColor: c.card }}
             >
-              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: '#f97316' }}>
+              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: c.warning }}>
                 {currentStreak}
               </Text>
               <Text style={{ fontSize: 16 }}>🔥</Text>
@@ -445,10 +449,10 @@ function StreakCalendarModal({
                     width: `${weekConsistency}%`,
                     backgroundColor:
                       weekConsistency >= 80
-                        ? '#22c55e'
+                        ? c.success
                         : weekConsistency >= 50
-                          ? '#f59e0b'
-                          : '#ef4444',
+                          ? c.warning
+                          : c.danger,
                     borderRadius: 5,
                   }}
                 />
@@ -473,10 +477,10 @@ function StreakCalendarModal({
                     width: `${monthConsistency}%`,
                     backgroundColor:
                       monthConsistency >= 80
-                        ? '#22c55e'
+                        ? c.success
                         : monthConsistency >= 50
-                          ? '#f59e0b'
-                          : '#ef4444',
+                          ? c.warning
+                          : c.danger,
                     borderRadius: 5,
                   }}
                 />
@@ -508,7 +512,7 @@ function StreakCalendarModal({
                         width: 34,
                         height: 34,
                         borderRadius: 8,
-                        backgroundColor: day.logged ? '#22c55e' : '#2c2c2e',
+                        backgroundColor: day.logged ? c.success : c.cardAlt,
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
@@ -517,7 +521,7 @@ function StreakCalendarModal({
                         style={{
                           fontSize: 12,
                           fontFamily: 'Inter-SemiBold',
-                          color: day.logged ? '#ffffff' : '#52525b',
+                          color: day.logged ? c.onPrimary : c.textTertiary,
                         }}
                       >
                         {day.dayNum}
@@ -533,7 +537,7 @@ function StreakCalendarModal({
           <View className="flex-row items-center justify-center gap-5 mt-2">
             <View className="flex-row items-center gap-2">
               <View
-                style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: '#22c55e' }}
+                style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c.success }}
               />
               <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: c.textSecondary }}>
                 Logged
@@ -691,6 +695,7 @@ export function HomeScreen() {
   ]);
 
   const handleLogMeal = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     (navigation as { navigate: (s: string) => void }).navigate('Log');
   };
 
@@ -728,7 +733,7 @@ export function HomeScreen() {
   const waterProgress =
     effectiveWaterTarget > 0 ? Math.min(effectiveWaterConsumed / effectiveWaterTarget, 1) : 0;
   const waterCupsConsumed = effectiveWaterConsumed / CUP_ML;
-  const waterCupsTarget = Math.round(effectiveWaterTarget / CUP_ML);
+  const _waterCupsTarget = Math.round(effectiveWaterTarget / CUP_ML);
   const waterMlLabel =
     effectiveWaterConsumed >= 1000
       ? `${(effectiveWaterConsumed / 1000).toFixed(1)} L`
@@ -770,12 +775,12 @@ export function HomeScreen() {
 
   const healthColor =
     healthScore === null
-      ? '#71717a'
+      ? c.textTertiary
       : healthScore >= 75
-        ? '#22c55e'
+        ? c.success
         : healthScore >= 50
-          ? '#f59e0b'
-          : '#ef4444';
+          ? c.warning
+          : c.danger;
 
   const stepsProg = Math.min(steps / STEPS_GOAL, 1);
   const caloriesBurned = Math.round(steps * KCAL_PER_STEP);
@@ -843,11 +848,11 @@ export function HomeScreen() {
                     if (calTarget !== null) {
                       const diff = Math.abs(dayCals - calTarget);
                       if (diff <= 200) {
-                        ringColor = '#22c55e'; // green
+                        ringColor = c.success; // green
                       } else if (diff <= 500) {
-                        ringColor = '#eab308'; // yellow
+                        ringColor = c.warning; // yellow
                       } else {
-                        ringColor = '#ef4444'; // red
+                        ringColor = c.danger; // red
                       }
                     }
                   }
@@ -999,7 +1004,7 @@ export function HomeScreen() {
                   targetAmount={hasTargets ? Math.round(targets.protein) : 0}
                   unit="g"
                   progress={proteinProg}
-                  color="#f97316"
+                  color={c.warning}
                   icon="🍗"
                   showEaten={showEaten}
                   onToggle={() => setShowEaten((v) => !v)}
@@ -1011,7 +1016,7 @@ export function HomeScreen() {
                   targetAmount={hasTargets ? Math.round(targets.carbs) : 0}
                   unit="g"
                   progress={carbsProg}
-                  color="#f59e0b"
+                  color={c.warning}
                   icon="🌾"
                   showEaten={showEaten}
                   onToggle={() => setShowEaten((v) => !v)}
@@ -1023,7 +1028,7 @@ export function HomeScreen() {
                   targetAmount={hasTargets ? Math.round(targets.fat) : 0}
                   unit="g"
                   progress={fatProg}
-                  color="#3b82f6"
+                  color={c.primaryMuted}
                   icon="🫐"
                   showEaten={showEaten}
                   onToggle={() => setShowEaten((v) => !v)}
@@ -1103,8 +1108,8 @@ export function HomeScreen() {
                       progress={waterProgress}
                       size={52}
                       strokeWidth={5}
-                      color="#0ea5e9"
-                      trackColor="#0c4a6e"
+                      color={c.primary}
+                      trackColor={c.trackBg}
                     >
                       <Text style={{ fontSize: 14 }}>💧</Text>
                     </ProgressArc>
@@ -1134,12 +1139,12 @@ export function HomeScreen() {
                       <Ionicons
                         name="remove"
                         size={18}
-                        color={effectiveWaterConsumed <= 0 ? '#3a3a3c' : '#ffffff'}
+                        color={effectiveWaterConsumed <= 0 ? c.muted : c.text}
                       />
                     </Pressable>
                     <Pressable
                       onPress={() => addWater(CUP_ML)}
-                      className="flex-1 h-8 rounded-xl bg-[#0ea5e9] items-center justify-center"
+                      className="flex-1 h-8 rounded-xl bg-primary-500 items-center justify-center"
                     >
                       <Ionicons name="add" size={18} color={c.text} />
                     </Pressable>
@@ -1153,7 +1158,7 @@ export function HomeScreen() {
                   label={t('dashboard.fiber')}
                   value="–"
                   unit="g"
-                  color="#22c55e"
+                  color={c.success}
                   icon="🥦"
                   sublabel={t('dashboard.comingSoon')}
                 />
@@ -1161,7 +1166,7 @@ export function HomeScreen() {
                   label={t('dashboard.sugar')}
                   value="–"
                   unit="g"
-                  color="#ec4899"
+                  color={c.danger}
                   icon="🍬"
                   sublabel={t('dashboard.comingSoon')}
                 />
@@ -1169,7 +1174,7 @@ export function HomeScreen() {
                   label={t('dashboard.sodium')}
                   value="–"
                   unit="mg"
-                  color="#8b5cf6"
+                  color={c.primaryMuted}
                   icon="🧂"
                   sublabel={t('dashboard.comingSoon')}
                 />
@@ -1213,7 +1218,7 @@ export function HomeScreen() {
                         size={80}
                         strokeWidth={7}
                         color={c.text}
-                        trackColor="#2c2c2e"
+                        trackColor={c.trackBg}
                       >
                         <Text style={{ fontSize: 22 }}>🚶</Text>
                       </ProgressArc>

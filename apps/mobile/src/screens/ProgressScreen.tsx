@@ -15,6 +15,7 @@ import Svg, {
   G,
 } from 'react-native-svg';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { Button, BottomSheet, Input, Badge, SkeletonLoader } from '../components/ui';
 import { useWeightStore, type WeightLogEntry } from '../stores/weight.store';
 import { useNutritionHistoryStore, type HistoryPeriod } from '../stores/nutrition-history.store';
@@ -205,7 +206,7 @@ function WeekHistoryChart({
                 style={{
                   fontSize: 10,
                   fontFamily: 'Inter-Medium',
-                  color: '#71717a',
+                  color: c.textTertiary,
                   marginTop: 5,
                   height: 14,
                 }}
@@ -244,6 +245,7 @@ function SummaryCards({
     else break;
   }
 
+  const { t } = useLocale();
   const goalDiff = targetCalories && avgCal > 0 ? avgCal - targetCalories : null;
 
   return (
@@ -251,7 +253,7 @@ function SummaryCards({
       {/* Avg calories */}
       <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-3 items-center">
         <Text className="text-[10px] text-text-tertiary font-sans-medium mb-1" numberOfLines={1}>
-          Avg / day
+          {t('progressTab.avgPerDay')}
         </Text>
         <Text className="text-lg font-sans-bold text-text">
           {avgCal > 0 ? avgCal.toLocaleString() : '–'}
@@ -259,7 +261,7 @@ function SummaryCards({
         {goalDiff !== null && (
           <Text
             className="text-[10px] font-sans-medium mt-0.5"
-            style={{ color: goalDiff <= 0 ? c.success : C.goal }}
+            style={{ color: goalDiff <= 0 ? c.success : c.warning }}
           >
             {goalDiff > 0 ? `+${goalDiff}` : goalDiff} kcal
           </Text>
@@ -269,28 +271,33 @@ function SummaryCards({
       {/* Days logged */}
       <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-3 items-center">
         <Text className="text-[10px] text-text-tertiary font-sans-medium mb-1" numberOfLines={1}>
-          Logged
+          {t('progressTab.logged')}
         </Text>
         <Text className="text-lg font-sans-bold text-text">{daysLogged}</Text>
         <Text className="text-[10px] text-text-tertiary font-sans-medium mt-0.5">
-          of {points.length} {period === 7 ? 'days' : 'periods'}
+          {t('progressTab.of')} {points.length}{' '}
+          {period === 7 ? t('progressTab.dayPlural') : t('progressTab.periods')}
         </Text>
       </View>
 
       {/* Streak */}
       <View className="flex-1 rounded-2xl bg-surface-card border border-surface-border p-3 items-center">
         <Text className="text-[10px] text-text-tertiary font-sans-medium mb-1" numberOfLines={1}>
-          Streak
+          {t('progressTab.streak')}
         </Text>
         <View className="flex-row items-center gap-1">
-          {streak > 0 && <Text style={{ fontSize: 14 }}>🔥</Text>}
+          {streak > 0 && <Text style={{ fontSize: 14 }}>{'🔥'}</Text>}
           <Text className="text-lg font-sans-bold text-text">{streak}</Text>
         </View>
         <Text
           className="text-[10px] font-sans-medium mt-0.5"
           style={{ color: streak === 0 ? c.warning : c.textTertiary }}
         >
-          {streak === 0 ? 'Start today!' : streak === 1 ? 'day' : 'days'}
+          {streak === 0
+            ? t('progressTab.startToday')
+            : streak === 1
+              ? t('progressTab.day')
+              : t('progressTab.dayPlural')}
         </Text>
       </View>
     </View>
@@ -309,6 +316,7 @@ function CalorieBarChart({
   chartWidth: number;
 }) {
   const c = useColors();
+  const { t } = useLocale();
   const CHART_H = 160;
   const PAD = { top: 16, bottom: 28 };
   const plotH = CHART_H - PAD.top - PAD.bottom;
@@ -446,7 +454,7 @@ function CalorieBarChart({
                 color: c.textSecondary,
               }}
             >
-              Log meals to see your trends
+              {t('progressTab.logMealsToSeeTrends')}
             </Text>
           </View>
         </View>
@@ -486,7 +494,7 @@ function MacroStackedChart({ points, chartWidth }: { points: ChartPoint[]; chart
   // Scale by kcal equivalent so proportions are calorie-accurate
   const toKcal = (p: ChartPoint) => p.protein * 4 + p.carbs * 4 + p.fat * 9;
   const maxKcal = Math.max(...points.map(toKcal), 500);
-  const scale = (v: number) => (v / (maxKcal * 1.1)) * plotH;
+  const _scale = (v: number) => (v / (maxKcal * 1.1)) * plotH;
 
   const allEmpty = points.every((p) => !p.hasData);
   const logged = points.filter((p) => p.hasData);
@@ -686,6 +694,7 @@ function WaterBarChart({ points, chartWidth }: { points: ChartPoint[]; chartWidt
 
 function NutritionTab({ chartWidth }: { chartWidth: number }) {
   const c = useColors();
+  const { t } = useLocale();
   const [period, setPeriod] = useState<HistoryPeriod>(7);
   const { data, isLoading, fetchHistory } = useNutritionHistoryStore();
 
@@ -712,7 +721,7 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
       {!hasAnyData && (
         <Animated.View entering={FadeInDown.duration(400)} className="mb-4">
           <LinearGradient
-            colors={['#1c1c1e', '#2c2c2e']}
+            colors={[c.card, c.cardAlt]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ borderRadius: 20, borderWidth: 1, borderColor: c.border }}
@@ -725,9 +734,11 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
                 <Ionicons name="nutrition" size={22} color={c.primary} />
               </View>
               <View className="flex-1">
-                <Text className="text-sm font-sans-bold text-text">Your trends start here</Text>
+                <Text className="text-sm font-sans-bold text-text">
+                  {t('progressTab.trendsStartHere')}
+                </Text>
                 <Text className="text-xs text-text-secondary mt-0.5 leading-4">
-                  Log your first meal and this chart will come alive with your real data.
+                  {t('progressTab.trendsStartHereDesc')}
                 </Text>
               </View>
             </View>
@@ -749,7 +760,7 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
                 marginBottom: 12,
               }}
             >
-              This week
+              {t('progressTab.thisWeek')}
             </Text>
             <WeekHistoryChart
               history={history7.history}
@@ -764,8 +775,12 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
         {HISTORY_PERIODS.map((p) => (
           <Pressable
             key={p}
-            onPress={() => setPeriod(p)}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setPeriod(p);
+            }}
             className={`flex-1 rounded-xl py-2.5 items-center ${period === p ? 'bg-primary-500' : ''}`}
+            accessibilityRole="button"
           >
             <Text
               className={`font-sans-semibold text-sm ${
@@ -785,7 +800,9 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
       <Animated.View entering={FadeInDown.delay(50).duration(350)} className="mb-4">
         <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-sm font-sans-semibold text-text">Calories</Text>
+            <Text className="text-sm font-sans-semibold text-text">
+              {t('progressTab.calories')}
+            </Text>
             {target && (
               <View className="flex-row items-center gap-1.5">
                 <View style={{ width: 8, height: 2, backgroundColor: C.goal, borderRadius: 1 }} />
@@ -806,7 +823,9 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
       {/* Macro breakdown */}
       <Animated.View entering={FadeInDown.delay(100).duration(350)} className="mb-4">
         <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
-          <Text className="text-sm font-sans-semibold text-text mb-3">Macros (avg / day)</Text>
+          <Text className="text-sm font-sans-semibold text-text mb-3">
+            {t('progressTab.macrosAvg')}
+          </Text>
           <MacroStackedChart points={points} chartWidth={chartWidth} />
         </View>
       </Animated.View>
@@ -815,7 +834,7 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
       <Animated.View entering={FadeInDown.delay(150).duration(350)} className="mb-4">
         <View className="rounded-2xl bg-surface-card border border-surface-border p-4">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-sm font-sans-semibold text-text">Water</Text>
+            <Text className="text-sm font-sans-semibold text-text">{t('progressTab.water')}</Text>
             <View className="flex-row items-center gap-1.5">
               <View style={{ width: 8, height: 2, backgroundColor: C.water, borderRadius: 1 }} />
               <Text className="text-[10px] text-text-tertiary font-sans-medium">2,000 ml goal</Text>
@@ -847,6 +866,7 @@ function fmtWindow(minutes: number): string {
 
 function MealTimingCard() {
   const c = useColors();
+  const { t } = useLocale();
   const [insights, setInsights] = useState<MealTimingInsights | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -883,7 +903,9 @@ function MealTimingCard() {
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center gap-2">
             <Ionicons name="time-outline" size={16} color={c.textSecondary} />
-            <Text className="text-sm font-sans-semibold text-text">Meal Timing</Text>
+            <Text className="text-sm font-sans-semibold text-text">
+              {t('progressTab.mealTiming')}
+            </Text>
           </View>
           <Text className="text-[10px] text-text-tertiary font-sans-medium">
             {insights.weekStart} – {insights.weekEnd}
@@ -899,7 +921,9 @@ function MealTimingCard() {
                 <Text className="text-[11px] font-sans-bold text-text mt-1">
                   {fmtHour(breakfastStat.avgHour)}
                 </Text>
-                <Text className="text-[9px] text-text-tertiary font-sans-medium">Breakfast</Text>
+                <Text className="text-[9px] text-text-tertiary font-sans-medium">
+                  {t('progressTab.breakfast')}
+                </Text>
               </View>
             )}
             {lunchStat && (
@@ -908,7 +932,9 @@ function MealTimingCard() {
                 <Text className="text-[11px] font-sans-bold text-text mt-1">
                   {fmtHour(lunchStat.avgHour)}
                 </Text>
-                <Text className="text-[9px] text-text-tertiary font-sans-medium">Lunch</Text>
+                <Text className="text-[9px] text-text-tertiary font-sans-medium">
+                  {t('progressTab.lunch')}
+                </Text>
               </View>
             )}
             {dinnerStat && (
@@ -917,7 +943,9 @@ function MealTimingCard() {
                 <Text className="text-[11px] font-sans-bold text-text mt-1">
                   {fmtHour(dinnerStat.avgHour)}
                 </Text>
-                <Text className="text-[9px] text-text-tertiary font-sans-medium">Dinner</Text>
+                <Text className="text-[9px] text-text-tertiary font-sans-medium">
+                  {t('progressTab.dinner')}
+                </Text>
               </View>
             )}
           </View>
@@ -934,7 +962,7 @@ function MealTimingCard() {
                 color={breakfastOk ? c.success : c.warning}
               />
               <Text className="text-xs text-text-secondary font-sans-medium">
-                Breakfast on weekdays
+                {t('progressTab.breakfastWeekdays')}
               </Text>
             </View>
             <Text
@@ -956,7 +984,7 @@ function MealTimingCard() {
                 color={lateNightOk ? c.success : c.warning}
               />
               <Text className="text-xs text-text-secondary font-sans-medium">
-                Late-night eating (after 20:00)
+                {t('progressTab.lateNightEating')}
               </Text>
             </View>
             <Text
@@ -979,7 +1007,7 @@ function MealTimingCard() {
                   color={windowOk ? c.success : c.warning}
                 />
                 <Text className="text-xs text-text-secondary font-sans-medium">
-                  Avg eating window
+                  {t('progressTab.avgEatingWindow')}
                 </Text>
               </View>
               <Text
@@ -1257,7 +1285,7 @@ function BodyCompositionCard({ onLogMeasurements }: { onLogMeasurements: () => v
             {bfDelta !== null && bfDelta !== 0 && (
               <Text
                 className="text-[10px] font-sans-medium"
-                style={{ color: bfDelta < 0 ? c.success : '#f59e0b' }}
+                style={{ color: bfDelta < 0 ? c.success : c.warning }}
               >
                 {bfDelta > 0 ? '+' : ''}
                 {bfDelta}%
@@ -1345,7 +1373,7 @@ function WeeklyBudgetCard() {
             className="h-full rounded-full"
             style={{
               width: `${Math.min(100, progress)}%`,
-              backgroundColor: isOverBudget ? '#ef4444' : c.primary,
+              backgroundColor: isOverBudget ? c.danger : c.primary,
             }}
           />
         </View>
@@ -1357,7 +1385,7 @@ function WeeklyBudgetCard() {
           </Text>
           <Text
             className="text-xs font-sans-semibold"
-            style={{ color: isOverBudget ? '#ef4444' : c.success }}
+            style={{ color: isOverBudget ? c.danger : c.success }}
           >
             {isOverBudget
               ? `${Math.abs(weeklyBudget.remaining).toLocaleString()} ${t('progress.surplus')}`
@@ -1393,7 +1421,7 @@ function WeeklyBudgetCard() {
                         width: '100%',
                         height: `${pct}%`,
                         backgroundColor: isOver
-                          ? '#ef4444'
+                          ? c.danger
                           : isToday
                             ? c.primary
                             : c.primaryMuted + '80',
@@ -1437,7 +1465,7 @@ function WeeklyBudgetCard() {
 function BodyTab({ viewportWidth }: { viewportWidth: number }) {
   const c = useColors();
   const { t } = useLocale();
-  const navigation = useNavigation();
+  const _navigation = useNavigation();
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const wUnit = weightUnit(unitSystem);
   const mUnit = measurementUnit(unitSystem);
@@ -1567,14 +1595,18 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
                         }
                         size={14}
                         color={
-                          weeklyDelta < 0 ? '#1f2028' : weeklyDelta > 0 ? '#8f93a4' : '#9a9caa'
+                          weeklyDelta < 0 ? c.success : weeklyDelta > 0 ? c.warning : c.textTertiary
                         }
                       />
                       <Text
                         className="text-sm font-sans-medium"
                         style={{
                           color:
-                            weeklyDelta < 0 ? '#1f2028' : weeklyDelta > 0 ? '#8f93a4' : '#9a9caa',
+                            weeklyDelta < 0
+                              ? c.success
+                              : weeklyDelta > 0
+                                ? c.warning
+                                : c.textTertiary,
                         }}
                       >
                         {weeklyDelta > 0 ? '+' : weeklyDelta < 0 ? '-' : ''}
@@ -2024,7 +2056,7 @@ function WorkoutProgressSection() {
           }
           className="bg-surface-card rounded-2xl p-5 items-center border border-surface-border"
         >
-          <Ionicons name="barbell-outline" size={28} color="#3a3a3c" />
+          <Ionicons name="barbell-outline" size={28} color={c.muted} />
           <Text className="text-sm font-sans-medium text-text-tertiary mt-2">
             {t('workout.noWorkoutsYet')}
           </Text>
@@ -2107,7 +2139,7 @@ export function ProgressScreen() {
                       activeTab === tab ? 'text-text' : 'text-text-tertiary'
                     }`}
                   >
-                    {tab === 'nutrition' ? 'Nutrition' : 'Body'}
+                    {tab === 'nutrition' ? t('progressTab.nutrition') : t('progressTab.body')}
                   </Text>
                 </Pressable>
               ))}
