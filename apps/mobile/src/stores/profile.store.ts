@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { GoalType, Gender, ActivityLevel, DietPreference } from '@coach/shared';
+import { onboardingStorage } from '../storage/mmkv';
 
 export type { GoalType, Gender, ActivityLevel, DietPreference };
 
@@ -108,6 +109,36 @@ export function calculateTargets(data: OnboardingData): CalculatedTargets | null
   return { calories, protein, carbs, fat };
 }
 
+const DRAFT_KEY = 'onboarding_draft';
+
+function saveDraft(data: OnboardingData): void {
+  onboardingStorage.set(
+    DRAFT_KEY,
+    JSON.stringify({
+      ...data,
+      birthDate: data.birthDate?.toISOString() ?? null,
+    }),
+  );
+}
+
+function loadDraft(): Partial<OnboardingData> {
+  const raw = onboardingStorage.getString(DRAFT_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      ...parsed,
+      birthDate: parsed.birthDate ? new Date(parsed.birthDate) : null,
+    };
+  } catch {
+    return {};
+  }
+}
+
+function clearDraftStorage(): void {
+  onboardingStorage.delete(DRAFT_KEY);
+}
+
 interface ProfileState extends OnboardingData {
   setGoalType: (goal: GoalType) => void;
   setGoalWeightKg: (weight: number) => void;
@@ -121,6 +152,7 @@ interface ProfileState extends OnboardingData {
   getOnboardingData: () => OnboardingData;
   getTargets: () => CalculatedTargets | null;
   isComplete: () => boolean;
+  clearDraft: () => void;
   reset: () => void;
 }
 
@@ -136,18 +168,29 @@ const initialState: OnboardingData = {
   dietPreference: null,
 };
 
-export const useProfileStore = create<ProfileState>((set, get) => ({
-  ...initialState,
+const hydratedState: OnboardingData = { ...initialState, ...loadDraft() };
 
-  setGoalType: (goalType) => set({ goalType }),
-  setGoalWeightKg: (goalWeightKg) => set({ goalWeightKg }),
-  setWeeklyRateKg: (weeklyRateKg) => set({ weeklyRateKg }),
-  setGender: (gender) => set({ gender }),
-  setBirthDate: (birthDate) => set({ birthDate }),
-  setHeightCm: (heightCm) => set({ heightCm }),
-  setWeightKg: (weightKg) => set({ weightKg }),
-  setActivityLevel: (activityLevel) => set({ activityLevel }),
-  setDietPreference: (dietPreference) => set({ dietPreference }),
+function persistAndSet(
+  set: (partial: Partial<OnboardingData>) => void,
+  get: () => ProfileState,
+  partial: Partial<OnboardingData>,
+) {
+  set(partial);
+  saveDraft(get().getOnboardingData());
+}
+
+export const useProfileStore = create<ProfileState>((set, get) => ({
+  ...hydratedState,
+
+  setGoalType: (goalType) => persistAndSet(set, get, { goalType }),
+  setGoalWeightKg: (goalWeightKg) => persistAndSet(set, get, { goalWeightKg }),
+  setWeeklyRateKg: (weeklyRateKg) => persistAndSet(set, get, { weeklyRateKg }),
+  setGender: (gender) => persistAndSet(set, get, { gender }),
+  setBirthDate: (birthDate) => persistAndSet(set, get, { birthDate }),
+  setHeightCm: (heightCm) => persistAndSet(set, get, { heightCm }),
+  setWeightKg: (weightKg) => persistAndSet(set, get, { weightKg }),
+  setActivityLevel: (activityLevel) => persistAndSet(set, get, { activityLevel }),
+  setDietPreference: (dietPreference) => persistAndSet(set, get, { dietPreference }),
 
   getOnboardingData: () => {
     const s = get();
@@ -181,5 +224,13 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     );
   },
 
-  reset: () => set(initialState),
+  clearDraft: () => {
+    clearDraftStorage();
+    set(initialState);
+  },
+
+  reset: () => {
+    clearDraftStorage();
+    set(initialState);
+  },
 }));

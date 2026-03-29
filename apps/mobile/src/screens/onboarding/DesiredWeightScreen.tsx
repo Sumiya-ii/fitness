@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { displayWeight, inputToKg, weightUnit, weightRange } from '../../utils/units';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'DesiredWeight'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'DesiredWeight'>;
 
 export function DesiredWeightScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.goalWeightKg);
@@ -19,6 +20,7 @@ export function DesiredWeightScreen({ navigation }: Props) {
   const goalType = useProfileStore((s) => s.goalType);
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const c = useColors();
+  const { t } = useLocale();
 
   const range = weightRange(unitSystem);
   const initialDisplay = stored ? displayWeight(stored, unitSystem).toString() : '';
@@ -34,21 +36,31 @@ export function DesiredWeightScreen({ navigation }: Props) {
     }
   };
 
-  const goalLabel = goalType === 'lose_fat' ? 'target' : goalType === 'gain' ? 'goal' : 'ideal';
+  const goalLabelKey =
+    goalType === 'lose_fat'
+      ? 'onboarding.desiredWeightTarget'
+      : goalType === 'gain'
+        ? 'onboarding.desiredWeightGoal'
+        : 'onboarding.desiredWeightIdeal';
+
+  const title = t('onboarding.desiredWeightTitle').replace('{{label}}', t(goalLabelKey));
 
   return (
     <OnboardingLayout
       step={3}
       totalSteps={TOTAL_STEPS}
-      title={`What's your ${goalLabel} weight?`}
-      subtitle="This helps us calculate how much you need to adjust"
+      title={title}
+      subtitle={t('onboarding.desiredWeightSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={handleContinue}
       continueDisabled={!isValid}
     >
       <View className="flex-1 justify-center items-center">
         <View className="items-center mb-8">
-          <View className="w-20 h-20 rounded-full bg-primary-500/15 items-center justify-center mb-6">
+          <View
+            className="w-20 h-20 rounded-full items-center justify-center mb-6"
+            style={{ backgroundColor: `${c.primary}1a` }}
+          >
             <Ionicons name="flag-outline" size={40} color={c.primary} />
           </View>
 
@@ -62,6 +74,7 @@ export function DesiredWeightScreen({ navigation }: Props) {
               className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
               maxLength={6}
               autoFocus
+              accessibilityLabel={t('onboarding.desiredWeightTitle').replace('{{label}}', '')}
             />
             <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">
               {weightUnit(unitSystem)}

@@ -10,7 +10,7 @@ import type { Gender, ActivityLevel } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { inputToKg, inputToCm, weightUnit, heightUnit } from '../../utils/units';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 
 const ACTIVITY_LEVELS: { id: ActivityLevel; label: string }[] = [
   { id: 'sedentary', label: 'Sedentary' },
@@ -21,7 +21,7 @@ const ACTIVITY_LEVELS: { id: ActivityLevel; label: string }[] = [
 ];
 
 type Props = {
-  navigation: NativeStackNavigationProp<SetupStackParamList>;
+  navigation: NativeStackNavigationProp<OnboardingStackParamList>;
 };
 
 export function ProfileSetupScreen({ navigation }: Props) {

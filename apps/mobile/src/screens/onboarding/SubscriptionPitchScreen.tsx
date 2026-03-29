@@ -3,51 +3,43 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'SubscriptionPitch'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'SubscriptionPitch'>;
 
-const PREMIUM_FEATURES = [
+const FEATURE_KEYS = [
   {
     icon: 'camera-outline' as const,
-    color: '#6366f1',
-    bg: '#6366f11a',
-    title: 'AI Photo Logging',
-    desc: 'Snap a photo and log any meal instantly',
+    titleKey: 'onboarding.subPitchPhotoTitle',
+    descKey: 'onboarding.subPitchPhotoDesc',
   },
   {
     icon: 'mic-outline' as const,
-    color: '#0ea5e9',
-    bg: '#0ea5e91a',
-    title: 'Voice Logging',
-    desc: 'Say what you ate — Coach logs it for you',
+    titleKey: 'onboarding.subPitchVoiceTitle',
+    descKey: 'onboarding.subPitchVoiceDesc',
   },
   {
     icon: 'analytics-outline' as const,
-    color: '#10b981',
-    bg: '#10b9811a',
-    title: 'Advanced Analytics',
-    desc: 'Weekly trends, nutrient deep-dives & more',
+    titleKey: 'onboarding.subPitchAnalyticsTitle',
+    descKey: 'onboarding.subPitchAnalyticsDesc',
   },
   {
     icon: 'chatbubbles-outline' as const,
-    color: '#f59e0b',
-    bg: '#f59e0b1a',
-    title: 'AI Coach Chat',
-    desc: 'Ask anything about your nutrition & goals',
+    titleKey: 'onboarding.subPitchChatTitle',
+    descKey: 'onboarding.subPitchChatDesc',
   },
   {
     icon: 'infinite-outline' as const,
-    color: '#ec4899',
-    bg: '#ec48991a',
-    title: 'Unlimited History',
-    desc: 'Access your full meal log, forever',
+    titleKey: 'onboarding.subPitchUnlimitedTitle',
+    descKey: 'onboarding.subPitchUnlimitedDesc',
   },
 ] as const;
 
 export function SubscriptionPitchScreen({ navigation }: Props) {
   const c = useColors();
+  const { t } = useLocale();
 
   const handleStartTrial = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -60,214 +52,141 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
+    <SafeAreaView className="flex-1 bg-surface-app">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Header */}
         <View
-          style={{
-            backgroundColor: c.card,
-            paddingTop: 40,
-            paddingBottom: 32,
-            paddingHorizontal: 24,
-            alignItems: 'center',
-            borderBottomLeftRadius: 28,
-            borderBottomRightRadius: 28,
-          }}
+          className="pt-10 pb-8 px-6 items-center bg-surface-card"
+          style={{ borderBottomLeftRadius: 28, borderBottomRightRadius: 28 }}
         >
           {/* Badge */}
           <View
-            style={{
-              backgroundColor: `${c.primary}1f`,
-              borderRadius: 100,
-              paddingHorizontal: 14,
-              paddingVertical: 6,
-              marginBottom: 20,
-            }}
+            className="rounded-full px-3.5 py-1.5 mb-5"
+            style={{ backgroundColor: `${c.primary}1f` }}
           >
-            <Text style={{ color: c.textSecondary, fontSize: 12, fontWeight: '600' }}>
-              COACH PREMIUM
+            <Text className="text-xs font-sans-semibold text-text-secondary">
+              {t('onboarding.subPitchBadge')}
             </Text>
           </View>
 
           <Text
-            style={{
-              fontSize: 30,
-              fontWeight: '800',
-              color: c.text,
-              textAlign: 'center',
-              lineHeight: 36,
-              marginBottom: 10,
-            }}
+            className="text-[30px] font-sans-bold text-text text-center leading-9 mb-2.5"
+            accessibilityRole="header"
           >
-            Your plan is ready.{'\n'}Now unlock it fully.
+            {t('onboarding.subPitchTitle')}
           </Text>
-          <Text
-            style={{
-              fontSize: 15,
-              color: c.textSecondary,
-              textAlign: 'center',
-              lineHeight: 22,
-            }}
-          >
-            Get AI-powered tools that make hitting your{'\n'}daily targets effortless.
+          <Text className="text-[15px] text-text-secondary text-center leading-[22px]">
+            {t('onboarding.subPitchSubtitle')}
           </Text>
 
           {/* Price pill */}
           <View
+            className="mt-6 rounded-2xl px-5 py-3.5 items-center border"
             style={{
-              marginTop: 24,
               backgroundColor: `${c.primary}1a`,
-              borderRadius: 16,
-              paddingHorizontal: 20,
-              paddingVertical: 14,
-              alignItems: 'center',
-              borderWidth: 1,
               borderColor: `${c.primary}1f`,
             }}
           >
-            <Text style={{ color: c.textTertiary, fontSize: 12, marginBottom: 2 }}>Then just</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: c.text, marginBottom: 4 }}>
-                ₮
+            <Text className="text-xs text-text-tertiary mb-0.5">
+              {t('onboarding.subPitchThen')}
+            </Text>
+            <View className="flex-row items-end gap-1">
+              <Text className="text-[11px] font-sans-bold text-text mb-1">{'\u20AE'}</Text>
+              <Text className="text-[32px] font-sans-bold text-text">9,900</Text>
+              <Text className="text-[13px] text-text-tertiary mb-1.5">
+                {t('onboarding.subPitchPerMonth')}
               </Text>
-              <Text style={{ fontSize: 32, fontWeight: '800', color: c.text }}>9,900</Text>
-              <Text style={{ fontSize: 13, color: c.textTertiary, marginBottom: 5 }}>/month</Text>
             </View>
-            <View
-              style={{
-                backgroundColor: '#22c55e',
-                borderRadius: 100,
-                paddingHorizontal: 10,
-                paddingVertical: 3,
-                marginTop: 6,
-              }}
-            >
-              <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '700' }}>
-                7-DAY FREE TRIAL
+            <View className="bg-success rounded-full px-2.5 py-0.5 mt-1.5">
+              <Text className="text-white text-[11px] font-sans-bold">
+                {t('onboarding.subPitchFreeTrial')}
               </Text>
             </View>
           </View>
         </View>
 
         {/* Features list */}
-        <View style={{ paddingHorizontal: 24, paddingTop: 28 }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: '800',
-              color: c.text,
-              marginBottom: 16,
-            }}
-          >
-            Everything in Premium
+        <View className="px-6 pt-7">
+          <Text className="text-lg font-sans-bold text-text mb-4">
+            {t('onboarding.subPitchFeaturesTitle')}
           </Text>
 
-          <View style={{ gap: 10 }}>
-            {PREMIUM_FEATURES.map((f) => (
+          <View className="gap-2.5">
+            {FEATURE_KEYS.map((f) => (
               <View
-                key={f.title}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: c.card,
-                  borderRadius: 16,
-                  padding: 14,
-                  gap: 12,
-                }}
+                key={f.titleKey}
+                className="flex-row items-center bg-surface-card rounded-2xl p-3.5 gap-3"
               >
                 <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    backgroundColor: f.bg,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                  className="w-11 h-11 rounded-xl items-center justify-center"
+                  style={{ backgroundColor: `${c.primary}1a` }}
                 >
-                  <Ionicons name={f.icon} size={22} color={f.color} />
+                  <Ionicons name={f.icon} size={22} color={c.primary} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 2 }}>
-                    {f.title}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: c.textTertiary, lineHeight: 17 }}>
-                    {f.desc}
-                  </Text>
+                <View className="flex-1">
+                  <Text className="text-sm font-sans-bold text-text mb-0.5">{t(f.titleKey)}</Text>
+                  <Text className="text-xs text-text-tertiary leading-[17px]">{t(f.descKey)}</Text>
                 </View>
-                <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                <Ionicons name="checkmark-circle" size={20} color={c.success} />
               </View>
             ))}
           </View>
 
           {/* Social proof */}
           <View
+            className="rounded-2xl p-4 mt-5 border"
             style={{
-              backgroundColor: '#052e16',
-              borderRadius: 16,
-              padding: 16,
-              marginTop: 20,
-              borderWidth: 1,
-              borderColor: '#14532d',
+              backgroundColor: `${c.success}0d`,
+              borderColor: `${c.success}26`,
             }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <Text style={{ fontSize: 16 }}>⭐⭐⭐⭐⭐</Text>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#4ade80' }}>
-                4.9 · 2,400+ reviews
+            <View className="flex-row items-center gap-2 mb-1.5">
+              <Text className="text-base">{'\u2B50\u2B50\u2B50\u2B50\u2B50'}</Text>
+              <Text className="text-xs font-sans-bold" style={{ color: c.success }}>
+                {t('onboarding.subPitchReviewStars')} {'\u00b7'}{' '}
+                {t('onboarding.subPitchReviewCount')}
               </Text>
             </View>
-            <Text style={{ fontSize: 13, color: '#86efac', lineHeight: 19, fontStyle: 'italic' }}>
-              "Lost 8kg in 3 months. The AI photo logging changed everything — I actually log every
-              meal now."
+            <Text className="text-[13px] leading-[19px] italic" style={{ color: c.textSecondary }}>
+              {t('onboarding.subPitchReviewText')}
             </Text>
-            <Text style={{ fontSize: 11, color: '#4ade80', marginTop: 6, fontWeight: '600' }}>
-              — B. Munkhjargal, Ulaanbaatar
+            <Text
+              className="text-[11px] font-sans-semibold mt-1.5"
+              style={{ color: c.textTertiary }}
+            >
+              {t('onboarding.subPitchReviewAuthor')}
             </Text>
           </View>
         </View>
       </ScrollView>
 
       {/* Bottom CTAs */}
-      <View
-        style={{
-          paddingHorizontal: 24,
-          paddingBottom: 40,
-          paddingTop: 16,
-          backgroundColor: c.bg,
-          borderTopWidth: 1,
-          borderTopColor: c.border,
-          gap: 12,
-        }}
-      >
+      <View className="px-6 pb-10 pt-4 border-t gap-3" style={{ borderTopColor: c.border }}>
         <Pressable
           onPress={handleStartTrial}
-          style={({ pressed }) => ({
-            backgroundColor: c.primary,
-            borderRadius: 100,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: 18,
-            opacity: pressed ? 0.88 : 1,
-          })}
+          className="bg-primary-500 rounded-full items-center justify-center py-[18px] active:opacity-90"
+          accessibilityRole="button"
+          accessibilityLabel={t('onboarding.subPitchStartTrial')}
         >
-          <Text style={{ fontSize: 17, fontWeight: '700', color: c.onPrimary }}>
-            Start 7-Day Free Trial
+          <Text className="text-[17px] font-sans-bold text-on-primary">
+            {t('onboarding.subPitchStartTrial')}
           </Text>
-          <Text style={{ fontSize: 11, color: `${c.onPrimary}80`, marginTop: 2 }}>
-            Cancel anytime before trial ends
+          <Text className="text-[11px] mt-0.5" style={{ color: `${c.onPrimary}80` }}>
+            {t('onboarding.subPitchTrialCancel')}
           </Text>
         </Pressable>
 
         <Pressable
           onPress={handleContinueFree}
-          style={{ alignItems: 'center', paddingVertical: 10 }}
+          className="items-center py-2.5 active:opacity-70"
+          accessibilityRole="button"
+          accessibilityLabel={t('onboarding.subPitchContinueFree')}
         >
-          <Text style={{ fontSize: 14, color: c.textTertiary, fontWeight: '500' }}>
-            Continue with free plan
+          <Text className="text-sm text-text-tertiary font-sans-medium">
+            {t('onboarding.subPitchContinueFree')}
           </Text>
         </Pressable>
       </View>

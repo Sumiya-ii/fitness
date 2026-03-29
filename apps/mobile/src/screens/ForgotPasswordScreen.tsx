@@ -3,12 +3,12 @@ import { View, Text, Pressable, KeyboardAvoidingView, Platform, ScrollView } fro
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from '../navigation/types';
+import type { OnboardingStackParamList } from '../navigation/types';
 import { Button, Input } from '../components/ui';
 import { resetPassword } from '../services/firebase-auth.service';
 import { useLocale } from '../i18n';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'ForgotPassword'>;
 
 export function ForgotPasswordScreen({ navigation }: Props) {
   const { t } = useLocale();

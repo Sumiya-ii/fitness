@@ -13,12 +13,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from '../navigation/types';
+import type { OnboardingStackParamList } from '../navigation/types';
 import { BackButton, Button, Input } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
 import { useLocale } from '../i18n';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'SignIn'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignIn'>;
 
 export function SignInScreen({ navigation }: Props) {
   const { t } = useLocale();

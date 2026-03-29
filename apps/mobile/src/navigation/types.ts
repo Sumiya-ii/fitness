@@ -1,14 +1,12 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type AuthStackParamList = {
-  Onboarding: undefined;
-  Welcome: undefined;
   SignIn: undefined;
-  SignUp: undefined;
   ForgotPassword: undefined;
 };
 
-export type SetupStackParamList = {
+export type OnboardingStackParamList = {
+  Welcome: undefined;
   ThemeSelect: undefined;
   GoalSetup: undefined;
   DesiredWeight: undefined;
@@ -21,6 +19,9 @@ export type SetupStackParamList = {
   DietPreferenceSelect: undefined;
   Motivation: undefined;
   TargetReview: undefined;
+  SignUp: undefined;
+  SignIn: undefined;
+  ForgotPassword: undefined;
   SubscriptionPitch: undefined;
   NotificationPermission: undefined;
 };
@@ -65,8 +66,8 @@ export type MainStackParamList = {
 };
 
 export type RootStackParamList = {
+  Onboarding: NavigatorScreenParams<OnboardingStackParamList>;
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Setup: NavigatorScreenParams<SetupStackParamList>;
   Main: NavigatorScreenParams<MainStackParamList>;
 };
 
@@ -75,8 +76,8 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace ReactNavigation {
     interface RootParamList extends RootStackParamList {}
+    interface OnboardingParamList extends OnboardingStackParamList {}
     interface AuthParamList extends AuthStackParamList {}
-    interface SetupParamList extends SetupStackParamList {}
     interface MainParamList extends MainStackParamList {}
     interface LogParamList extends LogStackParamList {}
   }

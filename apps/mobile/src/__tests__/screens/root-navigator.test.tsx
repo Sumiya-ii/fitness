@@ -2,8 +2,8 @@
  * RootNavigator tests — verifies auth/onboarding routing logic.
  *
  * Key scenarios:
- * - Unauthenticated user sees AuthStack
- * - Authenticated but not onboarded user sees SetupStack
+ * - Unauthenticated user sees OnboardingStack
+ * - Authenticated but not onboarded user sees OnboardingStack
  * - Fully onboarded user sees MainStack
  * - Loading states show spinner
  */
@@ -11,15 +11,9 @@
 // Track which stack renders
 let renderedStack = '';
 
-jest.mock('../../navigation/AuthStack', () => ({
-  AuthStack: () => {
-    renderedStack = 'AuthStack';
-    return null;
-  },
-}));
-jest.mock('../../navigation/SetupStack', () => ({
-  SetupStack: () => {
-    renderedStack = 'SetupStack';
+jest.mock('../../navigation/OnboardingStack', () => ({
+  OnboardingStack: () => {
+    renderedStack = 'OnboardingStack';
     return null;
   },
 }));
@@ -49,7 +43,7 @@ jest.mock('../../hooks/useSyncQueue', () => ({
   useSyncQueue: jest.fn(),
 }));
 
-import { renderScreen, act } from '../helpers/render';
+import { renderScreen } from '../helpers/render';
 import { useAuthStore } from '../../stores/auth.store';
 import { useOnboardingStore } from '../../stores/onboarding.store';
 import { RootNavigator } from '../../navigation/RootNavigator';
@@ -60,7 +54,7 @@ beforeEach(() => {
 });
 
 describe('RootNavigator', () => {
-  it('shows AuthStack when user is NOT authenticated', () => {
+  it('shows OnboardingStack when user is NOT authenticated', () => {
     useAuthStore.setState({
       isAuthenticated: false,
       isLoading: false,
@@ -73,10 +67,10 @@ describe('RootNavigator', () => {
 
     renderScreen(<RootNavigator />);
 
-    expect(renderedStack).toBe('AuthStack');
+    expect(renderedStack).toBe('OnboardingStack');
   });
 
-  it('shows SetupStack when authenticated but profile not complete', () => {
+  it('shows OnboardingStack when authenticated but profile not complete', () => {
     useAuthStore.setState({
       isAuthenticated: true,
       isLoading: false,
@@ -85,11 +79,12 @@ describe('RootNavigator', () => {
       profileSetupComplete: false,
       loadOnboardingStatus: jest.fn(),
       syncProfileSetupStatus: jest.fn().mockResolvedValue(undefined),
+      submitCachedOnboardingData: jest.fn().mockResolvedValue(undefined),
     });
 
     renderScreen(<RootNavigator />);
 
-    expect(renderedStack).toBe('SetupStack');
+    expect(renderedStack).toBe('OnboardingStack');
   });
 
   it('shows MainStack when authenticated AND profile is complete', () => {

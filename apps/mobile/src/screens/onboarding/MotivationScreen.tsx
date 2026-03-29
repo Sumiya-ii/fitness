@@ -1,16 +1,17 @@
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { displayWeight, displayWeeklyRate, weightUnit, weeklyRateUnit } from '../../utils/units';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'Motivation'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'Motivation'>;
 
 export function MotivationScreen({ navigation }: Props) {
   const goalType = useProfileStore((s) => s.goalType);
@@ -18,100 +19,62 @@ export function MotivationScreen({ navigation }: Props) {
   const goalWeightKg = useProfileStore((s) => s.goalWeightKg);
   const weeklyRateKg = useProfileStore((s) => s.weeklyRateKg);
   const c = useColors();
+  const { t } = useLocale();
 
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const diff = weightKg && goalWeightKg ? Math.abs(weightKg - goalWeightKg) : null;
   const weeks = diff && weeklyRateKg && weeklyRateKg > 0 ? Math.ceil(diff / weeklyRateKg) : null;
 
-  const goalMessage =
+  const goalMessageKey =
     goalType === 'lose_fat'
-      ? 'Your goal is totally realistic!'
+      ? 'onboarding.motivationLoseFat'
       : goalType === 'gain'
-        ? "Great goal — let's build some muscle!"
-        : 'Maintaining is the smartest move!';
+        ? 'onboarding.motivationGain'
+        : 'onboarding.motivationMaintain';
+
+  const features = [
+    { icon: 'sparkles' as const, textKey: 'onboarding.motivationAI' },
+    { icon: 'analytics' as const, textKey: 'onboarding.motivationTracking' },
+    { icon: 'chatbubbles' as const, textKey: 'onboarding.motivationTelegram' },
+  ];
 
   return (
     <OnboardingLayout
       step={11}
       totalSteps={TOTAL_STEPS}
-      title="You're all set!"
-      subtitle="Let's review what we've built for you"
+      title={t('onboarding.motivationTitle')}
+      subtitle={t('onboarding.motivationSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={() => navigation.navigate('TargetReview')}
-      continueLabel="See My Plan"
+      continueLabel={t('onboarding.motivationSeePlan')}
     >
       <View className="flex-1 justify-center">
-        <View
-          style={{
-            backgroundColor: c.card,
-            borderRadius: 24,
-            padding: 24,
-            marginBottom: 24,
-          }}
-        >
+        <View className="bg-surface-card rounded-3xl p-6 mb-6">
           <View className="items-center mb-4">
             <View
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 32,
-                backgroundColor: `${c.primary}33`,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}
+              className="w-16 h-16 rounded-full items-center justify-center mb-3"
+              style={{ backgroundColor: `${c.primary}33` }}
             >
               <Ionicons name="checkmark-done" size={36} color={c.primary} />
             </View>
             <Text
-              style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: c.text,
-                textAlign: 'center',
-              }}
+              className="text-xl font-sans-bold text-text text-center"
+              accessibilityRole="header"
             >
-              {goalMessage}
+              {t(goalMessageKey)}
             </Text>
           </View>
 
-          {weeks && goalType !== 'maintain' && (
-            <View
-              style={{
-                backgroundColor: `${c.primary}26`,
-                borderRadius: 16,
-                padding: 16,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: c.textSecondary,
-                  textAlign: 'center',
-                  marginBottom: 4,
-                }}
-              >
-                Estimated time to reach your goal
+          {weeks != null && goalType !== 'maintain' && (
+            <View className="rounded-2xl p-4" style={{ backgroundColor: `${c.primary}26` }}>
+              <Text className="text-sm text-text-secondary text-center mb-1">
+                {t('onboarding.motivationEstimate')}
               </Text>
-              <Text
-                style={{
-                  fontSize: 30,
-                  fontWeight: '700',
-                  color: c.text,
-                  textAlign: 'center',
-                }}
-              >
-                {weeks} weeks
+              <Text className="text-[30px] font-sans-bold text-text text-center">
+                {t('onboarding.motivationWeeks').replace('{{weeks}}', weeks.toString())}
               </Text>
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: c.textTertiary,
-                  textAlign: 'center',
-                  marginTop: 4,
-                }}
-              >
-                {diff ? displayWeight(diff, unitSystem) : ''} {weightUnit(unitSystem)} ·{' '}
+              <Text className="text-xs text-text-tertiary text-center mt-1">
+                {diff ? displayWeight(diff, unitSystem) : ''} {weightUnit(unitSystem)} {'\u00b7'}{' '}
                 {weeklyRateKg ? displayWeeklyRate(weeklyRateKg, unitSystem) : ''}{' '}
                 {weeklyRateUnit(unitSystem)}
               </Text>
@@ -119,45 +82,16 @@ export function MotivationScreen({ navigation }: Props) {
           )}
         </View>
 
-        <View style={{ gap: 12 }}>
-          {[
-            {
-              icon: 'sparkles' as const,
-              text: 'AI-powered food logging with photo & voice',
-            },
-            {
-              icon: 'analytics' as const,
-              text: 'Daily tracking with macro breakdowns',
-            },
-            {
-              icon: 'chatbubbles' as const,
-              text: 'Telegram coach for daily accountability',
-            },
-          ].map((item, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View className="gap-3">
+          {features.map((item, i) => (
+            <View key={i} className="flex-row items-center">
               <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: `${c.primary}26`,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                }}
+                className="w-8 h-8 rounded-full items-center justify-center mr-3"
+                style={{ backgroundColor: `${c.primary}26` }}
               >
                 <Ionicons name={item.icon} size={16} color={c.primary} />
               </View>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '500',
-                  color: c.text,
-                  flex: 1,
-                }}
-              >
-                {item.text}
-              </Text>
+              <Text className="text-sm font-sans-medium text-text flex-1">{t(item.textKey)}</Text>
             </View>
           ))}
         </View>

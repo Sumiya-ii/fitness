@@ -1,10 +1,12 @@
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import type { ActivityLevel } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
@@ -12,109 +14,104 @@ const TOTAL_STEPS = 11;
 type ActivityOption = {
   id: ActivityLevel;
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
 };
 
 const OPTIONS: ActivityOption[] = [
   {
     id: 'sedentary',
     icon: 'desktop-outline',
-    title: 'Sedentary',
-    description: 'Desk job, little to no exercise',
+    titleKey: 'onboarding.activitySedentary',
+    descKey: 'onboarding.activitySedentaryDesc',
   },
   {
     id: 'lightly_active',
     icon: 'walk-outline',
-    title: 'Lightly Active',
-    description: 'Light exercise 1–3 days/week',
+    titleKey: 'onboarding.activityLightly',
+    descKey: 'onboarding.activityLightlyDesc',
   },
   {
     id: 'moderately_active',
     icon: 'bicycle-outline',
-    title: 'Moderately Active',
-    description: 'Moderate exercise 3–5 days/week',
+    titleKey: 'onboarding.activityModerately',
+    descKey: 'onboarding.activityModeratelyDesc',
   },
   {
     id: 'very_active',
     icon: 'fitness-outline',
-    title: 'Very Active',
-    description: 'Hard exercise 6–7 days/week',
+    titleKey: 'onboarding.activityVery',
+    descKey: 'onboarding.activityVeryDesc',
   },
   {
     id: 'extra_active',
     icon: 'flame-outline',
-    title: 'Extra Active',
-    description: 'Physical job + intense daily training',
+    titleKey: 'onboarding.activityExtra',
+    descKey: 'onboarding.activityExtraDesc',
   },
 ];
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'ActivityLevelSelect'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'ActivityLevelSelect'>;
 
 export function ActivityLevelSelectScreen({ navigation }: Props) {
   const activityLevel = useProfileStore((s) => s.activityLevel);
   const setActivityLevel = useProfileStore((s) => s.setActivityLevel);
   const c = useColors();
+  const { t } = useLocale();
+
+  const handleSelect = (id: ActivityLevel) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActivityLevel(id);
+  };
 
   return (
     <OnboardingLayout
       step={9}
       totalSteps={TOTAL_STEPS}
-      title="How active are you?"
-      subtitle="This determines your daily calorie burn"
+      title={t('onboarding.activityTitle')}
+      subtitle={t('onboarding.activitySubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={() => navigation.navigate('DietPreferenceSelect')}
       continueDisabled={!activityLevel}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-        <View style={{ gap: 10 }}>
+        <View className="gap-2.5">
           {OPTIONS.map((opt) => {
             const selected = activityLevel === opt.id;
             return (
               <Pressable
                 key={opt.id}
-                onPress={() => setActivityLevel(opt.id)}
-                style={({ pressed }) => ({
-                  backgroundColor: selected ? c.primary : c.card,
-                  borderRadius: 16,
-                  paddingVertical: 16,
-                  paddingHorizontal: 16,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                  opacity: pressed ? 0.85 : 1,
-                })}
+                onPress={() => handleSelect(opt.id)}
+                className={`rounded-2xl py-4 px-4 flex-row items-center gap-3 active:opacity-85 ${
+                  selected ? 'bg-primary-500' : 'bg-surface-card'
+                }`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${t(opt.titleKey)} ${t(opt.descKey)}`}
               >
                 <View
+                  className="w-10 h-10 rounded-full items-center justify-center"
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
                     backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                   }}
                 >
                   <Ionicons name={opt.icon} size={20} color={selected ? c.onPrimary : c.text} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View className="flex-1">
                   <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: '700',
-                      color: selected ? c.onPrimary : c.text,
-                      marginBottom: 2,
-                    }}
+                    className={`text-[15px] font-sans-bold mb-0.5 ${
+                      selected ? 'text-on-primary' : 'text-text'
+                    }`}
                   >
-                    {opt.title}
+                    {t(opt.titleKey)}
                   </Text>
                   <Text
+                    className="text-xs"
                     style={{
-                      fontSize: 12,
                       color: selected ? `${c.onPrimary}99` : c.textTertiary,
                     }}
                   >
-                    {opt.description}
+                    {t(opt.descKey)}
                   </Text>
                 </View>
               </Pressable>

@@ -1,10 +1,12 @@
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import type { GoalType } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
@@ -12,98 +14,92 @@ const TOTAL_STEPS = 11;
 type GoalOption = {
   id: GoalType;
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
 };
 
 const GOAL_OPTIONS: GoalOption[] = [
   {
     id: 'lose_fat',
     icon: 'trending-down-outline',
-    title: 'Lose Fat',
-    description: 'Burn fat and get leaner with a calorie deficit',
+    titleKey: 'onboarding.goalLoseFat',
+    descKey: 'onboarding.goalLoseFatDesc',
   },
   {
     id: 'maintain',
     icon: 'scale-outline',
-    title: 'Maintain Weight',
-    description: 'Keep your current weight with balanced nutrition',
+    titleKey: 'onboarding.goalMaintain',
+    descKey: 'onboarding.goalMaintainDesc',
   },
   {
     id: 'gain',
     icon: 'trending-up-outline',
-    title: 'Build Muscle',
-    description: 'Gain lean mass with a controlled calorie surplus',
+    titleKey: 'onboarding.goalGain',
+    descKey: 'onboarding.goalGainDesc',
   },
 ];
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'GoalSetup'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'GoalSetup'>;
 
 export function GoalSetupScreen({ navigation }: Props) {
   const goalType = useProfileStore((s) => s.goalType);
   const setGoalType = useProfileStore((s) => s.setGoalType);
   const c = useColors();
+  const { t } = useLocale();
+
+  const handleSelect = (id: GoalType) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setGoalType(id);
+  };
 
   return (
     <OnboardingLayout
       step={2}
       totalSteps={TOTAL_STEPS}
-      title="What's your goal?"
-      subtitle="We'll create a personalized plan just for you"
+      title={t('onboarding.goalTitle')}
+      subtitle={t('onboarding.goalSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={() => navigation.navigate('DesiredWeight')}
       continueDisabled={!goalType}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-        <View style={{ gap: 12 }}>
+        <View className="gap-3">
           {GOAL_OPTIONS.map((option) => {
             const selected = goalType === option.id;
             return (
               <Pressable
                 key={option.id}
-                onPress={() => setGoalType(option.id)}
-                style={({ pressed }) => ({
-                  backgroundColor: selected ? c.primary : c.card,
-                  borderRadius: 18,
-                  paddingVertical: 20,
-                  paddingHorizontal: 20,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 14,
-                  opacity: pressed ? 0.85 : 1,
-                })}
+                onPress={() => handleSelect(option.id)}
+                className={`rounded-2xl py-5 px-5 flex-row items-center gap-3.5 active:opacity-85 ${
+                  selected ? 'bg-primary-500' : 'bg-surface-card'
+                }`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={t(option.titleKey)}
               >
                 <View
+                  className="w-11 h-11 rounded-xl items-center justify-center"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
                     backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                   }}
                 >
                   <Ionicons name={option.icon} size={22} color={selected ? c.onPrimary : c.text} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View className="flex-1">
                   <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: '700',
-                      color: selected ? c.onPrimary : c.text,
-                      marginBottom: 3,
-                    }}
+                    className={`text-base font-sans-bold mb-0.5 ${
+                      selected ? 'text-on-primary' : 'text-text'
+                    }`}
                   >
-                    {option.title}
+                    {t(option.titleKey)}
                   </Text>
                   <Text
+                    className="text-[13px] leading-[18px]"
                     style={{
-                      fontSize: 13,
                       color: selected ? `${c.onPrimary}a6` : c.textTertiary,
-                      lineHeight: 18,
                     }}
                   >
-                    {option.description}
+                    {t(option.descKey)}
                   </Text>
                 </View>
               </Pressable>

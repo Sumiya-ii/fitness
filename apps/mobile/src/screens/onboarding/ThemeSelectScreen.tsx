@@ -1,9 +1,11 @@
 import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import { useThemeStore, type ThemeMode } from '../../stores/theme.store';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
@@ -11,96 +13,90 @@ const TOTAL_STEPS = 11;
 type ThemeOption = {
   id: ThemeMode;
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
 };
 
 const OPTIONS: ThemeOption[] = [
   {
     id: 'system',
     icon: 'phone-portrait-outline',
-    title: 'System Default',
-    description: 'Matches your device appearance',
+    titleKey: 'onboarding.themeSystem',
+    descKey: 'onboarding.themeSystemDesc',
   },
   {
     id: 'light',
     icon: 'sunny-outline',
-    title: 'Light',
-    description: 'Clean, bright appearance',
+    titleKey: 'onboarding.themeLight',
+    descKey: 'onboarding.themeLightDesc',
   },
   {
     id: 'dark',
     icon: 'moon-outline',
-    title: 'Dark',
-    description: 'Easy on the eyes, saves battery',
+    titleKey: 'onboarding.themeDark',
+    descKey: 'onboarding.themeDarkDesc',
   },
 ];
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'ThemeSelect'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'ThemeSelect'>;
 
 export function ThemeSelectScreen({ navigation }: Props) {
   const mode = useThemeStore((s) => s.mode);
   const setMode = useThemeStore((s) => s.setMode);
   const c = useColors();
+  const { t } = useLocale();
+
+  const handleSelect = (id: ThemeMode) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setMode(id);
+  };
 
   return (
     <OnboardingLayout
       step={1}
       totalSteps={TOTAL_STEPS}
-      title="Choose your look"
-      subtitle="You can always change this later in settings"
+      title={t('onboarding.themeTitle')}
+      subtitle={t('onboarding.themeSubtitle')}
       onContinue={() => navigation.navigate('GoalSetup')}
     >
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <View style={{ gap: 12 }}>
+      <View className="flex-1 justify-center">
+        <View className="gap-3">
           {OPTIONS.map((opt) => {
             const selected = mode === opt.id;
             return (
               <Pressable
                 key={opt.id}
-                onPress={() => setMode(opt.id)}
-                style={({ pressed }) => ({
-                  backgroundColor: selected ? c.primary : c.card,
-                  borderRadius: 18,
-                  paddingVertical: 22,
-                  paddingHorizontal: 20,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 14,
-                  opacity: pressed ? 0.85 : 1,
-                })}
+                onPress={() => handleSelect(opt.id)}
+                className={`rounded-2xl py-[22px] px-5 flex-row items-center gap-3.5 active:opacity-85 ${
+                  selected ? 'bg-primary-500' : 'bg-surface-card'
+                }`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={t(opt.titleKey)}
               >
                 <View
+                  className="w-11 h-11 rounded-xl items-center justify-center"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
                     backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
-                    alignItems: 'center',
-                    justifyContent: 'center',
                   }}
                 >
                   <Ionicons name={opt.icon} size={22} color={selected ? c.onPrimary : c.text} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View className="flex-1">
                   <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: selected ? '700' : '500',
-                      color: selected ? c.onPrimary : c.text,
-                      marginBottom: 3,
-                    }}
+                    className={`text-base mb-0.5 ${
+                      selected ? 'font-sans-bold text-on-primary' : 'font-sans-medium text-text'
+                    }`}
                   >
-                    {opt.title}
+                    {t(opt.titleKey)}
                   </Text>
                   <Text
+                    className="text-[13px] leading-[18px]"
                     style={{
-                      fontSize: 13,
                       color: selected ? `${c.onPrimary}a6` : c.textTertiary,
-                      lineHeight: 18,
                     }}
                   >
-                    {opt.description}
+                    {t(opt.descKey)}
                   </Text>
                 </View>
                 {selected && <Ionicons name="checkmark-circle" size={24} color={c.onPrimary} />}

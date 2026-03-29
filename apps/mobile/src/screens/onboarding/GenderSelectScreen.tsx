@@ -1,67 +1,68 @@
 import { View, Text, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import type { Gender } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
-import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
 
 type GenderOption = {
   id: Gender;
-  label: string;
+  labelKey: string;
 };
 
 const OPTIONS: GenderOption[] = [
-  { id: 'male', label: 'Male' },
-  { id: 'female', label: 'Female' },
-  { id: 'other', label: 'Other' },
+  { id: 'male', labelKey: 'onboarding.genderMale' },
+  { id: 'female', labelKey: 'onboarding.genderFemale' },
+  { id: 'other', labelKey: 'onboarding.genderOther' },
 ];
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'GenderSelect'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'GenderSelect'>;
 
 export function GenderSelectScreen({ navigation }: Props) {
   const gender = useProfileStore((s) => s.gender);
   const setGender = useProfileStore((s) => s.setGender);
-  const c = useColors();
+  const { t } = useLocale();
+
+  const handleSelect = (id: Gender) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setGender(id);
+  };
 
   return (
     <OnboardingLayout
       step={5}
       totalSteps={TOTAL_STEPS}
-      title="Choose your Gender"
-      subtitle="This will be used to calibrate your custom plan."
+      title={t('onboarding.genderTitle')}
+      subtitle={t('onboarding.genderSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={() => navigation.navigate('BirthDateSelect')}
       continueDisabled={!gender}
     >
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <View style={{ gap: 12 }}>
+      <View className="flex-1 justify-center">
+        <View className="gap-3">
           {OPTIONS.map((opt) => {
             const selected = gender === opt.id;
             return (
               <Pressable
                 key={opt.id}
-                onPress={() => setGender(opt.id)}
-                style={({ pressed }) => ({
-                  backgroundColor: selected ? c.primary : c.card,
-                  borderRadius: 18,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 26,
-                  opacity: pressed ? 0.85 : 1,
-                })}
+                onPress={() => handleSelect(opt.id)}
+                className={`rounded-2xl items-center justify-center py-[26px] active:opacity-85 ${
+                  selected ? 'bg-primary-500' : 'bg-surface-card'
+                }`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={t(opt.labelKey)}
               >
                 <Text
-                  style={{
-                    fontSize: 17,
-                    fontWeight: selected ? '700' : '500',
-                    color: selected ? c.onPrimary : c.text,
-                    letterSpacing: 0.1,
-                  }}
+                  className={`text-[17px] tracking-wide ${
+                    selected ? 'font-sans-bold text-on-primary' : 'font-sans-medium text-text'
+                  }`}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
               </Pressable>
             );

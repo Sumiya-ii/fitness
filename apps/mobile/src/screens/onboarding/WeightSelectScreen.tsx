@@ -2,22 +2,24 @@ import { useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { SetupStackParamList } from '../../navigation/types';
+import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { displayWeight, inputToKg, weightUnit, weightRange } from '../../utils/units';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'WeightSelect'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'WeightSelect'>;
 
 export function WeightSelectScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.weightKg);
   const setWeightKg = useProfileStore((s) => s.setWeightKg);
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const c = useColors();
+  const { t } = useLocale();
 
   const range = weightRange(unitSystem);
   const initialDisplay = stored ? displayWeight(stored, unitSystem).toString() : '';
@@ -26,11 +28,10 @@ export function WeightSelectScreen({ navigation }: Props) {
   const parsed = parseFloat(value);
   const isValid = !isNaN(parsed) && parsed >= range.min && parsed <= range.max;
 
-  // Show the alternate unit as a reference
   const altValue = isValid
     ? unitSystem === 'metric'
-      ? `≈ ${Math.round(parsed * 2.205)} lbs`
-      : `≈ ${inputToKg(parsed, 'imperial').toFixed(1)} kg`
+      ? `\u2248 ${Math.round(parsed * 2.205)} lbs`
+      : `\u2248 ${inputToKg(parsed, 'imperial').toFixed(1)} kg`
     : null;
 
   const handleContinue = () => {
@@ -44,14 +45,17 @@ export function WeightSelectScreen({ navigation }: Props) {
     <OnboardingLayout
       step={8}
       totalSteps={TOTAL_STEPS}
-      title="What's your current weight?"
-      subtitle="Be honest — this stays private and helps us calculate accurately"
+      title={t('onboarding.weightTitle')}
+      subtitle={t('onboarding.weightSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={handleContinue}
       continueDisabled={!isValid}
     >
       <View className="flex-1 justify-center items-center">
-        <View className="w-20 h-20 rounded-full bg-emerald-500/15 items-center justify-center mb-8">
+        <View
+          className="w-20 h-20 rounded-full items-center justify-center mb-8"
+          style={{ backgroundColor: `${c.primary}1a` }}
+        >
           <Ionicons name="barbell-outline" size={40} color={c.primary} />
         </View>
 
@@ -65,6 +69,7 @@ export function WeightSelectScreen({ navigation }: Props) {
             className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
             maxLength={6}
             autoFocus
+            accessibilityLabel={t('onboarding.weightTitle')}
           />
           <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">
             {weightUnit(unitSystem)}

@@ -14,12 +14,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { AuthStackParamList } from '../navigation/types';
+import type { OnboardingStackParamList } from '../navigation/types';
 import { BackButton, Button, Input } from '../components/ui';
 import { useAuthStore } from '../stores/auth.store';
+import { useOnboardingStore } from '../stores/onboarding.store';
 import { useLocale } from '../i18n';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'SignUp'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'SignUp'>;
 
 type PasswordStrength = 'weak' | 'fair' | 'strong';
 
@@ -78,6 +79,7 @@ export function SignUpScreen({ navigation }: Props) {
   const signUp = useAuthStore((s) => s.signUp);
   const signInWithGoogleStore = useAuthStore((s) => s.signInWithGoogle);
   const signInWithAppleStore = useAuthStore((s) => s.signInWithApple);
+  const submitCachedOnboardingData = useOnboardingStore((s) => s.submitCachedOnboardingData);
 
   useEffect(() => {
     AppleAuthentication.isAvailableAsync().then(setIsAppleAvailable);
@@ -88,11 +90,21 @@ export function SignUpScreen({ navigation }: Props) {
   const isValid =
     email.trim() && password.length >= 6 && password === confirmPassword && acceptedTerms;
 
+  const submitAndNavigate = async () => {
+    try {
+      await submitCachedOnboardingData();
+    } catch {
+      // Submission failed — RootNavigator will retry on next launch
+    }
+    navigation.navigate('SubscriptionPitch');
+  };
+
   const handleGoogle = async () => {
     setError(null);
     setLoading('google');
     try {
       await signInWithGoogleStore();
+      await submitAndNavigate();
     } catch (err) {
       if (err instanceof Error && err.message !== 'CANCELLED') setError(err.message);
     } finally {
@@ -105,6 +117,7 @@ export function SignUpScreen({ navigation }: Props) {
     setLoading('apple');
     try {
       await signInWithAppleStore();
+      await submitAndNavigate();
     } catch (err) {
       if (err instanceof Error && err.message !== 'CANCELLED') setError(err.message);
     } finally {
@@ -118,6 +131,7 @@ export function SignUpScreen({ navigation }: Props) {
     setLoading('email');
     try {
       await signUp(email.trim(), password);
+      await submitAndNavigate();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create account.');
     } finally {

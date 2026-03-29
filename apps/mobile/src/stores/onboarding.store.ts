@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../api/client';
+import { useProfileStore } from './profile.store';
 
 const ONBOARDING_COMPLETE_KEY = 'onboarding_complete';
 const PROFILE_SETUP_COMPLETE_KEY = 'profile_setup_complete';
@@ -12,6 +13,7 @@ interface OnboardingState {
   syncProfileSetupStatus: () => Promise<void>;
   setOnboardingComplete: () => Promise<void>;
   setProfileSetupComplete: () => Promise<void>;
+  submitCachedOnboardingData: () => Promise<void>;
 }
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
@@ -55,5 +57,30 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   setProfileSetupComplete: async () => {
     await AsyncStorage.setItem(PROFILE_SETUP_COMPLETE_KEY, 'true');
     set({ profileSetupComplete: true });
+  },
+
+  submitCachedOnboardingData: async () => {
+    const profile = useProfileStore.getState();
+    const data = profile.getOnboardingData();
+
+    if (!profile.isComplete()) {
+      throw new Error('Incomplete onboarding data');
+    }
+
+    await api.post('/onboarding/complete', {
+      goalType: data.goalType,
+      goalWeightKg: data.goalWeightKg,
+      weeklyRateKg: data.weeklyRateKg,
+      gender: data.gender,
+      birthDate: data.birthDate!.toISOString().split('T')[0],
+      heightCm: data.heightCm,
+      weightKg: data.weightKg,
+      activityLevel: data.activityLevel,
+      dietPreference: data.dietPreference,
+    });
+
+    await AsyncStorage.setItem(PROFILE_SETUP_COMPLETE_KEY, 'true');
+    set({ profileSetupComplete: true });
+    profile.clearDraft();
   },
 }));

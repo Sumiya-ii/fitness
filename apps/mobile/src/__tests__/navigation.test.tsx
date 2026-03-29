@@ -26,8 +26,7 @@ jest.mock('@react-navigation/native', () => ({
   useIsFocused: () => true,
 }));
 
-jest.mock('../navigation/AuthStack', () => ({ AuthStack: () => null }));
-jest.mock('../navigation/SetupStack', () => ({ SetupStack: () => null }));
+jest.mock('../navigation/OnboardingStack', () => ({ OnboardingStack: () => null }));
 jest.mock('../navigation/MainStack', () => ({ MainStack: () => null }));
 jest.mock('../hooks/usePushNotifications', () => ({ usePushNotifications: jest.fn() }));
 jest.mock('../hooks/useSyncQueue', () => ({ useSyncQueue: jest.fn() }));
