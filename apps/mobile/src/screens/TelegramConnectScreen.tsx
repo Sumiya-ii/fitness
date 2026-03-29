@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Linking, Alert, AppState, type AppStateStatus } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, Linking, Alert, AppState, type AppStateStatus } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BackButton, Button, Badge, LoadingScreen } from '../components/ui';
 import { api } from '../api';
+import { useLocale } from '../i18n';
+import { useColors } from '../theme';
 
 const TELEGRAM_BOT_USERNAME = (process.env.EXPO_PUBLIC_TELEGRAM_BOT_USERNAME ?? 'CoachBot').replace(
   /^@/,
@@ -13,13 +15,14 @@ const TELEGRAM_BOT_USERNAME = (process.env.EXPO_PUBLIC_TELEGRAM_BOT_USERNAME ?? 
 );
 
 export function TelegramConnectScreen() {
-  const navigation = useNavigation();
+  const c = useColors();
+  const { t } = useLocale();
+  const insets = useSafeAreaInsets();
   const [linked, setLinked] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
-  // Track whether we've opened Telegram and are waiting for the user to come back
   const [pendingLink, setPendingLink] = useState(false);
   const appStateRef = useRef(AppState.currentState);
 
@@ -32,7 +35,7 @@ export function TelegramConnectScreen() {
         setPendingLink(false);
       }
     } catch {
-      // Network error — keep previous state, don't clear it
+      // Network error -- keep previous state
     } finally {
       setLoading(false);
     }
@@ -57,22 +60,21 @@ export function TelegramConnectScreen() {
     setConnecting(true);
     try {
       const res = await api.post<{ code: string }>('/telegram/link-code', {});
-      // Embed the code directly in the deep link — user just taps START in Telegram
       const deepLink = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${res.code}`;
       setPendingLink(true);
       await Linking.openURL(deepLink);
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not connect to the server');
+      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('telegram.connectError'));
     } finally {
       setConnecting(false);
     }
   };
 
   const handleUnlink = () => {
-    Alert.alert('Unlink Telegram', 'Are you sure you want to unlink your Telegram account?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('telegram.unlinkTitle'), t('telegram.unlinkConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Unlink',
+        text: t('telegram.unlink'),
         style: 'destructive',
         onPress: async () => {
           setUnlinking(true);
@@ -80,8 +82,12 @@ export function TelegramConnectScreen() {
             await api.post('/telegram/unlink', {});
             setLinked(false);
             setUsername(null);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch (e) {
-            Alert.alert('Error', e instanceof Error ? e.message : 'Failed to unlink');
+            Alert.alert(
+              t('common.error'),
+              e instanceof Error ? e.message : t('telegram.unlinkError'),
+            );
           } finally {
             setUnlinking(false);
           }
@@ -98,117 +104,183 @@ export function TelegramConnectScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-4 py-3">
+        <View className="flex-row items-center px-5 py-3">
           <BackButton />
-          <Text className="flex-1 ml-3 text-xl font-sans-bold text-text">Telegram Coach</Text>
+          <Text className="flex-1 text-lg leading-7 font-sans-bold text-text text-center mr-11">
+            {t('telegram.title')}
+          </Text>
         </View>
 
-        <View className="flex-1 px-4 pt-6">
+        <View className="flex-1 px-5 pt-6" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
           {/* Hero */}
-          <View className="items-center pb-8">
-            <LinearGradient
-              colors={['#1d4ed8', '#8b8fa0']}
-              className="mb-5 h-24 w-24 rounded-3xl items-center justify-center"
+          <Animated.View
+            entering={FadeInDown.duration(400).springify()}
+            className="items-center pb-6"
+          >
+            <View
+              className="mb-5 h-20 w-20 rounded-3xl items-center justify-center"
+              style={{ backgroundColor: c.primary }}
             >
-              <Ionicons name="paper-plane" size={44} color="#ffffff" />
-            </LinearGradient>
-            <Text className="text-center text-xl font-sans-bold text-text">
-              Connect with Coach on Telegram
+              <Ionicons name="paper-plane" size={36} color={c.onPrimary} />
+            </View>
+            <Text className="text-center text-xl leading-7 font-sans-bold text-text">
+              {t('telegram.heroTitle')}
             </Text>
-            <Text className="mt-2 text-center text-sm text-text-secondary">
-              Log meals and get reminders via Telegram
+            <Text
+              className="mt-2 text-center text-sm leading-5 font-sans-medium"
+              style={{ color: c.textSecondary }}
+            >
+              {t('telegram.heroSubtitle')}
             </Text>
             <View className="mt-4">
               <Badge variant={linked ? 'success' : 'warning'}>
-                {linked ? 'Connected' : 'Not Connected'}
+                {linked ? t('telegram.connected') : t('telegram.notConnected')}
               </Badge>
             </View>
-          </View>
+          </Animated.View>
 
           {linked ? (
-            <View className="rounded-2xl bg-surface-card border border-surface-border p-5">
-              <View className="flex-row items-center gap-3 mb-3">
-                <View className="h-10 w-10 rounded-full bg-blue-500/20 items-center justify-center">
-                  <Ionicons name="person" size={20} color="#8b8fa0" />
-                </View>
-                <View>
-                  <Text className="font-sans-semibold text-text">@{username ?? 'user'}</Text>
-                  <Text className="text-xs text-text-secondary">Connected account</Text>
-                </View>
-              </View>
-              <Text className="text-sm text-text-secondary mb-4">
-                You can log meals and receive reminders on Telegram.
-              </Text>
-              <Button variant="outline" onPress={handleUnlink} loading={unlinking}>
-                Unlink Account
-              </Button>
-            </View>
-          ) : (
-            <View className="rounded-2xl bg-surface-card border border-surface-border p-5">
-              {pendingLink ? (
-                <>
-                  <View className="items-center py-4 mb-4">
-                    <Ionicons name="time-outline" size={32} color="#9a9caa" className="mb-3" />
-                    <Text className="font-sans-semibold text-text text-center mb-2">
-                      Waiting for confirmation…
+            <Animated.View entering={FadeInDown.duration(400).delay(100).springify()}>
+              <View className="rounded-2xl bg-surface-card border border-surface-border p-5">
+                <View className="flex-row items-center gap-3 mb-3">
+                  <View
+                    className="h-11 w-11 rounded-full items-center justify-center"
+                    style={{ backgroundColor: `${c.primary}15` }}
+                  >
+                    <Ionicons name="person" size={20} color={c.textSecondary} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-sans-semibold text-base leading-6 text-text">
+                      @{username ?? 'user'}
                     </Text>
-                    <Text className="text-sm text-text-secondary text-center">
-                      Tap START in Telegram to link your account. Come back here once done.
+                    <Text
+                      className="text-xs leading-5 font-sans-medium"
+                      style={{ color: c.textSecondary }}
+                    >
+                      {t('telegram.connectedAccount')}
                     </Text>
                   </View>
-                  <Button variant="primary" onPress={fetchStatus}>
-                    I've connected — check status
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="mt-2"
-                    onPress={handleConnect}
-                    loading={connecting}
-                  >
-                    Open Telegram again
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Text className="font-sans-semibold text-text mb-2">Link your account</Text>
-                  <Text className="text-sm text-text-secondary mb-4">
-                    Tap below to open Telegram. Just tap START and your account will be linked
-                    automatically.
-                  </Text>
-                  <Button variant="primary" onPress={handleConnect} loading={connecting}>
-                    Connect with Telegram
-                  </Button>
-                </>
-              )}
-            </View>
+                </View>
+                <Text
+                  className="text-sm leading-5 font-sans-medium mb-4"
+                  style={{ color: c.textSecondary }}
+                >
+                  {t('telegram.connectedDesc')}
+                </Text>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onPress={handleUnlink}
+                  loading={unlinking}
+                  accessibilityLabel={t('telegram.unlinkAccount')}
+                >
+                  {t('telegram.unlinkAccount')}
+                </Button>
+              </View>
+            </Animated.View>
+          ) : (
+            <Animated.View entering={FadeInDown.duration(400).delay(100).springify()}>
+              <View className="rounded-2xl bg-surface-card border border-surface-border p-5">
+                {pendingLink ? (
+                  <>
+                    <View className="items-center py-4 mb-4">
+                      <View
+                        className="h-12 w-12 rounded-2xl items-center justify-center mb-3"
+                        style={{ backgroundColor: c.cardAlt }}
+                      >
+                        <Ionicons name="time-outline" size={24} color={c.textSecondary} />
+                      </View>
+                      <Text className="font-sans-semibold text-base leading-6 text-text text-center mb-2">
+                        {t('telegram.waitingTitle')}
+                      </Text>
+                      <Text
+                        className="text-sm leading-5 font-sans-medium text-center"
+                        style={{ color: c.textSecondary }}
+                      >
+                        {t('telegram.waitingDesc')}
+                      </Text>
+                    </View>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onPress={fetchStatus}
+                      accessibilityLabel={t('telegram.checkStatus')}
+                    >
+                      {t('telegram.checkStatus')}
+                    </Button>
+                    <View className="mt-3">
+                      <Button
+                        variant="ghost"
+                        size="md"
+                        onPress={handleConnect}
+                        loading={connecting}
+                        accessibilityLabel={t('telegram.openAgain')}
+                      >
+                        {t('telegram.openAgain')}
+                      </Button>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text className="font-sans-semibold text-base leading-6 text-text mb-2">
+                      {t('telegram.linkTitle')}
+                    </Text>
+                    <Text
+                      className="text-sm leading-5 font-sans-medium mb-4"
+                      style={{ color: c.textSecondary }}
+                    >
+                      {t('telegram.linkDesc')}
+                    </Text>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onPress={handleConnect}
+                      loading={connecting}
+                      accessibilityLabel={t('telegram.connectButton')}
+                    >
+                      {t('telegram.connectButton')}
+                    </Button>
+                  </>
+                )}
+              </View>
+            </Animated.View>
           )}
 
           {/* How it works */}
-          {!linked && !pendingLink && (
-            <View className="mt-6">
-              <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-3 px-1">
-                How it works
-              </Text>
-              {[
-                {
-                  icon: 'phone-portrait-outline' as const,
-                  text: 'Tap "Connect with Telegram" above',
-                },
-                { icon: 'paper-plane-outline' as const, text: 'Tap START in the Telegram app' },
-                {
-                  icon: 'checkmark-circle-outline' as const,
-                  text: 'Come back — your account is linked',
-                },
-              ].map((step, i) => (
-                <View key={i} className="flex-row items-center gap-3 mb-3">
-                  <View className="h-8 w-8 rounded-full bg-blue-500/15 items-center justify-center">
-                    <Ionicons name={step.icon} size={16} color="#8b8fa0" />
+          {!linked && !pendingLink ? (
+            <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
+              <View className="mt-6">
+                <Text
+                  className="text-xs leading-5 font-sans-semibold uppercase tracking-wider mb-3 ml-1"
+                  style={{ color: c.textTertiary }}
+                >
+                  {t('telegram.howItWorks')}
+                </Text>
+                {(
+                  [
+                    { icon: 'phone-portrait-outline' as const, text: t('telegram.step1') },
+                    { icon: 'paper-plane-outline' as const, text: t('telegram.step2') },
+                    { icon: 'checkmark-circle-outline' as const, text: t('telegram.step3') },
+                  ] as const
+                ).map((step, i) => (
+                  <View key={i} className="flex-row items-center gap-3 mb-3">
+                    <View
+                      className="h-9 w-9 rounded-xl items-center justify-center"
+                      style={{ backgroundColor: `${c.primary}15` }}
+                    >
+                      <Ionicons name={step.icon} size={16} color={c.textSecondary} />
+                    </View>
+                    <Text
+                      className="flex-1 text-sm leading-5 font-sans-medium"
+                      style={{ color: c.textSecondary }}
+                    >
+                      {step.text}
+                    </Text>
                   </View>
-                  <Text className="flex-1 text-sm text-text-secondary">{step.text}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+                ))}
+              </View>
+            </Animated.View>
+          ) : null}
         </View>
       </SafeAreaView>
     </View>

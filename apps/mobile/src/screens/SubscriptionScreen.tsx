@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Pressable, Linking, Platform, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Linking, Platform, ActivityIndicator } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BackButton, Button } from '../components/ui';
 import { useSubscriptionStore } from '../stores/subscription.store';
 import { PaywallContent } from '../components/PaywallContent';
 import { useLocale } from '../i18n';
+import { useColors } from '../theme';
 
 export function SubscriptionScreen() {
   const navigation = useNavigation();
+  const c = useColors();
+  const insets = useSafeAreaInsets();
   const tier = useSubscriptionStore((s) => s.tier);
   const currentPeriodEnd = useSubscriptionStore((s) => s.currentPeriodEnd);
   const { t } = useLocale();
@@ -35,15 +40,8 @@ export function SubscriptionScreen() {
 
   if (checking) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: '#0A0A0A',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <ActivityIndicator size="large" color="#22C55E" />
+      <View className="flex-1 bg-surface-app items-center justify-center">
+        <ActivityIndicator size="large" color={c.primary} />
       </View>
     );
   }
@@ -55,101 +53,68 @@ export function SubscriptionScreen() {
   const formattedEnd = currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString() : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0A0A0A' }}>
-      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-        {/* Back button */}
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          style={{
-            position: 'absolute',
-            top: Platform.OS === 'ios' ? 54 : 16,
-            left: 16,
-            zIndex: 10,
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+    <View className="flex-1 bg-surface-app">
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1">
+        {/* Header */}
+        <View className="flex-row items-center px-5 py-3">
+          <BackButton />
+        </View>
+
+        <View
+          className="flex-1 items-center justify-center px-8"
+          style={{ paddingBottom: Math.max(insets.bottom, 24) }}
         >
-          <Ionicons name="chevron-back" size={18} color="#9CA3AF" />
-        </Pressable>
-
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <LinearGradient
-            colors={['#22C55E', '#16A34A']}
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: 24,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 24,
-            }}
-          >
-            <Ionicons name="checkmark-circle" size={48} color="#FFFFFF" />
-          </LinearGradient>
-
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: '800',
-              color: '#FFFFFF',
-              textAlign: 'center',
-              marginBottom: 10,
-            }}
-          >
-            {t('subscription.alreadyProTitle')}
-          </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              color: '#9CA3AF',
-              textAlign: 'center',
-              lineHeight: 24,
-              marginBottom: 8,
-            }}
-          >
-            {t('subscription.alreadyProDesc')}
-          </Text>
-
-          {formattedEnd && (
-            <Text
-              style={{
-                fontSize: 14,
-                color: '#6B7280',
-                textAlign: 'center',
-                marginBottom: 32,
-              }}
+          <Animated.View entering={FadeInDown.duration(400).springify()} className="items-center">
+            {/* Success icon */}
+            <View
+              className="h-20 w-20 rounded-3xl items-center justify-center mb-6"
+              style={{ backgroundColor: `${c.success}20` }}
             >
-              {t('subscription.iapDisclaimer')}
-            </Text>
-          )}
+              <Ionicons name="checkmark-circle" size={44} color={c.success} />
+            </View>
 
-          <Pressable
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Linking.openURL('https://apps.apple.com/account/subscriptions');
-              } else {
-                Linking.openURL('https://play.google.com/store/account/subscriptions');
-              }
-            }}
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              borderRadius: 16,
-              paddingVertical: 16,
-              paddingHorizontal: 32,
-              marginBottom: 12,
-            }}
-          >
+            <Text className="text-2xl leading-8 font-sans-bold text-text text-center mb-3">
+              {t('subscription.alreadyProTitle')}
+            </Text>
             <Text
-              style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600', textAlign: 'center' }}
+              className="text-base leading-6 font-sans-medium text-center mb-2"
+              style={{ color: c.textSecondary }}
+            >
+              {t('subscription.alreadyProDesc')}
+            </Text>
+
+            {formattedEnd ? (
+              <Text
+                className="text-sm leading-5 font-sans-medium text-center mb-8"
+                style={{ color: c.textTertiary }}
+              >
+                {t('subscription.iapDisclaimer')}
+              </Text>
+            ) : (
+              <View className="mb-8" />
+            )}
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.duration(400).delay(150).springify()}
+            className="w-full"
+          >
+            <Button
+              variant="secondary"
+              size="lg"
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('https://apps.apple.com/account/subscriptions');
+                } else {
+                  Linking.openURL('https://play.google.com/store/account/subscriptions');
+                }
+              }}
+              accessibilityLabel={t('settings.manage')}
             >
               {t('settings.manage')}
-            </Text>
-          </Pressable>
+            </Button>
+          </Animated.View>
         </View>
       </SafeAreaView>
     </View>

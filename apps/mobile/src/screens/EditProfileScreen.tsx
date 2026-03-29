@@ -1,11 +1,18 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { BackButton } from '../components/ui';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BackButton, Button } from '../components/ui';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
@@ -18,9 +25,10 @@ export function EditProfileScreen() {
   const c = useColors();
   const navigation = useNavigation();
   const { t } = useLocale();
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [nameInput, setNameInput] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useState(() => {
@@ -63,66 +71,81 @@ export function EditProfileScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-4 py-3">
+        <View className="flex-row items-center px-5 py-3">
           <BackButton />
-          <Text className="flex-1 text-lg font-sans-bold text-text text-center mr-10">
+          <Text className="flex-1 text-lg leading-7 font-sans-bold text-text text-center mr-11">
             {t('settings.editProfile')}
           </Text>
         </View>
 
-        <View className="flex-1 px-4 pt-8">
-          {/* Avatar */}
-          <View className="items-center mb-8">
-            <LinearGradient
-              colors={['#667eea', '#764ba2']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="h-24 w-24 rounded-full items-center justify-center"
-            >
-              <Text className="text-white text-3xl font-sans-bold">
-                {getInitials(nameInput || profile?.displayName)}
-              </Text>
-            </LinearGradient>
-          </View>
-
-          {/* Name input */}
-          <View className="bg-surface-card rounded-2xl px-4 py-2 border border-surface-border">
-            <Text className="text-xs text-text-tertiary font-sans-medium mt-2">
-              {t('settings.displayName')}
-            </Text>
-            <TextInput
-              className="text-text font-sans-medium text-[16px] py-3"
-              value={nameInput}
-              onChangeText={setNameInput}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={handleSave}
-              placeholderTextColor={c.textTertiary}
-              placeholder={t('settings.yourName')}
-            />
-          </View>
-
-          {/* Save button */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              handleSave();
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1"
+        >
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingBottom: Math.max(insets.bottom, 24),
             }}
-            disabled={!hasChanges || saving}
-            className="mt-6"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <LinearGradient
-              colors={hasChanges ? ['#667eea', '#764ba2'] : [c.muted, c.muted]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              className="rounded-2xl py-4 items-center"
+            {/* Avatar */}
+            <Animated.View
+              entering={FadeInDown.duration(400).springify()}
+              className="items-center mt-8 mb-8"
             >
-              <Text className="text-white text-[16px] font-sans-bold">
-                {saving ? t('common.saving') : t('common.save')}
-              </Text>
-            </LinearGradient>
-          </Pressable>
-        </View>
+              <View
+                className="h-24 w-24 rounded-full items-center justify-center"
+                style={{ backgroundColor: c.primary }}
+              >
+                <Text className="text-3xl font-sans-bold" style={{ color: c.onPrimary }}>
+                  {getInitials(nameInput || profile?.displayName)}
+                </Text>
+              </View>
+            </Animated.View>
+
+            {/* Name input */}
+            <Animated.View entering={FadeInDown.duration(400).delay(100).springify()}>
+              <View className="bg-surface-card rounded-2xl px-4 pt-3 pb-1 border border-surface-border">
+                <Text
+                  className="text-xs leading-5 font-sans-medium"
+                  style={{ color: c.textTertiary }}
+                >
+                  {t('settings.displayName')}
+                </Text>
+                <TextInput
+                  className="text-base leading-6 font-sans-medium py-3 text-text"
+                  value={nameInput}
+                  onChangeText={setNameInput}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleSave}
+                  placeholderTextColor={c.textTertiary}
+                  placeholder={t('settings.yourName')}
+                  accessibilityLabel={t('settings.displayName')}
+                />
+              </View>
+            </Animated.View>
+
+            {/* Save button */}
+            <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
+              <View className="mt-6">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onPress={handleSave}
+                  disabled={!hasChanges}
+                  loading={saving}
+                  accessibilityLabel={t('common.save')}
+                >
+                  {t('common.save')}
+                </Button>
+              </View>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );

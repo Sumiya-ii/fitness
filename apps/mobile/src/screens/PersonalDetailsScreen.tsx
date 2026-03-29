@@ -9,12 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BackButton } from '../components/ui';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BackButton, Button, SkeletonLoader } from '../components/ui';
 import { useSettingsStore } from '../stores/settings.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
@@ -32,7 +33,7 @@ interface ProfileData {
   goalWeightKg: number | null;
 }
 
-/* ── Unit conversion helpers ── */
+/* -- Unit conversion helpers -- */
 
 function kgToLbs(kg: number): number {
   return Math.round(kg * 2.20462 * 10) / 10;
@@ -54,13 +55,13 @@ function ftInToCm(ft: number, inches: number): number {
 }
 
 function formatWeight(kg: number | null, imperial: boolean): string {
-  if (kg === null) return '—';
+  if (kg === null) return '--';
   if (imperial) return `${kgToLbs(kg)} lbs`;
   return `${kg} kg`;
 }
 
 function formatHeight(cm: number | null, imperial: boolean): string {
-  if (cm === null) return '—';
+  if (cm === null) return '--';
   if (imperial) {
     const { ft, inches } = cmToFtIn(cm);
     return `${ft} ft ${inches} in`;
@@ -69,18 +70,18 @@ function formatHeight(cm: number | null, imperial: boolean): string {
 }
 
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—';
+  if (!dateStr) return '--';
   return dateStr.replace(/-/g, '.');
 }
 
 function formatGender(gender: string | null, t: (k: string) => string): string {
-  if (!gender) return '—';
+  if (!gender) return '--';
   if (gender === 'male') return t('personalDetails.male');
   if (gender === 'female') return t('personalDetails.female');
   return gender;
 }
 
-/* ── Detail row ── */
+/* -- Detail row -- */
 
 function DetailRow({
   label,
@@ -96,31 +97,40 @@ function DetailRow({
   const c = useColors();
   return (
     <>
-      <View className="flex-row items-center py-[16px] px-1">
-        <Text className="flex-1 text-[15px] font-sans text-text">{label}</Text>
-        <Text className="text-[15px] font-sans-semibold text-text mr-3">{value}</Text>
+      <View className="flex-row items-center py-3.5 min-h-[48px]">
+        <Text className="flex-1 text-base leading-6 font-sans" style={{ color: c.text }}>
+          {label}
+        </Text>
+        <Text className="text-base leading-6 font-sans-semibold mr-3" style={{ color: c.text }}>
+          {value}
+        </Text>
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onEdit();
           }}
           hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={`${label} ${value}`}
+          className="h-9 w-9 rounded-xl items-center justify-center"
+          style={{ backgroundColor: c.cardAlt }}
         >
-          <Ionicons name="pencil-outline" size={18} color={c.textTertiary} />
+          <Ionicons name="pencil-outline" size={16} color={c.textTertiary} />
         </Pressable>
       </View>
-      {!isLast && <View className="h-px bg-surface-secondary mx-1" />}
+      {!isLast ? <View className="h-px bg-surface-secondary" /> : null}
     </>
   );
 }
 
 type EditField = 'weight' | 'goalWeight' | 'height' | 'birthDate' | 'gender' | 'stepGoal' | null;
 
-/* ── Main screen ── */
+/* -- Main screen -- */
 
 export function PersonalDetailsScreen() {
   const c = useColors();
   const { t } = useLocale();
+  const insets = useSafeAreaInsets();
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const imperial = unitSystem === 'imperial';
 
@@ -260,10 +270,49 @@ export function PersonalDetailsScreen() {
     setEditField(null);
   };
 
+  const getEditorLabel = (): string => {
+    switch (editField) {
+      case 'weight':
+        return t('personalDetails.currentWeight');
+      case 'goalWeight':
+        return t('personalDetails.goalWeight');
+      case 'height':
+        return t('personalDetails.height');
+      case 'birthDate':
+        return t('personalDetails.dateOfBirth');
+      case 'stepGoal':
+        return t('personalDetails.dailyStepGoal');
+      default:
+        return '';
+    }
+  };
+
+  const getUnitLabel = (): string => {
+    switch (editField) {
+      case 'stepGoal':
+        return t('personalDetails.steps');
+      case 'height':
+        return 'cm';
+      default:
+        return imperial ? 'lbs' : 'kg';
+    }
+  };
+
   if (loading) {
     return (
-      <View className="flex-1 bg-surface-app items-center justify-center">
-        <Text className="text-text-tertiary font-sans-medium">{t('common.loading')}</Text>
+      <View className="flex-1 bg-surface-app">
+        <SafeAreaView edges={['top']} className="flex-1">
+          <View className="flex-row items-center px-5 py-3">
+            <BackButton />
+            <Text className="flex-1 text-lg leading-7 font-sans-bold text-text text-center mr-11">
+              {t('personalDetails.title')}
+            </Text>
+          </View>
+          <View className="px-5 pt-6 gap-3">
+            <SkeletonLoader height={80} borderRadius={16} />
+            <SkeletonLoader height={280} borderRadius={16} />
+          </View>
+        </SafeAreaView>
       </View>
     );
   }
@@ -279,9 +328,9 @@ export function PersonalDetailsScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-4 py-3">
+        <View className="flex-row items-center px-5 py-3">
           <BackButton />
-          <Text className="flex-1 text-lg font-sans-bold text-text text-center mr-10">
+          <Text className="flex-1 text-lg leading-7 font-sans-bold text-text text-center mr-11">
             {t('personalDetails.title')}
           </Text>
         </View>
@@ -292,156 +341,168 @@ export function PersonalDetailsScreen() {
         >
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingBottom: Math.max(insets.bottom, 24) + 24,
+            }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* ── Goal Weight card ── */}
-            <View className="bg-surface-card rounded-2xl px-5 py-4 mt-6 mb-3 border border-surface-border flex-row items-center">
-              <View className="flex-1">
-                <Text className="text-[15px] font-sans text-text">
-                  {t('personalDetails.goalWeight')}
-                </Text>
-                <Text className="text-[17px] font-sans-bold text-text mt-1">
-                  {formatWeight(profile?.goalWeightKg ?? null, imperial)}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  startEdit('goalWeight');
-                }}
-                className="bg-text rounded-full px-4 py-2"
-              >
-                <Text className="text-[13px] font-sans-semibold text-surface-app">
+            {/* -- Goal Weight card -- */}
+            <Animated.View entering={FadeInDown.duration(400).springify()}>
+              <View className="bg-surface-card rounded-2xl px-5 py-4 mt-6 mb-4 border border-surface-border flex-row items-center">
+                <View className="flex-1">
+                  <Text
+                    className="text-sm leading-5 font-sans-medium"
+                    style={{ color: c.textSecondary }}
+                  >
+                    {t('personalDetails.goalWeight')}
+                  </Text>
+                  <Text className="text-xl leading-7 font-sans-bold text-text mt-1">
+                    {formatWeight(profile?.goalWeightKg ?? null, imperial)}
+                  </Text>
+                </View>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    startEdit('goalWeight');
+                  }}
+                  accessibilityLabel={t('personalDetails.changeGoal')}
+                >
                   {t('personalDetails.changeGoal')}
-                </Text>
-              </Pressable>
-            </View>
+                </Button>
+              </View>
+            </Animated.View>
 
-            {/* ── Details card ── */}
-            <View className="bg-surface-card rounded-2xl px-4 border border-surface-border">
-              <DetailRow
-                label={t('personalDetails.currentWeight')}
-                value={formatWeight(profile?.weightKg ?? null, imperial)}
-                onEdit={() => startEdit('weight')}
-              />
-              <DetailRow
-                label={t('personalDetails.height')}
-                value={formatHeight(profile?.heightCm ?? null, imperial)}
-                onEdit={() => startEdit('height')}
-              />
-              <DetailRow
-                label={t('personalDetails.dateOfBirth')}
-                value={formatDate(profile?.birthDate ?? null)}
-                onEdit={() => startEdit('birthDate')}
-              />
-              <DetailRow
-                label={t('personalDetails.gender')}
-                value={formatGender(profile?.gender ?? null, t)}
-                onEdit={() => startEdit('gender')}
-              />
-              <DetailRow
-                label={t('personalDetails.dailyStepGoal')}
-                value={`${stepGoal} ${t('personalDetails.steps')}`}
-                onEdit={() => startEdit('stepGoal')}
-                isLast
-              />
-            </View>
+            {/* -- Details card -- */}
+            <Animated.View entering={FadeInDown.duration(400).delay(100).springify()}>
+              <View className="bg-surface-card rounded-2xl px-4 border border-surface-border">
+                <DetailRow
+                  label={t('personalDetails.currentWeight')}
+                  value={formatWeight(profile?.weightKg ?? null, imperial)}
+                  onEdit={() => startEdit('weight')}
+                />
+                <DetailRow
+                  label={t('personalDetails.height')}
+                  value={formatHeight(profile?.heightCm ?? null, imperial)}
+                  onEdit={() => startEdit('height')}
+                />
+                <DetailRow
+                  label={t('personalDetails.dateOfBirth')}
+                  value={formatDate(profile?.birthDate ?? null)}
+                  onEdit={() => startEdit('birthDate')}
+                />
+                <DetailRow
+                  label={t('personalDetails.gender')}
+                  value={formatGender(profile?.gender ?? null, t)}
+                  onEdit={() => startEdit('gender')}
+                />
+                <DetailRow
+                  label={t('personalDetails.dailyStepGoal')}
+                  value={`${stepGoal.toLocaleString()} ${t('personalDetails.steps')}`}
+                  onEdit={() => startEdit('stepGoal')}
+                  isLast
+                />
+              </View>
+            </Animated.View>
 
-            {/* ── Inline editor ── */}
-            {showInlineEditor && (
-              <View className="bg-surface-card rounded-2xl px-4 py-4 mt-3 border border-surface-border">
-                <Text className="text-[13px] font-sans-semibold text-text-tertiary mb-3">
-                  {editField === 'weight'
-                    ? t('personalDetails.currentWeight')
-                    : editField === 'goalWeight'
-                      ? t('personalDetails.goalWeight')
-                      : editField === 'height'
-                        ? t('personalDetails.height')
-                        : editField === 'birthDate'
-                          ? t('personalDetails.dateOfBirth')
-                          : t('personalDetails.dailyStepGoal')}
-                </Text>
+            {/* -- Inline editor -- */}
+            {showInlineEditor ? (
+              <Animated.View entering={FadeInDown.duration(300).springify()}>
+                <View className="bg-surface-card rounded-2xl px-4 py-4 mt-4 border border-surface-border">
+                  <Text
+                    className="text-sm leading-5 font-sans-semibold mb-3"
+                    style={{ color: c.textTertiary }}
+                  >
+                    {getEditorLabel()}
+                  </Text>
 
-                {editField === 'height' && imperial ? (
-                  <View className="flex-row items-center gap-3">
-                    <View className="flex-1 flex-row items-center">
+                  {editField === 'height' && imperial ? (
+                    <View className="flex-row items-center gap-3">
+                      <View className="flex-1 flex-row items-center">
+                        <TextInput
+                          className="flex-1 text-base leading-6 font-sans-medium text-text bg-surface-secondary rounded-xl px-4 py-3"
+                          value={editValue}
+                          onChangeText={setEditValue}
+                          keyboardType="number-pad"
+                          autoFocus
+                          placeholder="ft"
+                          placeholderTextColor={c.textTertiary}
+                          accessibilityLabel="Feet"
+                        />
+                        <Text className="font-sans-medium ml-2" style={{ color: c.textTertiary }}>
+                          ft
+                        </Text>
+                      </View>
+                      <View className="flex-1 flex-row items-center">
+                        <TextInput
+                          className="flex-1 text-base leading-6 font-sans-medium text-text bg-surface-secondary rounded-xl px-4 py-3"
+                          value={editValue2}
+                          onChangeText={setEditValue2}
+                          keyboardType="number-pad"
+                          placeholder="in"
+                          placeholderTextColor={c.textTertiary}
+                          accessibilityLabel="Inches"
+                        />
+                        <Text className="font-sans-medium ml-2" style={{ color: c.textTertiary }}>
+                          in
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View className="flex-row items-center">
                       <TextInput
-                        className="flex-1 text-text font-sans-medium text-[16px] bg-surface-secondary rounded-xl px-4 py-3"
+                        className="flex-1 text-base leading-6 font-sans-medium text-text bg-surface-secondary rounded-xl px-4 py-3"
                         value={editValue}
                         onChangeText={setEditValue}
-                        keyboardType="number-pad"
+                        keyboardType={
+                          editField === 'stepGoal'
+                            ? 'number-pad'
+                            : editField === 'birthDate'
+                              ? 'numbers-and-punctuation'
+                              : 'decimal-pad'
+                        }
                         autoFocus
-                        placeholder="ft"
+                        placeholder={editField === 'birthDate' ? 'YYYY.MM.DD' : undefined}
                         placeholderTextColor={c.textTertiary}
+                        accessibilityLabel={getEditorLabel()}
                       />
-                      <Text className="text-text-tertiary font-sans-medium ml-2">ft</Text>
+                      {editField !== 'birthDate' ? (
+                        <Text className="font-sans-medium ml-3" style={{ color: c.textTertiary }}>
+                          {getUnitLabel()}
+                        </Text>
+                      ) : null}
                     </View>
-                    <View className="flex-1 flex-row items-center">
-                      <TextInput
-                        className="flex-1 text-text font-sans-medium text-[16px] bg-surface-secondary rounded-xl px-4 py-3"
-                        value={editValue2}
-                        onChangeText={setEditValue2}
-                        keyboardType="number-pad"
-                        placeholder="in"
-                        placeholderTextColor={c.textTertiary}
-                      />
-                      <Text className="text-text-tertiary font-sans-medium ml-2">in</Text>
-                    </View>
-                  </View>
-                ) : (
-                  <View className="flex-row items-center">
-                    <TextInput
-                      className="flex-1 text-text font-sans-medium text-[16px] bg-surface-secondary rounded-xl px-4 py-3"
-                      value={editValue}
-                      onChangeText={setEditValue}
-                      keyboardType={
-                        editField === 'stepGoal'
-                          ? 'number-pad'
-                          : editField === 'birthDate'
-                            ? 'numbers-and-punctuation'
-                            : 'decimal-pad'
-                      }
-                      autoFocus
-                      placeholder={editField === 'birthDate' ? 'YYYY.MM.DD' : undefined}
-                      placeholderTextColor={c.textTertiary}
-                    />
-                    {editField !== 'birthDate' && (
-                      <Text className="text-text-tertiary font-sans-medium ml-3">
-                        {editField === 'stepGoal'
-                          ? t('personalDetails.steps')
-                          : editField === 'height'
-                            ? 'cm'
-                            : imperial
-                              ? 'lbs'
-                              : 'kg'}
-                      </Text>
-                    )}
-                  </View>
-                )}
+                  )}
 
-                <View className="flex-row gap-3 mt-4">
-                  <Pressable
-                    onPress={cancelEdit}
-                    className="flex-1 bg-surface-secondary rounded-xl py-3 items-center"
-                  >
-                    <Text className="text-text font-sans-semibold text-[14px]">
-                      {t('common.cancel')}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleSaveEdit}
-                    disabled={saving}
-                    className="flex-1 bg-text rounded-xl py-3 items-center"
-                  >
-                    <Text className="text-surface-app font-sans-semibold text-[14px]">
-                      {saving ? t('common.loading') : t('common.save')}
-                    </Text>
-                  </Pressable>
+                  <View className="flex-row gap-3 mt-4">
+                    <View className="flex-1">
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        onPress={cancelEdit}
+                        accessibilityLabel={t('common.cancel')}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                    </View>
+                    <View className="flex-1">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onPress={handleSaveEdit}
+                        loading={saving}
+                        accessibilityLabel={t('common.save')}
+                      >
+                        {t('common.save')}
+                      </Button>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            )}
+              </Animated.View>
+            ) : null}
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BackButton } from '../components/ui';
 import { useSettingsStore } from '../stores/settings.store';
 import { useThemeStore, type ThemeMode } from '../stores/theme.store';
@@ -27,7 +28,7 @@ function Pill({
 }) {
   const c = useColors();
   return (
-    <View className="flex-row rounded-xl p-[3px] bg-surface-secondary">
+    <View className="flex-row rounded-xl p-1 bg-surface-secondary">
       {options.map((opt) => {
         const active = value === opt.value;
         return (
@@ -37,11 +38,15 @@ function Pill({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onChange(opt.value);
             }}
-            className="px-4 py-1.5 rounded-[10px]"
-            style={active ? { backgroundColor: c.muted } : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={opt.label}
+            accessibilityState={{ selected: active }}
+            className="px-4 py-2 rounded-[10px] min-h-[36px] items-center justify-center"
+            style={active ? { backgroundColor: c.card } : undefined}
           >
             <Text
-              className={`text-[13px] font-sans-semibold ${active ? 'text-text' : 'text-text-tertiary'}`}
+              className="text-sm leading-5 font-sans-semibold"
+              style={{ color: active ? c.text : c.textTertiary }}
             >
               {opt.label}
             </Text>
@@ -52,9 +57,25 @@ function Pill({
   );
 }
 
-function Section({ children }: { children: React.ReactNode }) {
+function SettingRow({
+  icon,
+  label,
+  children,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  children: React.ReactNode;
+}) {
+  const c = useColors();
   return (
-    <View className="bg-surface-card rounded-2xl px-4 mb-3 border border-surface-border">
+    <View className="flex-row items-center py-3.5 min-h-[52px]">
+      <View
+        className="h-9 w-9 rounded-xl items-center justify-center mr-3"
+        style={{ backgroundColor: c.cardAlt }}
+      >
+        <Ionicons name={icon} size={18} color={c.textTertiary} />
+      </View>
+      <Text className="flex-1 text-base leading-6 font-sans-medium text-text">{label}</Text>
       {children}
     </View>
   );
@@ -65,7 +86,6 @@ function Divider() {
 }
 
 export function AppSettingsScreen() {
-  const c = useColors();
   const { locale: currentLocale, setLocale, t } = useLocale();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const themeMode = useThemeStore((s) => s.mode);
@@ -105,81 +125,58 @@ export function AppSettingsScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-4 py-3">
+        <View className="flex-row items-center px-5 py-3">
           <BackButton />
-          <Text className="flex-1 text-lg font-sans-bold text-text text-center mr-10">
+          <Text className="flex-1 text-lg leading-7 font-sans-bold text-text text-center mr-11">
             {t('settings.preferences')}
           </Text>
         </View>
 
-        <View className="px-4 pt-6">
-          <Section>
-            {/* Language */}
-            <View className="flex-row items-center py-[14px]">
-              <Ionicons
-                name="language-outline"
-                size={20}
-                color={c.textTertiary}
-                style={{ width: 28 }}
-              />
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                {t('settings.language')}
-              </Text>
-              <Pill
-                options={[
-                  { label: 'EN', value: 'en' },
-                  { label: 'МН', value: 'mn' },
-                ]}
-                value={currentLang}
-                onChange={handleLanguageSelect}
-              />
-            </View>
-            <Divider />
+        <View className="px-5 pt-6">
+          <Animated.View entering={FadeInDown.duration(400).springify()}>
+            <View className="bg-surface-card rounded-2xl px-4 border border-surface-border">
+              {/* Language */}
+              <SettingRow icon="language-outline" label={t('settings.language')}>
+                <Pill
+                  options={[
+                    { label: 'EN', value: 'en' },
+                    { label: 'MN', value: 'mn' },
+                  ]}
+                  value={currentLang}
+                  onChange={handleLanguageSelect}
+                />
+              </SettingRow>
 
-            {/* Units */}
-            <View className="flex-row items-center py-[14px]">
-              <Ionicons
-                name="resize-outline"
-                size={20}
-                color={c.textTertiary}
-                style={{ width: 28 }}
-              />
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                {t('settings.units')}
-              </Text>
-              <Pill
-                options={[
-                  { label: t('settings.metric'), value: 'metric' },
-                  { label: t('settings.imperial'), value: 'imperial' },
-                ]}
-                value={currentUnits}
-                onChange={handleUnitsSelect}
-              />
-            </View>
-            <Divider />
+              <Divider />
 
-            {/* Appearance */}
-            <View className="flex-row items-center py-[14px]">
-              <Ionicons
-                name="moon-outline"
-                size={20}
-                color={c.textTertiary}
-                style={{ width: 28 }}
-              />
-              <Text className="flex-1 text-[15px] font-sans-medium text-text">
-                {t('settings.appearance')}
-              </Text>
-              <Pill
-                options={[
-                  { label: '☀️', value: 'light' },
-                  { label: '🌙', value: 'dark' },
-                  { label: '⚙️', value: 'system' },
-                ]}
-                value={themeMode}
-                onChange={(v) => setThemeMode(v as ThemeMode)}
-              />
+              {/* Units */}
+              <SettingRow icon="resize-outline" label={t('settings.units')}>
+                <Pill
+                  options={[
+                    { label: t('settings.metric'), value: 'metric' },
+                    { label: t('settings.imperial'), value: 'imperial' },
+                  ]}
+                  value={currentUnits}
+                  onChange={handleUnitsSelect}
+                />
+              </SettingRow>
+
+              <Divider />
+
+              {/* Appearance */}
+              <SettingRow icon="moon-outline" label={t('settings.appearance')}>
+                <Pill
+                  options={[
+                    { label: t('onboarding.themeLight'), value: 'light' },
+                    { label: t('onboarding.themeDark'), value: 'dark' },
+                    { label: t('onboarding.themeSystem').split(' ')[0], value: 'system' },
+                  ]}
+                  value={themeMode}
+                  onChange={(v) => setThemeMode(v as ThemeMode)}
+                />
+              </SettingRow>
             </View>
-          </Section>
+          </Animated.View>
         </View>
       </SafeAreaView>
     </View>
