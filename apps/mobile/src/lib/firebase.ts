@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence, type Auth } from 'firebase/auth';
+import { initializeAuth, getAuth, getReactNativePersistence, type Auth } from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 type FirebaseConfig = {
@@ -38,9 +38,15 @@ export function getFirebaseAuth(): Auth {
   if (cachedAuth) return cachedAuth;
 
   const app = getApps().length > 0 ? getApp() : initializeApp(getFirebaseConfig());
-  cachedAuth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-  });
+
+  if (typeof getReactNativePersistence === 'function') {
+    cachedAuth = initializeAuth(app, {
+      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+    });
+  } else {
+    // Fallback: getAuth uses default persistence (may not persist across restarts)
+    cachedAuth = getAuth(app);
+  }
 
   return cachedAuth;
 }
