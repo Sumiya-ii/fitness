@@ -41,3 +41,6 @@ export { ProgressRing } from './ProgressRing';
 export type { ProgressRingProps } from './ProgressRing';
 
 export { SyncBanner } from './SyncBanner';
+
+export { ScrollPicker } from './ScrollPicker';
+export type { ScrollPickerProps, ScrollPickerItem } from './ScrollPicker';

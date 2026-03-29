@@ -1,41 +1,48 @@
 import { useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
-import { useSettingsStore } from '../../stores/settings.store';
-import { displayWeight, inputToKg, weightUnit, weightRange } from '../../utils/units';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
+import { ScrollPicker } from '../../components/ui';
 
 const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'DesiredWeight'>;
 
+const MIN_WEIGHT = 30;
+const MAX_WEIGHT = 200;
+const DEFAULT_WEIGHT = 65;
+
+// Whole-kg items only.
+const WEIGHT_ITEMS = Array.from({ length: MAX_WEIGHT - MIN_WEIGHT + 1 }, (_, i) => {
+  const w = MIN_WEIGHT + i;
+  return { label: w.toString(), value: w };
+});
+
 export function DesiredWeightScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.goalWeightKg);
   const setGoalWeightKg = useProfileStore((s) => s.setGoalWeightKg);
   const goalType = useProfileStore((s) => s.goalType);
-  const unitSystem = useSettingsStore((s) => s.unitSystem);
   const c = useColors();
   const { t } = useLocale();
 
-  const range = weightRange(unitSystem);
-  const initialDisplay = stored ? displayWeight(stored, unitSystem).toString() : '';
-  const [value, setValue] = useState(initialDisplay);
-
-  const weight = parseFloat(value);
-  const isValid = !isNaN(weight) && weight >= range.min && weight <= range.max;
+  const [selectedWeight, setSelectedWeight] = useState<number>(() => {
+    if (stored && stored >= MIN_WEIGHT && stored <= MAX_WEIGHT) {
+      return Math.round(stored);
+    }
+    return DEFAULT_WEIGHT;
+  });
 
   const handleContinue = () => {
-    if (isValid) {
-      setGoalWeightKg(inputToKg(weight, unitSystem));
-      navigation.navigate('WeeklyRate');
-    }
+    setGoalWeightKg(selectedWeight);
+    navigation.navigate('WeeklyRate');
   };
 
+  // Goal-type-dependent title label.
   const goalLabelKey =
     goalType === 'lose_fat'
       ? 'onboarding.desiredWeightTarget'
@@ -53,33 +60,34 @@ export function DesiredWeightScreen({ navigation }: Props) {
       subtitle={t('onboarding.desiredWeightSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={handleContinue}
-      continueDisabled={!isValid}
     >
       <View className="flex-1 justify-center items-center">
-        <View className="items-center mb-8">
+        {/* Icon */}
+        <View
+          className="w-20 h-20 rounded-full items-center justify-center mb-10"
+          style={{ backgroundColor: `${c.primary}1a` }}
+        >
+          <Ionicons name="flag-outline" size={40} color={c.primary} />
+        </View>
+
+        {/* Picker + unit label */}
+        <View className="flex-row items-center gap-4">
           <View
-            className="w-20 h-20 rounded-full items-center justify-center mb-6"
-            style={{ backgroundColor: `${c.primary}1a` }}
+            className="overflow-hidden rounded-2xl border border-surface-border bg-surface-card"
+            style={{ width: 120 }}
           >
-            <Ionicons name="flag-outline" size={40} color={c.primary} />
+            <ScrollPicker
+              items={WEIGHT_ITEMS}
+              selectedValue={selectedWeight}
+              onValueChange={(v) => setSelectedWeight(v as number)}
+              itemHeight={48}
+              visibleItems={5}
+              width={120}
+              accessibilityLabel={title}
+            />
           </View>
 
-          <View className="flex-row items-end">
-            <TextInput
-              value={value}
-              onChangeText={setValue}
-              keyboardType="decimal-pad"
-              placeholder={range.placeholder}
-              placeholderTextColor={c.textTertiary}
-              className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
-              maxLength={6}
-              autoFocus
-              accessibilityLabel={t('onboarding.desiredWeightTitle').replace('{{label}}', '')}
-            />
-            <Text className="text-2xl font-sans-medium text-text-secondary ml-2 mb-2">
-              {weightUnit(unitSystem)}
-            </Text>
-          </View>
+          <Text className="text-2xl font-sans-semibold text-text-secondary">kg</Text>
         </View>
       </View>
     </OnboardingLayout>
