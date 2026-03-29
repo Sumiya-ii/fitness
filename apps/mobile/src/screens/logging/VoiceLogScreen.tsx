@@ -80,15 +80,6 @@ function autoDetectMealType(): MealType {
   return 'snack';
 }
 
-function getDeviceLocale(): 'mn' | 'en' {
-  try {
-    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-    return locale.startsWith('mn') ? 'mn' : 'en';
-  } catch {
-    return 'mn';
-  }
-}
-
 function getProcessingMessage(
   screenState: ScreenState,
   draftWorkerStatus: 'waiting' | 'active' | null,
@@ -194,7 +185,7 @@ function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
 
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [screenState, setScreenState] = useState<ScreenState>('idle');
@@ -294,7 +285,7 @@ export function VoiceLogScreen() {
         type: 'audio/m4a',
         name: 'recording.m4a',
       } as unknown as Blob);
-      formData.append('locale', getDeviceLocale());
+      formData.append('locale', locale);
       const res = await api.upload<{ data: { draftId: string } }>('/voice/upload', formData);
       setScreenState('processing');
       pollDraft(res.data.draftId);
@@ -330,7 +321,7 @@ export function VoiceLogScreen() {
           itemCount: items.length,
           totalCalories: d.totalCalories ?? 0,
           hasLowConfidenceItems: items.some((it) => it.confidence < 0.7),
-          locale: getDeviceLocale(),
+          locale,
         });
         return;
       }
