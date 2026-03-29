@@ -1,7 +1,11 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": "..",
-  "testMatch": ["<rootDir>/test/performance/**/*.spec.ts", "<rootDir>/test/reliability/**/*.spec.ts", "<rootDir>/test/security/**/*.spec.ts"],
+  "testMatch": [
+    "<rootDir>/test/performance/**/*.spec.ts",
+    "<rootDir>/test/reliability/**/*.spec.ts",
+    "<rootDir>/test/security/**/*.spec.ts"
+  ],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },

@@ -60,23 +60,18 @@ export class WeightLogsService {
     const recentWeek = logs.slice(0, 7);
     const previousWeek = logs.slice(7, 14);
 
-    const weekAvg =
-      recentWeek.reduce((sum, l) => sum + Number(l.weightKg), 0) /
-      recentWeek.length;
+    const weekAvg = recentWeek.reduce((sum, l) => sum + Number(l.weightKg), 0) / recentWeek.length;
 
     const prevWeekAvg =
       previousWeek.length > 0
-        ? previousWeek.reduce((sum, l) => sum + Number(l.weightKg), 0) /
-          previousWeek.length
+        ? previousWeek.reduce((sum, l) => sum + Number(l.weightKg), 0) / previousWeek.length
         : null;
 
     return {
       current,
       weeklyAverage: Number(weekAvg.toFixed(1)),
       previousWeekAverage: prevWeekAvg ? Number(prevWeekAvg.toFixed(1)) : null,
-      weeklyDelta: prevWeekAvg
-        ? Number((weekAvg - prevWeekAvg).toFixed(1))
-        : null,
+      weeklyDelta: prevWeekAvg ? Number((weekAvg - prevWeekAvg).toFixed(1)) : null,
       dataPoints: logs.length,
     };
   }

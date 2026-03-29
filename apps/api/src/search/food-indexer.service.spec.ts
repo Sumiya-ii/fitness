@@ -13,9 +13,7 @@ describe('FoodIndexerService', () => {
     locale: 'mn',
     status: 'approved',
     sourceType: 'admin',
-    nutrients: [
-      { caloriesPer100g: 130, proteinPer100g: 2.7 },
-    ],
+    nutrients: [{ caloriesPer100g: 130, proteinPer100g: 2.7 }],
     aliases: [{ alias: 'rice' }],
     localizations: [
       { locale: 'en', name: 'White Rice' },

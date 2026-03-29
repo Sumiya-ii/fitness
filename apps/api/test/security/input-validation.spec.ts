@@ -10,7 +10,7 @@ import { createConsentSchema } from '../../src/privacy/privacy.dto';
 const SQL_INJECTION_PAYLOADS = [
   "'; DROP TABLE users; --",
   "1' OR '1'='1",
-  "1; DELETE FROM foods; --",
+  '1; DELETE FROM foods; --',
   "admin'--",
   "' UNION SELECT * FROM users --",
 ];

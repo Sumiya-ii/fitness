@@ -17,10 +17,7 @@ export class WeightLogsController {
   }
 
   @Get()
-  async getHistory(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query('days') days?: string,
-  ) {
+  async getHistory(@CurrentUser() user: AuthenticatedUser, @Query('days') days?: string) {
     const parsedDays = days ? Math.min(parseInt(days, 10) || 30, 365) : 30;
     return { data: await this.weightLogsService.getHistory(user.id, parsedDays) };
   }

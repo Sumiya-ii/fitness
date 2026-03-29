@@ -22,10 +22,7 @@ describe('Reliability: Graceful Shutdown (NFR-010..012)', () => {
   });
 
   it('should create workers that support close() for graceful shutdown', async () => {
-    const worker = createWorkerForQueue(
-      QUEUE_NAMES.MEAL_LOG,
-      'redis://localhost:6379',
-    );
+    const worker = createWorkerForQueue(QUEUE_NAMES.MEAL_LOG, 'redis://localhost:6379');
 
     expect(worker).toBeDefined();
     expect(typeof worker.close).toBe('function');
@@ -36,10 +33,7 @@ describe('Reliability: Graceful Shutdown (NFR-010..012)', () => {
   });
 
   it('should create workers that can be closed without error', async () => {
-    const worker = createWorkerForQueue(
-      QUEUE_NAMES.STT_PROCESSING,
-      'redis://localhost:6379',
-    );
+    const worker = createWorkerForQueue(QUEUE_NAMES.STT_PROCESSING, 'redis://localhost:6379');
 
     await expect(worker.close()).resolves.not.toThrow();
   });

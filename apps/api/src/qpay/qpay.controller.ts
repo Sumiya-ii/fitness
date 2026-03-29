@@ -33,11 +33,7 @@ export class QPayController {
     const host = req.headers['x-forwarded-host'] ?? req.get('host');
     const callbackBaseUrl = `${protocol}://${host}`;
 
-    const result = await this.qpayService.createInvoice(
-      user.id,
-      parsed.data.plan,
-      callbackBaseUrl,
-    );
+    const result = await this.qpayService.createInvoice(user.id, parsed.data.plan, callbackBaseUrl);
 
     return { data: result };
   }
@@ -51,21 +47,12 @@ export class QPayController {
       throw new BadRequestException(parsed.error.issues);
     }
 
-    return this.qpayService.handleCallback(
-      parsed.data.sender_invoice_no,
-      parsed.data.token,
-    );
+    return this.qpayService.handleCallback(parsed.data.sender_invoice_no, parsed.data.token);
   }
 
   @Get('invoice/:invoiceId/status')
-  async checkStatus(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('invoiceId') invoiceId: string,
-  ) {
-    const result = await this.qpayService.checkPaymentStatus(
-      invoiceId,
-      user.id,
-    );
+  async checkStatus(@CurrentUser() user: AuthenticatedUser, @Param('invoiceId') invoiceId: string) {
+    const result = await this.qpayService.checkPaymentStatus(invoiceId, user.id);
     return { data: result };
   }
 }

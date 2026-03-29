@@ -7,10 +7,7 @@ export class WeeklySummaryController {
   constructor(private readonly weeklySummaryService: WeeklySummaryService) {}
 
   @Get()
-  async getWeeklySummary(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query('week') week?: string,
-  ) {
+  async getWeeklySummary(@CurrentUser() user: AuthenticatedUser, @Query('week') week?: string) {
     return {
       data: await this.weeklySummaryService.getWeeklySummary(user.id, week),
     };

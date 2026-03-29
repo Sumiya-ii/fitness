@@ -45,11 +45,7 @@ export class RemindersService {
    * When quiet hours span midnight (e.g. 22:00–07:00), we're in quiet hours if
    * current >= start OR current < end.
    */
-  isInQuietHours(
-    timezone: string,
-    quietStart: string | null,
-    quietEnd: string | null,
-  ): boolean {
+  isInQuietHours(timezone: string, quietStart: string | null, quietEnd: string | null): boolean {
     if (!quietStart || !quietEnd) return false;
 
     const { hour, minute } = getLocalTimeParts(timezone);
@@ -84,7 +80,10 @@ export class RemindersService {
       const [tgLink, profile, deviceTokens] = await Promise.all([
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
-        this.prisma.deviceToken.findMany({ where: { userId: pref.userId }, select: { token: true } }),
+        this.prisma.deviceToken.findMany({
+          where: { userId: pref.userId },
+          select: { token: true },
+        }),
       ]);
 
       await this.reminderQueue.add(
@@ -140,7 +139,10 @@ export class RemindersService {
       const [tgLink, profile, deviceTokens] = await Promise.all([
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
-        this.prisma.deviceToken.findMany({ where: { userId: pref.userId }, select: { token: true } }),
+        this.prisma.deviceToken.findMany({
+          where: { userId: pref.userId },
+          select: { token: true },
+        }),
       ]);
 
       await this.reminderQueue.add(

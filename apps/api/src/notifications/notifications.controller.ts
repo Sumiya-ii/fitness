@@ -1,4 +1,13 @@
-import { Controller, Get, Put, Post, Body, BadRequestException, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Post,
+  Body,
+  BadRequestException,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { NotificationsService } from './notifications.service';
 import { updatePreferencesSchema, registerDeviceTokenSchema } from './notifications.dto';
@@ -16,10 +25,7 @@ export class NotificationsController {
 
   @Post('device-token')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async registerDeviceToken(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown,
-  ) {
+  async registerDeviceToken(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = registerDeviceTokenSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
@@ -28,10 +34,7 @@ export class NotificationsController {
   }
 
   @Put('preferences')
-  async updatePreferences(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown,
-  ) {
+  async updatePreferences(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = updatePreferencesSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);

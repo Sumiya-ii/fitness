@@ -8,10 +8,7 @@ export class OnboardingController {
   constructor(private readonly onboardingService: OnboardingService) {}
 
   @Post('complete')
-  async completeOnboarding(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown,
-  ) {
+  async completeOnboarding(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = completeOnboardingSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);

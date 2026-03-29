@@ -32,10 +32,7 @@ export class WeeklySummaryService {
     return d;
   }
 
-  async getWeeklySummary(
-    userId: string,
-    weekStartDate?: string,
-  ): Promise<WeeklySummaryResult> {
+  async getWeeklySummary(userId: string, weekStartDate?: string): Promise<WeeklySummaryResult> {
     const baseDate = weekStartDate
       ? (() => {
           const [y, m, d] = weekStartDate.split('-').map(Number);
@@ -69,7 +66,10 @@ export class WeeklySummaryService {
       }),
     ]);
 
-    const dayTotals = new Map<string, { calories: number; protein: number; carbs: number; fat: number }>();
+    const dayTotals = new Map<
+      string,
+      { calories: number; protein: number; carbs: number; fat: number }
+    >();
 
     for (const log of mealLogs) {
       const dayKey = log.loggedAt.toISOString().split('T')[0];

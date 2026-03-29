@@ -84,12 +84,8 @@ export class TypesenseProvider implements OnModuleInit {
       .documents()
       .import(docs, { action: 'upsert' });
 
-    const successes = results.filter(
-      (r: { success: boolean }) => r.success,
-    ).length;
-    const failures = results.filter(
-      (r: { success: boolean }) => !r.success,
-    );
+    const successes = results.filter((r: { success: boolean }) => r.success).length;
+    const failures = results.filter((r: { success: boolean }) => !r.success);
     if (failures.length > 0) {
       this.logger.warn(`${failures.length} documents failed to index`);
     }
@@ -110,19 +106,13 @@ export class TypesenseProvider implements OnModuleInit {
       searchParams.filter_by = `locale:=${locale}`;
     }
 
-    return this.client
-      .collections(FOODS_COLLECTION)
-      .documents()
-      .search(searchParams);
+    return this.client.collections(FOODS_COLLECTION).documents().search(searchParams);
   }
 
   async deleteDocument(id: string) {
     if (!this.client) return;
     try {
-      await this.client
-        .collections(FOODS_COLLECTION)
-        .documents(id)
-        .delete();
+      await this.client.collections(FOODS_COLLECTION).documents(id).delete();
     } catch {
       this.logger.warn(`Failed to delete document ${id} from search index`);
     }

@@ -32,11 +32,7 @@ describe('PhotosService', () => {
 
   describe('uploadPhoto', () => {
     it('should enqueue photo parsing job and return draft ID', async () => {
-      const result = await service.uploadPhoto(
-        'user-1',
-        Buffer.from('image-data'),
-        'meal.jpg',
-      );
+      const result = await service.uploadPhoto('user-1', Buffer.from('image-data'), 'meal.jpg');
 
       expect(result.draftId).toBe('job-456');
       expect(mockQueue.add).toHaveBeenCalledWith(
@@ -71,9 +67,7 @@ describe('PhotosService', () => {
     it('should throw when draft not found', async () => {
       mockQueue.getJob.mockResolvedValue(null);
 
-      await expect(service.getDraft('missing', 'user-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getDraft('missing', 'user-1')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw when draft belongs to different user', async () => {
@@ -84,9 +78,7 @@ describe('PhotosService', () => {
       };
       mockQueue.getJob.mockResolvedValue(mockJob);
 
-      await expect(service.getDraft('job-456', 'user-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getDraft('job-456', 'user-1')).rejects.toThrow(NotFoundException);
     });
   });
 });

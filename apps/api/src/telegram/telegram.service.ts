@@ -56,9 +56,7 @@ export class TelegramService implements OnModuleDestroy {
       where: { telegramUserId, active: true },
     });
     if (existing && existing.userId !== storedUserId) {
-      throw new BadRequestException(
-        'This Telegram account is already linked to another user',
-      );
+      throw new BadRequestException('This Telegram account is already linked to another user');
     }
 
     await this.redis.del(key);

@@ -30,7 +30,9 @@ describe('BarcodesService', () => {
           normalizedName: 'Test Product',
           locale: 'mn',
           servings: [{ id: 's1', label: '1 piece', gramsPerUnit: 50, isDefault: true }],
-          nutrients: [{ caloriesPer100g: 200, proteinPer100g: 10, carbsPer100g: 25, fatPer100g: 8 }],
+          nutrients: [
+            { caloriesPer100g: 200, proteinPer100g: 10, carbsPer100g: 25, fatPer100g: 8 },
+          ],
           localizations: [{ locale: 'en', name: 'Test Product EN' }],
         },
       });

@@ -1,27 +1,14 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, BadRequestException } from '@nestjs/common';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { PrivacyService } from './privacy.service';
-import {
-  createConsentSchema,
-  paginationSchema,
-} from './privacy.dto';
+import { createConsentSchema, paginationSchema } from './privacy.dto';
 
 @Controller('privacy')
 export class PrivacyController {
   constructor(private readonly privacyService: PrivacyService) {}
 
   @Post('consent')
-  async createConsent(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown,
-  ) {
+  async createConsent(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = createConsentSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
@@ -46,10 +33,7 @@ export class PrivacyController {
   }
 
   @Get('requests')
-  async getRequests(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: unknown,
-  ) {
+  async getRequests(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown) {
     const parsed = paginationSchema.safeParse(query);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);

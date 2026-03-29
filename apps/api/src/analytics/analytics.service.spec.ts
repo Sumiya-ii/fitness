@@ -39,9 +39,7 @@ describe('AnalyticsService', () => {
     });
 
     it('should reject unknown event', async () => {
-      await expect(
-        service.emit('unknown_event', 'user-uuid'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.emit('unknown_event', 'user-uuid')).rejects.toThrow(BadRequestException);
 
       expect(prisma.analyticsEvent.create).not.toHaveBeenCalled();
     });
@@ -62,13 +60,7 @@ describe('AnalyticsService', () => {
     });
 
     it('should store event with sessionId and platform', async () => {
-      await service.emit(
-        'meal_log_saved',
-        'user-uuid',
-        undefined,
-        'sess-123',
-        'ios',
-      );
+      await service.emit('meal_log_saved', 'user-uuid', undefined, 'sess-123', 'ios');
 
       expect(prisma.analyticsEvent.create).toHaveBeenCalledWith({
         data: {

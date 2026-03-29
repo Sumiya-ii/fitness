@@ -44,9 +44,9 @@ describe('FavoritesService', () => {
         }),
       );
 
-      await expect(
-        service.addFavorite('user-uuid', 'food-uuid'),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.addFavorite('user-uuid', 'food-uuid')).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 

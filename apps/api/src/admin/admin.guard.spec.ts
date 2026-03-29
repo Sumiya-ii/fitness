@@ -24,9 +24,7 @@ describe('AdminGuard', () => {
     const config = { adminUserIds: ['admin-1'] } as ConfigService;
     const guard = new AdminGuard(config);
 
-    expect(() => guard.canActivate(mockContext('user-1'))).toThrow(
-      ForbiddenException,
-    );
+    expect(() => guard.canActivate(mockContext('user-1'))).toThrow(ForbiddenException);
   });
 
   it('blocks when auth user is missing', () => {

@@ -22,9 +22,7 @@ describe('Performance: Response Time (NFR-001..003)', () => {
 
       const module: TestingModule = await Test.createTestingModule({
         controllers: [HealthController],
-        providers: [
-          { provide: QueueHealthService, useValue: mockQueueHealth },
-        ],
+        providers: [{ provide: QueueHealthService, useValue: mockQueueHealth }],
       }).compile();
 
       const controller = module.get<HealthController>(HealthController);

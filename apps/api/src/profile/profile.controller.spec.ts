@@ -47,20 +47,20 @@ describe('ProfileController', () => {
   });
 
   it('should reject invalid locale', async () => {
-    await expect(
-      controller.updateProfile(mockUser, { locale: 'invalid' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(controller.updateProfile(mockUser, { locale: 'invalid' })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('should reject invalid unitSystem', async () => {
-    await expect(
-      controller.updateProfile(mockUser, { unitSystem: 'banana' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(controller.updateProfile(mockUser, { unitSystem: 'banana' })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('should reject heightCm out of range', async () => {
-    await expect(
-      controller.updateProfile(mockUser, { heightCm: 10 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(controller.updateProfile(mockUser, { heightCm: 10 })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });

@@ -13,10 +13,7 @@ export class BarcodesController {
   }
 
   @Post('submit')
-  async submitUnknown(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown,
-  ) {
+  async submitUnknown(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = submitBarcodeSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);

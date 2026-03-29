@@ -35,9 +35,7 @@ export class FavoritesService {
 
     if (favorites.length === 0) return [];
 
-    const foodIds = favorites
-      .map((f) => f.foodId)
-      .filter((id): id is string => id !== null);
+    const foodIds = favorites.map((f) => f.foodId).filter((id): id is string => id !== null);
 
     const foods = await this.prisma.food.findMany({
       where: { id: { in: foodIds } },

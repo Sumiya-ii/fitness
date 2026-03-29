@@ -13,10 +13,7 @@ export class ProfileController {
   }
 
   @Put()
-  async updateProfile(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown,
-  ) {
+  async updateProfile(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = updateProfileSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);

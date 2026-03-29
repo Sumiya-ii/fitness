@@ -8,10 +8,7 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Post('events')
-  async emitEvent(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown,
-  ) {
+  async emitEvent(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = emitEventSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);

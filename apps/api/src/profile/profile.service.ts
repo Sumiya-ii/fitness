@@ -22,28 +22,25 @@ export class ProfileService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.formatProfile(
-      profile,
-      latestWeightLog ? Number(latestWeightLog.weightKg) : null,
-    );
+    return this.formatProfile(profile, latestWeightLog ? Number(latestWeightLog.weightKg) : null);
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const [profile, latestWeightLog] = await Promise.all([
       this.prisma.profile.update({
-      where: { userId },
-      data: {
-        ...(dto.displayName !== undefined && { displayName: dto.displayName }),
-        ...(dto.locale !== undefined && { locale: dto.locale }),
-        ...(dto.unitSystem !== undefined && { unitSystem: dto.unitSystem }),
-        ...(dto.gender !== undefined && { gender: dto.gender }),
-        ...(dto.birthDate !== undefined && { birthDate: new Date(dto.birthDate) }),
-        ...(dto.heightCm !== undefined && { heightCm: dto.heightCm }),
-        ...(dto.weightKg !== undefined && { weightKg: dto.weightKg }),
-        ...(dto.goalWeightKg !== undefined && { goalWeightKg: dto.goalWeightKg }),
-        ...(dto.activityLevel !== undefined && { activityLevel: dto.activityLevel }),
-        ...(dto.dietPreference !== undefined && { dietPreference: dto.dietPreference }),
-      },
+        where: { userId },
+        data: {
+          ...(dto.displayName !== undefined && { displayName: dto.displayName }),
+          ...(dto.locale !== undefined && { locale: dto.locale }),
+          ...(dto.unitSystem !== undefined && { unitSystem: dto.unitSystem }),
+          ...(dto.gender !== undefined && { gender: dto.gender }),
+          ...(dto.birthDate !== undefined && { birthDate: new Date(dto.birthDate) }),
+          ...(dto.heightCm !== undefined && { heightCm: dto.heightCm }),
+          ...(dto.weightKg !== undefined && { weightKg: dto.weightKg }),
+          ...(dto.goalWeightKg !== undefined && { goalWeightKg: dto.goalWeightKg }),
+          ...(dto.activityLevel !== undefined && { activityLevel: dto.activityLevel }),
+          ...(dto.dietPreference !== undefined && { dietPreference: dto.dietPreference }),
+        },
       }),
       this.prisma.weightLog.findFirst({
         where: { userId },
@@ -51,29 +48,29 @@ export class ProfileService {
       }),
     ]);
 
-    return this.formatProfile(
-      profile,
-      latestWeightLog ? Number(latestWeightLog.weightKg) : null,
-    );
+    return this.formatProfile(profile, latestWeightLog ? Number(latestWeightLog.weightKg) : null);
   }
 
-  private formatProfile(profile: {
-    id: string;
-    userId: string;
-    displayName: string | null;
-    locale: string;
-    unitSystem: string;
-    gender: string | null;
-    birthDate: Date | null;
-    heightCm: unknown;
-    weightKg: unknown;
-    goalWeightKg: unknown;
-    activityLevel: string | null;
-    dietPreference: string | null;
-    onboardingCompletedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-  }, latestWeightKg: number | null = null) {
+  private formatProfile(
+    profile: {
+      id: string;
+      userId: string;
+      displayName: string | null;
+      locale: string;
+      unitSystem: string;
+      gender: string | null;
+      birthDate: Date | null;
+      heightCm: unknown;
+      weightKg: unknown;
+      goalWeightKg: unknown;
+      activityLevel: string | null;
+      dietPreference: string | null;
+      onboardingCompletedAt: Date | null;
+      createdAt: Date;
+      updatedAt: Date;
+    },
+    latestWeightKg: number | null = null,
+  ) {
     const heightCm = profile.heightCm ? Number(profile.heightCm) : null;
     const profileWeightKg = profile.weightKg ? Number(profile.weightKg) : null;
     const effectiveWeightKg = latestWeightKg ?? profileWeightKg;

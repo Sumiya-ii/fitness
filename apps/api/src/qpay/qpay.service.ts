@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { timingSafeEqual } from 'node:crypto';
 import type { Prisma, QPayInvoice } from '@prisma/client';
 import { ConfigService } from '../config/config.service';
@@ -32,7 +27,11 @@ export class QPayService {
   }
 
   private get isConfigured(): boolean {
-    return !!(this.config.qpayClientId && this.config.qpayClientSecret && this.config.qpayInvoiceCode);
+    return !!(
+      this.config.qpayClientId &&
+      this.config.qpayClientSecret &&
+      this.config.qpayInvoiceCode
+    );
   }
 
   private async authenticate(): Promise<string> {
@@ -69,11 +68,7 @@ export class QPayService {
     return this.accessToken;
   }
 
-  async createInvoice(
-    userId: string,
-    plan: string,
-    callbackBaseUrl: string,
-  ) {
+  async createInvoice(userId: string, plan: string, callbackBaseUrl: string) {
     const amount = PLAN_PRICES_MNT[plan];
     if (!amount) {
       throw new BadRequestException(`Invalid plan: ${plan}`);
@@ -198,9 +193,9 @@ export class QPayService {
     for (const paidRow of paidRows) {
       const amount = Number.parseFloat(paidRow.payment_amount);
       if (
-        Number.isNaN(amount)
-        || paidRow.payment_currency !== QPayService.EXPECTED_CURRENCY
-        || amount !== expectedAmountMnt
+        Number.isNaN(amount) ||
+        paidRow.payment_currency !== QPayService.EXPECTED_CURRENCY ||
+        amount !== expectedAmountMnt
       ) {
         this.logger.warn(
           `Ignoring paid row due to mismatch for invoice ${qpayInvoiceId}: amount=${paidRow.payment_amount} currency=${paidRow.payment_currency}`,
@@ -312,11 +307,7 @@ export class QPayService {
     return { status: 'pending', paidAt: null };
   }
 
-  private async activateSubscription(
-    tx: Prisma.TransactionClient,
-    userId: string,
-    plan: string,
-  ) {
+  private async activateSubscription(tx: Prisma.TransactionClient, userId: string, plan: string) {
     const now = new Date();
     const periodEnd = new Date(now);
     if (plan === 'monthly') {

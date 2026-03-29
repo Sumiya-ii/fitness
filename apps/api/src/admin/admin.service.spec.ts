@@ -5,7 +5,12 @@ import { PrismaService } from '../prisma';
 describe('AdminService', () => {
   let service: AdminService;
   let prisma: {
-    moderationQueue: { findUnique: jest.Mock; findMany: jest.Mock; count: jest.Mock; update: jest.Mock };
+    moderationQueue: {
+      findUnique: jest.Mock;
+      findMany: jest.Mock;
+      count: jest.Mock;
+      update: jest.Mock;
+    };
     food: { update: jest.Mock };
     auditLog: { create: jest.Mock };
     $transaction: jest.Mock;
@@ -90,9 +95,7 @@ describe('AdminService', () => {
 
     it('should throw when item not found', async () => {
       prisma.moderationQueue.findUnique.mockResolvedValue(null);
-      await expect(
-        service.approve('admin-uuid', 'missing'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.approve('admin-uuid', 'missing')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -117,9 +120,7 @@ describe('AdminService', () => {
 
     it('should throw when item not found', async () => {
       prisma.moderationQueue.findUnique.mockResolvedValue(null);
-      await expect(
-        service.reject('admin-uuid', 'missing'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.reject('admin-uuid', 'missing')).rejects.toThrow(NotFoundException);
     });
   });
 });

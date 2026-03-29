@@ -61,8 +61,19 @@ describe('Performance: Pagination (NFR-001..003)', () => {
         confidence: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-        servings: [{ id: `s-${i}`, label: '100g', labelMn: null, gramsPerUnit: 100, isDefault: true }],
-        nutrients: [{ id: `n-${i}`, caloriesPer100g: 100, proteinPer100g: 10, carbsPer100g: 10, fatPer100g: 5, fiberPer100g: null }],
+        servings: [
+          { id: `s-${i}`, label: '100g', labelMn: null, gramsPerUnit: 100, isDefault: true },
+        ],
+        nutrients: [
+          {
+            id: `n-${i}`,
+            caloriesPer100g: 100,
+            proteinPer100g: 10,
+            carbsPer100g: 10,
+            fatPer100g: 5,
+            fiberPer100g: null,
+          },
+        ],
         aliases: [],
         localizations: [],
         barcodes: [],
@@ -106,19 +117,21 @@ describe('Performance: Pagination (NFR-001..003)', () => {
         note: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-        items: [{
-          id: `item-${i}`,
-          foodId: null,
-          quantity: 1,
-          servingLabel: '100g',
-          gramsPerUnit: 100,
-          snapshotCalories: 100,
-          snapshotProtein: 10,
-          snapshotCarbs: 10,
-          snapshotFat: 5,
-          snapshotFoodName: 'Food',
-          createdAt: new Date(),
-        }],
+        items: [
+          {
+            id: `item-${i}`,
+            foodId: null,
+            quantity: 1,
+            servingLabel: '100g',
+            gramsPerUnit: 100,
+            snapshotCalories: 100,
+            snapshotProtein: 10,
+            snapshotCarbs: 10,
+            snapshotFat: 5,
+            snapshotFoodName: 'Food',
+            createdAt: new Date(),
+          },
+        ],
       }));
 
       const mockPrisma = {

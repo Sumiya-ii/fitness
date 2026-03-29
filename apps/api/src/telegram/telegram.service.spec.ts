@@ -40,11 +40,7 @@ describe('TelegramService', () => {
       const code = await service.generateLinkCode('user-uuid');
 
       expect(code).toMatch(/^\d{6}$/);
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        `telegram:link:${code}`,
-        300,
-        'user-uuid',
-      );
+      expect(mockRedis.setex).toHaveBeenCalledWith(`telegram:link:${code}`, 300, 'user-uuid');
     });
   });
 
@@ -52,9 +48,9 @@ describe('TelegramService', () => {
     it('should throw when code is invalid or expired', async () => {
       mockRedis.get.mockResolvedValue(null);
 
-      await expect(
-        service.confirmLink('tg-123', 'chat-123', '123456', 'user'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.confirmLink('tg-123', 'chat-123', '123456', 'user')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should create TelegramLink when code is valid', async () => {
@@ -66,12 +62,7 @@ describe('TelegramService', () => {
         linkedAt: new Date(),
       });
 
-      const result = await service.confirmLink(
-        'tg-123',
-        'chat-123',
-        '123456',
-        'username',
-      );
+      const result = await service.confirmLink('tg-123', 'chat-123', '123456', 'username');
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe('user-uuid');
@@ -101,9 +92,9 @@ describe('TelegramService', () => {
         telegramUserId: 'tg-123',
       });
 
-      await expect(
-        service.confirmLink('tg-123', 'chat-123', '123456'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.confirmLink('tg-123', 'chat-123', '123456')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -146,9 +137,7 @@ describe('TelegramService', () => {
     it('should throw when no link exists', async () => {
       prisma.telegramLink.findUnique.mockResolvedValue(null);
 
-      await expect(service.unlinkAccount('user-uuid')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.unlinkAccount('user-uuid')).rejects.toThrow(NotFoundException);
     });
   });
 

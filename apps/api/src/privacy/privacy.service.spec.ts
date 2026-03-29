@@ -30,9 +30,9 @@ describe('PrivacyService', () => {
   beforeEach(() => {
     prisma = {
       consent: {
-        create: jest.fn().mockImplementation((args) =>
-          Promise.resolve({ ...mockConsent, ...args.data }),
-        ),
+        create: jest
+          .fn()
+          .mockImplementation((args) => Promise.resolve({ ...mockConsent, ...args.data })),
       },
       privacyRequest: {
         create: jest.fn().mockImplementation((args) =>

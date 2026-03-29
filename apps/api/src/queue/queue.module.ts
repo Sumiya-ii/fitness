@@ -16,9 +16,7 @@ import { QueueHealthService } from './queue-health.service';
         defaultJobOptions: DEFAULT_JOB_OPTIONS,
       }),
     }),
-    ...Object.values(QUEUE_NAMES).map((name) =>
-      BullModule.registerQueue({ name }),
-    ),
+    ...Object.values(QUEUE_NAMES).map((name) => BullModule.registerQueue({ name })),
   ],
   providers: [QueueHealthService],
   exports: [BullModule, QueueHealthService],
