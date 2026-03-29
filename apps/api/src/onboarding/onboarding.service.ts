@@ -57,7 +57,7 @@ export class OnboardingService {
           goalWeightKg: dto.goalWeightKg,
           activityLevel: dto.activityLevel,
           dietPreference: dto.dietPreference,
-          onboardingCompletedAt: profile.onboardingCompletedAt ?? new Date(),
+          onboardingCompletedAt: new Date(),
         },
       }),
       this.prisma.target.create({
@@ -104,14 +104,25 @@ export class OnboardingService {
   }
 
   async getOnboardingStatus(userId: string) {
-    const profile = await this.prisma.profile.findUnique({
-      where: { userId },
-      select: { onboardingCompletedAt: true },
-    });
+    const [profile, activeTarget] = await Promise.all([
+      this.prisma.profile.findUnique({
+        where: { userId },
+        select: { onboardingCompletedAt: true },
+      }),
+      this.prisma.target.findFirst({
+        where: { userId, effectiveTo: null },
+        select: { id: true },
+      }),
+    ]);
+
+    // Onboarding is only truly complete when both the profile is marked done
+    // AND an active target exists. This catches cases where the profile was
+    // updated but target creation failed or targets were lost.
+    const completed = !!profile?.onboardingCompletedAt && !!activeTarget;
 
     return {
-      completed: !!profile?.onboardingCompletedAt,
-      completedAt: profile?.onboardingCompletedAt?.toISOString() ?? null,
+      completed,
+      completedAt: completed ? profile!.onboardingCompletedAt!.toISOString() : null,
     };
   }
 }

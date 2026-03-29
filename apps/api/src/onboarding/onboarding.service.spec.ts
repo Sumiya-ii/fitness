@@ -12,6 +12,7 @@ const mockPrisma = {
   target: {
     create: jest.fn(),
     updateMany: jest.fn(),
+    findFirst: jest.fn(),
   },
   $transaction: jest.fn(),
 };
@@ -175,22 +176,34 @@ describe('OnboardingService', () => {
   });
 
   describe('getOnboardingStatus', () => {
-    it('should return completed false when not done', async () => {
+    it('should return completed false when profile not done', async () => {
       mockPrisma.profile.findUnique.mockResolvedValue({
         onboardingCompletedAt: null,
       });
+      mockPrisma.target.findFirst.mockResolvedValue(null);
       const result = await service.getOnboardingStatus('user-1');
       expect(result.completed).toBe(false);
     });
 
-    it('should return completed true when done', async () => {
+    it('should return completed true when profile done and active target exists', async () => {
       const date = new Date();
       mockPrisma.profile.findUnique.mockResolvedValue({
         onboardingCompletedAt: date,
       });
+      mockPrisma.target.findFirst.mockResolvedValue({ id: 't-1' });
       const result = await service.getOnboardingStatus('user-1');
       expect(result.completed).toBe(true);
       expect(result.completedAt).toBe(date.toISOString());
+    });
+
+    it('should return completed false when profile done but no active target', async () => {
+      mockPrisma.profile.findUnique.mockResolvedValue({
+        onboardingCompletedAt: new Date(),
+      });
+      mockPrisma.target.findFirst.mockResolvedValue(null);
+      const result = await service.getOnboardingStatus('user-1');
+      expect(result.completed).toBe(false);
+      expect(result.completedAt).toBeNull();
     });
   });
 });

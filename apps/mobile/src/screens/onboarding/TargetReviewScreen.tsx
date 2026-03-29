@@ -60,12 +60,15 @@ export function TargetReviewScreen({ navigation }: Props) {
         activityLevel: data.activityLevel,
         dietPreference: data.dietPreference,
       });
+      // Navigate only after the backend confirms data was saved
+      navigation.navigate('SubscriptionPitch');
     } catch {
-      // Best-effort API call — proceed to notification primer regardless
+      Alert.alert(
+        'Something went wrong',
+        "We couldn't save your profile. Please check your connection and try again.",
+      );
     } finally {
       setLoading(false);
-      // Navigate to subscription pitch before finishing setup
-      navigation.navigate('SubscriptionPitch');
     }
   };
 

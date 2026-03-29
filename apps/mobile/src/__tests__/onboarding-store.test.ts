@@ -99,20 +99,14 @@ describe('syncProfileSetupStatus', () => {
     expect(await AsyncStorage.getItem('profile_setup_complete')).toBe('false');
   });
 
-  it('falls back to AsyncStorage when API throws', async () => {
+  it('defaults to false when API throws (backend is source of truth)', async () => {
     await AsyncStorage.setItem('profile_setup_complete', 'true');
     mockApi.get.mockRejectedValue(new Error('network error'));
 
     await useOnboardingStore.getState().syncProfileSetupStatus();
 
-    expect(useOnboardingStore.getState().profileSetupComplete).toBe(true);
-  });
-
-  it('falls back to false when API throws and AsyncStorage is empty', async () => {
-    mockApi.get.mockRejectedValue(new Error('network error'));
-
-    await useOnboardingStore.getState().syncProfileSetupStatus();
-
+    // Even though AsyncStorage says true, we default to false when the
+    // backend is unreachable — better to re-onboard than show empty data
     expect(useOnboardingStore.getState().profileSetupComplete).toBe(false);
   });
 

@@ -41,12 +41,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       await AsyncStorage.setItem(PROFILE_SETUP_COMPLETE_KEY, completed ? 'true' : 'false');
       set({ profileSetupComplete: completed });
     } catch {
-      try {
-        const profile = await AsyncStorage.getItem(PROFILE_SETUP_COMPLETE_KEY);
-        set({ profileSetupComplete: profile === 'true' });
-      } catch {
-        set({ profileSetupComplete: false });
-      }
+      // Backend is the source of truth. If we can't reach it, default to false
+      // so the user re-does onboarding rather than entering the app with no data.
+      set({ profileSetupComplete: false });
     }
   },
 
