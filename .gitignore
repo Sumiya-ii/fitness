@@ -28,6 +28,11 @@ coverage/
 *.log
 npm-debug.log*
 
+# Expo prebuild / generated
+.expo/
+ios/
+app.json
+
 # Mobile
 apps/mobile/ios/Pods/
 apps/mobile/android/.gradle/

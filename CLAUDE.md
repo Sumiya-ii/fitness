@@ -11,6 +11,7 @@
 **Coach** is an AI-enabled nutrition and training mobile app for Mongolian users.
 
 **Monorepo structure (npm workspaces):**
+
 ```
 apps/
   mobile/    — React Native + Expo (@coach/mobile)
@@ -22,17 +23,17 @@ packages/
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Mobile | React Native 0.83, Expo ~55, NativeWind 4 (Tailwind), Zustand, React Navigation 7 |
-| API | NestJS 10, Prisma 5 + PostgreSQL 16, Redis 7, Firebase Admin |
-| AI | OpenAI GPT-4 Vision (food photos), Google Speech-to-Text / Chimege STT |
-| Queue | BullMQ (via Redis) |
-| Search | Typesense 0.25 |
-| Auth | Firebase Authentication |
-| Payments | QPay (Mongolia) |
-| Observability | Sentry, OpenTelemetry |
-| Infra | Docker Compose (local), GitHub Actions CI |
+| Layer         | Technology                                                                        |
+| ------------- | --------------------------------------------------------------------------------- |
+| Mobile        | React Native 0.83, Expo ~55, NativeWind 4 (Tailwind), Zustand, React Navigation 7 |
+| API           | NestJS 10, Prisma 5 + PostgreSQL 16, Redis 7, Firebase Admin                      |
+| AI            | OpenAI GPT-4 Vision (food photos), Google Speech-to-Text / Chimege STT            |
+| Queue         | BullMQ (via Redis)                                                                |
+| Search        | Typesense 0.25                                                                    |
+| Auth          | Firebase Authentication                                                           |
+| Payments      | QPay (Mongolia)                                                                   |
+| Observability | Sentry, OpenTelemetry                                                             |
+| Infra         | Docker Compose (local), GitHub Actions CI                                         |
 
 ## Key commands
 
@@ -66,6 +67,7 @@ npx expo prebuild:ios                      # regenerate native iOS project
 ## Environment variables
 
 Copy `.env.example` to `.env` in repo root. Key vars:
+
 - `DATABASE_URL` — PostgreSQL connection string
 - `REDIS_URL` — Redis connection string
 - `FIREBASE_*` — Firebase Admin credentials
@@ -77,6 +79,7 @@ Mobile env vars are prefixed `EXPO_PUBLIC_*` in `apps/mobile/.env`.
 ## CI/CD
 
 GitHub Actions runs on every push/PR to `main`:
+
 1. `npm run lint`
 2. `npm run typecheck`
 3. `npm run test`
@@ -103,11 +106,11 @@ All four must pass before merging.
 
 ### Layers
 
-| Layer | Where | When to add |
-|---|---|---|
-| Unit | co-located `*.spec.ts` (API/worker) or `src/__tests__/*.test.ts` (mobile) | Pure logic, transforms, calculators, error mapping |
-| Store/integration | `src/__tests__/*.test.ts` | Zustand stores, service functions with mocked boundaries |
-| E2E | Not configured — skip unless Detox/Maestro is set up | Critical flows only, future |
+| Layer             | Where                                                                     | When to add                                              |
+| ----------------- | ------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Unit              | co-located `*.spec.ts` (API/worker) or `src/__tests__/*.test.ts` (mobile) | Pure logic, transforms, calculators, error mapping       |
+| Store/integration | `src/__tests__/*.test.ts`                                                 | Zustand stores, service functions with mocked boundaries |
+| E2E               | Not configured — skip unless Detox/Maestro is set up                      | Critical flows only, future                              |
 
 ### Rules for every feature or bugfix
 
