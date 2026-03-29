@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto';
 import {
   Injectable,
   BadRequestException,
@@ -26,12 +27,19 @@ export class TelegramService implements OnModuleDestroy {
     this.redis.disconnect();
   }
 
+  private hashLinkCode(code: string): string {
+    return createHmac('sha256', process.env.LINK_CODE_SECRET || 'coach-link-code-key')
+      .update(code)
+      .digest('hex');
+  }
+
   /**
-   * Generate a 6-digit link code, store in Redis with 5-minute TTL.
+   * Generate a 6-digit link code, store the hash in Redis with 5-minute TTL,
+   * and return the raw code to the caller.
    */
   async generateLinkCode(userId: string): Promise<string> {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const key = `${LINK_CODE_PREFIX}${code}`;
+    const key = `${LINK_CODE_PREFIX}${this.hashLinkCode(code)}`;
     await this.redis.setex(key, LINK_CODE_TTL_SECONDS, userId);
     return code;
   }
@@ -45,7 +53,7 @@ export class TelegramService implements OnModuleDestroy {
     code: string,
     username?: string,
   ): Promise<{ success: boolean; userId: string }> {
-    const key = `${LINK_CODE_PREFIX}${code}`;
+    const key = `${LINK_CODE_PREFIX}${this.hashLinkCode(code)}`;
     const storedUserId = await this.redis.get(key);
     if (!storedUserId) {
       throw new BadRequestException('Invalid or expired link code');

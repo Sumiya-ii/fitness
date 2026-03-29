@@ -1,5 +1,12 @@
+import { createHmac } from 'crypto';
 import { PrivacyService } from './privacy.service';
 import { PrismaService } from '../prisma';
+
+function hashIp(ip: string): string {
+  return createHmac('sha256', process.env.IP_HASH_SECRET || 'coach-ip-hash-key')
+    .update(ip)
+    .digest('hex');
+}
 
 describe('PrivacyService', () => {
   let service: PrivacyService;
@@ -67,6 +74,31 @@ describe('PrivacyService', () => {
           accepted: true,
         }),
       });
+    });
+
+    it('should hash the IP address before storing', async () => {
+      const rawIp = '192.168.1.1';
+      await service.createConsent('user-uuid', {
+        consentType: 'analytics',
+        version: '2.0',
+        accepted: true,
+        ipAddress: rawIp,
+      });
+
+      const callArg = prisma.consent.create.mock.calls[0][0];
+      expect(callArg.data.ipAddress).toBe(hashIp(rawIp));
+      expect(callArg.data.ipAddress).not.toBe(rawIp);
+    });
+
+    it('should store null when no IP address is provided', async () => {
+      await service.createConsent('user-uuid', {
+        consentType: 'analytics',
+        version: '2.0',
+        accepted: true,
+      });
+
+      const callArg = prisma.consent.create.mock.calls[0][0];
+      expect(callArg.data.ipAddress).toBeNull();
     });
   });
 

@@ -1,7 +1,14 @@
+import { createHmac } from 'crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
+
+function hashLinkCode(code: string): string {
+  return createHmac('sha256', process.env.LINK_CODE_SECRET || 'coach-link-code-key')
+    .update(code)
+    .digest('hex');
+}
 
 const mockRedis = {
   setex: jest.fn().mockResolvedValue('OK'),
@@ -40,11 +47,14 @@ describe('TelegramService', () => {
   });
 
   describe('generateLinkCode', () => {
-    it('should generate 6-digit code and store in Redis with 5-min TTL', async () => {
+    it('should generate 6-digit code and store its hash in Redis with 5-min TTL', async () => {
       const code = await service.generateLinkCode('user-uuid');
 
       expect(code).toMatch(/^\d{6}$/);
-      expect(mockRedis.setex).toHaveBeenCalledWith(`telegram:link:${code}`, 300, 'user-uuid');
+      const expectedKey = `telegram:link:${hashLinkCode(code)}`;
+      expect(mockRedis.setex).toHaveBeenCalledWith(expectedKey, 300, 'user-uuid');
+      // Raw code must not appear in the Redis key
+      expect(mockRedis.setex.mock.calls[0][0]).not.toBe(`telegram:link:${code}`);
     });
   });
 
@@ -67,10 +77,13 @@ describe('TelegramService', () => {
       });
 
       const result = await service.confirmLink('tg-123', 'chat-123', '123456', 'username');
+      const hashedKey = `telegram:link:${hashLinkCode('123456')}`;
 
       expect(result.success).toBe(true);
       expect(result.userId).toBe('user-uuid');
-      expect(mockRedis.del).toHaveBeenCalledWith('telegram:link:123456');
+      // del must use the hashed key, not the raw code
+      expect(mockRedis.del).toHaveBeenCalledWith(hashedKey);
+      expect(mockRedis.del).not.toHaveBeenCalledWith('telegram:link:123456');
       expect(prisma.telegramLink.upsert).toHaveBeenCalledWith({
         where: { userId: 'user-uuid' },
         create: expect.objectContaining({

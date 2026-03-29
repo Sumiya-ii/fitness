@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import type { CreateConsentDto, PaginationDto } from './privacy.dto';
@@ -6,6 +7,12 @@ import type { CreateConsentDto, PaginationDto } from './privacy.dto';
 export class PrivacyService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private hashIp(ip: string): string {
+    return createHmac('sha256', process.env.IP_HASH_SECRET || 'coach-ip-hash-key')
+      .update(ip)
+      .digest('hex');
+  }
+
   async createConsent(userId: string, dto: CreateConsentDto) {
     const consent = await this.prisma.consent.create({
       data: {
@@ -13,7 +20,7 @@ export class PrivacyService {
         consentType: dto.consentType,
         version: dto.version,
         accepted: dto.accepted,
-        ipAddress: dto.ipAddress ?? null,
+        ipAddress: dto.ipAddress ? this.hashIp(dto.ipAddress) : null,
         userAgent: dto.userAgent ?? null,
       },
     });
