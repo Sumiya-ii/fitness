@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1A2E"/>
+      <stop offset="100%" stop-color="#16213E"/>
+    </linearGradient>
+
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00D2FF"/>
+      <stop offset="100%" stop-color="#7B61FF"/>
+    </linearGradient>
+
+    <linearGradient id="accent2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7B61FF"/>
+      <stop offset="60%" stop-color="#00D2FF"/>
+      <stop offset="100%" stop-color="#00F5A0"/>
+    </linearGradient>
+
+    <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D2FF" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#7B61FF" stop-opacity="0"/>
+    </linearGradient>
+
+    <radialGradient id="glow1" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#00D2FF" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#00D2FF" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="glow2" cx="60%" cy="30%" r="40%">
+      <stop offset="0%" stop-color="#7B61FF" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#7B61FF" stop-opacity="0"/>
+    </radialGradient>
+
+    <clipPath id="appClip">
+      <rect x="32" y="32" width="448" height="448" rx="100" ry="100"/>
+    </clipPath>
+
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+
+    <filter id="innerGlow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- App icon base -->
+  <rect x="32" y="32" width="448" height="448" rx="100" ry="100" fill="url(#bg)" filter="url(#softShadow)"/>
+
+  <!-- Ambient glow layers -->
+  <circle cx="240" cy="220" r="180" fill="url(#glow1)" clip-path="url(#appClip)"/>
+  <circle cx="300" cy="200" r="160" fill="url(#glow2)" clip-path="url(#appClip)"/>
+
+  <!-- Main logomark — stylized "C" constructed from geometric arcs -->
+  <g transform="translate(256, 240)" filter="url(#innerGlow)">
+
+    <!-- Outer arc — open ring forming the C -->
+    <path d="
+      M 50,-88
+      A 100,100 0 1,0 50,88
+    " fill="none" stroke="url(#accent2)" stroke-width="28" stroke-linecap="round"/>
+
+    <!-- Inner parallel arc — creates depth and motion -->
+    <path d="
+      M 30,-58
+      A 65,65 0 1,0 30,58
+    " fill="none" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" opacity="0.4"/>
+
+    <!-- Dynamic slash element — cutting through the C, represents AI/speed -->
+    <line x1="20" y1="-70" x2="-15" y2="70" stroke="url(#accent2)" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- Pulse dot — top right, represents AI intelligence -->
+    <circle cx="62" cy="-82" r="10" fill="#00D2FF" opacity="0.95"/>
+    <circle cx="62" cy="-82" r="16" fill="#00D2FF" opacity="0.15"/>
+    <circle cx="62" cy="-82" r="5" fill="#FFFFFF" opacity="0.9"/>
+
+    <!-- Second pulse dot — bottom, subtle -->
+    <circle cx="62" cy="82" r="6" fill="#7B61FF" opacity="0.7"/>
+    <circle cx="62" cy="82" r="3" fill="#FFFFFF" opacity="0.5"/>
+  </g>
+
+  <!-- Wordmark: COACH -->
+  <g transform="translate(256, 420)">
+    <text x="0" y="0" text-anchor="middle"
+      font-family="'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif"
+      font-size="38" font-weight="800" letter-spacing="14"
+      fill="url(#accent2)">COACH</text>
+  </g>
+
+  <!-- Subtle shine line across the icon -->
+  <rect x="32" y="240" width="448" height="1" fill="url(#shimmer)" clip-path="url(#appClip)" opacity="0.5"/>
+</svg>
