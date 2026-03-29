@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
@@ -49,6 +49,7 @@ const MEAL_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const CALENDAR_WEEKS = 5; // ~1 month of swipable history
 
 function toDateKey(date: Date): string {
   const y = date.getFullYear();
@@ -584,15 +585,29 @@ export function HomeScreen() {
   } = useStepsStore();
   const { summary: workoutSummary, fetchSummary: fetchWorkoutSummary } = useWorkoutStore();
 
-  // Current week: Sun–Sat
-  const weekDays = useMemo(() => {
+  const insets = useSafeAreaInsets();
+  const calendarRef = useRef<ScrollView>(null);
+
+  // Generate weeks where today is always at the 6th position (index 5)
+  const calendarWeeks = useMemo(() => {
     const today = new Date();
-    const dayOfWeek = today.getDay(); // 0=Sun
-    const sunday = addDays(today, -dayOfWeek);
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = addDays(sunday, i);
-      return { date: d, key: toDateKey(d) };
-    });
+    const weeks: { date: Date; key: string }[][] = [];
+    for (let w = -(CALENDAR_WEEKS - 1); w <= 0; w++) {
+      const days: { date: Date; key: string }[] = [];
+      for (let d = -5; d <= 1; d++) {
+        const date = addDays(today, w * 7 + d);
+        days.push({ date, key: toDateKey(date) });
+      }
+      weeks.push(days);
+    }
+    return weeks;
+  }, []);
+
+  // Scroll calendar to current week on mount
+  useEffect(() => {
+    setTimeout(() => {
+      calendarRef.current?.scrollToEnd({ animated: false });
+    }, 50);
   }, []);
 
   const loadProfile = useCallback(async () => {
@@ -611,7 +626,7 @@ export function HomeScreen() {
           history: { date: string; calories: number }[];
           target: { calories: number } | null;
         };
-      }>('/dashboard/history?days=7');
+      }>('/dashboard/history?days=35');
       const map = new Map<string, number>();
       for (const day of res.data.history) {
         map.set(day.date, day.calories);
@@ -762,9 +777,19 @@ export function HomeScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: c.bg }}>
-      <SafeAreaView edges={['top']}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100, paddingTop: insets.top }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading && !!data}
+            onRefresh={onRefresh}
+            tintColor={c.text}
+          />
+        }
+      >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pt-3 pb-1">
+        <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
           <View className="flex-row items-center gap-2">
             <Text style={{ fontSize: 28 }}>🍏</Text>
             <Text className="text-2xl font-sans-bold text-text">
@@ -783,101 +808,107 @@ export function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Week Calendar Strip */}
-        <View className="px-4 pb-2 pt-2">
-          <View style={{ flexDirection: 'row' }}>
-            {weekDays.map(({ date, key }) => {
-              const isSelected = selectedDateKey === key;
-              const isToday = todayKey === key;
-              const isFuture = key > todayKey;
-              const circleSize = 40;
+        {/* Swipable Week Calendar */}
+        <View className="pb-4 pt-1">
+          <ScrollView
+            ref={calendarRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+          >
+            {calendarWeeks.map((week, weekIdx) => (
+              <View
+                key={weekIdx}
+                style={{ width: screenWidth, flexDirection: 'row', paddingHorizontal: 16 }}
+              >
+                {week.map(({ date, key }) => {
+                  const isSelected = selectedDateKey === key;
+                  const isToday = todayKey === key;
+                  const isFuture = key > todayKey;
+                  const circleSize = 40;
 
-              // Determine ring color based on calorie proximity to goal
-              const dayCals = weekHistory.get(key);
-              const calTarget = weekCalorieTarget ?? targets.calories;
-              let ringColor: string | null = null;
-              let hasMeals = false;
+                  // Determine ring color based on calorie proximity to goal
+                  const dayCals = weekHistory.get(key);
+                  const calTarget = weekCalorieTarget ?? targets.calories;
+                  let ringColor: string | null = null;
+                  let dayHasMeals = false;
 
-              if (!isFuture && dayCals !== undefined && dayCals > 0) {
-                hasMeals = true;
-                const diff = Math.abs(dayCals - calTarget);
-                if (diff <= 200) {
-                  ringColor = '#22c55e'; // green
-                } else if (diff <= 500) {
-                  ringColor = '#eab308'; // yellow
-                } else {
-                  ringColor = '#ef4444'; // red
-                }
-              }
+                  if (!isFuture && dayCals !== undefined && dayCals > 0) {
+                    dayHasMeals = true;
+                    const diff = Math.abs(dayCals - calTarget);
+                    if (diff <= 200) {
+                      ringColor = '#22c55e'; // green
+                    } else if (diff <= 500) {
+                      ringColor = '#eab308'; // yellow
+                    } else {
+                      ringColor = '#ef4444'; // red
+                    }
+                  }
 
-              return (
-                <Pressable
-                  key={key}
-                  onPress={() => setSelectedDateKey(key)}
-                  style={{ flex: 1, alignItems: 'center', paddingVertical: 2 }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontFamily: 'Inter-Medium',
-                      color: isSelected ? c.text : c.textTertiary,
-                      marginBottom: 6,
-                    }}
-                  >
-                    {WEEKDAY_LABELS[date.getDay()]}
-                  </Text>
-                  <View
-                    style={{
-                      width: circleSize,
-                      height: circleSize,
-                      borderRadius: circleSize / 2,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      ...(isSelected
-                        ? { backgroundColor: c.text }
-                        : hasMeals && ringColor
-                          ? {
-                              borderWidth: 2,
-                              borderColor: ringColor,
-                              borderStyle: 'solid' as const,
-                            }
-                          : {
-                              borderWidth: 1.5,
-                              borderColor: isFuture ? c.border : c.textTertiary,
-                              borderStyle: 'dashed' as const,
-                            }),
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
-                        color: isSelected ? c.bg : isToday || hasMeals ? c.text : c.textTertiary,
-                      }}
+                  return (
+                    <Pressable
+                      key={key}
+                      onPress={() => setSelectedDateKey(key)}
+                      style={{ flex: 1, alignItems: 'center', paddingVertical: 2 }}
                     >
-                      {date.getDate()}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontFamily: 'Inter-Medium',
+                          color: isSelected || isToday ? c.text : c.textTertiary,
+                          marginBottom: 6,
+                        }}
+                      >
+                        {WEEKDAY_LABELS[date.getDay()]}
+                      </Text>
+                      <View
+                        style={{
+                          width: circleSize,
+                          height: circleSize,
+                          borderRadius: circleSize / 2,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          ...(isSelected
+                            ? { backgroundColor: c.text }
+                            : isToday
+                              ? { backgroundColor: 'rgba(255,255,255,0.15)' }
+                              : dayHasMeals && ringColor
+                                ? {
+                                    borderWidth: 2,
+                                    borderColor: ringColor,
+                                    borderStyle: 'solid' as const,
+                                  }
+                                : {
+                                    borderWidth: 1.5,
+                                    borderColor: isFuture ? c.border : c.textTertiary,
+                                    borderStyle: 'dashed' as const,
+                                  }),
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontFamily: isSelected || isToday ? 'Inter-Bold' : 'Inter-Medium',
+                            color: isSelected
+                              ? c.bg
+                              : isToday || dayHasMeals
+                                ? c.text
+                                : c.textTertiary,
+                          }}
+                        >
+                          {date.getDate()}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+          </ScrollView>
         </View>
-      </SafeAreaView>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100, paddingTop: 8 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading && !!data}
-            onRefresh={onRefresh}
-            tintColor={c.text}
-          />
-        }
-      >
         {/* ── Nutrition Carousel ── */}
-        <Animated.View entering={FadeInDown.duration(350)} className="mb-1">
+        <Animated.View entering={FadeInDown.duration(350)} className="mb-4">
           <ScrollView
             horizontal
             pagingEnabled
@@ -1287,7 +1318,7 @@ export function HomeScreen() {
         </Animated.View>
 
         {/* ── Recently Uploaded ── */}
-        <Animated.View entering={FadeInDown.duration(350).delay(150)} className="px-4">
+        <Animated.View entering={FadeInDown.duration(350).delay(150)} className="px-4 mt-2">
           <Text
             style={{
               fontSize: 18,
