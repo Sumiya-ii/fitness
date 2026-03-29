@@ -868,21 +868,19 @@ export function HomeScreen() {
                           borderRadius: circleSize / 2,
                           alignItems: 'center',
                           justifyContent: 'center',
-                          ...(isSelected
-                            ? { backgroundColor: c.text }
-                            : isToday
-                              ? { backgroundColor: 'rgba(255,255,255,0.15)' }
-                              : dayHasMeals && ringColor
-                                ? {
-                                    borderWidth: 2,
-                                    borderColor: ringColor,
-                                    borderStyle: 'solid' as const,
-                                  }
-                                : {
-                                    borderWidth: 1.5,
-                                    borderColor: isFuture ? c.border : c.textTertiary,
-                                    borderStyle: 'dashed' as const,
-                                  }),
+                          backgroundColor: isSelected ? c.text : isToday ? c.card : 'transparent',
+                          ...(!(isSelected || isToday) &&
+                            (dayHasMeals && ringColor
+                              ? {
+                                  borderWidth: 2,
+                                  borderColor: ringColor,
+                                  borderStyle: 'solid' as const,
+                                }
+                              : {
+                                  borderWidth: 1.5,
+                                  borderColor: isFuture ? c.border : c.textTertiary,
+                                  borderStyle: 'dashed' as const,
+                                })),
                         }}
                       >
                         <Text
