@@ -82,6 +82,17 @@ export class TelegramService implements OnModuleDestroy {
       },
     });
 
+    // Ensure 'telegram' is in the user's notification channels
+    const pref = await this.prisma.notificationPreference.findUnique({
+      where: { userId: storedUserId },
+    });
+    if (pref && !pref.channels.includes('telegram')) {
+      await this.prisma.notificationPreference.update({
+        where: { userId: storedUserId },
+        data: { channels: [...pref.channels, 'telegram'] },
+      });
+    }
+
     return { success: true, userId: storedUserId };
   }
 
@@ -124,6 +135,17 @@ export class TelegramService implements OnModuleDestroy {
       where: { userId },
       data: { active: false },
     });
+
+    // Remove 'telegram' from notification channels
+    const pref = await this.prisma.notificationPreference.findUnique({
+      where: { userId },
+    });
+    if (pref && pref.channels.includes('telegram')) {
+      await this.prisma.notificationPreference.update({
+        where: { userId },
+        data: { channels: pref.channels.filter((c) => c !== 'telegram') },
+      });
+    }
   }
 
   /**
