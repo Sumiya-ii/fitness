@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { API_PREFIX, QUEUE_NAMES } from '@coach/shared';
 import { ConfigService } from './config';
@@ -15,7 +16,8 @@ const BULL_BOARD_PATH = '/admin/queues';
 const ADMIN_DASHBOARD_PATH = '/admin/dashboard';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
   app.setGlobalPrefix(API_PREFIX);
   app.enableCors();
 
