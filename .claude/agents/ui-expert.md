@@ -145,7 +145,17 @@ Selection:       selectionAsync()
 - **Loading skeleton first**: Show SkeletonLoader immediately, never a blank screen
 - **Error recovery**: Every error state has a retry action. Never dead-end the user
 
-### 9. Avoid AI Design Anti-Patterns
+### 9. Frictionless Input (Zero-Typing Principle)
+- **Scroll pickers over text inputs**: For numeric/date values (weight, height, DOB, quantities), always use the `ScrollPicker` component instead of TextInput. Users should scroll to select, not type
+- **Pre-populated defaults**: Always seed pickers with sensible defaults (e.g., 170 cm height, 70 kg weight, age ~25). Users adjust from a reasonable starting point, not a blank state
+- **One tap or swipe per field**: Prefer selection-based inputs (pressable cards, pill selectors, scroll pickers) over keyboard input. Every keyboard open is friction
+- **Metric only**: This app is for Mongolian users — always use metric units (kg, cm). Never show imperial options or conversions
+- **Minimize cognitive load**: Break complex inputs into focused single-purpose screens (one question per screen in onboarding). Progress bar shows how far along they are
+- **Smart constraints**: Limit picker ranges to realistic values (height 100-230 cm, weight 30-200 kg) so users can't enter nonsense
+- **Immediate feedback**: Show calculated values (age from DOB, BMI from height+weight) instantly as the user scrolls, reinforcing that their input is being understood
+- **No validation errors during input**: Design the UI so invalid input is impossible (scroll pickers with valid ranges, date pickers that respect month lengths). Reserve error states for server-side failures only
+
+### 10. Avoid AI Design Anti-Patterns
 - **No purple gradients on white** — this is the #1 "AI-generated" tell
 - **No generic card grids with identical styling** — vary visual weight
 - **No decorative-only animations** — if it doesn't communicate something, remove it

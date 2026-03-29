@@ -10,12 +10,13 @@ Specialized AI agents with deep domain knowledge of the Coach codebase. Each age
 |-------|-----------|-------|-------|--------|
 | `api-expert` | NestJS backend (controllers, services, DTOs, modules) | Sonnet | Full | Yes |
 | `mobile-expert` | React Native (screens, stores, hooks, navigation) | Sonnet | Full | Yes |
-| `database-expert` | Prisma schema, PostgreSQL, query optimization | Sonnet | Full | Yes |
+| `database-expert` | Prisma schema, PostgreSQL, query optimization, schema audits | **Opus** | Full | Yes |
 | `ai-pipeline` | Vision AI, STT, coaching LLM, prompt engineering | **Opus** | Full | Yes |
 | `worker-expert` | BullMQ processors, async jobs, notifications | Sonnet | Full | Yes |
 | `debugger` | Sentry errors, Railway logs, production debugging | Sonnet | Full | Yes |
 | `test-expert` | Jest tests, mocking, coverage | Sonnet | Full | Yes |
 | `reviewer` | Code review, security audit, architecture analysis | Sonnet | **Read-only** | No |
+| `ux-copywriter` | App copy, engagement, onboarding, notifications, i18n | **Opus** | Full | No |
 
 ---
 
@@ -29,6 +30,8 @@ Just describe what you need and mention the domain:
 "Have the debugger investigate the PrismaClientKnownRequestError in Sentry"
 "Ask the reviewer to check my last commit"
 "Use the ai-pipeline agent to improve the Mongolian food recognition prompt"
+"Use the ux-copywriter to audit all onboarding screens for engagement"
+"Have the ux-copywriter rewrite our empty states to be more compelling"
 ```
 
 ### Method 2: @-mention (Explicit)
@@ -82,6 +85,9 @@ Build a full feature by chaining specialists:
 ### Code review / security audit
 - `reviewer` → read-only analysis, won't modify any files
 
+### App copy, engagement, and content
+- `ux-copywriter` → audit existing copy, rewrite for engagement, onboarding optimization, notification copy, empty states, i18n updates (uses Opus for creative depth)
+
 ---
 
 ## Agent Memory
@@ -99,8 +105,8 @@ This means the more you use an agent, the better it gets at its job.
 
 ## Design Decisions
 
-**Why Opus for ai-pipeline?**
-AI prompt engineering and vision pipeline debugging require deeper reasoning. The cost is justified for this high-complexity, high-impact domain.
+**Why Opus for ai-pipeline, database-expert, and ux-copywriter?**
+AI prompt engineering, database schema design, and engagement copywriting all require deeper reasoning about trade-offs, cascading effects, and long-term implications. The cost is justified for these high-impact domains — bad copy kills retention just as surely as bad schema design kills performance.
 
 **Why read-only for reviewer?**
 Code reviews should analyze without modifying. The reviewer can't accidentally introduce bugs.
@@ -109,4 +115,4 @@ Code reviews should analyze without modifying. The reviewer can't accidentally i
 Agents learn project-specific patterns that are more valuable than generic knowledge. Memory persists across conversations.
 
 **Why Sonnet for most agents?**
-Best balance of capability and speed. Sonnet handles 90% of tasks well. Opus reserved for the most complex domain (AI/ML pipelines).
+Best balance of capability and speed. Sonnet handles 90% of tasks well. Opus reserved for the most complex domains (AI/ML pipelines and database engineering).

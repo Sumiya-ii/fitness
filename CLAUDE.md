@@ -1,16 +1,8 @@
 # Coach — Agent Instructions
 
-## Git workflow
-
-- **Always commit and push directly to `main`**. Do not create feature branches or PRs unless explicitly asked.
-- Commit frequently after each logical change so individual changes are easy to revert.
-- Use clear, descriptive commit messages so each change is identifiable in the git log.
-
 ## Project overview
 
 **Coach** is an AI-enabled nutrition and training mobile app for Mongolian users.
-
-**Monorepo structure (npm workspaces):**
 
 ```
 apps/
@@ -21,122 +13,184 @@ packages/
   shared/    — Shared Zod schemas, types, constants (@coach/shared)
 ```
 
+## Git workflow
+
+- **Commit and push directly to `main`**. No feature branches or PRs unless explicitly asked.
+- Commit frequently after each logical change.
+
 ## Tech stack
 
-| Layer         | Technology                                                                        |
-| ------------- | --------------------------------------------------------------------------------- |
-| Mobile        | React Native 0.83, Expo ~55, NativeWind 4 (Tailwind), Zustand, React Navigation 7 |
-| API           | NestJS 10, Prisma 5 + PostgreSQL 16, Redis 7, Firebase Admin                      |
-| AI            | OpenAI GPT-4 Vision (food photos), Google Speech-to-Text / Chimege STT            |
-| Queue         | BullMQ (via Redis)                                                                |
-| Search        | Typesense 0.25                                                                    |
-| Auth          | Firebase Authentication                                                           |
-| Payments      | QPay (Mongolia)                                                                   |
-| Observability | Sentry, OpenTelemetry                                                             |
-| Infra         | Docker Compose (local), GitHub Actions CI                                         |
+| Layer         | Technology                                                              |
+| ------------- | ----------------------------------------------------------------------- |
+| Mobile        | React Native 0.83, Expo ~55, NativeWind 4, Zustand, React Navigation 7  |
+| API           | NestJS 10, Prisma 5 + PostgreSQL 16, Redis 7, Firebase Admin            |
+| AI            | OpenAI GPT-4 Vision (food photos), Google Speech-to-Text / Chimege STT  |
+| Queue         | BullMQ (via Redis)                                                      |
+| Auth          | Firebase Authentication (global guard, all routes protected by default) |
+| Payments      | QPay (Mongolia)                                                         |
+| Observability | Sentry, Pino structured logging, OpenTelemetry                          |
 
-## Key commands
+## Commands
 
 ```bash
-# Per workspace: append --workspace=apps/api | apps/mobile | apps/worker
 npm run lint --workspace=apps/api
 npm run typecheck --workspace=apps/api
 npm run test --workspace=apps/api
 npm run build --workspace=apps/api
-npm run format         # prettier --write (all)
-
-# Database (API workspace)
-npm run db:migrate --workspace=apps/api    # run pending migrations
-npm run db:generate --workspace=apps/api   # regenerate Prisma client
-npm run db:seed --workspace=apps/api       # seed dev data
-
-# Mobile
-npx expo prebuild:ios                      # regenerate native iOS project
+npm run format                              # prettier --write (all)
+npm run db:migrate --workspace=apps/api     # run pending migrations
+npm run db:generate --workspace=apps/api    # regenerate Prisma client
+npm run test --workspaces                   # all tests (same as CI)
 ```
 
-## Code style & conventions
+## Code style
 
 - **TypeScript strict mode** everywhere. No `any` without justification.
-- **Prettier** (enforced): singleQuote, semi, trailingComma: all, printWidth: 100, tabWidth: 2
+- **Prettier**: singleQuote, semi, trailingComma: all, printWidth: 100, tabWidth: 2.
 - **ESLint** with `@typescript-eslint`; unused vars prefixed with `_` are allowed.
-- **NativeWind** for all mobile styling — use `className` props, not `StyleSheet`.
-- **Zustand** for client state in mobile; no Redux.
-- **Zod** (`@coach/shared`) for all schema validation and type inference.
-- **NestJS modules** for all API features; each feature in `apps/api/src/<feature>/`.
+- **File naming**: kebab-case everywhere (e.g., `meal-logs.service.ts`, `use-auth-store.ts`).
+
+## Hard rules — violating these causes bugs
+
+1. **Never add dependencies** without asking first. Check if an existing dep already solves it.
+2. **Never use relative imports across workspace boundaries** — always `@coach/shared`.
+3. **All API responses** must use `{ data: T }` envelope. Errors are `{ statusCode, message, requestId }`.
+4. **Zod for all validation** — no `class-validator`, no NestJS `ValidationPipe`. Parse with `schema.safeParse(body)` in controllers, throw `BadRequestException(parsed.error.issues)` on failure.
+5. **Controllers are thin** — validate input with Zod, delegate to service, return `{ data }`. Zero business logic.
+6. **All business logic lives in services** — computations, DB queries, side effects.
+7. **`@CurrentUser()` for auth context** — never read `req.user` directly. All data-access services must scope queries to `user.id`.
+8. **Routes are protected by default** (global `AuthGuard`). Use `@Public()` only for webhooks, health checks.
+9. **Prisma Decimal fields** must be converted with `Number()` before returning — Prisma returns `Decimal` objects, not numbers.
+10. **Dates returned from API** must be ISO strings. Use `.toISOString().split('T')[0]` for date-only fields.
+11. **NativeWind only** for mobile styling — use `className`, never `StyleSheet.create()` or inline styles.
+12. **Zustand** for mobile state — no Redux, no Context for state management.
+13. **Never call real external services in tests** — Firebase, OpenAI, QPay, Typesense must be mocked at the boundary.
+14. **Conditional Prisma updates** use spread: `...(dto.field !== undefined && { field: value })`.
+
+## API patterns (follow exactly)
+
+```typescript
+// ── Controller ──────────────────────────────────────
+@Post()
+async create(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
+  const parsed = createSchema.safeParse(body);
+  if (!parsed.success) throw new BadRequestException(parsed.error.issues);
+  return { data: await this.service.create(user.id, parsed.data) };
+}
+
+// ── Service ─────────────────────────────────────────
+@Injectable()
+export class FooService {
+  constructor(private readonly prisma: PrismaService) {}
+  // All DB queries scoped to userId
+}
+
+// ── DTO ─────────────────────────────────────────────
+export const createSchema = z.object({ ... });
+export type CreateDto = z.infer<typeof createSchema>;
+
+// ── Module ──────────────────────────────────────────
+@Module({
+  controllers: [FooController],
+  providers: [FooService],
+  exports: [FooService],
+})
+```
+
+## Prisma conventions
+
+- IDs: `String @id @default(uuid()) @db.Uuid`
+- Columns: camelCase in TS, snake_case in DB via `@map("snake_case")`
+- Tables: PascalCase model, snake_case via `@@map("table_name")`
+- Relations: cascade deletes where parent owns child
+- Indexes: composite indexes on common query patterns (`@@index([userId, createdAt(sort: Desc)])`)
+- After schema changes: always run `npm run db:generate --workspace=apps/api`
+
+## Mobile patterns
+
+- **Navigation**: React Navigation 7 with typed `NativeStackScreenProps<ParamList, 'ScreenName'>`
+- **Screens**: feature-organized under `apps/mobile/app/`
+- **State**: Zustand `create<State>((set, get) => ({ ... }))` with AsyncStorage caching
+- **Hooks**: `useColors()` for theme, `useLocale()` for i18n, `useProGate()` for subscription
+- **Screen lifecycle**: `useFocusEffect(useCallback(() => { ... }, []))` — not `useEffect`
+- **API calls**: use the `api` client from `src/api/client.ts` — never raw `fetch`
+- **i18n**: all user-facing strings through translation keys (Mongolian + English)
+
+## Testing
+
+**Stack**: Jest 29 + ts-jest. CI runs `npm run test --workspaces` on every push.
+
+**When to test**:
+
+- Pure logic (calculators, parsers, validators): always unit test
+- NestJS services: co-located `*.spec.ts`, mock PrismaService as plain object of jest.Mock
+- Zustand stores: test via `.setState()` / `.getState()`
+- Worker processors: co-located `*.spec.ts` for each processor (see below)
+- Queue dispatcher: routing test in `apps/worker/src/processors/index.spec.ts`
+- UI screens: skip unless non-trivial branching logic
+- No testable behavior (styling, config): note "not test-worthy" in commit
+
+**Mock conventions**:
+
+- Mobile native modules: globally stubbed via `moduleNameMapper` in `jest.config.js`
+- API client in mobile: `jest.mock('../api/client', () => ({ api: { get: jest.fn(), ... } }))`
+- Firebase auth: mock whole module; include `configureGoogleSignIn: jest.fn()` and `subscribeToTokenRefresh: jest.fn(() => jest.fn())`
+- PrismaService in API: inline plain object of `jest.Mock` (see `auth.service.spec.ts`)
+
+### Worker processor test requirements
+
+Every worker processor **must** have a co-located `*.spec.ts` with tests covering these categories:
+
+1. **Missing env vars**: return early / skip when `OPENAI_API_KEY`, `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, etc. are unset
+2. **Happy path**: mock all external deps, verify correct API calls, delivery, and return values
+3. **Both delivery channels**: test Telegram and Push independently and together
+4. **No deliverable channels**: skip gracefully when chatId missing, pushTokens empty, or channels list empty
+5. **Locale handling**: test `mn` (default), `en`, undefined locale, and unknown locale (should fallback)
+6. **AI fallbacks**: null/empty GPT response content → processor uses static fallback message
+7. **External service errors**: OpenAI failure, Telegram failure, Push failure → correct error logging, no crash
+8. **Error logging**: verify `logMessage()` called with `status: 'failed'` and `errorMessage` on delivery errors
+9. **Edge case data**: null/undefined optional fields, empty arrays, boundary values (confidence 0/1, zero kcal)
+
+**Worker mock patterns** (follow for all processors):
+
+```typescript
+// OpenAI — mock the default export constructor
+jest.mock('openai', () => {
+  const mockCreate = jest.fn();
+  return jest.fn().mockImplementation(() => ({
+    chat: { completions: { create: mockCreate } },
+  }));
+});
+
+// Telegraf — mock bot constructor
+jest.mock('telegraf', () => ({
+  Telegraf: jest.fn().mockImplementation(() => ({
+    telegram: { sendMessage: jest.fn().mockResolvedValue(undefined) },
+  })),
+}));
+
+// Redis — mock with stateful store
+const mockRedis = { get: jest.fn(), setex: jest.fn(), disconnect: jest.fn() };
+jest.mock('ioredis', () => jest.fn().mockImplementation(() => mockRedis));
+
+// PostgreSQL — mock Pool for coach-memory and similar
+const mockPoolQuery = jest.fn();
+jest.mock('pg', () => ({ Pool: jest.fn().mockImplementation(() => ({ query: mockPoolQuery, end: jest.fn() })) }));
+
+// Shared worker services — always mock at module level
+jest.mock('../expo-push', () => ({ sendExpoPush: jest.fn() }));
+jest.mock('../message-log.service', () => ({ logMessage: jest.fn() }));
+jest.mock('../s3', () => ({ downloadFromS3: jest.fn(), deleteFromS3: jest.fn() }));
+jest.mock('../db', () => ({ setVoiceDraftActive: jest.fn(), setVoiceDraftCompleted: jest.fn(), setVoiceDraftFailed: jest.fn() }));
+
+// Environment — save/restore in beforeEach/afterEach
+let originalEnv: NodeJS.ProcessEnv;
+beforeEach(() => { originalEnv = { ...process.env }; process.env.OPENAI_API_KEY = 'test-key'; });
+afterEach(() => { process.env = originalEnv; jest.restoreAllMocks(); });
+```
+
+**When adding a new worker processor**: create the spec file immediately with all 9 test categories above. Do not merge a processor without tests.
 
 ## Environment variables
 
-Copy `.env.example` to `.env` in repo root. Key vars:
-
-- `DATABASE_URL` — PostgreSQL connection string
-- `REDIS_URL` — Redis connection string
-- `FIREBASE_*` — Firebase Admin credentials
-- `OPENAI_API_KEY` — GPT-4 Vision for food photo recognition
-- `STT_PROVIDER` — `google` or `chimege` for speech-to-text
-
-Mobile env vars are prefixed `EXPO_PUBLIC_*` in `apps/mobile/.env`.
-
-## CI/CD
-
-GitHub Actions runs on every push/PR to `main`:
-
-1. `npm run lint`
-2. `npm run typecheck`
-3. `npm run test`
-4. `npm run format:check`
-
-All four must pass before merging.
-
-## API modules
-
-`admin`, `analytics`, `auth`, `barcodes`, `config`, `dashboard`, `favorites`, `foods`, `health`, `meal-logs`, `notifications`, `observability`, `onboarding`, `photos`, `prisma`
-
-## Mobile architecture
-
-- **Navigation**: React Navigation 7 (stack + tab navigators)
-- **Screens**: feature-organized under `apps/mobile/app/`
-- **State**: Zustand stores under `apps/mobile/stores/`
-- **Hooks**: custom hooks under `apps/mobile/hooks/`
-- **i18n**: internationalization support (Mongolian + English)
-- **Auth**: Firebase phone/email auth with Expo SecureStore for tokens
-
-## Testing strategy
-
-**Stack**: Jest 29 + ts-jest in all workspaces. `npm run test --workspaces` runs in CI on every push.
-
-### Layers
-
-| Layer             | Where                                                                     | When to add                                              |
-| ----------------- | ------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Unit              | co-located `*.spec.ts` (API/worker) or `src/__tests__/*.test.ts` (mobile) | Pure logic, transforms, calculators, error mapping       |
-| Store/integration | `src/__tests__/*.test.ts`                                                 | Zustand stores, service functions with mocked boundaries |
-| E2E               | Not configured — skip unless Detox/Maestro is set up                      | Critical flows only, future                              |
-
-### Rules for every feature or bugfix
-
-1. **Pure logic** (calculators, parsers, validators, error maps): add a unit test. No exceptions.
-2. **Zustand stores**: test state transitions + side effects (AsyncStorage, API calls) via `useXxxStore.setState()` / `.getState()`.
-3. **NestJS services**: add a `*.spec.ts` co-located with the service. Mock `PrismaService` inline (see existing specs for pattern).
-4. **New queue processors**: add routing test in `apps/worker/src/processors/index.spec.ts`.
-5. **UI screens**: skip unless there is non-trivial branching logic. No `@testing-library/react-native` is configured.
-6. **External APIs** (Firebase, OpenAI, QPay, Typesense): always mock at the boundary — never call real services in tests.
-7. **If a change has no testable behavior** (pure styling, string changes, config tweaks): explicitly note "not test-worthy" in the commit message.
-
-### Mock conventions
-
-- **Mobile native modules** (expo-notifications, expo-constants, expo-secure-store): globally stubbed via `moduleNameMapper` in `jest.config.js`. Stubs live in `src/__mocks__/`.
-- **AsyncStorage**: mock inline with `jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'))`.
-- **API client** in mobile: `jest.mock('../api/client', () => ({ api: { get: jest.fn(), post: jest.fn(), ... } }))`.
-- **Firebase auth service** in mobile: mock the whole module; always include `configureGoogleSignIn: jest.fn()` and `subscribeToTokenRefresh: jest.fn(() => jest.fn())`.
-- **PrismaService** in API: construct inline as a plain object of `jest.Mock` functions (see `auth.service.spec.ts`).
-
-### Key commands
-
-```bash
-npm run test --workspace=apps/mobile     # mobile tests only
-npm run test --workspace=apps/api        # API tests only
-npm run test --workspace=apps/worker     # worker tests only
-npm run test --workspace=packages/shared # shared schema tests only
-npm run test --workspaces                # all (same as CI)
-npm run test:cov --workspace=apps/api    # coverage report
-```
+Copy `.env.example` to `.env` in repo root. Mobile env vars prefixed `EXPO_PUBLIC_*` in `apps/mobile/.env`.

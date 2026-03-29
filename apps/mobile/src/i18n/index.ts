@@ -9,7 +9,7 @@ export type Locale = 'en' | 'mn';
 
 const translations = { en, mn } as Record<Locale, Record<string, unknown>>;
 
-let currentLocale: Locale = 'en';
+let currentLocale: Locale = 'mn';
 
 export function t(key: string): string {
   const parts = key.split('.');
@@ -39,7 +39,7 @@ export async function getLocale(): Promise<Locale> {
   } catch {
     // Ignore
   }
-  return 'en';
+  return 'mn';
 }
 
 export function useLocale(): {

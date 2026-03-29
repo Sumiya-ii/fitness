@@ -9,6 +9,7 @@ jest.mock('./stt.processor', () => ({ processSttJob: jest.fn() }));
 jest.mock('./photo.processor', () => ({ processPhotoJob: jest.fn() }));
 jest.mock('./reminders.processor', () => ({ processReminderJob: jest.fn() }));
 jest.mock('./coach.processor', () => ({ processCoachMessageJob: jest.fn() }));
+jest.mock('./weekly-report.processor', () => ({ processWeeklyReportJob: jest.fn() }));
 jest.mock('./adaptive-target.processor', () => ({ processAdaptiveTargetJob: jest.fn() }));
 jest.mock('./meal-timing.processor', () => ({ processMealTimingJob: jest.fn() }));
 jest.mock('./coach-memory.processor', () => ({ processCoachMemoryJob: jest.fn() }));
@@ -19,6 +20,7 @@ import { processSttJob } from './stt.processor';
 import { processPhotoJob } from './photo.processor';
 import { processReminderJob } from './reminders.processor';
 import { processCoachMessageJob } from './coach.processor';
+import { processWeeklyReportJob } from './weekly-report.processor';
 import { processAdaptiveTargetJob } from './adaptive-target.processor';
 import { processMealTimingJob } from './meal-timing.processor';
 import { processCoachMemoryJob } from './coach-memory.processor';
@@ -30,6 +32,9 @@ const mockStt = processSttJob as jest.MockedFunction<typeof processSttJob>;
 const mockPhoto = processPhotoJob as jest.MockedFunction<typeof processPhotoJob>;
 const mockReminder = processReminderJob as jest.MockedFunction<typeof processReminderJob>;
 const mockCoach = processCoachMessageJob as jest.MockedFunction<typeof processCoachMessageJob>;
+const mockWeeklyReport = processWeeklyReportJob as jest.MockedFunction<
+  typeof processWeeklyReportJob
+>;
 const mockAdaptiveTarget = processAdaptiveTargetJob as jest.MockedFunction<
   typeof processAdaptiveTargetJob
 >;
@@ -95,6 +100,13 @@ describe('processJob routing', () => {
     mockCoach.mockResolvedValue(undefined);
     await processJob(QUEUE_NAMES.COACH_MESSAGES, fakeJob);
     expect(mockCoach).toHaveBeenCalledWith(fakeJob);
+    expect(mockStt).not.toHaveBeenCalled();
+  });
+
+  it('routes weekly-report to processWeeklyReportJob', async () => {
+    mockWeeklyReport.mockResolvedValue(undefined);
+    await processJob(QUEUE_NAMES.WEEKLY_REPORT, fakeJob);
+    expect(mockWeeklyReport).toHaveBeenCalledWith(fakeJob);
     expect(mockStt).not.toHaveBeenCalled();
   });
 

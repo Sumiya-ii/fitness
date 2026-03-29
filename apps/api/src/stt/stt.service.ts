@@ -39,10 +39,12 @@ export class SttService {
 
     const formData = new FormData();
     formData.append('file', new Blob([audioBuffer], { type: 'audio/wav' }), 'audio.wav');
-    formData.append('model', 'whisper-1');
-    // Explicitly set language to improve transcription accuracy
-    const whisperLang = locale === 'en' ? 'en' : 'mn';
-    formData.append('language', whisperLang);
+    formData.append('model', 'gpt-4o-transcribe');
+    // Only set language hint for languages the model supports directly.
+    // Mongolian is not supported — omit to let the model auto-detect.
+    if (locale === 'en') {
+      formData.append('language', 'en');
+    }
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',

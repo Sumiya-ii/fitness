@@ -91,10 +91,12 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
   try {
     const formData = new FormData();
     formData.append('file', new Blob([buffer], { type: 'audio/m4a' }), 'audio.m4a');
-    formData.append('model', 'whisper-1');
-    // Explicitly set language to improve transcription accuracy
-    const whisperLang = locale === 'en' ? 'en' : 'mn';
-    formData.append('language', whisperLang);
+    formData.append('model', 'gpt-4o-transcribe');
+    // Only set language hint for languages Whisper supports directly.
+    // Mongolian is not supported — omit to let the model auto-detect.
+    if (locale === 'en') {
+      formData.append('language', 'en');
+    }
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
@@ -110,7 +112,7 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     const data = (await response.json()) as { text?: string };
     text = data.text?.trim() ?? '';
 
-    console.log(`[STT] Transcribed (whisper, lang=${whisperLang}):`, text);
+    console.log(`[STT] Transcribed (gpt-4o-transcribe, locale=${locale ?? 'auto'}):`, text);
   } catch (err) {
     const msg = `Transcription failed: ${String(err)}`;
     console.error(`[STT] ${msg}`);
