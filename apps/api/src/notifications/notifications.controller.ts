@@ -33,6 +33,13 @@ export class NotificationsController {
     await this.notificationsService.registerDeviceToken(user.id, parsed.data);
   }
 
+  @Post('test')
+  async sendTestNotification(@CurrentUser() user: AuthenticatedUser) {
+    return {
+      data: await this.notificationsService.sendTestNotification(user.id),
+    };
+  }
+
   @Put('preferences')
   async updatePreferences(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
     const parsed = updatePreferencesSchema.safeParse(body);

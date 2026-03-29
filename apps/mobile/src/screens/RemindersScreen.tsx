@@ -41,12 +41,9 @@ export function RemindersScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([
-        api.get<{ data: NotificationPrefs }>('/notifications/preferences'),
-        Notifications.getPermissionsAsync(),
-      ])
-        .then(([notifRes, permResult]) => {
-          setNotifPrefs(notifRes.data);
+      // Check OS permission independently — an API failure must not hide the real status
+      Notifications.getPermissionsAsync()
+        .then((permResult) => {
           setOsPermission(
             permResult.status === 'granted'
               ? 'granted'
@@ -55,6 +52,11 @@ export function RemindersScreen() {
                 : 'undetermined',
           );
         })
+        .catch(() => {});
+
+      api
+        .get<{ data: NotificationPrefs }>('/notifications/preferences')
+        .then((notifRes) => setNotifPrefs(notifRes.data))
         .catch(() => {});
     }, []),
   );
@@ -118,8 +120,16 @@ export function RemindersScreen() {
                 <Pressable
                   onPress={async () => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    const granted = await requestAndRegisterPushToken();
-                    setOsPermission(granted ? 'granted' : 'denied');
+                    await requestAndRegisterPushToken();
+                    // Re-check actual OS permission instead of relying on token registration success
+                    const { status } = await Notifications.getPermissionsAsync();
+                    setOsPermission(
+                      status === 'granted'
+                        ? 'granted'
+                        : status === 'denied'
+                          ? 'denied'
+                          : 'undetermined',
+                    );
                   }}
                   className="mt-4 bg-primary-500 rounded-xl px-6 py-3"
                 >
