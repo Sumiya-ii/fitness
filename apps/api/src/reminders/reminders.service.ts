@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { DateTime } from 'luxon';
+import Redis from 'ioredis';
 import { PrismaService } from '../prisma';
+import { ConfigService } from '../config';
 import { QUEUE_NAMES } from '@coach/shared';
 
 export type ReminderType = 'morning' | 'evening';
@@ -33,11 +35,43 @@ function parseTimeToMinutes(timeStr: string): number {
 }
 
 @Injectable()
-export class RemindersService {
+export class RemindersService implements OnModuleDestroy {
+  private readonly redis: Redis;
+
   constructor(
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
     @InjectQueue(QUEUE_NAMES.REMINDERS) private readonly reminderQueue: Queue,
-  ) {}
+  ) {
+    this.redis = new Redis(this.config.get('REDIS_URL'));
+  }
+
+  onModuleDestroy() {
+    this.redis.disconnect();
+  }
+
+  private async hasBeenSentToday(
+    userId: string,
+    type: ReminderType,
+    timezone: string,
+  ): Promise<boolean> {
+    const dateStr = DateTime.now().setZone(timezone).toISODate()!;
+    const key = `reminder:sent:${userId}:${type}:${dateStr}`;
+    return (await this.redis.exists(key)) === 1;
+  }
+
+  private async markReminderSent(
+    userId: string,
+    type: ReminderType,
+    timezone: string,
+  ): Promise<void> {
+    const dateStr = DateTime.now().setZone(timezone).toISODate()!;
+    const key = `reminder:sent:${userId}:${type}:${dateStr}`;
+    const secondsUntilMidnight = Math.ceil(
+      DateTime.now().setZone(timezone).endOf('day').diffNow('seconds').seconds,
+    );
+    await this.redis.setex(key, secondsUntilMidnight + 3600, '1');
+  }
 
   /**
    * Check if current time in user's timezone falls within quiet hours.
@@ -77,11 +111,13 @@ export class RemindersService {
         continue;
       }
 
+      if (await this.hasBeenSentToday(pref.userId, 'morning', pref.reminderTimezone)) continue;
+
       const [tgLink, profile, deviceTokens] = await Promise.all([
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
         this.prisma.deviceToken.findMany({
-          where: { userId: pref.userId },
+          where: { userId: pref.userId, active: true },
           select: { token: true },
         }),
       ]);
@@ -98,6 +134,7 @@ export class RemindersService {
         } satisfies ReminderJobData,
         { jobId: `morning-${pref.userId}-${Date.now()}` },
       );
+      await this.markReminderSent(pref.userId, 'morning', pref.reminderTimezone);
       enqueued++;
     }
 
@@ -123,6 +160,8 @@ export class RemindersService {
         continue;
       }
 
+      if (await this.hasBeenSentToday(pref.userId, 'evening', pref.reminderTimezone)) continue;
+
       const todayStart = this.getLocalDayStart(pref.reminderTimezone);
       const todayEnd = new Date(todayStart);
       todayEnd.setDate(todayEnd.getDate() + 1);
@@ -140,7 +179,7 @@ export class RemindersService {
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
         this.prisma.deviceToken.findMany({
-          where: { userId: pref.userId },
+          where: { userId: pref.userId, active: true },
           select: { token: true },
         }),
       ]);
@@ -157,6 +196,7 @@ export class RemindersService {
         } satisfies ReminderJobData,
         { jobId: `evening-${pref.userId}-${Date.now()}` },
       );
+      await this.markReminderSent(pref.userId, 'evening', pref.reminderTimezone);
       enqueued++;
     }
 

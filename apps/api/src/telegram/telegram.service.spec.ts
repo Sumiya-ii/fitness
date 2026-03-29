@@ -28,6 +28,10 @@ describe('TelegramService', () => {
         upsert: jest.fn(),
         update: jest.fn(),
       },
+      notificationPreference: {
+        findUnique: jest.fn().mockResolvedValue({ userId: 'user-uuid', channels: ['push'] }),
+        update: jest.fn().mockResolvedValue({}),
+      },
     };
     service = new TelegramService(
       prisma as unknown as PrismaService,

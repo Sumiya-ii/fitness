@@ -2,7 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { RemindersService } from './reminders.service';
 import { PrismaService } from '../prisma';
+import { ConfigService } from '../config';
 import { QUEUE_NAMES } from '@coach/shared';
+
+jest.mock('ioredis', () => {
+  return jest.fn().mockImplementation(() => ({
+    exists: jest.fn().mockResolvedValue(0),
+    setex: jest.fn().mockResolvedValue('OK'),
+    disconnect: jest.fn(),
+  }));
+});
 
 describe('RemindersService', () => {
   let service: RemindersService;
@@ -29,6 +38,10 @@ describe('RemindersService', () => {
       providers: [
         RemindersService,
         { provide: PrismaService, useValue: prisma },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('redis://localhost:6379') },
+        },
         { provide: getQueueToken(QUEUE_NAMES.REMINDERS), useValue: reminderQueue },
       ],
     }).compile();

@@ -147,7 +147,17 @@ async function sendTelegram(chatId: string, text: string): Promise<void> {
     return;
   }
   const bot = new Telegraf(token);
-  await bot.telegram.sendMessage(chatId, text, { parse_mode: 'Markdown' });
+  try {
+    // Try Markdown first for nicer formatting
+    await bot.telegram.sendMessage(chatId, text, { parse_mode: 'Markdown' });
+  } catch (err) {
+    // If Markdown parsing fails (unmatched *, _, [, etc. from AI), send as plain text
+    console.warn(
+      '[CoachProcessor] Markdown send failed, retrying as plain text:',
+      err instanceof Error ? err.message : err,
+    );
+    await bot.telegram.sendMessage(chatId, text);
+  }
 }
 
 /**
