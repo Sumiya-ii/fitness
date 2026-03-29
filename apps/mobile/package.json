@@ -61,5 +61,12 @@
     "tailwindcss": "^3.4.0",
     "ts-jest": "^29.1.0",
     "typescript": "~5.9.2"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react-native-worklets"
+      ]
+    }
   }
 }
