@@ -2,6 +2,7 @@ import 'dotenv/config';
 import * as Sentry from '@sentry/node';
 import { APP_NAME, QUEUE_NAMES, DEFAULT_JOB_OPTIONS, validateEnv } from '@coach/shared';
 import { createWorkerForQueue } from './worker-factory';
+import { logger } from './logger';
 
 async function bootstrap() {
   const config = validateEnv();
@@ -13,27 +14,27 @@ async function bootstrap() {
       environment: process.env.NODE_ENV ?? 'production',
       tracesSampleRate: 0.1,
     });
-    console.log('[Sentry] Initialized');
+    logger.info('Sentry initialized');
   } else {
-    console.warn('[Sentry] SENTRY_DSN not set — error reporting disabled');
+    logger.warn('SENTRY_DSN not set — error reporting disabled');
   }
 
-  console.log(`${APP_NAME} Worker starting...`);
+  const queueNames = Object.values(QUEUE_NAMES);
+  const workers = queueNames.map((queueName) => createWorkerForQueue(queueName, config.REDIS_URL));
 
-  const workers = Object.values(QUEUE_NAMES).map((queueName) =>
-    createWorkerForQueue(queueName, config.REDIS_URL),
-  );
-
-  console.log(`Started ${workers.length} workers:`, Object.values(QUEUE_NAMES).join(', '));
-  console.log(
-    `Default retry policy: ${DEFAULT_JOB_OPTIONS.attempts} attempts, exponential backoff`,
+  logger.info(
+    {
+      queues: queueNames,
+      retryPolicy: { attempts: DEFAULT_JOB_OPTIONS.attempts, backoff: 'exponential' },
+    },
+    `${APP_NAME} Worker started with ${workers.length} workers`,
   );
 
   const shutdown = async () => {
-    console.log('Shutting down workers...');
+    logger.info('Shutting down workers...');
     await Sentry.flush(2000);
     await Promise.all(workers.map((w) => w.close()));
-    console.log('All workers stopped.');
+    logger.info('All workers stopped');
     process.exit(0);
   };
 

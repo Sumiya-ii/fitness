@@ -2,14 +2,20 @@ import { Worker, Job } from 'bullmq';
 import * as Sentry from '@sentry/node';
 import { QUEUE_NAMES, QueueName } from '@coach/shared';
 import { processJob } from './processors';
+import { logger } from './logger';
 
 export function createWorkerForQueue(queueName: QueueName, redisUrl: string): Worker {
+  const queueLogger = logger.child({ queue: queueName });
+
   const worker = new Worker(
     queueName,
     async (job: Job) => {
-      console.log(`[${queueName}] Processing job ${job.id}: ${job.name}`);
+      queueLogger.info(
+        { jobId: job.id, jobName: job.name },
+        `Processing job ${job.id}: ${job.name}`,
+      );
       const result = await processJob(queueName, job);
-      console.log(`[${queueName}] Completed job ${job.id}`);
+      queueLogger.info({ jobId: job.id, jobName: job.name }, `Completed job ${job.id}`);
       return result;
     },
     {
@@ -24,9 +30,16 @@ export function createWorkerForQueue(queueName: QueueName, redisUrl: string): Wo
       job?.opts?.attempts !== undefined &&
       job.attemptsMade >= job.opts.attempts;
 
-    console.error(
-      `[${queueName}] Job ${job?.id} failed (attempt ${job?.attemptsMade}):`,
-      err.message,
+    queueLogger.error(
+      {
+        jobId: job?.id,
+        jobName: job?.name,
+        attempt: job?.attemptsMade,
+        maxAttempts: job?.opts?.attempts,
+        isFinalAttempt,
+        error: err.message,
+      },
+      `Job ${job?.id} failed (attempt ${job?.attemptsMade}): ${err.message}`,
     );
 
     // Only report to Sentry on the final attempt to avoid duplicate noise
@@ -46,7 +59,7 @@ export function createWorkerForQueue(queueName: QueueName, redisUrl: string): Wo
   });
 
   worker.on('error', (err) => {
-    console.error(`[${queueName}] Worker error:`, err.message);
+    queueLogger.error({ error: err.message, stack: err.stack }, `Worker error: ${err.message}`);
     Sentry.captureException(err, { tags: { queue: queueName } });
   });
 
