@@ -1,4 +1,5 @@
 export { OnboardingScreen } from './OnboardingScreen';
+export { ThemeSelectScreen } from './ThemeSelectScreen';
 export { GoalSetupScreen } from './GoalSetupScreen';
 export { DesiredWeightScreen } from './DesiredWeightScreen';
 export { WeeklyRateScreen } from './WeeklyRateScreen';

@@ -9,6 +9,7 @@ export type AuthStackParamList = {
 };
 
 export type SetupStackParamList = {
+  ThemeSelect: undefined;
   GoalSetup: undefined;
   DesiredWeight: undefined;
   WeeklyRate: undefined;

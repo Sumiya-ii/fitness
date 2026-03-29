@@ -1,71 +1,68 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
-import type { GoalType } from '../../stores/profile.store';
-import { useProfileStore } from '../../stores/profile.store';
+import { useThemeStore, type ThemeMode } from '../../stores/theme.store';
 import { useColors } from '../../theme';
 import { OnboardingLayout } from './OnboardingLayout';
 
 const TOTAL_STEPS = 11;
 
-type GoalOption = {
-  id: GoalType;
+type ThemeOption = {
+  id: ThemeMode;
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   description: string;
 };
 
-const GOAL_OPTIONS: GoalOption[] = [
+const OPTIONS: ThemeOption[] = [
   {
-    id: 'lose_fat',
-    icon: 'trending-down-outline',
-    title: 'Lose Fat',
-    description: 'Burn fat and get leaner with a calorie deficit',
+    id: 'system',
+    icon: 'phone-portrait-outline',
+    title: 'System Default',
+    description: 'Matches your device appearance',
   },
   {
-    id: 'maintain',
-    icon: 'scale-outline',
-    title: 'Maintain Weight',
-    description: 'Keep your current weight with balanced nutrition',
+    id: 'light',
+    icon: 'sunny-outline',
+    title: 'Light',
+    description: 'Clean, bright appearance',
   },
   {
-    id: 'gain',
-    icon: 'trending-up-outline',
-    title: 'Build Muscle',
-    description: 'Gain lean mass with a controlled calorie surplus',
+    id: 'dark',
+    icon: 'moon-outline',
+    title: 'Dark',
+    description: 'Easy on the eyes, saves battery',
   },
 ];
 
-type Props = NativeStackScreenProps<SetupStackParamList, 'GoalSetup'>;
+type Props = NativeStackScreenProps<SetupStackParamList, 'ThemeSelect'>;
 
-export function GoalSetupScreen({ navigation }: Props) {
-  const goalType = useProfileStore((s) => s.goalType);
-  const setGoalType = useProfileStore((s) => s.setGoalType);
+export function ThemeSelectScreen({ navigation }: Props) {
+  const mode = useThemeStore((s) => s.mode);
+  const setMode = useThemeStore((s) => s.setMode);
   const c = useColors();
 
   return (
     <OnboardingLayout
-      step={2}
+      step={1}
       totalSteps={TOTAL_STEPS}
-      title="What's your goal?"
-      subtitle="We'll create a personalized plan just for you"
-      onBack={() => navigation.goBack()}
-      onContinue={() => navigation.navigate('DesiredWeight')}
-      continueDisabled={!goalType}
+      title="Choose your look"
+      subtitle="You can always change this later in settings"
+      onContinue={() => navigation.navigate('GoalSetup')}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
         <View style={{ gap: 12 }}>
-          {GOAL_OPTIONS.map((option) => {
-            const selected = goalType === option.id;
+          {OPTIONS.map((opt) => {
+            const selected = mode === opt.id;
             return (
               <Pressable
-                key={option.id}
-                onPress={() => setGoalType(option.id)}
+                key={opt.id}
+                onPress={() => setMode(opt.id)}
                 style={({ pressed }) => ({
                   backgroundColor: selected ? c.primary : c.card,
                   borderRadius: 18,
-                  paddingVertical: 20,
+                  paddingVertical: 22,
                   paddingHorizontal: 20,
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -83,18 +80,18 @@ export function GoalSetupScreen({ navigation }: Props) {
                     justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name={option.icon} size={22} color={selected ? c.onPrimary : c.text} />
+                  <Ionicons name={opt.icon} size={22} color={selected ? c.onPrimary : c.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: '700',
+                      fontWeight: selected ? '700' : '500',
                       color: selected ? c.onPrimary : c.text,
                       marginBottom: 3,
                     }}
                   >
-                    {option.title}
+                    {opt.title}
                   </Text>
                   <Text
                     style={{
@@ -103,14 +100,15 @@ export function GoalSetupScreen({ navigation }: Props) {
                       lineHeight: 18,
                     }}
                   >
-                    {option.description}
+                    {opt.description}
                   </Text>
                 </View>
+                {selected && <Ionicons name="checkmark-circle" size={24} color={c.onPrimary} />}
               </Pressable>
             );
           })}
         </View>
-      </ScrollView>
+      </View>
     </OnboardingLayout>
   );
 }

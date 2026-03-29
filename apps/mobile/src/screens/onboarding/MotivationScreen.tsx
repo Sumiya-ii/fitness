@@ -1,14 +1,14 @@
 import { View, Text } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { displayWeight, displayWeeklyRate, weightUnit, weeklyRateUnit } from '../../utils/units';
+import { useColors } from '../../theme';
 import { OnboardingLayout } from './OnboardingLayout';
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<SetupStackParamList, 'Motivation'>;
 
@@ -17,6 +17,7 @@ export function MotivationScreen({ navigation }: Props) {
   const weightKg = useProfileStore((s) => s.weightKg);
   const goalWeightKg = useProfileStore((s) => s.goalWeightKg);
   const weeklyRateKg = useProfileStore((s) => s.weeklyRateKg);
+  const c = useColors();
 
   const unitSystem = useSettingsStore((s) => s.unitSystem);
   const diff = weightKg && goalWeightKg ? Math.abs(weightKg - goalWeightKg) : null;
@@ -31,7 +32,7 @@ export function MotivationScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={10}
+      step={11}
       totalSteps={TOTAL_STEPS}
       title="You're all set!"
       subtitle="Let's review what we've built for you"
@@ -40,34 +41,85 @@ export function MotivationScreen({ navigation }: Props) {
       continueLabel="See My Plan"
     >
       <View className="flex-1 justify-center">
-        <LinearGradient
-          colors={['#1f2028', '#15161d']}
-          className="rounded-3xl p-6 mb-6"
-          style={{ borderRadius: 24 }}
+        <View
+          style={{
+            backgroundColor: c.card,
+            borderRadius: 24,
+            padding: 24,
+            marginBottom: 24,
+          }}
         >
           <View className="items-center mb-4">
-            <View className="w-16 h-16 rounded-full bg-white/20 items-center justify-center mb-3">
-              <Ionicons name="checkmark-done" size={36} color="white" />
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: `${c.primary}33`,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 12,
+              }}
+            >
+              <Ionicons name="checkmark-done" size={36} color={c.primary} />
             </View>
-            <Text className="text-xl font-sans-bold text-text text-center">{goalMessage}</Text>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: c.text,
+                textAlign: 'center',
+              }}
+            >
+              {goalMessage}
+            </Text>
           </View>
 
           {weeks && goalType !== 'maintain' && (
-            <View className="bg-white/15 rounded-2xl p-4">
-              <Text className="text-sm text-text/80 text-center mb-1">
+            <View
+              style={{
+                backgroundColor: `${c.primary}26`,
+                borderRadius: 16,
+                padding: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: c.textSecondary,
+                  textAlign: 'center',
+                  marginBottom: 4,
+                }}
+              >
                 Estimated time to reach your goal
               </Text>
-              <Text className="text-3xl font-sans-bold text-text text-center">{weeks} weeks</Text>
-              <Text className="text-xs text-text/70 text-center mt-1">
+              <Text
+                style={{
+                  fontSize: 30,
+                  fontWeight: '700',
+                  color: c.text,
+                  textAlign: 'center',
+                }}
+              >
+                {weeks} weeks
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: c.textTertiary,
+                  textAlign: 'center',
+                  marginTop: 4,
+                }}
+              >
                 {diff ? displayWeight(diff, unitSystem) : ''} {weightUnit(unitSystem)} ·{' '}
                 {weeklyRateKg ? displayWeeklyRate(weeklyRateKg, unitSystem) : ''}{' '}
                 {weeklyRateUnit(unitSystem)}
               </Text>
             </View>
           )}
-        </LinearGradient>
+        </View>
 
-        <View className="gap-3">
+        <View style={{ gap: 12 }}>
           {[
             {
               icon: 'sparkles' as const,
@@ -82,11 +134,30 @@ export function MotivationScreen({ navigation }: Props) {
               text: 'Telegram coach for daily accountability',
             },
           ].map((item, i) => (
-            <View key={i} className="flex-row items-center">
-              <View className="w-8 h-8 rounded-full bg-primary-500/15 items-center justify-center mr-3">
-                <Ionicons name={item.icon} size={16} color="#1f2028" />
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: `${c.primary}26`,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name={item.icon} size={16} color={c.primary} />
               </View>
-              <Text className="text-sm font-sans-medium text-text flex-1">{item.text}</Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: '500',
+                  color: c.text,
+                  flex: 1,
+                }}
+              >
+                {item.text}
+              </Text>
             </View>
           ))}
         </View>

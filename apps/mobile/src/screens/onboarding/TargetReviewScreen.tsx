@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
@@ -9,6 +8,7 @@ import { ProgressRing } from '../../components/ui/ProgressRing';
 import { MacroBar } from '../../components/ui/MacroBar';
 import { Button } from '../../components/ui/Button';
 import { useProfileStore, calculateTargets } from '../../stores/profile.store';
+import { useColors } from '../../theme';
 import { api } from '../../api/client';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -30,6 +30,7 @@ export function TargetReviewScreen({ navigation }: Props) {
   );
   const targets = calculateTargets(data);
   const [loading, setLoading] = useState(false);
+  const c = useColors();
 
   const handleConfirm = async () => {
     if (
@@ -78,9 +79,18 @@ export function TargetReviewScreen({ navigation }: Props) {
 
   if (!targets) {
     return (
-      <SafeAreaView className="flex-1 bg-surface-app items-center justify-center">
-        <Ionicons name="alert-circle-outline" size={48} color="#9a9caa" />
-        <Text className="text-text-secondary mt-4 text-center px-8">
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Ionicons name="alert-circle-outline" size={48} color={c.textSecondary} />
+        <Text
+          style={{
+            color: c.textSecondary,
+            marginTop: 16,
+            textAlign: 'center',
+            paddingHorizontal: 32,
+          }}
+        >
           No targets calculated. Please go back and complete all steps.
         </Text>
         <Button onPress={() => navigation.popToTop()} variant="outline" className="mt-6">
@@ -91,77 +101,139 @@ export function TargetReviewScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-app">
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
-        <LinearGradient
-          colors={['#1f2028', '#15161d']}
-          className="pt-8 pb-12 px-6"
-          style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
+        <View
+          style={{
+            backgroundColor: c.card,
+            paddingTop: 32,
+            paddingBottom: 48,
+            paddingHorizontal: 24,
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+          }}
         >
-          <Text className="text-2xl font-sans-bold text-text mb-1">Your Personalized Plan</Text>
-          <Text className="text-base text-text-secondary">Based on your profile and goals</Text>
-        </LinearGradient>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: c.text, marginBottom: 4 }}>
+            Your Personalized Plan
+          </Text>
+          <Text style={{ fontSize: 16, color: c.textSecondary }}>
+            Based on your profile and goals
+          </Text>
+        </View>
 
-        <View className="px-6 -mt-6">
-          <View className="bg-surface-card rounded-2xl p-6 shadow-lg shadow-black/5 mb-6">
-            <View className="items-center mb-6">
+        <View style={{ paddingHorizontal: 24, marginTop: -24 }}>
+          <View
+            style={{
+              backgroundColor: c.card,
+              borderRadius: 16,
+              padding: 24,
+              marginBottom: 24,
+            }}
+          >
+            <View style={{ alignItems: 'center', marginBottom: 24 }}>
               <ProgressRing
                 progress={1}
                 size={160}
-                color="#1f2028"
-                gradientEnd="#15161d"
-                backgroundColor="#d2d2db"
+                color={c.primary}
+                gradientEnd={c.primaryMuted}
+                backgroundColor={c.border}
                 centerLabel={`${targets.calories}`}
                 centerSubLabel="kcal / day"
               />
             </View>
 
-            <View className="gap-4">
+            <View style={{ gap: 16 }}>
               <MacroBar
                 label="Protein"
                 current={targets.protein}
                 target={targets.protein}
-                color="#1f2028"
+                color={c.primary}
                 size="large"
               />
               <MacroBar
                 label="Carbs"
                 current={targets.carbs}
                 target={targets.carbs}
-                color="#8b8fa0"
+                color={c.textSecondary}
               />
-              <MacroBar label="Fat" current={targets.fat} target={targets.fat} color="#8f93a4" />
+              <MacroBar
+                label="Fat"
+                current={targets.fat}
+                target={targets.fat}
+                color={c.textTertiary}
+              />
             </View>
           </View>
 
-          <View className="bg-surface-card rounded-2xl p-4 mb-6">
-            <Text className="text-sm font-sans-semibold text-text mb-3">Your Profile Summary</Text>
-            <View className="gap-2">
-              <SummaryRow label="Goal" value={formatGoalType(data.goalType)} />
+          <View
+            style={{
+              backgroundColor: c.card,
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 24,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '600',
+                color: c.text,
+                marginBottom: 12,
+              }}
+            >
+              Your Profile Summary
+            </Text>
+            <View style={{ gap: 8 }}>
+              <SummaryRow label="Goal" value={formatGoalType(data.goalType)} colors={c} />
               <SummaryRow
                 label="Current → Target"
                 value={`${data.weightKg} kg → ${data.goalWeightKg} kg`}
+                colors={c}
               />
               <SummaryRow
                 label="Weekly Rate"
                 value={data.weeklyRateKg === 0 ? 'Maintain' : `${data.weeklyRateKg} kg/week`}
+                colors={c}
               />
-              <SummaryRow label="Diet Style" value={formatDietPref(data.dietPreference)} />
+              <SummaryRow
+                label="Diet Style"
+                value={formatDietPref(data.dietPreference)}
+                colors={c}
+              />
             </View>
           </View>
 
-          <View className="flex-row items-start bg-primary-500/10 border border-primary-500/20 rounded-2xl p-4 mb-6">
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              backgroundColor: `${c.primary}1a`,
+              borderWidth: 1,
+              borderColor: `${c.primary}33`,
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 24,
+            }}
+          >
             <Ionicons
               name="information-circle"
               size={20}
-              color="#1f2028"
+              color={c.primary}
               style={{ marginTop: 1 }}
             />
-            <Text className="text-xs text-text-secondary ml-2 flex-1 leading-5">
+            <Text
+              style={{
+                fontSize: 12,
+                color: c.textSecondary,
+                marginLeft: 8,
+                flex: 1,
+                lineHeight: 20,
+              }}
+            >
               These targets are AI-generated recommendations. You can always adjust them later in
               Settings.
             </Text>
@@ -169,7 +241,7 @@ export function TargetReviewScreen({ navigation }: Props) {
         </View>
       </ScrollView>
 
-      <View className="px-6 pb-8 pt-4 gap-3">
+      <View style={{ paddingHorizontal: 24, paddingBottom: 32, paddingTop: 16, gap: 12 }}>
         <Button onPress={handleConfirm} size="lg" loading={loading} className="w-full">
           Looks Good — Let's Go!
         </Button>
@@ -187,11 +259,19 @@ export function TargetReviewScreen({ navigation }: Props) {
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string | null | undefined }) {
+function SummaryRow({
+  label,
+  value,
+  colors: c,
+}: {
+  label: string;
+  value: string | null | undefined;
+  colors: ReturnType<typeof useColors>;
+}) {
   return (
-    <View className="flex-row justify-between py-1">
-      <Text className="text-xs text-text-secondary">{label}</Text>
-      <Text className="text-xs font-sans-medium text-text">{value ?? '—'}</Text>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+      <Text style={{ fontSize: 12, color: c.textSecondary }}>{label}</Text>
+      <Text style={{ fontSize: 12, fontWeight: '500', color: c.text }}>{value ?? '—'}</Text>
     </View>
   );
 }

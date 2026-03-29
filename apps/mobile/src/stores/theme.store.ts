@@ -10,7 +10,7 @@ const THEME_KEY = 'theme_mode';
 function getStoredMode(): ThemeMode {
   const stored = storage.getString(THEME_KEY);
   if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-  return 'dark';
+  return 'system';
 }
 
 export function resolveScheme(mode: ThemeMode): 'light' | 'dark' {

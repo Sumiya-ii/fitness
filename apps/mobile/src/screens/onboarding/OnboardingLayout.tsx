@@ -1,6 +1,7 @@
 import { View, Text, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useColors } from '../../theme';
 
 interface OnboardingLayoutProps {
   step: number;
@@ -26,6 +27,7 @@ export function OnboardingLayout({
   continueDisabled = false,
   children,
 }: OnboardingLayoutProps) {
+  const c = useColors();
   const progress = step / totalSteps;
 
   return (
@@ -33,7 +35,7 @@ export function OnboardingLayout({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
         {/* Header: back button + progress bar */}
         <View
           style={{
@@ -53,8 +55,8 @@ export function OnboardingLayout({
                 height: 40,
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: '#2c2c2e',
-                backgroundColor: '#000000',
+                borderColor: c.border,
+                backgroundColor: c.bg,
                 alignItems: 'center',
                 justifyContent: 'center',
                 opacity: pressed ? 0.6 : 1,
@@ -62,19 +64,19 @@ export function OnboardingLayout({
               })}
               hitSlop={8}
             >
-              <Ionicons name="chevron-back" size={20} color="#ffffff" />
+              <Ionicons name="chevron-back" size={20} color={c.text} />
             </Pressable>
           ) : (
             <View style={{ width: 40, height: 40 }} />
           )}
 
           {/* Progress bar */}
-          <View style={{ flex: 1, height: 3, backgroundColor: '#2c2c2e', borderRadius: 2 }}>
+          <View style={{ flex: 1, height: 3, backgroundColor: c.border, borderRadius: 2 }}>
             <View
               style={{
                 height: '100%',
                 width: `${progress * 100}%`,
-                backgroundColor: '#ffffff',
+                backgroundColor: c.primary,
                 borderRadius: 2,
               }}
             />
@@ -87,7 +89,7 @@ export function OnboardingLayout({
             style={{
               fontSize: 28,
               fontWeight: '800',
-              color: '#ffffff',
+              color: c.text,
               marginBottom: 8,
               lineHeight: 34,
             }}
@@ -98,7 +100,7 @@ export function OnboardingLayout({
             <Text
               style={{
                 fontSize: 15,
-                color: '#71717a',
+                color: c.textTertiary,
                 lineHeight: 22,
               }}
             >
@@ -116,7 +118,7 @@ export function OnboardingLayout({
             onPress={continueDisabled ? undefined : onContinue}
             disabled={continueDisabled}
             style={({ pressed }) => ({
-              backgroundColor: continueDisabled ? '#3a3a3c' : '#ffffff',
+              backgroundColor: continueDisabled ? c.muted : c.primary,
               borderRadius: 100,
               alignItems: 'center',
               justifyContent: 'center',
@@ -128,7 +130,7 @@ export function OnboardingLayout({
               style={{
                 fontSize: 17,
                 fontWeight: '700',
-                color: continueDisabled ? '#71717a' : '#000000',
+                color: continueDisabled ? c.textTertiary : c.onPrimary,
                 letterSpacing: 0.2,
               }}
             >

@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from './types';
 import {
+  ThemeSelectScreen,
   GoalSetupScreen,
   DesiredWeightScreen,
   WeeklyRateScreen,
@@ -26,6 +27,7 @@ export function SetupStack() {
         animation: 'slide_from_right',
       }}
     >
+      <Stack.Screen name="ThemeSelect" component={ThemeSelectScreen} />
       <Stack.Screen name="GoalSetup" component={GoalSetupScreen} />
       <Stack.Screen name="DesiredWeight" component={DesiredWeightScreen} />
       <Stack.Screen name="WeeklyRate" component={WeeklyRateScreen} />

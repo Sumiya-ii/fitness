@@ -3,9 +3,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import type { Gender } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
+import { useColors } from '../../theme';
 import { OnboardingLayout } from './OnboardingLayout';
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 type GenderOption = {
   id: Gender;
@@ -23,10 +24,11 @@ type Props = NativeStackScreenProps<SetupStackParamList, 'GenderSelect'>;
 export function GenderSelectScreen({ navigation }: Props) {
   const gender = useProfileStore((s) => s.gender);
   const setGender = useProfileStore((s) => s.setGender);
+  const c = useColors();
 
   return (
     <OnboardingLayout
-      step={4}
+      step={5}
       totalSteps={TOTAL_STEPS}
       title="Choose your Gender"
       subtitle="This will be used to calibrate your custom plan."
@@ -43,7 +45,7 @@ export function GenderSelectScreen({ navigation }: Props) {
                 key={opt.id}
                 onPress={() => setGender(opt.id)}
                 style={({ pressed }) => ({
-                  backgroundColor: selected ? '#ffffff' : '#1c1c1e',
+                  backgroundColor: selected ? c.primary : c.card,
                   borderRadius: 18,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -55,7 +57,7 @@ export function GenderSelectScreen({ navigation }: Props) {
                   style={{
                     fontSize: 17,
                     fontWeight: selected ? '700' : '500',
-                    color: selected ? '#000000' : '#ffffff',
+                    color: selected ? c.onPrimary : c.text,
                     letterSpacing: 0.1,
                   }}
                 >

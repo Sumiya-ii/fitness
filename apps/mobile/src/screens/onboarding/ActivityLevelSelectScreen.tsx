@@ -4,9 +4,10 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
 import type { ActivityLevel } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
+import { useColors } from '../../theme';
 import { OnboardingLayout } from './OnboardingLayout';
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 type ActivityOption = {
   id: ActivityLevel;
@@ -53,10 +54,11 @@ type Props = NativeStackScreenProps<SetupStackParamList, 'ActivityLevelSelect'>;
 export function ActivityLevelSelectScreen({ navigation }: Props) {
   const activityLevel = useProfileStore((s) => s.activityLevel);
   const setActivityLevel = useProfileStore((s) => s.setActivityLevel);
+  const c = useColors();
 
   return (
     <OnboardingLayout
-      step={8}
+      step={9}
       totalSteps={TOTAL_STEPS}
       title="How active are you?"
       subtitle="This determines your daily calorie burn"
@@ -73,7 +75,7 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                 key={opt.id}
                 onPress={() => setActivityLevel(opt.id)}
                 style={({ pressed }) => ({
-                  backgroundColor: selected ? '#ffffff' : '#1c1c1e',
+                  backgroundColor: selected ? c.primary : c.card,
                   borderRadius: 16,
                   paddingVertical: 16,
                   paddingHorizontal: 16,
@@ -88,19 +90,19 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    backgroundColor: selected ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.08)',
+                    backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name={opt.icon} size={20} color={selected ? '#000000' : '#ffffff'} />
+                  <Ionicons name={opt.icon} size={20} color={selected ? c.onPrimary : c.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
                       fontSize: 15,
                       fontWeight: '700',
-                      color: selected ? '#000000' : '#ffffff',
+                      color: selected ? c.onPrimary : c.text,
                       marginBottom: 2,
                     }}
                   >
@@ -109,7 +111,7 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: selected ? 'rgba(0,0,0,0.6)' : '#71717a',
+                      color: selected ? `${c.onPrimary}99` : c.textTertiary,
                     }}
                   >
                     {opt.description}

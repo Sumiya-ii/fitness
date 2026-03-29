@@ -6,9 +6,10 @@ import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { displayWeeklyRate, weeklyRateUnit } from '../../utils/units';
+import { useColors } from '../../theme';
 import { OnboardingLayout } from './OnboardingLayout';
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 type RateOption = {
   /** Rate in kg/week (always stored as kg) */
@@ -37,6 +38,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.weeklyRateKg);
   const setWeeklyRateKg = useProfileStore((s) => s.setWeeklyRateKg);
   const unitSystem = useSettingsStore((s) => s.unitSystem);
+  const c = useColors();
   const [selected, setSelected] = useState<number | null>(stored);
 
   const rateLabel = weeklyRateUnit(unitSystem);
@@ -56,7 +58,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
   if (isMaintain) {
     return (
       <OnboardingLayout
-        step={3}
+        step={4}
         totalSteps={TOTAL_STEPS}
         title="Great choice!"
         subtitle="We'll maintain your current weight by matching your calorie intake to your daily burn"
@@ -65,7 +67,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
       >
         <View className="flex-1 justify-center items-center">
           <View className="w-24 h-24 rounded-full bg-sky-500/15 items-center justify-center mb-4">
-            <Ionicons name="scale-outline" size={48} color="#8b8fa0" />
+            <Ionicons name="scale-outline" size={48} color={c.textSecondary} />
           </View>
           <Text className="text-lg font-sans-medium text-text text-center">
             No weekly change target needed
@@ -77,7 +79,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={3}
+      step={4}
       totalSteps={TOTAL_STEPS}
       title="How fast do you want results?"
       subtitle={
@@ -100,27 +102,70 @@ export function WeeklyRateScreen({ navigation }: Props) {
               <Pressable
                 key={rate.value}
                 onPress={() => setSelected(rate.value)}
-                className={`flex-row items-center p-4 rounded-2xl border-2 bg-surface-card ${
-                  isSelected ? 'border-primary-500' : 'border-surface-border'
-                }`}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderRadius: 16,
+                  borderWidth: 2,
+                  backgroundColor: c.card,
+                  borderColor: isSelected ? c.primary : c.border,
+                  opacity: pressed ? 0.85 : 1,
+                })}
               >
-                <View className="w-10 h-10 rounded-full bg-surface-secondary items-center justify-center mr-3">
-                  <Ionicons name={rate.icon} size={20} color={isSelected ? '#1f2028' : '#9a9caa'} />
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: c.cardAlt,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12,
+                  }}
+                >
+                  <Ionicons
+                    name={rate.icon}
+                    size={20}
+                    color={isSelected ? c.primary : c.textSecondary}
+                  />
                 </View>
-                <View className="flex-1">
-                  <View className="flex-row items-center">
-                    <Text className="text-base font-sans-semibold text-text">{label}</Text>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: '600',
+                        color: c.text,
+                      }}
+                    >
+                      {label}
+                    </Text>
                     {isRecommended && (
-                      <View className="ml-2 px-2 py-0.5 bg-primary-500/15 rounded-full">
-                        <Text className="text-xs font-sans-medium text-primary-600">
+                      <View
+                        style={{
+                          marginLeft: 8,
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          backgroundColor: `${c.primary}26`,
+                          borderRadius: 100,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: '500',
+                            color: c.primary,
+                          }}
+                        >
                           Recommended
                         </Text>
                       </View>
                     )}
                   </View>
-                  <Text className="text-sm text-text-secondary">{rate.description}</Text>
+                  <Text style={{ fontSize: 14, color: c.textSecondary }}>{rate.description}</Text>
                 </View>
-                {isSelected && <Ionicons name="checkmark-circle" size={22} color="#1f2028" />}
+                {isSelected && <Ionicons name="checkmark-circle" size={22} color={c.primary} />}
               </Pressable>
             );
           })}

@@ -1,10 +1,10 @@
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { SetupStackParamList } from '../../navigation/types';
+import { useColors } from '../../theme';
 
 type Props = NativeStackScreenProps<SetupStackParamList, 'SubscriptionPitch'>;
 
@@ -47,6 +47,8 @@ const PREMIUM_FEATURES = [
 ] as const;
 
 export function SubscriptionPitchScreen({ navigation }: Props) {
+  const c = useColors();
+
   const handleStartTrial = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate('NotificationPermission');
@@ -58,15 +60,15 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Header */}
-        <LinearGradient
-          colors={['#0f172a', '#1e293b']}
+        <View
           style={{
+            backgroundColor: c.card,
             paddingTop: 40,
             paddingBottom: 32,
             paddingHorizontal: 24,
@@ -78,15 +80,15 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           {/* Badge */}
           <View
             style={{
-              backgroundColor: 'rgba(255,255,255,0.12)',
+              backgroundColor: `${c.primary}1f`,
               borderRadius: 100,
               paddingHorizontal: 14,
               paddingVertical: 6,
               marginBottom: 20,
             }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600' }}>
-              ✦ COACH PREMIUM
+            <Text style={{ color: c.textSecondary, fontSize: 12, fontWeight: '600' }}>
+              COACH PREMIUM
             </Text>
           </View>
 
@@ -94,7 +96,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
             style={{
               fontSize: 30,
               fontWeight: '800',
-              color: '#ffffff',
+              color: c.text,
               textAlign: 'center',
               lineHeight: 36,
               marginBottom: 10,
@@ -105,7 +107,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           <Text
             style={{
               fontSize: 15,
-              color: 'rgba(255,255,255,0.6)',
+              color: c.textSecondary,
               textAlign: 'center',
               lineHeight: 22,
             }}
@@ -117,26 +119,22 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           <View
             style={{
               marginTop: 24,
-              backgroundColor: 'rgba(255,255,255,0.1)',
+              backgroundColor: `${c.primary}1a`,
               borderRadius: 16,
               paddingHorizontal: 20,
               paddingVertical: 14,
               alignItems: 'center',
               borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.12)',
+              borderColor: `${c.primary}1f`,
             }}
           >
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 2 }}>
-              Then just
-            </Text>
+            <Text style={{ color: c.textTertiary, fontSize: 12, marginBottom: 2 }}>Then just</Text>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: 'white', marginBottom: 4 }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: c.text, marginBottom: 4 }}>
                 ₮
               </Text>
-              <Text style={{ fontSize: 32, fontWeight: '800', color: '#ffffff' }}>9,900</Text>
-              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 5 }}>
-                /month
-              </Text>
+              <Text style={{ fontSize: 32, fontWeight: '800', color: c.text }}>9,900</Text>
+              <Text style={{ fontSize: 13, color: c.textTertiary, marginBottom: 5 }}>/month</Text>
             </View>
             <View
               style={{
@@ -152,7 +150,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
               </Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Features list */}
         <View style={{ paddingHorizontal: 24, paddingTop: 28 }}>
@@ -160,7 +158,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
             style={{
               fontSize: 18,
               fontWeight: '800',
-              color: '#ffffff',
+              color: c.text,
               marginBottom: 16,
             }}
           >
@@ -174,7 +172,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: '#1c1c1e',
+                  backgroundColor: c.card,
                   borderRadius: 16,
                   padding: 14,
                   gap: 12,
@@ -193,12 +191,12 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
                   <Ionicons name={f.icon} size={22} color={f.color} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 14, fontWeight: '700', color: '#ffffff', marginBottom: 2 }}
-                  >
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 2 }}>
                     {f.title}
                   </Text>
-                  <Text style={{ fontSize: 12, color: '#71717a', lineHeight: 17 }}>{f.desc}</Text>
+                  <Text style={{ fontSize: 12, color: c.textTertiary, lineHeight: 17 }}>
+                    {f.desc}
+                  </Text>
                 </View>
                 <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
               </View>
@@ -239,16 +237,16 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           paddingHorizontal: 24,
           paddingBottom: 40,
           paddingTop: 16,
-          backgroundColor: '#000000',
+          backgroundColor: c.bg,
           borderTopWidth: 1,
-          borderTopColor: '#2c2c2e',
+          borderTopColor: c.border,
           gap: 12,
         }}
       >
         <Pressable
           onPress={handleStartTrial}
           style={({ pressed }) => ({
-            backgroundColor: '#ffffff',
+            backgroundColor: c.primary,
             borderRadius: 100,
             alignItems: 'center',
             justifyContent: 'center',
@@ -256,10 +254,10 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
             opacity: pressed ? 0.88 : 1,
           })}
         >
-          <Text style={{ fontSize: 17, fontWeight: '700', color: '#000000' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: c.onPrimary }}>
             Start 7-Day Free Trial
           </Text>
-          <Text style={{ fontSize: 11, color: 'rgba(0,0,0,0.5)', marginTop: 2 }}>
+          <Text style={{ fontSize: 11, color: `${c.onPrimary}80`, marginTop: 2 }}>
             Cancel anytime before trial ends
           </Text>
         </Pressable>
@@ -268,7 +266,7 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
           onPress={handleContinueFree}
           style={{ alignItems: 'center', paddingVertical: 10 }}
         >
-          <Text style={{ fontSize: 14, color: '#71717a', fontWeight: '500' }}>
+          <Text style={{ fontSize: 14, color: c.textTertiary, fontWeight: '500' }}>
             Continue with free plan
           </Text>
         </Pressable>

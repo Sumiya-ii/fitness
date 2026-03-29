@@ -6,9 +6,10 @@ import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { displayWeight, inputToKg, weightUnit, weightRange } from '../../utils/units';
+import { useColors } from '../../theme';
 import { OnboardingLayout } from './OnboardingLayout';
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<SetupStackParamList, 'WeightSelect'>;
 
@@ -16,6 +17,7 @@ export function WeightSelectScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.weightKg);
   const setWeightKg = useProfileStore((s) => s.setWeightKg);
   const unitSystem = useSettingsStore((s) => s.unitSystem);
+  const c = useColors();
 
   const range = weightRange(unitSystem);
   const initialDisplay = stored ? displayWeight(stored, unitSystem).toString() : '';
@@ -40,7 +42,7 @@ export function WeightSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={7}
+      step={8}
       totalSteps={TOTAL_STEPS}
       title="What's your current weight?"
       subtitle="Be honest — this stays private and helps us calculate accurately"
@@ -50,7 +52,7 @@ export function WeightSelectScreen({ navigation }: Props) {
     >
       <View className="flex-1 justify-center items-center">
         <View className="w-20 h-20 rounded-full bg-emerald-500/15 items-center justify-center mb-8">
-          <Ionicons name="barbell-outline" size={40} color="#1f2028" />
+          <Ionicons name="barbell-outline" size={40} color={c.primary} />
         </View>
 
         <View className="flex-row items-end mb-4">
@@ -59,7 +61,7 @@ export function WeightSelectScreen({ navigation }: Props) {
             onChangeText={setValue}
             keyboardType="decimal-pad"
             placeholder={range.placeholder}
-            placeholderTextColor="#9a9caa"
+            placeholderTextColor={c.textTertiary}
             className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
             maxLength={6}
             autoFocus

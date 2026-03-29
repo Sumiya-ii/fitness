@@ -6,9 +6,10 @@ import type { SetupStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
 import { useSettingsStore } from '../../stores/settings.store';
 import { cmToFeetInches, feetInchesToCm } from '../../utils/units';
+import { useColors } from '../../theme';
 import { OnboardingLayout } from './OnboardingLayout';
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<SetupStackParamList, 'HeightSelect'>;
 
@@ -16,6 +17,7 @@ export function HeightSelectScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.heightCm);
   const setHeightCm = useProfileStore((s) => s.setHeightCm);
   const unitSystem = useSettingsStore((s) => s.unitSystem);
+  const c = useColors();
 
   // Metric mode: single cm input
   // Imperial mode: feet + inches inputs
@@ -56,7 +58,7 @@ export function HeightSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={6}
+      step={7}
       totalSteps={TOTAL_STEPS}
       title="How tall are you?"
       subtitle="Height is used in the Mifflin-St Jeor formula"
@@ -66,7 +68,7 @@ export function HeightSelectScreen({ navigation }: Props) {
     >
       <View className="flex-1 justify-center items-center">
         <View className="w-20 h-20 rounded-full bg-amber-500/15 items-center justify-center mb-8">
-          <Ionicons name="resize-outline" size={40} color="#8f93a4" />
+          <Ionicons name="resize-outline" size={40} color={c.primary} />
         </View>
 
         {isMetric ? (
@@ -76,7 +78,7 @@ export function HeightSelectScreen({ navigation }: Props) {
               onChangeText={(t) => setCmValue(t.replace(/\D/g, ''))}
               keyboardType="number-pad"
               placeholder="170"
-              placeholderTextColor="#9a9caa"
+              placeholderTextColor={c.textTertiary}
               className="text-5xl font-sans-bold text-text text-center min-w-[120px]"
               maxLength={3}
               autoFocus
@@ -91,7 +93,7 @@ export function HeightSelectScreen({ navigation }: Props) {
                 onChangeText={(t) => setFeetValue(t.replace(/\D/g, ''))}
                 keyboardType="number-pad"
                 placeholder="5"
-                placeholderTextColor="#9a9caa"
+                placeholderTextColor={c.textTertiary}
                 className="text-5xl font-sans-bold text-text text-center min-w-[60px]"
                 maxLength={1}
                 autoFocus
@@ -104,7 +106,7 @@ export function HeightSelectScreen({ navigation }: Props) {
                 onChangeText={(t) => setInchesValue(t.replace(/\D/g, ''))}
                 keyboardType="number-pad"
                 placeholder="8"
-                placeholderTextColor="#9a9caa"
+                placeholderTextColor={c.textTertiary}
                 className="text-5xl font-sans-bold text-text text-center min-w-[60px]"
                 maxLength={2}
               />
