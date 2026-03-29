@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { BackButton } from '../../components/ui';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BackButton, Button, Card } from '../../components/ui';
 import { mealsApi, type MealTemplateDetailItem } from '../../api/meals';
 import { useColors } from '../../theme';
+import { useLocale } from '../../i18n';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'LogTemplate'>;
@@ -16,10 +19,10 @@ interface StagedItem extends MealTemplateDetailItem {
 }
 
 const MEAL_TYPES = [
-  { key: 'breakfast', label: 'Breakfast', icon: 'sunny-outline' as const },
-  { key: 'lunch', label: 'Lunch', icon: 'restaurant-outline' as const },
-  { key: 'dinner', label: 'Dinner', icon: 'moon-outline' as const },
-  { key: 'snack', label: 'Snack', icon: 'cafe-outline' as const },
+  { key: 'breakfast', icon: 'sunny-outline' as const },
+  { key: 'lunch', icon: 'restaurant-outline' as const },
+  { key: 'dinner', icon: 'moon-outline' as const },
+  { key: 'snack', icon: 'cafe-outline' as const },
 ];
 
 function guessDefaultMealType(): string {
@@ -35,6 +38,8 @@ export function LogTemplateScreen() {
   const route = useRoute<Props['route']>();
   const { templateId } = route.params;
   const c = useColors();
+  const { t } = useLocale();
+  const insets = useSafeAreaInsets();
 
   const [templateName, setTemplateName] = useState('');
   const [items, setItems] = useState<StagedItem[]>([]);
@@ -57,9 +62,9 @@ export function LogTemplateScreen() {
           })),
         );
       })
-      .catch(() => Alert.alert('Error', 'Failed to load template'))
+      .catch(() => Alert.alert(t('common.error'), t('template.loadFailed')))
       .finally(() => setLoading(false));
-  }, [templateId]);
+  }, [templateId, t]);
 
   const activeItems = items.filter((i) => !i.removed);
 
@@ -78,6 +83,7 @@ export function LogTemplateScreen() {
   );
 
   const adjustQuantity = useCallback((itemId: string, delta: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setItems((prev) =>
       prev.map((item) => {
         if (item.id !== itemId) return item;
@@ -88,14 +94,20 @@ export function LogTemplateScreen() {
   }, []);
 
   const toggleRemove = useCallback((itemId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setItems((prev) =>
       prev.map((item) => (item.id === itemId ? { ...item, removed: !item.removed } : item)),
     );
   }, []);
 
+  const handleMealTypeSelect = (key: string) => {
+    Haptics.selectionAsync();
+    setMealType(key);
+  };
+
   const handleLog = async () => {
     if (activeItems.length === 0) {
-      Alert.alert('No items', 'Add at least one item to log this meal.');
+      Alert.alert(t('template.noItems'), t('template.noItemsDesc'));
       return;
     }
 
@@ -109,9 +121,10 @@ export function LogTemplateScreen() {
           quantity: item.adjustedQuantity,
         })),
       });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.getParent()?.goBack();
     } catch {
-      Alert.alert('Error', 'Failed to log meal. Please try again.');
+      Alert.alert(t('common.error'), t('template.logFailed'));
     } finally {
       setLogging(false);
     }
@@ -128,125 +141,131 @@ export function LogTemplateScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-app" edges={['top']}>
       {/* Header */}
-      <View className="flex-row items-center border-b border-surface-border px-4 py-3">
+      <View className="flex-row items-center px-5 py-3">
         <BackButton />
         <View className="ml-3 flex-1">
           <Text className="text-lg font-sans-semibold text-text" numberOfLines={1}>
             {templateName}
           </Text>
           <Text className="text-xs text-text-tertiary font-sans-medium">
-            Adjust items before logging
+            {t('template.adjustBeforeLog')}
           </Text>
         </View>
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Meal type selector */}
-        <View className="px-4 pt-4 pb-2">
+        <Animated.View entering={FadeInDown.duration(300).delay(50)} className="px-5 pt-4 pb-2">
           <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
-            Meal Type
+            {t('quickAdd.mealType')}
           </Text>
           <View className="flex-row gap-2">
-            {MEAL_TYPES.map((mt) => (
-              <Pressable
-                key={mt.key}
-                onPress={() => setMealType(mt.key)}
-                className={`flex-1 items-center py-2.5 rounded-xl ${
-                  mealType === mt.key ? 'bg-primary-500' : 'bg-surface-card'
-                }`}
-              >
-                <Ionicons
-                  name={mt.icon}
-                  size={16}
-                  color={mealType === mt.key ? c.onPrimary : c.textTertiary}
-                />
-                <Text
-                  className={`text-xs font-sans-medium mt-0.5 ${
-                    mealType === mt.key ? 'text-on-primary' : 'text-text-tertiary'
+            {MEAL_TYPES.map((mt) => {
+              const isSelected = mealType === mt.key;
+              return (
+                <Pressable
+                  key={mt.key}
+                  onPress={() => handleMealTypeSelect(mt.key)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={t(`mealTypes.${mt.key}`)}
+                  className={`flex-1 items-center py-2.5 rounded-2xl ${
+                    isSelected ? 'bg-primary-500' : 'bg-surface-card'
                   }`}
                 >
-                  {mt.label}
-                </Text>
-              </Pressable>
-            ))}
+                  <Ionicons
+                    name={mt.icon}
+                    size={16}
+                    color={isSelected ? c.onPrimary : c.textTertiary}
+                  />
+                  <Text
+                    className={`text-xs font-sans-medium mt-0.5 ${
+                      isSelected ? 'text-on-primary' : 'text-text-tertiary'
+                    }`}
+                  >
+                    {t(`mealTypes.${mt.key}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Items */}
-        <View className="px-4 pt-4">
+        <View className="px-5 pt-4">
           <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
-            Items ({activeItems.length})
+            {t('template.items')} ({activeItems.length})
           </Text>
 
-          {items.map((item) => {
+          {items.map((item, index) => {
             const ratio = item.adjustedQuantity / item.quantity;
             const itemCal = item.estimatedNutrition
               ? Math.round(item.estimatedNutrition.calories * ratio)
               : 0;
 
             return (
-              <View
+              <Animated.View
                 key={item.id}
-                className={`rounded-2xl p-4 mb-2 ${item.removed ? 'opacity-40' : ''}`}
-                style={{
-                  backgroundColor: c.card,
-                  shadowColor: c.shadow,
-                  shadowOpacity: 0.04,
-                  shadowRadius: 8,
-                  shadowOffset: { width: 0, height: 2 },
-                  elevation: 1,
-                }}
+                entering={FadeInDown.duration(250).delay(Math.min(index * 40, 200) + 100)}
               >
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-1 mr-3">
-                    <Text className="text-sm font-sans-bold text-text" numberOfLines={1}>
-                      {item.foodName}
-                    </Text>
-                    <Text className="text-xs text-text-tertiary font-sans-medium">
-                      {item.servingLabel} · {itemCal} kcal
-                    </Text>
-                  </View>
+                <Card className={`mb-2 ${item.removed ? 'opacity-40' : ''}`}>
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-1 mr-3">
+                      <Text className="text-sm font-sans-semibold text-text" numberOfLines={1}>
+                        {item.foodName}
+                      </Text>
+                      <Text className="text-xs text-text-tertiary font-sans-medium mt-0.5">
+                        {item.servingLabel} · {itemCal} kcal
+                      </Text>
+                    </View>
 
-                  {/* Remove/restore toggle */}
-                  <Pressable
-                    onPress={() => toggleRemove(item.id)}
-                    className={`h-8 w-8 rounded-full items-center justify-center ${
-                      item.removed ? 'bg-surface-secondary' : 'bg-danger/10'
-                    }`}
-                  >
-                    <Ionicons
-                      name={item.removed ? 'add' : 'close'}
-                      size={16}
-                      color={item.removed ? '#3b5bdb' : '#ef4444'}
-                    />
-                  </Pressable>
-                </View>
-
-                {/* Quantity adjuster */}
-                {!item.removed && (
-                  <View className="flex-row items-center justify-center gap-4">
+                    {/* Remove/restore toggle */}
                     <Pressable
-                      onPress={() => adjustQuantity(item.id, -0.5)}
-                      className="h-9 w-9 rounded-xl bg-surface-app items-center justify-center"
+                      onPress={() => toggleRemove(item.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={item.removed ? 'Restore item' : 'Remove item'}
+                      className={`h-9 w-9 rounded-full items-center justify-center ${
+                        item.removed ? 'bg-surface-secondary' : 'bg-danger/10'
+                      }`}
                     >
-                      <Ionicons name="remove" size={18} color={c.text} />
-                    </Pressable>
-                    <Text className="text-lg font-sans-bold text-text min-w-[48px] text-center">
-                      {item.adjustedQuantity}
-                    </Text>
-                    <Pressable
-                      onPress={() => adjustQuantity(item.id, 0.5)}
-                      className="h-9 w-9 rounded-xl bg-surface-app items-center justify-center"
-                    >
-                      <Ionicons name="add" size={18} color={c.text} />
+                      <Ionicons
+                        name={item.removed ? 'add' : 'close'}
+                        size={16}
+                        color={item.removed ? c.textSecondary : c.danger}
+                      />
                     </Pressable>
                   </View>
-                )}
-              </View>
+
+                  {/* Quantity adjuster */}
+                  {!item.removed && (
+                    <View className="flex-row items-center justify-center gap-5">
+                      <Pressable
+                        onPress={() => adjustQuantity(item.id, -0.5)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Decrease quantity"
+                        className="h-10 w-10 rounded-xl bg-surface-secondary items-center justify-center active:opacity-70"
+                      >
+                        <Ionicons name="remove" size={18} color={c.text} />
+                      </Pressable>
+                      <Text className="text-lg font-sans-bold text-text min-w-[48px] text-center">
+                        {item.adjustedQuantity}
+                      </Text>
+                      <Pressable
+                        onPress={() => adjustQuantity(item.id, 0.5)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Increase quantity"
+                        className="h-10 w-10 rounded-xl bg-surface-secondary items-center justify-center active:opacity-70"
+                      >
+                        <Ionicons name="add" size={18} color={c.text} />
+                      </Pressable>
+                    </View>
+                  )}
+                </Card>
+              </Animated.View>
             );
           })}
         </View>
@@ -254,15 +273,8 @@ export function LogTemplateScreen() {
 
       {/* Bottom bar with totals + log button */}
       <View
-        className="absolute bottom-0 left-0 right-0 border-t border-surface-border px-5 pb-8 pt-4"
-        style={{
-          backgroundColor: c.card,
-          shadowColor: c.shadow,
-          shadowOpacity: 0.1,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: -4 },
-          elevation: 8,
-        }}
+        className="absolute bottom-0 left-0 right-0 border-t border-surface-border bg-surface-card px-5 pt-4"
+        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
         {/* Macro summary */}
         <View className="flex-row justify-between mb-4">
@@ -271,36 +283,33 @@ export function LogTemplateScreen() {
             <Text className="text-xs text-text-tertiary font-sans-medium">kcal</Text>
           </View>
           <View className="items-center flex-1">
-            <Text className="text-lg font-sans-bold text-[#3b5bdb]">
-              {totals.protein.toFixed(0)}g
+            <Text className="text-lg font-sans-bold text-text">{totals.protein.toFixed(0)}g</Text>
+            <Text className="text-xs text-text-tertiary font-sans-medium">
+              {t('dashboard.protein')}
             </Text>
-            <Text className="text-xs text-text-tertiary font-sans-medium">Protein</Text>
           </View>
           <View className="items-center flex-1">
-            <Text className="text-lg font-sans-bold text-[#f59e0b]">
-              {totals.carbs.toFixed(0)}g
+            <Text className="text-lg font-sans-bold text-warning">{totals.carbs.toFixed(0)}g</Text>
+            <Text className="text-xs text-text-tertiary font-sans-medium">
+              {t('dashboard.carbs')}
             </Text>
-            <Text className="text-xs text-text-tertiary font-sans-medium">Carbs</Text>
           </View>
           <View className="items-center flex-1">
-            <Text className="text-lg font-sans-bold text-[#ef4444]">{totals.fat.toFixed(0)}g</Text>
-            <Text className="text-xs text-text-tertiary font-sans-medium">Fat</Text>
+            <Text className="text-lg font-sans-bold text-danger">{totals.fat.toFixed(0)}g</Text>
+            <Text className="text-xs text-text-tertiary font-sans-medium">
+              {t('dashboard.fat')}
+            </Text>
           </View>
         </View>
 
-        <Pressable
+        <Button
           onPress={handleLog}
+          loading={logging}
           disabled={logging || activeItems.length === 0}
-          className={`rounded-2xl py-4 items-center ${
-            logging || activeItems.length === 0 ? 'bg-surface-tertiary' : 'bg-primary-500'
-          }`}
+          accessibilityLabel={t('template.logMeal')}
         >
-          {logging ? (
-            <ActivityIndicator color={c.text} />
-          ) : (
-            <Text className="text-base font-sans-bold text-on-primary">Log Meal</Text>
-          )}
-        </Pressable>
+          {t('template.logMeal')}
+        </Button>
       </View>
     </SafeAreaView>
   );

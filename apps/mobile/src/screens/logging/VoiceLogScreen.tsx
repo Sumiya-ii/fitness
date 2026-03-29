@@ -6,13 +6,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  Animated,
+  Animated as RNAnimated,
   Modal,
   TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -22,11 +22,13 @@ import {
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
 } from 'expo-audio';
-import { BackButton } from '../../components/ui';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BackButton, Button, Card, Badge } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
 import { trackEvent, EVENTS } from '../../utils/analytics';
 import { useLocale } from '../../i18n';
+import { useColors } from '../../theme';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'VoiceLog'>;
@@ -40,7 +42,7 @@ interface ParsedFoodItem {
   protein: number;
   carbs: number;
   fat: number;
-  confidence: number; // 0.0–1.0
+  confidence: number;
 }
 
 interface VoiceDraft {
@@ -66,6 +68,12 @@ type ScreenState =
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+const MEAL_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  breakfast: 'sunny-outline',
+  lunch: 'restaurant-outline',
+  dinner: 'moon-outline',
+  snack: 'cafe-outline',
+};
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 30;
 const MAX_RECORDING_SECONDS = 60;
@@ -90,16 +98,17 @@ function getProcessingMessage(
   return t('voiceLog.transcribing');
 }
 
-// ── Edit Item Modal ──────────────────────────────────────────────────────────
+// -- Edit Item Modal --
 
 interface EditItemModalProps {
   item: ParsedFoodItem;
   onSave: (updated: ParsedFoodItem) => void;
   onClose: () => void;
   t: (key: string) => string;
+  c: ReturnType<typeof useColors>;
 }
 
-function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
+function EditItemModal({ item, onSave, onClose, t, c }: EditItemModalProps) {
   const [name, setName] = useState(item.name);
   const [calories, setCalories] = useState(String(Math.round(item.calories)));
   const [protein, setProtein] = useState(String(item.protein));
@@ -112,6 +121,7 @@ function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
       Alert.alert(t('voiceLog.invalid'), t('voiceLog.invalidCalories'));
       return;
     }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSave({
       ...item,
       name: name.trim() || item.name,
@@ -119,7 +129,7 @@ function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
       protein: parseFloat(protein) || 0,
       carbs: parseFloat(carbs) || 0,
       fat: parseFloat(fat) || 0,
-      confidence: 1.0, // user edited = fully confident
+      confidence: 1.0,
     });
   };
 
@@ -129,23 +139,36 @@ function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        <Pressable className="flex-1 bg-black/40" onPress={onClose} />
+        <Pressable
+          className="flex-1 bg-black/40"
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        />
         <View className="bg-surface-card rounded-t-3xl px-5 pt-5 pb-8">
           <View className="flex-row items-center justify-between mb-5">
             <Text className="text-text font-sans-semibold text-lg">
               {t('voiceLog.editFoodItem')}
             </Text>
-            <Pressable onPress={onClose} hitSlop={12}>
-              <Ionicons name="close" size={22} color="#9a9caa" />
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              className="h-9 w-9 items-center justify-center rounded-full bg-surface-secondary"
+              accessibilityRole="button"
+              accessibilityLabel={t('common.cancel')}
+            >
+              <Ionicons name="close" size={18} color={c.textSecondary} />
             </Pressable>
           </View>
 
-          <Text className="text-xs text-text-secondary mb-1">{t('voiceLog.name')}</Text>
+          <Text className="text-xs text-text-tertiary font-sans-medium mb-1 uppercase tracking-wider">
+            {t('voiceLog.name')}
+          </Text>
           <TextInput
             value={name}
             onChangeText={setName}
-            className="bg-surface-secondary rounded-xl px-4 py-3 text-text mb-4"
-            placeholderTextColor="#9a9caa"
+            className="bg-surface-secondary rounded-2xl px-4 py-3 text-base font-sans-medium text-text mb-4"
+            placeholderTextColor={c.textTertiary}
           />
 
           <View className="flex-row gap-3 mb-5">
@@ -158,34 +181,34 @@ function EditItemModal({ item, onSave, onClose, t }: EditItemModalProps) {
               ] as const
             ).map(({ label, value, set }) => (
               <View key={label} className="flex-1">
-                <Text className="text-xs text-text-secondary mb-1">{label}</Text>
+                <Text className="text-xs text-text-tertiary font-sans-medium mb-1">{label}</Text>
                 <TextInput
                   value={value}
                   onChangeText={set as (v: string) => void}
                   keyboardType="decimal-pad"
-                  className="bg-surface-secondary rounded-xl px-2 py-3 text-text text-center"
-                  placeholderTextColor="#9a9caa"
+                  className="bg-surface-secondary rounded-xl px-2 py-3 text-base font-sans-medium text-text text-center"
+                  placeholderTextColor={c.textTertiary}
                 />
               </View>
             ))}
           </View>
 
-          <Pressable onPress={handleSave} className="rounded-2xl bg-primary-500 py-4 items-center">
-            <Text className="font-sans-semibold text-text-inverse text-base">
-              {t('common.save')}
-            </Text>
-          </Pressable>
+          <Button onPress={handleSave} accessibilityLabel={t('common.save')}>
+            {t('common.save')}
+          </Button>
         </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-// ── Main Screen ──────────────────────────────────────────────────────────────
+// -- Main Screen --
 
 export function VoiceLogScreen() {
   const navigation = useNavigation<Props['navigation']>();
   const { locale, t } = useLocale();
+  const c = useColors();
+  const insets = useSafeAreaInsets();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [screenState, setScreenState] = useState<ScreenState>('idle');
@@ -199,10 +222,10 @@ export function VoiceLogScreen() {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
-  const successScale = useRef(new Animated.Value(0)).current;
-  const successOpacity = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+  const pulseLoop = useRef<RNAnimated.CompositeAnimation | null>(null);
+  const successScale = useRef(new RNAnimated.Value(0)).current;
+  const successOpacity = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
     return () => {
@@ -214,10 +237,10 @@ export function VoiceLogScreen() {
   // Pulse animation when recording
   useEffect(() => {
     if (screenState === 'recording') {
-      pulseLoop.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.18, duration: 650, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 650, useNativeDriver: true }),
+      pulseLoop.current = RNAnimated.loop(
+        RNAnimated.sequence([
+          RNAnimated.timing(pulseAnim, { toValue: 1.18, duration: 650, useNativeDriver: true }),
+          RNAnimated.timing(pulseAnim, { toValue: 1, duration: 650, useNativeDriver: true }),
         ]),
       );
       pulseLoop.current.start();
@@ -245,7 +268,7 @@ export function VoiceLogScreen() {
     await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     await recorder.prepareToRecordAsync();
     recorder.record();
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setScreenState('recording');
     setElapsed(0);
     timerRef.current = setInterval(() => {
@@ -264,7 +287,7 @@ export function VoiceLogScreen() {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await recorder.stop();
     const uri = recorder.uri;
     if (!uri) {
@@ -309,7 +332,7 @@ export function VoiceLogScreen() {
       else if (d.status === 'waiting') setDraftWorkerStatus('waiting');
 
       if (d.status === 'completed') {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const items = d.items ?? [];
         setTranscription(d.transcription ?? '');
         setDraftItems(items);
@@ -317,7 +340,7 @@ export function VoiceLogScreen() {
           setMealType(d.mealType as MealType);
         }
         setScreenState('results');
-        void trackEvent(EVENTS.VOICE_LOG_PROCESSED, {
+        trackEvent(EVENTS.VOICE_LOG_PROCESSED, {
           itemCount: items.length,
           totalCalories: d.totalCalories ?? 0,
           hasLowConfidenceItems: items.some((it) => it.confidence < 0.7),
@@ -340,7 +363,7 @@ export function VoiceLogScreen() {
   };
 
   const handleDeleteItem = (index: number) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setDraftItems((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -370,28 +393,27 @@ export function VoiceLogScreen() {
         source: 'voice',
       });
 
-      void trackEvent(EVENTS.MEAL_LOG_SAVED, {
+      trackEvent(EVENTS.MEAL_LOG_SAVED, {
         source: 'voice',
         mealType,
         calories: Math.round(totalCalories),
         itemCount: draftItems.length,
       });
 
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Show success animation then go back
       setScreenState('success');
       successScale.setValue(0);
       successOpacity.setValue(1);
-      Animated.sequence([
-        Animated.spring(successScale, {
+      RNAnimated.sequence([
+        RNAnimated.spring(successScale, {
           toValue: 1,
           useNativeDriver: true,
           tension: 120,
           friction: 8,
         }),
-        Animated.delay(700),
-        Animated.timing(successOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        RNAnimated.delay(700),
+        RNAnimated.timing(successOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
       ]).start(() => navigation.goBack());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed');
@@ -400,6 +422,7 @@ export function VoiceLogScreen() {
   };
 
   const handleReset = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setScreenState('idle');
     setDraftItems([]);
     setTranscription('');
@@ -409,13 +432,17 @@ export function VoiceLogScreen() {
     setDraftWorkerStatus(null);
   };
 
-  const timerColor = elapsed >= WARN_RECORDING_SECONDS ? 'text-amber-400' : 'text-text';
+  const handleMealTypeSelect = (type: MealType) => {
+    Haptics.selectionAsync();
+    setMealType(type);
+  };
+
+  const timerColor = elapsed >= WARN_RECORDING_SECONDS ? 'text-warning' : 'text-text';
   const totalCalories = Math.round(draftItems.reduce((s, i) => s + i.calories, 0));
   const totalProtein = Math.round(draftItems.reduce((s, i) => s + i.protein, 0));
   const totalCarbs = Math.round(draftItems.reduce((s, i) => s + i.carbs, 0));
   const totalFat = Math.round(draftItems.reduce((s, i) => s + i.fat, 0));
 
-  // Processing step index (0=uploading, 1=transcribing, 2=analyzing)
   const processingStepIndex =
     screenState === 'uploading' ? 0 : draftWorkerStatus === 'active' ? 2 : 1;
 
@@ -423,30 +450,48 @@ export function VoiceLogScreen() {
     <View className="flex-1 bg-surface-app">
       <SafeAreaView edges={['top']} className="flex-1">
         {/* Header */}
-        <View className="flex-row items-center px-4 py-3 border-b border-surface-border">
+        <View className="flex-row items-center px-5 py-3">
           <BackButton />
           <Text className="ml-3 text-lg font-sans-semibold text-text">{t('voiceLog.title')}</Text>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
-          {/* ── IDLE ── */}
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: Math.max(insets.bottom, 24),
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* -- IDLE -- */}
           {screenState === 'idle' && (
-            <View className="flex-1 items-center justify-center px-8 py-16">
+            <Animated.View
+              entering={FadeInDown.duration(400)}
+              className="flex-1 items-center justify-center px-8 py-16"
+            >
               <Text className="text-text-secondary text-center mb-10 text-base leading-6">
                 {t('voiceLog.instruction')}
               </Text>
               <Pressable
                 onPress={startRecording}
+                accessibilityRole="button"
+                accessibilityLabel={t('voiceLog.tapToStart')}
                 className="h-28 w-28 rounded-full bg-primary-500 items-center justify-center"
               >
-                <Ionicons name="mic" size={52} color="#ffffff" />
+                <Ionicons name="mic" size={52} color={c.onPrimary} />
               </Pressable>
-              <Text className="mt-5 text-text-secondary text-sm">{t('voiceLog.tapToStart')}</Text>
-              {error && <Text className="mt-6 text-center text-red-400 text-sm px-4">{error}</Text>}
-            </View>
+              <Text className="mt-5 text-text-tertiary text-sm font-sans-medium">
+                {t('voiceLog.tapToStart')}
+              </Text>
+              {error ? (
+                <View className="mt-6 rounded-2xl bg-danger/10 px-4 py-3">
+                  <Text className="text-center text-danger text-sm font-sans-medium">{error}</Text>
+                </View>
+              ) : null}
+            </Animated.View>
           )}
 
-          {/* ── RECORDING ── */}
+          {/* -- RECORDING -- */}
           {screenState === 'recording' && (
             <View className="flex-1 items-center justify-center px-8 py-16">
               <Text className="text-text-secondary text-center mb-6 text-base">
@@ -455,29 +500,33 @@ export function VoiceLogScreen() {
               <Text className={`font-sans-bold text-5xl mb-1 tabular-nums ${timerColor}`}>
                 {formatElapsed(elapsed)}
               </Text>
-              <Text className="text-xs text-text-secondary mb-10">
+              <Text className="text-xs text-text-tertiary mb-10">
                 / {formatElapsed(MAX_RECORDING_SECONDS)} {t('voiceLog.max')}
               </Text>
-              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <RNAnimated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <Pressable
                   onPress={stopRecording}
-                  className="h-28 w-28 rounded-full bg-red-500 items-center justify-center"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('voiceLog.tapToStop')}
+                  className="h-28 w-28 rounded-full bg-danger items-center justify-center"
                 >
                   <Ionicons name="stop" size={46} color="#ffffff" />
                 </Pressable>
-              </Animated.View>
-              <Text className="mt-5 text-text-secondary text-sm">{t('voiceLog.tapToStop')}</Text>
+              </RNAnimated.View>
+              <Text className="mt-5 text-text-tertiary text-sm font-sans-medium">
+                {t('voiceLog.tapToStop')}
+              </Text>
             </View>
           )}
 
-          {/* ── UPLOADING / PROCESSING ── */}
+          {/* -- UPLOADING / PROCESSING -- */}
           {(screenState === 'uploading' || screenState === 'processing') && (
             <View className="flex-1 items-center justify-center px-8 py-16">
-              <ActivityIndicator size="large" color="#1f2028" />
+              <ActivityIndicator size="large" color={c.primary} />
               <Text className="mt-5 text-text text-base font-sans-medium">
                 {getProcessingMessage(screenState, draftWorkerStatus, t)}
               </Text>
-              {/* Step progress pills */}
+              {/* Step progress */}
               <View className="flex-row gap-2 mt-5">
                 {[0, 1, 2].map((i) => (
                   <View
@@ -488,59 +537,88 @@ export function VoiceLogScreen() {
                   />
                 ))}
               </View>
-              <Text className="mt-3 text-xs text-text-secondary">
-                {processingStepIndex === 0
-                  ? `${t('voiceLog.uploadStep')} · ${t('voiceLog.transcribeStep')} · ${t('voiceLog.analyzeStep')}`
-                  : processingStepIndex === 1
-                    ? `${t('voiceLog.uploadStep')} ✓ · ${t('voiceLog.transcribeStep')} · ${t('voiceLog.analyzeStep')}`
-                    : `${t('voiceLog.uploadStep')} ✓ · ${t('voiceLog.transcribeStep')} ✓ · ${t('voiceLog.analyzeStep')}`}
-              </Text>
+              <View className="flex-row gap-2 mt-3">
+                {[
+                  { key: 'uploadStep', idx: 0 },
+                  { key: 'transcribeStep', idx: 1 },
+                  { key: 'analyzeStep', idx: 2 },
+                ].map(({ key, idx }) => (
+                  <Text
+                    key={key}
+                    className={`text-xs font-sans-medium ${
+                      idx <= processingStepIndex ? 'text-text' : 'text-text-tertiary'
+                    }`}
+                  >
+                    {t(`voiceLog.${key}`)}
+                    {idx < processingStepIndex ? ' \u2713' : ''}
+                  </Text>
+                ))}
+              </View>
             </View>
           )}
 
-          {/* ── RESULTS / SAVING ── */}
+          {/* -- RESULTS / SAVING -- */}
           {(screenState === 'results' || screenState === 'saving') && (
-            <View className="px-4 py-5">
+            <View className="px-5 py-4">
               {/* Transcription */}
               {transcription.length > 0 && (
-                <View className="rounded-xl bg-surface-card border border-surface-border p-4 mb-4">
-                  <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    {t('voiceLog.whatYouSaid')}
-                  </Text>
-                  <Text className="text-text text-sm leading-5 italic">"{transcription}"</Text>
-                </View>
+                <Animated.View entering={FadeInDown.duration(300).delay(50)}>
+                  <Card className="mb-4">
+                    <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
+                      {t('voiceLog.whatYouSaid')}
+                    </Text>
+                    <Text className="text-text text-sm leading-5 italic">
+                      &ldquo;{transcription}&rdquo;
+                    </Text>
+                  </Card>
+                </Animated.View>
               )}
 
               {/* Meal type chips */}
-              <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-2">
-                {t('voiceLog.mealType')}
-              </Text>
-              <View className="flex-row gap-2 mb-5">
-                {MEAL_TYPES.map((type) => (
-                  <Pressable
-                    key={type}
-                    onPress={() => setMealType(type)}
-                    className={`rounded-full px-4 py-2 ${
-                      mealType === type ? 'bg-primary-500' : 'bg-surface-secondary'
-                    }`}
-                  >
-                    <Text
-                      className={`font-sans-medium text-sm ${
-                        mealType === type ? 'text-text-inverse' : 'text-text-secondary'
-                      }`}
-                    >
-                      {t(`mealTypes.${type}`)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+              <Animated.View entering={FadeInDown.duration(300).delay(100)}>
+                <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
+                  {t('voiceLog.mealType')}
+                </Text>
+                <View className="flex-row gap-2 mb-5">
+                  {MEAL_TYPES.map((type) => {
+                    const isSelected = mealType === type;
+                    return (
+                      <Pressable
+                        key={type}
+                        onPress={() => handleMealTypeSelect(type)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isSelected }}
+                        accessibilityLabel={t(`mealTypes.${type}`)}
+                        className={`flex-1 items-center rounded-2xl py-2.5 ${
+                          isSelected ? 'bg-primary-500' : 'bg-surface-card'
+                        }`}
+                      >
+                        <Ionicons
+                          name={MEAL_ICONS[type]}
+                          size={16}
+                          color={isSelected ? c.onPrimary : c.textTertiary}
+                        />
+                        <Text
+                          className={`font-sans-medium text-xs mt-0.5 ${
+                            isSelected ? 'text-on-primary' : 'text-text-tertiary'
+                          }`}
+                        >
+                          {t(`mealTypes.${type}`)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </Animated.View>
 
-              {/* Food items with edit + delete */}
+              {/* Food items */}
               {draftItems.length > 0 && (
                 <>
-                  <Text className="font-sans-semibold text-text mb-3">
-                    {t('voiceLog.identifiedFoods')}
-                  </Text>
+                  <Animated.View entering={FadeInDown.duration(300).delay(150)}>
+                    <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-3">
+                      {t('voiceLog.identifiedFoods')}
+                    </Text>
+                  </Animated.View>
                   {draftItems.map((item, index) => {
                     const isLowConfidence = item.confidence < 0.7;
                     const portionLabel =
@@ -548,110 +626,125 @@ export function VoiceLogScreen() {
                         ? `${item.quantity} ${item.unit} · ~${item.grams}g`
                         : `${item.quantity} ${item.unit}`;
                     return (
-                      <View
+                      <Animated.View
                         key={`${item.name}-${index}`}
-                        className="rounded-xl bg-surface-card border border-surface-border p-4 mb-3"
+                        entering={FadeInDown.duration(250).delay(Math.min(index * 40, 200) + 200)}
                       >
-                        <View className="flex-row items-center">
-                          <View className="flex-1 mr-2">
-                            <View className="flex-row items-center gap-2">
-                              <Text className="font-sans-semibold text-text flex-shrink">
-                                {item.name}
+                        <Card className="mb-3">
+                          <View className="flex-row items-center">
+                            <View className="flex-1 mr-2">
+                              <View className="flex-row items-center gap-2">
+                                <Text
+                                  className="font-sans-semibold text-text flex-shrink"
+                                  numberOfLines={1}
+                                >
+                                  {item.name}
+                                </Text>
+                                {isLowConfidence && (
+                                  <Badge variant="warning">{t('voiceLog.estimated')}</Badge>
+                                )}
+                              </View>
+                              <Text className="text-xs text-text-secondary mt-0.5">
+                                {portionLabel}
                               </Text>
-                              {isLowConfidence && (
-                                <View className="rounded-full bg-amber-100 px-2 py-0.5">
-                                  <Text className="text-xs text-amber-700 font-sans-medium">
-                                    {t('voiceLog.estimated')}
-                                  </Text>
-                                </View>
-                              )}
+                              <Text className="text-xs text-text-tertiary mt-0.5">
+                                P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F:{' '}
+                                {Math.round(item.fat)}g
+                              </Text>
                             </View>
-                            <Text className="text-xs text-text-secondary mt-0.5">
-                              {portionLabel}
+                            <Text className="font-sans-bold text-text text-base mr-3">
+                              {Math.round(item.calories)} cal
                             </Text>
-                            <Text className="text-xs text-text-secondary mt-0.5">
-                              P: {Math.round(item.protein)}g · C: {Math.round(item.carbs)}g · F:{' '}
-                              {Math.round(item.fat)}g
-                            </Text>
+                            <Pressable
+                              onPress={() => setEditingIndex(index)}
+                              hitSlop={8}
+                              className="h-9 w-9 items-center justify-center rounded-full bg-surface-secondary mr-1"
+                              accessibilityRole="button"
+                              accessibilityLabel={`Edit ${item.name}`}
+                            >
+                              <Ionicons name="pencil-outline" size={16} color={c.textSecondary} />
+                            </Pressable>
+                            <Pressable
+                              onPress={() => handleDeleteItem(index)}
+                              hitSlop={8}
+                              className="h-9 w-9 items-center justify-center rounded-full bg-danger/10"
+                              accessibilityRole="button"
+                              accessibilityLabel={`Delete ${item.name}`}
+                            >
+                              <Ionicons name="trash-outline" size={16} color={c.danger} />
+                            </Pressable>
                           </View>
-                          <Text className="font-sans-bold text-text text-base mr-3">
-                            {Math.round(item.calories)} cal
-                          </Text>
-                          <Pressable
-                            onPress={() => setEditingIndex(index)}
-                            hitSlop={8}
-                            className="mr-3"
-                          >
-                            <Ionicons name="pencil-outline" size={18} color="#9a9caa" />
-                          </Pressable>
-                          <Pressable onPress={() => handleDeleteItem(index)} hitSlop={8}>
-                            <Ionicons name="trash-outline" size={18} color="#f87171" />
-                          </Pressable>
-                        </View>
-                      </View>
+                        </Card>
+                      </Animated.View>
                     );
                   })}
 
                   {/* Total */}
-                  <View className="rounded-xl bg-surface-secondary border border-surface-border p-4 mb-6">
-                    <Text className="text-xs font-sans-semibold text-text-secondary uppercase tracking-wider mb-1">
-                      {t('voiceLog.total')}
-                    </Text>
-                    <Text className="text-text font-sans-bold text-2xl">{totalCalories} cal</Text>
-                    <Text className="text-xs text-text-secondary mt-1">
-                      P: {totalProtein}g · C: {totalCarbs}g · F: {totalFat}g
-                    </Text>
-                  </View>
+                  <Animated.View entering={FadeInDown.duration(300).delay(400)}>
+                    <Card className="mb-6 bg-surface-secondary">
+                      <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-1">
+                        {t('voiceLog.total')}
+                      </Text>
+                      <Text className="text-text font-sans-bold text-2xl">{totalCalories} cal</Text>
+                      <Text className="text-xs text-text-secondary mt-1">
+                        P: {totalProtein}g · C: {totalCarbs}g · F: {totalFat}g
+                      </Text>
+                    </Card>
+                  </Animated.View>
                 </>
               )}
 
               {/* Zero items fallback */}
               {draftItems.length === 0 && (
-                <View className="items-center py-10">
-                  <Ionicons name="alert-circle-outline" size={40} color="#9a9caa" />
-                  <Text className="text-text-secondary mt-3 text-base text-center">
+                <Animated.View
+                  entering={FadeInDown.duration(300).delay(150)}
+                  className="items-center py-10"
+                >
+                  <View className="h-16 w-16 rounded-full bg-surface-card border border-surface-border items-center justify-center mb-4">
+                    <Ionicons name="alert-circle-outline" size={32} color={c.textTertiary} />
+                  </View>
+                  <Text className="text-text-secondary text-base text-center font-sans-medium">
                     {t('voiceLog.noFoodsIdentified')}
                   </Text>
-                  <Text className="text-text-secondary mt-1 text-sm text-center">
+                  <Text className="text-text-tertiary mt-1 text-sm text-center">
                     {t('voiceLog.addManually')}
                   </Text>
-                  <Pressable
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onPress={() => navigation.navigate('QuickAdd')}
-                    className="mt-5 rounded-2xl bg-surface-secondary border border-surface-border px-6 py-3"
+                    className="mt-5"
+                    accessibilityLabel={t('voiceLog.addEntryManually')}
                   >
-                    <Text className="font-sans-semibold text-text-secondary text-sm">
-                      {t('voiceLog.addEntryManually')}
-                    </Text>
-                  </Pressable>
-                </View>
+                    {t('voiceLog.addEntryManually')}
+                  </Button>
+                </Animated.View>
               )}
 
-              {error && <Text className="mb-4 text-center text-red-400 text-sm">{error}</Text>}
+              {error ? (
+                <View className="mb-4 rounded-2xl bg-danger/10 px-4 py-3">
+                  <Text className="text-center text-danger text-sm font-sans-medium">{error}</Text>
+                </View>
+              ) : null}
 
               <View className="gap-3">
                 {draftItems.length > 0 && (
-                  <Pressable
+                  <Button
                     onPress={handleSave}
+                    loading={screenState === 'saving'}
                     disabled={screenState === 'saving'}
-                    className="rounded-2xl bg-primary-500 px-6 py-4 items-center"
+                    accessibilityLabel={t('voiceLog.logMeal')}
                   >
-                    {screenState === 'saving' ? (
-                      <ActivityIndicator color="#ffffff" />
-                    ) : (
-                      <Text className="font-sans-semibold text-text-inverse text-base">
-                        {t('voiceLog.logMeal')}
-                      </Text>
-                    )}
-                  </Pressable>
+                    {t('voiceLog.logMeal')}
+                  </Button>
                 )}
-                <Pressable
+                <Button
+                  variant="outline"
                   onPress={handleReset}
-                  className="rounded-2xl border border-surface-border px-6 py-4 items-center"
+                  accessibilityLabel={t('voiceLog.recordAgain')}
                 >
-                  <Text className="font-sans-semibold text-text-secondary text-base">
-                    {t('voiceLog.recordAgain')}
-                  </Text>
-                </Pressable>
+                  {t('voiceLog.recordAgain')}
+                </Button>
               </View>
             </View>
           )}
@@ -665,25 +758,26 @@ export function VoiceLogScreen() {
           onSave={(updated) => handleEditSave(editingIndex, updated)}
           onClose={() => setEditingIndex(null)}
           t={t}
+          c={c}
         />
       )}
 
       {/* Success overlay */}
       {screenState === 'success' && (
-        <Animated.View
+        <RNAnimated.View
           style={{ opacity: successOpacity }}
           className="absolute inset-0 items-center justify-center bg-black/40"
         >
-          <Animated.View
+          <RNAnimated.View
             style={{ transform: [{ scale: successScale }] }}
-            className="h-28 w-28 rounded-full bg-green-500 items-center justify-center"
+            className="h-28 w-28 rounded-full bg-success items-center justify-center"
           >
             <Ionicons name="checkmark" size={60} color="#ffffff" />
-          </Animated.View>
+          </RNAnimated.View>
           <Text className="mt-5 text-white font-sans-semibold text-lg">
             {t('voiceLog.mealLogged')}
           </Text>
-        </Animated.View>
+        </RNAnimated.View>
       )}
     </View>
   );

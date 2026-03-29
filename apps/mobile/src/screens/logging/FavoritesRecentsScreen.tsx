@@ -3,9 +3,12 @@ import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BackButton, Card, EmptyState } from '../../components/ui';
 import { mealsApi, type FavoriteItem, type RecentItem } from '../../api/meals';
 import { useLocale } from '../../i18n';
+import { useColors } from '../../theme';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'FavoritesRecents'>;
@@ -14,6 +17,7 @@ type Tab = 'favorites' | 'recents';
 
 export function FavoritesRecentsScreen() {
   const { t } = useLocale();
+  const c = useColors();
   const navigation = useNavigation<Props['navigation']>();
   const [tab, setTab] = useState<Tab>('recents');
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
@@ -50,8 +54,14 @@ export function FavoritesRecentsScreen() {
     loadData();
   }, [loadData]);
 
+  const handleTabChange = (newTab: Tab) => {
+    Haptics.selectionAsync();
+    setTab(newTab);
+  };
+
   const toggleFavorite = async (foodId: string) => {
     const isFav = favoritedIds.has(foodId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       if (isFav) {
         await mealsApi.removeFavorite(foodId);
@@ -86,96 +96,115 @@ export function FavoritesRecentsScreen() {
   };
 
   const handleQuickLog = (_item: FavoriteItem | RecentItem) => {
-    // Navigate to TextSearch with pre-selected food for quick log
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('TextSearch');
-    // In full impl: pass foodId as param and pre-load
   };
 
-  const renderFavorite = ({ item }: { item: FavoriteItem }) => (
-    <Card
-      pressable
-      onPress={() => handleQuickLog(item)}
-      className="mb-3 flex-row items-center justify-between"
-    >
-      <View className="flex-1">
-        <Text className="font-sans-semibold text-text">{item.name}</Text>
-        <Text className="text-sm text-text-secondary">{item.caloriesPer100g} cal / 100g</Text>
-      </View>
-      <Pressable onPress={() => toggleFavorite(item.foodId)} className="p-2">
-        <Ionicons
-          name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
-          size={24}
-          color={favoritedIds.has(item.foodId) ? '#ef4444' : '#9a9caa'}
-        />
-      </Pressable>
-    </Card>
+  const renderFavorite = ({ item, index }: { item: FavoriteItem; index: number }) => (
+    <Animated.View entering={FadeInDown.duration(300).delay(Math.min(index * 40, 200))}>
+      <Card
+        pressable
+        onPress={() => handleQuickLog(item)}
+        className="mb-3 flex-row items-center justify-between"
+      >
+        <View className="flex-1 mr-3">
+          <Text className="font-sans-semibold text-text" numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text className="text-sm text-text-secondary mt-0.5">
+            {item.caloriesPer100g} cal / 100g
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => toggleFavorite(item.foodId)}
+          className="h-11 w-11 items-center justify-center rounded-full"
+          accessibilityRole="button"
+          accessibilityLabel={
+            favoritedIds.has(item.foodId) ? 'Remove from favorites' : 'Add to favorites'
+          }
+        >
+          <Ionicons
+            name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
+            size={24}
+            color={favoritedIds.has(item.foodId) ? c.danger : c.textTertiary}
+          />
+        </Pressable>
+      </Card>
+    </Animated.View>
   );
 
-  const renderRecent = ({ item }: { item: RecentItem }) => (
-    <Card
-      pressable
-      onPress={() => handleQuickLog(item)}
-      className="mb-3 flex-row items-center justify-between"
-    >
-      <View className="flex-1">
-        <Text className="font-sans-semibold text-text">{item.name}</Text>
-        <Text className="text-sm text-text-secondary">Last: {item.lastCalories} cal</Text>
-      </View>
-      <Pressable onPress={() => toggleFavorite(item.foodId)} className="p-2">
-        <Ionicons
-          name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
-          size={24}
-          color={favoritedIds.has(item.foodId) ? '#ef4444' : '#9a9caa'}
-        />
-      </Pressable>
-    </Card>
+  const renderRecent = ({ item, index }: { item: RecentItem; index: number }) => (
+    <Animated.View entering={FadeInDown.duration(300).delay(Math.min(index * 40, 200))}>
+      <Card
+        pressable
+        onPress={() => handleQuickLog(item)}
+        className="mb-3 flex-row items-center justify-between"
+      >
+        <View className="flex-1 mr-3">
+          <Text className="font-sans-semibold text-text" numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text className="text-sm text-text-secondary mt-0.5">{item.lastCalories} cal</Text>
+        </View>
+        <Pressable
+          onPress={() => toggleFavorite(item.foodId)}
+          className="h-11 w-11 items-center justify-center rounded-full"
+          accessibilityRole="button"
+          accessibilityLabel={
+            favoritedIds.has(item.foodId) ? 'Remove from favorites' : 'Add to favorites'
+          }
+        >
+          <Ionicons
+            name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
+            size={24}
+            color={favoritedIds.has(item.foodId) ? c.danger : c.textTertiary}
+          />
+        </Pressable>
+      </Card>
+    </Animated.View>
   );
 
   const listData = tab === 'favorites' ? favorites : recents;
   const isEmpty = listData.length === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <View className="flex-row items-center border-b border-surface-border px-4 py-3">
+    <SafeAreaView className="flex-1 bg-surface-app" edges={['top']}>
+      {/* Header */}
+      <View className="flex-row items-center px-5 py-3">
         <BackButton />
         <Text className="ml-3 text-lg font-sans-semibold text-text">{t('favRecents.title')}</Text>
       </View>
 
-      {/* Tabs */}
-      <View className="flex-row border-b border-surface-border px-4">
-        <Pressable
-          onPress={() => setTab('favorites')}
-          className={`border-b-2 py-3 px-4 ${
-            tab === 'favorites' ? 'border-primary-500' : 'border-transparent'
-          }`}
-        >
-          <Text
-            className={`font-sans-medium ${
-              tab === 'favorites' ? 'text-primary-600' : 'text-text-secondary'
-            }`}
-          >
-            {t('favRecents.favorites')}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setTab('recents')}
-          className={`border-b-2 py-3 px-4 ${
-            tab === 'recents' ? 'border-primary-500' : 'border-transparent'
-          }`}
-        >
-          <Text
-            className={`font-sans-medium ${
-              tab === 'recents' ? 'text-primary-600' : 'text-text-secondary'
-            }`}
-          >
-            {t('favRecents.recents')}
-          </Text>
-        </Pressable>
+      {/* Tab bar */}
+      <View className="flex-row mx-5 mb-4 rounded-2xl bg-surface-card p-1">
+        {(['favorites', 'recents'] as const).map((tabKey) => {
+          const isActive = tab === tabKey;
+          return (
+            <Pressable
+              key={tabKey}
+              onPress={() => handleTabChange(tabKey)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={t(`favRecents.${tabKey}`)}
+              className={`flex-1 items-center rounded-xl py-2.5 ${
+                isActive ? 'bg-primary-500' : ''
+              }`}
+            >
+              <Text
+                className={`text-sm font-sans-semibold ${
+                  isActive ? 'text-on-primary' : 'text-text-secondary'
+                }`}
+              >
+                {t(`favRecents.${tabKey}`)}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center py-16">
-          <ActivityIndicator size="large" color="#1f2028" />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={c.primary} />
         </View>
       ) : isEmpty ? (
         <EmptyState
@@ -189,14 +218,15 @@ export function FavoritesRecentsScreen() {
         <FlatList<FavoriteItem | RecentItem>
           data={listData}
           keyExtractor={(item) => item.foodId}
-          renderItem={({ item }) =>
+          renderItem={({ item, index }) =>
             tab === 'favorites'
-              ? renderFavorite({ item: item as FavoriteItem })
-              : renderRecent({ item: item as RecentItem })
+              ? renderFavorite({ item: item as FavoriteItem, index })
+              : renderRecent({ item: item as RecentItem, index })
           }
-          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1f2028" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />
           }
         />
       )}

@@ -2,18 +2,18 @@ import { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   ScrollView,
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { BackButton } from '../../components/ui';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { BackButton, Input, Button, Card } from '../../components/ui';
 import { mealsApi } from '../../api/meals';
 import { useLocale } from '../../i18n';
 import { useColors } from '../../theme';
@@ -33,11 +33,17 @@ export function SaveTemplateScreen() {
   const c = useColors();
   const navigation = useNavigation<Props['navigation']>();
   const route = useRoute<Props['route']>();
+  const insets = useSafeAreaInsets();
   const { mealLogId, mealType: initialMealType, itemNames } = route.params;
 
   const [name, setName] = useState('');
   const [mealType, setMealType] = useState<string | undefined>(initialMealType);
   const [saving, setSaving] = useState(false);
+
+  const handleMealTypeSelect = (key: string) => {
+    Haptics.selectionAsync();
+    setMealType(mealType === key ? undefined : key);
+  };
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -48,6 +54,7 @@ export function SaveTemplateScreen() {
     setSaving(true);
     try {
       await mealsApi.createTemplateFromLog(mealLogId, name.trim(), mealType);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch {
       Alert.alert(t('common.error'), t('template.saveFailed'));
@@ -62,128 +69,110 @@ export function SaveTemplateScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-row items-center border-b border-surface-border px-4 py-3">
+        {/* Header */}
+        <View className="flex-row items-center px-5 py-3">
           <BackButton />
           <Text className="ml-3 text-lg font-sans-semibold text-text">
             {t('template.saveAsTemplate')}
           </Text>
         </View>
 
-        <ScrollView className="flex-1 px-5 pt-6" keyboardShouldPersistTaps="handled">
-          {/* Template name */}
-          <Text className="text-sm font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
-            {t('template.templateName')}
-          </Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t('template.templateNamePlaceholder')}
-            placeholderTextColor={c.textTertiary}
-            maxLength={200}
-            autoFocus
-            className="rounded-2xl px-4 py-4 text-base font-sans-medium text-text mb-6"
-            style={{
-              backgroundColor: c.card,
-              shadowColor: c.shadow,
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 2 },
-              elevation: 2,
-            }}
-          />
+        <ScrollView
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          <View className="px-5 pt-6">
+            {/* Template name */}
+            <Animated.View entering={FadeInDown.duration(300).delay(50)}>
+              <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
+                {t('template.templateName')}
+              </Text>
+              <Input
+                value={name}
+                onChangeText={setName}
+                placeholder={t('template.templateNamePlaceholder')}
+                maxLength={200}
+                autoFocus
+                accessibilityLabel={t('template.templateName')}
+                containerClassName="mb-6"
+              />
+            </Animated.View>
 
-          {/* Meal type */}
-          <Text className="text-sm font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
-            {t('template.defaultMealType')}
-          </Text>
-          <View className="flex-row gap-2 mb-6">
-            {MEAL_TYPES.map((mt) => (
-              <Pressable
-                key={mt.key}
-                onPress={() => setMealType(mealType === mt.key ? undefined : mt.key)}
-                className={`flex-1 items-center py-3 rounded-2xl ${
-                  mealType === mt.key ? 'bg-primary-500' : 'bg-surface-card'
-                }`}
-                style={{
-                  shadowColor: c.shadow,
-                  shadowOpacity: 0.05,
-                  shadowRadius: 8,
-                  shadowOffset: { width: 0, height: 2 },
-                  elevation: 2,
-                }}
-              >
-                <Ionicons
-                  name={mt.icon}
-                  size={18}
-                  color={mealType === mt.key ? c.onPrimary : c.textTertiary}
-                />
-                <Text
-                  className={`text-xs font-sans-medium mt-1 ${
-                    mealType === mt.key ? 'text-on-primary' : 'text-text-tertiary'
-                  }`}
-                >
-                  {t(`mealTypes.${mt.key}`)}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Items preview */}
-          <Text className="text-sm font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
-            {t('template.itemsInMeal')}
-          </Text>
-          <View
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: c.card,
-              shadowColor: c.shadow,
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 2 },
-              elevation: 2,
-            }}
-          >
-            {itemNames.map((itemName, idx) => (
-              <View
-                key={`item-${idx}`}
-                className="flex-row items-center py-2"
-                style={idx > 0 ? { borderTopWidth: 1, borderTopColor: c.border } : undefined}
-              >
-                <View className="h-8 w-8 rounded-xl bg-surface-app items-center justify-center mr-3">
-                  <Text style={{ fontSize: 16 }}>🍽️</Text>
-                </View>
-                <Text className="text-sm font-sans-medium text-text flex-1" numberOfLines={1}>
-                  {itemName}
-                </Text>
+            {/* Meal type */}
+            <Animated.View entering={FadeInDown.duration(300).delay(100)}>
+              <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
+                {t('template.defaultMealType')}
+              </Text>
+              <View className="flex-row gap-2 mb-6">
+                {MEAL_TYPES.map((mt) => {
+                  const isSelected = mealType === mt.key;
+                  return (
+                    <Pressable
+                      key={mt.key}
+                      onPress={() => handleMealTypeSelect(mt.key)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      accessibilityLabel={t(`mealTypes.${mt.key}`)}
+                      className={`flex-1 items-center py-3 rounded-2xl ${
+                        isSelected ? 'bg-primary-500' : 'bg-surface-card'
+                      }`}
+                    >
+                      <Ionicons
+                        name={mt.icon}
+                        size={18}
+                        color={isSelected ? c.onPrimary : c.textTertiary}
+                      />
+                      <Text
+                        className={`text-xs font-sans-medium mt-1 ${
+                          isSelected ? 'text-on-primary' : 'text-text-tertiary'
+                        }`}
+                      >
+                        {t(`mealTypes.${mt.key}`)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-            ))}
+            </Animated.View>
+
+            {/* Items preview */}
+            <Animated.View entering={FadeInDown.duration(300).delay(150)}>
+              <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider mb-2">
+                {t('template.itemsInMeal')}
+              </Text>
+              <Card>
+                {itemNames.map((itemName, idx) => (
+                  <View
+                    key={`item-${idx}`}
+                    className={`flex-row items-center py-3 ${
+                      idx > 0 ? 'border-t border-surface-border' : ''
+                    }`}
+                  >
+                    <View className="h-8 w-8 rounded-xl bg-surface-secondary items-center justify-center mr-3">
+                      <Ionicons name="nutrition-outline" size={16} color={c.textTertiary} />
+                    </View>
+                    <Text className="text-sm font-sans-medium text-text flex-1" numberOfLines={1}>
+                      {itemName}
+                    </Text>
+                  </View>
+                ))}
+              </Card>
+            </Animated.View>
           </View>
         </ScrollView>
 
         {/* Save button */}
-        <View className="px-5 pb-6 pt-3">
-          <Pressable
+        <View className="px-5 pt-3" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+          <Button
             onPress={handleSave}
+            loading={saving}
             disabled={saving || !name.trim()}
-            className={`rounded-2xl py-4 items-center ${
-              saving || !name.trim() ? 'bg-surface-tertiary' : 'bg-primary-500'
-            }`}
-            style={{
-              shadowColor: c.shadow,
-              shadowOpacity: 0.2,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 4,
-            }}
+            accessibilityLabel={t('template.saveTemplate')}
           >
-            {saving ? (
-              <ActivityIndicator color={c.text} />
-            ) : (
-              <Text className="text-base font-sans-bold text-on-primary">
-                {t('template.saveTemplate')}
-              </Text>
-            )}
-          </Pressable>
+            {t('template.saveTemplate')}
+          </Button>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

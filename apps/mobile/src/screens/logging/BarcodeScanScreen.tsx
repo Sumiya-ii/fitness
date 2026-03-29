@@ -1,17 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { BackButton, Button, BottomSheet } from '../../components/ui';
+import { BackButton, Button, BottomSheet, EmptyState } from '../../components/ui';
 import { mealsApi, type BarcodeLookupResult } from '../../api/meals';
 import type { LogStackScreenProps } from '../../navigation/types';
 import { useLocale } from '../../i18n';
@@ -21,6 +15,7 @@ type Props = LogStackScreenProps<'BarcodeScan'>;
 
 export function BarcodeScanScreen() {
   const { t } = useLocale();
+  const c = useColors();
   const { width } = useWindowDimensions();
   const scanFrameSize = width * 0.7;
   const navigation = useNavigation<Props['navigation']>();
@@ -42,6 +37,7 @@ export function BarcodeScanScreen() {
     setLoading(true);
     setResult(null);
     setNotFound(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       const res = await mealsApi.barcodeLookup(data);
       setResult(res.data);
@@ -57,6 +53,7 @@ export function BarcodeScanScreen() {
     setScanned(false);
     setResult(null);
     setNotFound(false);
+    setQuantity(1);
   }, []);
 
   const handleSubmitProduct = useCallback(() => {
@@ -80,6 +77,7 @@ export function BarcodeScanScreen() {
           },
         ],
       });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch {
       // show error
@@ -88,29 +86,36 @@ export function BarcodeScanScreen() {
     }
   };
 
-  const c = useColors();
+  const handleAdjustQuantity = (delta: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setQuantity((q) => Math.max(0.5, q + delta));
+  };
 
+  // Permission loading
   if (!permission) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-surface">
+      <SafeAreaView className="flex-1 items-center justify-center bg-surface-app">
         <ActivityIndicator size="large" color={c.primary} />
       </SafeAreaView>
     );
   }
 
+  // Permission denied
   if (!permission.granted) {
     return (
-      <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-        <View className="flex-row items-center border-b border-surface-border px-4 py-3">
+      <SafeAreaView className="flex-1 bg-surface-app" edges={['top']}>
+        <View className="flex-row items-center px-5 py-3">
           <BackButton />
           <Text className="ml-3 text-lg font-sans-semibold text-text">
             {t('logging.scanBarcode')}
           </Text>
         </View>
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="mb-4 text-center text-text">{t('barcode.cameraRequired')}</Text>
-          <Button onPress={requestPermission}>{t('barcode.grantPermission')}</Button>
-        </View>
+        <EmptyState
+          icon="barcode"
+          title={t('barcode.cameraRequired')}
+          actionLabel={t('barcode.grantPermission')}
+          onAction={requestPermission}
+        />
       </SafeAreaView>
     );
   }
@@ -118,21 +123,34 @@ export function BarcodeScanScreen() {
   return (
     <View className="flex-1 bg-black">
       <CameraView
-        style={StyleSheet.absoluteFill}
+        className="absolute inset-0"
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
         }}
       />
-      {/* Overlay frame */}
-      <View style={styles.overlay} pointerEvents="none">
-        <View style={[styles.frame, { width: scanFrameSize, height: scanFrameSize }]} />
+
+      {/* Overlay */}
+      <View
+        className="absolute inset-0 items-center justify-center bg-black/40"
+        pointerEvents="none"
+      >
+        <View
+          className="rounded-xl border-2"
+          style={{
+            width: scanFrameSize,
+            height: scanFrameSize,
+            borderColor: c.primary,
+            backgroundColor: 'transparent',
+          }}
+        />
       </View>
 
-      <SafeAreaView style={StyleSheet.absoluteFill} edges={['top']} className="justify-between">
-        <View className="flex-row items-center px-4 py-3">
+      {/* Header + Controls */}
+      <SafeAreaView className="absolute inset-0 justify-between" edges={['top']}>
+        <View className="flex-row items-center px-5 py-3">
           <BackButton variant="overlay" />
-          <Text className="ml-4 text-lg font-sans-semibold text-text">
+          <Text className="ml-4 text-lg font-sans-semibold text-white">
             {t('logging.scanBarcode')}
           </Text>
         </View>
@@ -140,20 +158,26 @@ export function BarcodeScanScreen() {
         {loading && (
           <View className="items-center py-8">
             <ActivityIndicator size="large" color="#ffffff" />
-            <Text className="mt-2 text-text">{t('barcode.lookingUp')}</Text>
+            <Text className="mt-3 text-white font-sans-medium text-base">
+              {t('barcode.lookingUp')}
+            </Text>
           </View>
         )}
 
-        <View className="px-4 pb-8">
+        <View className="px-5 pb-8">
           {scanned && !loading && (
-            <Button variant="secondary" onPress={resetScan}>
+            <Button
+              variant="secondary"
+              onPress={resetScan}
+              accessibilityLabel={t('barcode.scanAgain')}
+            >
               {t('barcode.scanAgain')}
             </Button>
           )}
         </View>
       </SafeAreaView>
 
-      {/* Result BottomSheet */}
+      {/* Result bottom sheet */}
       <BottomSheet
         visible={!!result && !loading}
         onClose={() => {
@@ -163,41 +187,49 @@ export function BarcodeScanScreen() {
       >
         {result && (
           <View>
-            <Text className="mb-2 text-lg font-sans-semibold text-text">{result.food.name}</Text>
+            <Text className="mb-1 text-lg font-sans-semibold text-text">{result.food.name}</Text>
             {result.food.nutrients && (
-              <Text className="mb-4 text-sm text-text-secondary">
+              <Text className="mb-5 text-sm text-text-secondary">
                 {result.food.nutrients.caloriesPer100g} cal / 100g
               </Text>
             )}
-            <View className="mb-4 flex-row items-center justify-center gap-4">
+
+            {/* Quantity adjuster */}
+            <View className="mb-5 flex-row items-center justify-center gap-6">
               <Pressable
-                onPress={() => setQuantity((q) => Math.max(0.5, q - 0.5))}
-                className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
+                onPress={() => handleAdjustQuantity(-0.5)}
+                className="h-11 w-11 items-center justify-center rounded-full bg-surface-secondary active:opacity-70"
                 accessibilityRole="button"
                 accessibilityLabel="Decrease quantity"
               >
-                <Ionicons name="remove" size={24} color="#777985" />
+                <Ionicons name="remove" size={22} color={c.textSecondary} />
               </Pressable>
-              <Text className="min-w-[60px] text-center text-xl font-sans-bold text-text">
+              <Text className="min-w-[60px] text-center text-2xl font-sans-bold text-text">
                 {quantity}
               </Text>
               <Pressable
-                onPress={() => setQuantity((q) => q + 0.5)}
-                className="h-10 w-10 items-center justify-center rounded-full bg-surface-secondary"
+                onPress={() => handleAdjustQuantity(0.5)}
+                className="h-11 w-11 items-center justify-center rounded-full bg-surface-secondary active:opacity-70"
                 accessibilityRole="button"
                 accessibilityLabel="Increase quantity"
               >
-                <Ionicons name="add" size={24} color="#777985" />
+                <Ionicons name="add" size={22} color={c.textSecondary} />
               </Pressable>
             </View>
-            <Button onPress={handleSaveFromResult} loading={saving} disabled={saving}>
+
+            <Button
+              onPress={handleSaveFromResult}
+              loading={saving}
+              disabled={saving}
+              accessibilityLabel={t('logging.addToLog')}
+            >
               {t('logging.addToLog')}
             </Button>
           </View>
         )}
       </BottomSheet>
 
-      {/* Not found BottomSheet */}
+      {/* Not found bottom sheet */}
       <BottomSheet
         visible={notFound && !loading}
         onClose={() => {
@@ -206,28 +238,20 @@ export function BarcodeScanScreen() {
         }}
       >
         <View className="items-center">
+          <View className="mb-4 h-16 w-16 rounded-full bg-surface-secondary items-center justify-center">
+            <Ionicons name="help-outline" size={32} color={c.textTertiary} />
+          </View>
           <Text className="mb-2 text-center text-lg font-sans-semibold text-text">
             {t('barcode.productNotFound')}
           </Text>
-          <Text className="mb-6 text-center text-text-secondary">{t('barcode.notFoundDesc')}</Text>
-          <Button onPress={handleSubmitProduct}>{t('barcode.submitProduct')}</Button>
+          <Text className="mb-6 text-center text-sm text-text-secondary leading-5">
+            {t('barcode.notFoundDesc')}
+          </Text>
+          <Button onPress={handleSubmitProduct} accessibilityLabel={t('barcode.submitProduct')}>
+            {t('barcode.submitProduct')}
+          </Button>
         </View>
       </BottomSheet>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  frame: {
-    borderWidth: 2,
-    borderColor: '#1f2028',
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-  },
-});
