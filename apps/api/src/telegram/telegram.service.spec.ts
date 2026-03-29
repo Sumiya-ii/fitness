@@ -5,9 +5,7 @@ import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
 
 function hashLinkCode(code: string): string {
-  return createHmac('sha256', process.env.LINK_CODE_SECRET || 'coach-link-code-key')
-    .update(code)
-    .digest('hex');
+  return createHmac('sha256', process.env.LINK_CODE_SECRET!).update(code).digest('hex');
 }
 
 const mockRedis = {
@@ -24,8 +22,11 @@ describe('TelegramService', () => {
   let service: TelegramService;
   let prisma: Record<string, Record<string, jest.Mock>>;
   let config: { get: jest.Mock };
+  let originalEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
+    originalEnv = { ...process.env };
+    process.env.LINK_CODE_SECRET = 'test-secret';
     jest.clearAllMocks();
     config = { get: jest.fn().mockReturnValue('redis://localhost:6379') };
     prisma = {
@@ -44,6 +45,10 @@ describe('TelegramService', () => {
       prisma as unknown as PrismaService,
       config as unknown as ConfigService,
     );
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   describe('generateLinkCode', () => {

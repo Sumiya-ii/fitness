@@ -53,17 +53,28 @@ export class AdaptiveTargetService {
     const fourWeeksAgo = new Date();
     fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
 
+    // Batch-fetch all weight logs for all affected users in a single query (avoids N+1)
+    const userIds = targets.map((t) => t.userId);
+    const allWeightLogs = await this.prisma.weightLog.findMany({
+      where: {
+        userId: { in: userIds },
+        loggedAt: { gte: fourWeeksAgo },
+      },
+      orderBy: { loggedAt: 'asc' },
+      select: { userId: true, loggedAt: true, weightKg: true },
+    });
+
+    const weightLogsByUser = new Map<string, typeof allWeightLogs>();
+    for (const log of allWeightLogs) {
+      const bucket = weightLogsByUser.get(log.userId) ?? [];
+      bucket.push(log);
+      weightLogsByUser.set(log.userId, bucket);
+    }
+
     let adjusted = 0;
 
     for (const target of targets) {
-      const weightLogs = await this.prisma.weightLog.findMany({
-        where: {
-          userId: target.userId,
-          loggedAt: { gte: fourWeeksAgo },
-        },
-        orderBy: { loggedAt: 'asc' },
-        select: { loggedAt: true, weightKg: true },
-      });
+      const weightLogs = weightLogsByUser.get(target.userId) ?? [];
 
       const entries: WeightEntry[] = weightLogs.map((w) => ({
         date: (w.loggedAt as Date).toISOString().split('T')[0]!,

@@ -61,7 +61,7 @@ export class MealLogsService {
         totalSodium,
         totalSaturatedFat,
         items: {
-          create: itemSnapshots,
+          create: itemSnapshots.map((snapshot) => ({ ...snapshot, userId })),
         },
       },
       include: { items: true },
@@ -88,6 +88,7 @@ export class MealLogsService {
         totalSaturatedFat: dto.saturatedFatGrams ?? null,
         items: {
           create: {
+            userId,
             quantity: 1,
             servingLabel: 'Quick Add',
             gramsPerUnit: 0,

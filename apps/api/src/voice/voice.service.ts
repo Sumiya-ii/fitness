@@ -117,10 +117,10 @@ export class VoiceService {
         transcription: draft.transcription ?? undefined,
         mealType: draft.mealType ?? null,
         items: (draft.parsedItems as ParsedFoodItem[] | null) ?? undefined,
-        totalCalories: draft.totalCalories ?? undefined,
-        totalProtein: draft.totalProtein ?? undefined,
-        totalCarbs: draft.totalCarbs ?? undefined,
-        totalFat: draft.totalFat ?? undefined,
+        totalCalories: draft.totalCalories != null ? Number(draft.totalCalories) : undefined,
+        totalProtein: draft.totalProtein != null ? Number(draft.totalProtein) : undefined,
+        totalCarbs: draft.totalCarbs != null ? Number(draft.totalCarbs) : undefined,
+        totalFat: draft.totalFat != null ? Number(draft.totalFat) : undefined,
       };
     }
 

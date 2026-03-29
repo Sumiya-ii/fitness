@@ -3,15 +3,20 @@ import { APP_NAME } from '@coach/shared';
 import { Public } from '../auth';
 import { SkipThrottle } from '@nestjs/throttler';
 import { QueueHealthService, QueueHealthStatus } from '../queue';
+import { PrismaService } from '../prisma';
 
 @SkipThrottle()
 @Controller('health')
 export class HealthController {
-  constructor(private readonly queueHealth: QueueHealthService) {}
+  constructor(
+    private readonly queueHealth: QueueHealthService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Public()
   @Get()
-  check() {
+  async check() {
+    await this.prisma.$queryRaw`SELECT 1`;
     return {
       status: 'ok',
       app: APP_NAME,

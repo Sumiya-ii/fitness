@@ -20,6 +20,7 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
   app.setGlobalPrefix(API_PREFIX);
   app.enableCors();
+  app.enableShutdownHooks();
 
   const config = app.get(ConfigService);
   const port = config.port;

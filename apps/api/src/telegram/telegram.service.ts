@@ -28,9 +28,9 @@ export class TelegramService implements OnModuleDestroy {
   }
 
   private hashLinkCode(code: string): string {
-    return createHmac('sha256', process.env.LINK_CODE_SECRET || 'coach-link-code-key')
-      .update(code)
-      .digest('hex');
+    const secret = process.env.LINK_CODE_SECRET;
+    if (!secret) throw new Error('LINK_CODE_SECRET environment variable is required');
+    return createHmac('sha256', secret).update(code).digest('hex');
   }
 
   /**

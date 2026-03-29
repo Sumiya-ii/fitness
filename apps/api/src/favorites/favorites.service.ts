@@ -28,14 +28,14 @@ export class FavoritesService {
 
   async getFavorites(userId: string, limit = 20) {
     const favorites = await this.prisma.favorite.findMany({
-      where: { userId, foodId: { not: null } },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
 
     if (favorites.length === 0) return [];
 
-    const foodIds = favorites.map((f) => f.foodId).filter((id): id is string => id !== null);
+    const foodIds = favorites.map((f) => f.foodId);
 
     const foods = await this.prisma.food.findMany({
       where: { id: { in: foodIds } },
@@ -46,7 +46,7 @@ export class FavoritesService {
 
     return favorites
       .map((fav) => {
-        const food = fav.foodId ? foodMap.get(fav.foodId) : null;
+        const food = foodMap.get(fav.foodId);
         if (!food) return null;
         const nutrient = food.nutrients[0];
         return {
@@ -65,7 +65,7 @@ export class FavoritesService {
   async getRecents(userId: string, limit = 20) {
     const recentItems = await this.prisma.mealLogItem.findMany({
       where: {
-        mealLog: { userId },
+        userId,
         foodId: { not: null },
       },
       orderBy: { createdAt: 'desc' },

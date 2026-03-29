@@ -224,7 +224,7 @@ export class MealTemplatesService {
           totalSugar,
           totalSodium,
           totalSaturatedFat,
-          items: { create: itemSnapshots },
+          items: { create: itemSnapshots.map((snapshot) => ({ ...snapshot, userId })) },
         },
         include: { items: true },
       }),

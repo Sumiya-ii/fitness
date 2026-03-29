@@ -8,9 +8,9 @@ export class PrivacyService {
   constructor(private readonly prisma: PrismaService) {}
 
   private hashIp(ip: string): string {
-    return createHmac('sha256', process.env.IP_HASH_SECRET || 'coach-ip-hash-key')
-      .update(ip)
-      .digest('hex');
+    const secret = process.env.IP_HASH_SECRET;
+    if (!secret) throw new Error('IP_HASH_SECRET environment variable is required');
+    return createHmac('sha256', secret).update(ip).digest('hex');
   }
 
   async createConsent(userId: string, dto: CreateConsentDto) {

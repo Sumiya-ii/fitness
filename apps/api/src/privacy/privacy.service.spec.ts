@@ -3,14 +3,13 @@ import { PrivacyService } from './privacy.service';
 import { PrismaService } from '../prisma';
 
 function hashIp(ip: string): string {
-  return createHmac('sha256', process.env.IP_HASH_SECRET || 'coach-ip-hash-key')
-    .update(ip)
-    .digest('hex');
+  return createHmac('sha256', process.env.IP_HASH_SECRET!).update(ip).digest('hex');
 }
 
 describe('PrivacyService', () => {
   let service: PrivacyService;
   let prisma: Record<string, Record<string, jest.Mock>>;
+  let originalEnv: NodeJS.ProcessEnv;
 
   const mockConsent = {
     id: 'consent-uuid',
@@ -35,6 +34,8 @@ describe('PrivacyService', () => {
   };
 
   beforeEach(() => {
+    originalEnv = { ...process.env };
+    process.env.IP_HASH_SECRET = 'test-secret';
     prisma = {
       consent: {
         create: jest
@@ -53,6 +54,10 @@ describe('PrivacyService', () => {
       },
     };
     service = new PrivacyService(prisma as unknown as PrismaService);
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   describe('createConsent', () => {
