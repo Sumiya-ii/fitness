@@ -17,12 +17,16 @@ export class WaterLogsController {
   }
 
   @Get()
-  async getDaily(@CurrentUser() user: AuthenticatedUser, @Query('date') date?: string) {
-    return { data: await this.waterLogsService.getDaily(user.id, date) };
+  async getDaily(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('date') date?: string,
+    @Query('tz') tz?: string,
+  ) {
+    return { data: await this.waterLogsService.getDaily(user.id, date, tz) };
   }
 
   @Delete('last')
-  async deleteLast(@CurrentUser() user: AuthenticatedUser) {
-    return { data: await this.waterLogsService.deleteLast(user.id) };
+  async deleteLast(@CurrentUser() user: AuthenticatedUser, @Query('tz') tz?: string) {
+    return { data: await this.waterLogsService.deleteLast(user.id, tz) };
   }
 }

@@ -48,6 +48,7 @@ export const updateMealLogSchema = z.object({
 
 export const mealLogQuerySchema = z.object({
   date: z.string().date().optional(),
+  tz: z.string().max(50).optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
 });

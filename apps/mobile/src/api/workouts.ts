@@ -1,6 +1,7 @@
 import { api } from './client';
 import { isNetworkError, offlineQueue } from '../services/offlineQueue';
 import { useSyncStore } from '../stores/sync.store';
+import { getDeviceTimezone } from '../utils/timezone';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -105,8 +106,8 @@ export const workoutsApi = {
     if (params?.days) qs.set('days', String(params.days));
     if (params?.page) qs.set('page', String(params.page));
     if (params?.limit) qs.set('limit', String(params.limit));
-    const q = qs.toString();
-    return api.get<{ data: WorkoutLog[]; meta: ListMeta }>(`/workout-logs${q ? `?${q}` : ''}`);
+    qs.set('tz', getDeviceTimezone());
+    return api.get<{ data: WorkoutLog[]; meta: ListMeta }>(`/workout-logs?${qs}`);
   },
 
   /** Get single workout */

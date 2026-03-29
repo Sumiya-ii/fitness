@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { dayBoundariesUTC } from '@coach/shared';
+import { dayBoundaries, toDateKeyInTZ } from '@coach/shared';
 import { PrismaService } from '../prisma';
 
 export interface DayHistory {
@@ -19,10 +19,9 @@ export interface DayHistory {
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDailyDashboard(userId: string, dateStr?: string) {
+  async getDailyDashboard(userId: string, dateStr?: string, tz?: string) {
     const dateKey = dateStr ?? new Date().toISOString().split('T')[0]!;
-    // Use explicit UTC boundaries to avoid server-timezone day-boundary drift
-    const { dayStart, dayEnd } = dayBoundariesUTC(dateKey);
+    const { dayStart, dayEnd } = dayBoundaries(dateKey, tz);
 
     const [mealLogs, target, waterLogs, profile, workoutEntries] = await Promise.all([
       this.prisma.mealLog.findMany({
@@ -170,15 +169,15 @@ export class DashboardService {
     };
   }
 
-  async getHistory(userId: string, days: number) {
+  async getHistory(userId: string, days: number, tz?: string) {
     const now = new Date();
     const endKey = now.toISOString().split('T')[0]!;
-    const end = new Date(endKey + 'T23:59:59.999Z');
+    const { dayEnd: end } = dayBoundaries(endKey, tz);
 
     const startDate = new Date(now);
     startDate.setUTCDate(startDate.getUTCDate() - days + 1);
     const startKey = startDate.toISOString().split('T')[0]!;
-    const start = new Date(startKey + 'T00:00:00.000Z');
+    const { dayStart: start } = dayBoundaries(startKey, tz);
 
     const [mealLogs, waterLogs, target] = await Promise.all([
       this.prisma.mealLog.findMany({
@@ -209,7 +208,7 @@ export class DashboardService {
     for (let i = 0; i < days; i++) {
       const d = new Date(start);
       d.setUTCDate(d.getUTCDate() + i);
-      const key = d.toISOString().split('T')[0]!;
+      const key = toDateKeyInTZ(d, tz);
       byDate.set(key, {
         date: key,
         calories: 0,
@@ -225,7 +224,7 @@ export class DashboardService {
     }
 
     for (const log of mealLogs) {
-      const key = log.loggedAt.toISOString().split('T')[0]!;
+      const key = toDateKeyInTZ(log.loggedAt, tz);
       const day = byDate.get(key);
       if (day) {
         day.calories += log.totalCalories ?? 0;
@@ -248,7 +247,7 @@ export class DashboardService {
     }
 
     for (const log of waterLogs) {
-      const key = log.loggedAt.toISOString().split('T')[0]!;
+      const key = toDateKeyInTZ(log.loggedAt, tz);
       const day = byDate.get(key);
       if (day) {
         day.waterMl += log.amountMl;

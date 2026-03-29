@@ -1,4 +1,5 @@
 import { api } from './client';
+import { getDeviceTimezone } from '../utils/timezone';
 
 export interface WaterEntry {
   id: string;
@@ -17,9 +18,13 @@ export const waterApi = {
     api.post<{ data: WaterEntry }>('/water-logs', loggedAt ? { amountMl, loggedAt } : { amountMl }),
 
   getDaily: (date?: string) => {
-    const params = date ? `?date=${date}` : '';
-    return api.get<{ data: WaterDailyData }>(`/water-logs${params}`);
+    const params = new URLSearchParams({ tz: getDeviceTimezone() });
+    if (date) params.set('date', date);
+    return api.get<{ data: WaterDailyData }>(`/water-logs?${params}`);
   },
 
-  deleteLast: () => api.delete<{ data: { deleted: boolean } }>('/water-logs/last'),
+  deleteLast: () => {
+    const tz = encodeURIComponent(getDeviceTimezone());
+    return api.delete<{ data: { deleted: boolean } }>(`/water-logs/last?tz=${tz}`);
+  },
 };

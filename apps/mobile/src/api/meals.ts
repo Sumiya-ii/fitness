@@ -1,6 +1,7 @@
 import { api } from './client';
 import { isNetworkError, offlineQueue } from '../services/offlineQueue';
 import { useSyncStore } from '../stores/sync.store';
+import { getDeviceTimezone } from '../utils/timezone';
 
 export interface FoodNutrients {
   caloriesPer100g: number;
@@ -240,6 +241,7 @@ export const mealsApi = {
   getMealLogs: (date?: string, page = 1, limit = 50) => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (date) params.set('date', date);
+    params.set('tz', getDeviceTimezone());
     return api.get<{
       data: MealLog[];
       meta: { total: number; page: number; limit: number; totalPages: number };

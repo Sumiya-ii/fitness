@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import {
-  dayBoundariesUTC,
+  dayBoundaries,
   computeItemSnapshot,
   aggregateNutritionTotals,
   FoodData,
@@ -130,8 +130,7 @@ export class MealLogsService {
     const where: { userId: string; loggedAt?: { gte: Date; lt: Date } } = { userId };
 
     if (query.date) {
-      // Parse as UTC to avoid server-timezone day-boundary drift
-      const { dayStart, dayEnd } = dayBoundariesUTC(query.date);
+      const { dayStart, dayEnd } = dayBoundaries(query.date, query.tz);
       where.loggedAt = { gte: dayStart, lt: dayEnd };
     }
 

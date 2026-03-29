@@ -1,5 +1,7 @@
 import { create } from 'zustand';
+import { toLocalDateKey } from '@coach/shared';
 import { api } from '../api';
+import { getDeviceTimezone } from '../utils/timezone';
 
 export interface DashboardMealItem {
   id: string;
@@ -57,20 +59,19 @@ interface DashboardState {
   fetchDashboard: (date?: string) => Promise<void>;
 }
 
-function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-
 export const useDashboardStore = create<DashboardState>((set) => ({
   data: null,
   isLoading: false,
   error: null,
 
   fetchDashboard: async (date?: string) => {
-    const dateStr = date ?? formatDate(new Date());
+    const dateStr = date ?? toLocalDateKey(new Date());
+    const tz = getDeviceTimezone();
     set({ isLoading: true, error: null });
     try {
-      const res = await api.get<{ data: DashboardData }>(`/dashboard?date=${dateStr}`);
+      const res = await api.get<{ data: DashboardData }>(
+        `/dashboard?date=${dateStr}&tz=${encodeURIComponent(tz)}`,
+      );
       set({ data: res.data, isLoading: false, error: null });
     } catch (e) {
       set({

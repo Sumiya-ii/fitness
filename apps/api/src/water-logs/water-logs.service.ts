@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { dayBoundariesUTC } from '@coach/shared';
+import { dayBoundaries } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import { AddWaterDto } from './water-logs.dto';
 
@@ -23,10 +23,9 @@ export class WaterLogsService {
     };
   }
 
-  async getDaily(userId: string, dateStr?: string) {
+  async getDaily(userId: string, dateStr?: string, tz?: string) {
     const dateKey = dateStr ?? new Date().toISOString().split('T')[0]!;
-    // Explicit UTC boundaries to avoid server-timezone day-boundary drift
-    const { dayStart, dayEnd } = dayBoundariesUTC(dateKey);
+    const { dayStart, dayEnd } = dayBoundaries(dateKey, tz);
 
     const [entries, profile] = await Promise.all([
       this.prisma.waterLog.findMany({
@@ -53,9 +52,9 @@ export class WaterLogsService {
     };
   }
 
-  async deleteLast(userId: string) {
+  async deleteLast(userId: string, tz?: string) {
     const todayKey = new Date().toISOString().split('T')[0]!;
-    const { dayStart, dayEnd } = dayBoundariesUTC(todayKey);
+    const { dayStart, dayEnd } = dayBoundaries(todayKey, tz);
 
     const last = await this.prisma.waterLog.findFirst({
       where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
