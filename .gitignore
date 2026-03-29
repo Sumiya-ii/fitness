@@ -55,3 +55,6 @@ google-services.json
 # Claude Code
 .claude/
 !.claude/commands/
+!.claude/agents/
+claude-notes/
+
