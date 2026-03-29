@@ -1,0 +1,20 @@
+{
+  "name": "@coach/integration-test",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "test:integration": "jest --runInBand"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.3.0",
+    "openai": "^6.26.0",
+    "@google-cloud/speech": "^7.3.0",
+    "@google/generative-ai": "^0.24.1",
+    "luxon": "^3.5.0",
+    "@types/luxon": "^3.4.0"
+  }
+}
