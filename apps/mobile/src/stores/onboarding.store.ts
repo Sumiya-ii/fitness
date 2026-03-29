@@ -36,14 +36,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   syncProfileSetupStatus: async () => {
     set({ profileSetupComplete: null });
     try {
-      const response = await api.get<{ data: { completed: boolean } }>(
-        '/onboarding/status',
-      );
+      const response = await api.get<{ data: { completed: boolean } }>('/onboarding/status');
       const completed = response.data.completed === true;
-      await AsyncStorage.setItem(
-        PROFILE_SETUP_COMPLETE_KEY,
-        completed ? 'true' : 'false',
-      );
+      await AsyncStorage.setItem(PROFILE_SETUP_COMPLETE_KEY, completed ? 'true' : 'false');
       set({ profileSetupComplete: completed });
     } catch {
       try {

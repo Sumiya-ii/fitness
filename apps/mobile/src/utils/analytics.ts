@@ -50,7 +50,7 @@ async function sendEvent(
   event: string,
   properties?: Record<string, unknown>,
   sessionId?: string,
-  platform?: string
+  platform?: string,
 ): Promise<boolean> {
   const token = await api.getToken();
   if (!token) return false;
@@ -83,12 +83,7 @@ export async function flushAnalyticsQueue(): Promise<void> {
 
   const failed: QueuedEvent[] = [];
   for (const item of queue) {
-    const ok = await sendEvent(
-      item.event,
-      item.properties,
-      item.sessionId,
-      item.platform
-    );
+    const ok = await sendEvent(item.event, item.properties, item.sessionId, item.platform);
     if (!ok) failed.push(item);
   }
 
@@ -101,7 +96,7 @@ export async function flushAnalyticsQueue(): Promise<void> {
  */
 export async function trackEvent(
   event: string,
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
 ): Promise<void> {
   const sessionId = `session_${Date.now()}`;
   const platform = 'mobile';

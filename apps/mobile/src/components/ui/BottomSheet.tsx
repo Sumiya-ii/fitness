@@ -17,12 +17,7 @@ export interface BottomSheetProps {
   className?: string;
 }
 
-export function BottomSheet({
-  visible,
-  onClose,
-  children,
-  className = '',
-}: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, children, className = '' }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
   const backdropOpacity = useSharedValue(0);
   const translateY = useSharedValue(300);
@@ -73,10 +68,7 @@ export function BottomSheet({
       onRequestClose={onClose}
     >
       <View className="flex-1 justify-end">
-        <Animated.View
-          style={backdropStyle}
-          className="absolute inset-0 bg-black/50"
-        >
+        <Animated.View style={backdropStyle} className="absolute inset-0 bg-black/50">
           <Pressable
             className="flex-1"
             onPress={onClose}
