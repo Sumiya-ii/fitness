@@ -19,7 +19,8 @@ Coach has a solid NestJS/Prisma backend with the right architectural patterns. T
 ---
 
 ## Priority 1 — Core Data Model & Calculation Fixes
-*Must-haves. Everything downstream depends on these being right.*
+
+_Must-haves. Everything downstream depends on these being right._
 
 ---
 
@@ -76,6 +77,7 @@ Coach has a solid NestJS/Prisma backend with the right architectural patterns. T
 **Coach today**: Uses Harris-Benedict in `target-calculator.ts`.
 
 **Mifflin-St Jeor formulas**:
+
 - Men: `BMR = (10 × weight_kg) + (6.25 × height_cm) − (5 × age_years) + 5`
 - Women: `BMR = (10 × weight_kg) + (6.25 × height_cm) − (5 × age_years) − 161`
 
@@ -146,7 +148,8 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 ---
 
 ## Priority 2 — Food Logging Completeness
-*Without these, users hit walls in daily logging and churn.*
+
+_Without these, users hit walls in daily logging and churn._
 
 ---
 
@@ -190,6 +193,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 **What to build**:
 
 1. **New `SavedMeal` model**:
+
    ```prisma
    model SavedMeal {
      id        String   @id @default(uuid())
@@ -237,6 +241,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 **What to build**:
 
 1. **New Prisma models**:
+
    ```prisma
    model Recipe {
      id           String         @id @default(uuid())
@@ -309,7 +314,8 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 ---
 
 ## Priority 3 — Body Composition & Advanced Goals
-*The second layer of engagement and retention after daily logging.*
+
+_The second layer of engagement and retention after daily logging._
 
 ---
 
@@ -342,6 +348,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 **What to build**:
 
 1. **New `BodyMeasurementLog` model**:
+
    ```prisma
    model BodyMeasurementLog {
      id         String   @id @default(uuid())
@@ -388,6 +395,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 1. **`Profile` model** — add `caloriRolloverEnabled` (boolean, default false).
 
 2. **New `CalorieRolloverLog` model** (tracks rollover state per day):
+
    ```prisma
    model CalorieRolloverLog {
      id           String   @id @default(uuid())
@@ -422,13 +430,15 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 ---
 
 ## Priority 4 — Platform Integrations
-*Major retention and accuracy boost, but requires mobile-side work too.*
+
+_Major retention and accuracy boost, but requires mobile-side work too._
 
 ---
 
 ### P4.1 — Apple Health / HealthKit Integration
 
 **Cal AI**: Reads and writes Apple HealthKit:
+
 - **Reads**: step count, active calories burned, workout sessions, weight, water intake
 - **Writes**: nutrition data (calories, protein, carbs, fat) back to Health app
 
@@ -437,6 +447,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 **Backend requirements** (mobile does the HealthKit calls, backend receives the data):
 
 1. **New endpoint `POST /api/v1/health-sync`** — mobile sends daily HealthKit summary:
+
    ```typescript
    {
      date: string,           // YYYY-MM-DD
@@ -496,7 +507,8 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 ---
 
 ## Priority 5 — Enhanced Food Database
-*Grows food coverage to match Cal AI's reach.*
+
+_Grows food coverage to match Cal AI's reach._
 
 ---
 
@@ -552,6 +564,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 4. **`GET /api/v1/barcodes/:code`** — update to fall back to FatSecret barcode API when not found locally.
 
 **Environment variables to add**:
+
 - `FATSECRET_CLIENT_ID`
 - `FATSECRET_CLIENT_SECRET`
 - or `USDA_API_KEY` (free, no contract required)
@@ -561,7 +574,8 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 ---
 
 ## Priority 6 — AI & Recognition Enhancements
-*Closes the accuracy gap with Cal AI's vision pipeline.*
+
+_Closes the accuracy gap with Cal AI's vision pipeline._
 
 ---
 
@@ -574,6 +588,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 **What to build**:
 
 1. **Update `POST /api/v1/photos/upload`** — accept optional `depthData` field:
+
    ```typescript
    {
      photo: base64,
@@ -616,6 +631,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 1. **During photo/voice parsing** — after initial AI identification, retrieve top-5 matching foods from local DB/Typesense by name similarity.
 
 2. **Inject retrieved food records** into the second-pass AI prompt:
+
    ```
    "I've identified this as possibly 'buuz'. Here are the verified nutritional values for similar foods:
    - Буз (steamed dumpling, beef): 210 kcal, 12g protein, 18g carbs, 9g fat per 100g
@@ -633,7 +649,8 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 ---
 
 ## Priority 7 — Social & Advanced Features
-*Growth and retention layer. Implement last.*
+
+_Growth and retention layer. Implement last._
 
 ---
 
@@ -651,6 +668,7 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
    - GPT-4o prompt includes: current Target, dietPreference, last 30 days of MealLogs (most-eaten foods), any dietary restrictions from profile
 
 2. **`MealPlan` model**:
+
    ```prisma
    model MealPlan {
      id          String   @id @default(uuid())
@@ -695,27 +713,27 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 
 ## Summary Table (Prioritized)
 
-| # | Feature | Effort | Impact | Status |
-|---|---------|--------|--------|--------|
-| P1.1 | Expand nutrients (sodium, sugar, sat. fat) | M | High | Missing |
-| P1.2 | Mifflin-St Jeor BMR formula | XS | Medium | Wrong formula |
-| P1.3 | WorkoutLog API + calorie burn | M | High | Schema only |
-| P1.4 | Net calorie dashboard | S | High | Missing |
-| P2.1 | Custom user foods | M | High | Schema only |
-| P2.2 | Saved meal templates | M | High | Missing |
-| P2.3 | Recipe management | L | Medium | Missing |
-| P2.4 | Nutrition label OCR | S | Medium | Missing |
-| P3.1 | BMI calculation | XS | Low | Missing |
-| P3.2 | Body composition (US Navy) | M | Medium | Missing |
-| P3.3 | Rollover calories | M | Medium | Missing |
-| P4.1 | Apple Health / Google Fit sync | L | High | Missing |
-| P4.2 | Data export CSV | S | Medium | Stub only |
-| P5.1 | Mongolian restaurant DB | M | Medium | Missing |
-| P5.2 | FatSecret/USDA integration | L | High | Missing |
-| P6.1 | LiDAR-assisted portions | M | Medium | Missing |
-| P6.2 | RAG-augmented recognition | M | Medium | Missing |
-| P7.1 | AI meal planning | L | Medium | Missing |
-| P7.2 | Social groups | XL | Low | Missing |
+| #    | Feature                                    | Effort | Impact | Status        |
+| ---- | ------------------------------------------ | ------ | ------ | ------------- |
+| P1.1 | Expand nutrients (sodium, sugar, sat. fat) | M      | High   | Missing       |
+| P1.2 | Mifflin-St Jeor BMR formula                | XS     | Medium | Wrong formula |
+| P1.3 | WorkoutLog API + calorie burn              | M      | High   | Schema only   |
+| P1.4 | Net calorie dashboard                      | S      | High   | Missing       |
+| P2.1 | Custom user foods                          | M      | High   | Schema only   |
+| P2.2 | Saved meal templates                       | M      | High   | Missing       |
+| P2.3 | Recipe management                          | L      | Medium | Missing       |
+| P2.4 | Nutrition label OCR                        | S      | Medium | Missing       |
+| P3.1 | BMI calculation                            | XS     | Low    | Missing       |
+| P3.2 | Body composition (US Navy)                 | M      | Medium | Missing       |
+| P3.3 | Rollover calories                          | M      | Medium | Missing       |
+| P4.1 | Apple Health / Google Fit sync             | L      | High   | Missing       |
+| P4.2 | Data export CSV                            | S      | Medium | Stub only     |
+| P5.1 | Mongolian restaurant DB                    | M      | Medium | Missing       |
+| P5.2 | FatSecret/USDA integration                 | L      | High   | Missing       |
+| P6.1 | LiDAR-assisted portions                    | M      | Medium | Missing       |
+| P6.2 | RAG-augmented recognition                  | M      | Medium | Missing       |
+| P7.1 | AI meal planning                           | L      | Medium | Missing       |
+| P7.2 | Social groups                              | XL     | Low    | Missing       |
 
 **Effort**: XS = hours, S = 1 day, M = 2–4 days, L = 1 week, XL = 2+ weeks
 
@@ -725,16 +743,16 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 
 For reference — areas where Coach's backend is architecturally superior:
 
-| Feature | Coach | Cal AI |
-|---|---|---|
-| Database | PostgreSQL + Prisma (relational, typed, safe) | Firebase NoSQL (flexible but breach-prone) |
-| Auth | Firebase Auth + JWT (industry standard) | Firebase + 4-digit PIN (criticized as weak) |
-| Multi-channel notifications | Push + Telegram + Email infrastructure | Push only (at launch) |
-| AI coach memory | Persistent CoachMemory model per category | No persistent coach memory |
-| Meal timing insights | Dedicated BullMQ processor | Not documented |
-| Adaptive target | Automatic target adjustment processor | Not documented |
-| Webhook idempotency | IdempotencyKey model (safe replay) | Not documented |
-| Audit logging | Full AuditLog model | Not documented |
-| Localization | Mongolian-first, multi-locale food model | English-first |
-| Moderation queue | Admin moderation workflow built-in | Not documented |
-| Privacy / GDPR | Consent model, export/deletion flows | Retroactive (breach was unauthenticated) |
+| Feature                     | Coach                                         | Cal AI                                      |
+| --------------------------- | --------------------------------------------- | ------------------------------------------- |
+| Database                    | PostgreSQL + Prisma (relational, typed, safe) | Firebase NoSQL (flexible but breach-prone)  |
+| Auth                        | Firebase Auth + JWT (industry standard)       | Firebase + 4-digit PIN (criticized as weak) |
+| Multi-channel notifications | Push + Telegram + Email infrastructure        | Push only (at launch)                       |
+| AI coach memory             | Persistent CoachMemory model per category     | No persistent coach memory                  |
+| Meal timing insights        | Dedicated BullMQ processor                    | Not documented                              |
+| Adaptive target             | Automatic target adjustment processor         | Not documented                              |
+| Webhook idempotency         | IdempotencyKey model (safe replay)            | Not documented                              |
+| Audit logging               | Full AuditLog model                           | Not documented                              |
+| Localization                | Mongolian-first, multi-locale food model      | English-first                               |
+| Moderation queue            | Admin moderation workflow built-in            | Not documented                              |
+| Privacy / GDPR              | Consent model, export/deletion flows          | Retroactive (breach was unauthenticated)    |
