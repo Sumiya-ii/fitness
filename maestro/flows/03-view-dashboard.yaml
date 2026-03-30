@@ -29,28 +29,18 @@ appId: com.coach.mobile
 - assertVisible: "Settings"
 
 # ── Dashboard calorie card ─────────────────────────────────────────────
-# The calorie card shows either "Calories left" or "Calories eaten"
-# depending on whether a target is set (dashboard.caloriesLeft / caloriesEaten).
-# We assert at least one of them is visible.
-- runFlow:
-    when:
-      visible: "Calories left"
-    commands:
-      - assertVisible: "Calories left"
-- runFlow:
-    when:
-      visible: "Calories eaten"
-    commands:
-      - assertVisible: "Calories eaten"
+# The calorie card Pressable has testID="calorie-card"
+- assertVisible:
+    id: "calorie-card"
 
 # ── Macro cards ────────────────────────────────────────────────────────
-# MacroCard components render the label text: Protein, Carbs, Fat
-# Labels appear as "Protein left", "Carbs left", "Fat left" (the "left" suffix
-# comes from the hardcoded " left" string in MacroCard).
-# We check for the root macro label text.
-- assertVisible: "Protein"
-- assertVisible: "Carbs"
-- assertVisible: "Fat"
+# Each MacroCard Pressable has a stable testID
+- assertVisible:
+    id: "macro-protein"
+- assertVisible:
+    id: "macro-carbs"
+- assertVisible:
+    id: "macro-fat"
 
 # ── Water widget (page 1 of carousel) ─────────────────────────────────
 # Swipe left on the nutrition carousel to reach page 1 which contains
@@ -61,6 +51,14 @@ appId: com.coach.mobile
 - waitForAnimationToEnd
 - assertVisible: "Water"
 
+# The water +/- buttons and count display have stable testIDs
+- assertVisible:
+    id: "water-count"
+- assertVisible:
+    id: "water-add-btn"
+- assertVisible:
+    id: "water-remove-btn"
+
 # Swipe back to page 0 (calorie page)
 - swipe:
     direction: RIGHT
@@ -68,11 +66,12 @@ appId: com.coach.mobile
 - waitForAnimationToEnd
 
 # ── Meals section header ───────────────────────────────────────────────
-# Whether meals exist or not, the section header "Recently added"
-# (dashboard.recentlyUploaded) renders below the carousel.
+# Whether meals exist or not, the section header renders below the carousel.
+# testID="recently-added-header" is set on the Text element.
 - scrollUntilVisible:
     element:
-      text: "Recently added"
+      id: "recently-added-header"
     direction: DOWN
     timeout: 5000
-- assertVisible: "Recently added"
+- assertVisible:
+    id: "recently-added-header"

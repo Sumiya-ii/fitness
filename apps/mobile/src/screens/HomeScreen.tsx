@@ -141,6 +141,7 @@ interface MacroCardProps {
   icon: string;
   showEaten: boolean;
   onToggle: () => void;
+  testID?: string;
 }
 
 function MacroCard({
@@ -154,11 +155,13 @@ function MacroCard({
   icon,
   showEaten,
   onToggle,
+  testID,
 }: MacroCardProps) {
   const c = useColors();
   const { t } = useLocale();
   return (
     <Pressable
+      testID={testID}
       className="flex-1 rounded-3xl p-4"
       style={{ backgroundColor: c.card }}
       onPress={onToggle}
@@ -933,6 +936,7 @@ export function HomeScreen() {
             <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
               {/* Calorie Card */}
               <Pressable
+                testID="calorie-card"
                 onPress={() => setShowEaten((v) => !v)}
                 className="rounded-3xl p-4 mb-3"
                 style={{ backgroundColor: c.card }}
@@ -998,6 +1002,7 @@ export function HomeScreen() {
               {/* Macro Cards */}
               <View className="flex-row gap-3">
                 <MacroCard
+                  testID="macro-protein"
                   label={t('dashboard.protein')}
                   leftAmount={proteinLeft}
                   eatenAmount={Math.round(consumed.protein)}
@@ -1010,6 +1015,7 @@ export function HomeScreen() {
                   onToggle={() => setShowEaten((v) => !v)}
                 />
                 <MacroCard
+                  testID="macro-carbs"
                   label={t('dashboard.carbs')}
                   leftAmount={carbsLeft}
                   eatenAmount={Math.round(consumed.carbs)}
@@ -1022,6 +1028,7 @@ export function HomeScreen() {
                   onToggle={() => setShowEaten((v) => !v)}
                 />
                 <MacroCard
+                  testID="macro-fat"
                   label={t('dashboard.fat')}
                   leftAmount={fatLeft}
                   eatenAmount={Math.round(consumed.fat)}
@@ -1114,6 +1121,7 @@ export function HomeScreen() {
                       <Text style={{ fontSize: 14 }}>💧</Text>
                     </ProgressArc>
                     <Text
+                      testID="water-count"
                       style={{
                         fontSize: 16,
                         fontFamily: 'Inter-Bold',
@@ -1131,6 +1139,7 @@ export function HomeScreen() {
                   </View>
                   <View className="flex-row items-center gap-2">
                     <Pressable
+                      testID="water-remove-btn"
                       onPress={() => removeCup(CUP_ML)}
                       disabled={effectiveWaterConsumed <= 0}
                       className="flex-1 h-8 rounded-xl items-center justify-center"
@@ -1143,6 +1152,7 @@ export function HomeScreen() {
                       />
                     </Pressable>
                     <Pressable
+                      testID="water-add-btn"
                       onPress={() => addWater(CUP_ML)}
                       className="flex-1 h-8 rounded-xl bg-primary-500 items-center justify-center"
                     >
@@ -1340,6 +1350,7 @@ export function HomeScreen() {
         {/* ── Recently Uploaded ── */}
         <Animated.View entering={FadeInDown.duration(350).delay(150)} className="px-4 mt-2">
           <Text
+            testID="recently-added-header"
             style={{
               fontSize: 18,
               fontFamily: 'Inter-Bold',
