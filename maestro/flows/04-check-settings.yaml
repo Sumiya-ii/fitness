@@ -1,0 +1,80 @@
+---
+# Flow 04: Navigate to Settings and verify key sections
+# Opens the Settings tab, checks that the profile card is present,
+# and verifies that the General, Integrations, and Account sections
+# are rendered with their expected row labels.
+#
+# Prerequisites: user is authenticated and has completed onboarding.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+# Wait for the main tab bar
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 12000
+
+# ── Navigate to Settings tab ───────────────────────────────────────────
+# The Settings tab has accessibilityLabel "Settings" (tabs.settings)
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+# ── Profile card ───────────────────────────────────────────────────────
+# The profile card Pressable has accessibilityLabel from settings.editProfile.
+# If no name is set, the initials avatar shows "U".
+# The subtitle is always shown (settings.tapToEdit = "Tap to edit profile").
+- assertVisible: "Tap to edit profile"
+
+# ── General section rows ───────────────────────────────────────────────
+# Section title "GENERAL" is rendered uppercased from settings.general.
+# Individual row labels come from their respective translation keys.
+- assertVisible: "General"
+
+# Row: personalDetails.title = "Personal Details"
+- assertVisible: "Personal Details"
+
+# Row: settings.preferences = "Preferences" (rendered as AppSettings)
+- assertVisible: "Preferences"
+
+# Row: settings.reminders = "Reminders"
+- assertVisible: "Reminders"
+
+# ── Integrations section ───────────────────────────────────────────────
+# Section title settings.integrations = "Integrations"
+- scrollUntilVisible:
+    element:
+      text: "Integrations"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Integrations"
+
+# Row: settings.telegramCoach = "Telegram Coach"
+- assertVisible: "Telegram Coach"
+
+# ── Support & Legal section ────────────────────────────────────────────
+- scrollUntilVisible:
+    element:
+      text: "Support & Legal"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Support & Legal"
+
+# ── Account / Sign Out row ─────────────────────────────────────────────
+- scrollUntilVisible:
+    element:
+      text: "Sign Out"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Sign Out"
+
+# ── Version string ─────────────────────────────────────────────────────
+# The version row renders t('settings.version') + appVersion:
+# "Version 1.0.0" (from expo config version = "1.0.0")
+- scrollUntilVisible:
+    element:
+      text: "Version"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Version"

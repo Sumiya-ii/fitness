@@ -1,0 +1,55 @@
+---
+# Flow 01: App Launch
+# Verifies the app launches cleanly, auth loading resolves, and the
+# user lands on either the Welcome/onboarding screen or the Home tab.
+#
+# Prerequisites: app installed, no special account state required.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+# The RootNavigator shows an ActivityIndicator while isLoading === true
+# (Firebase auth state fires within ~1 s on device).
+# Wait up to 10 s for it to disappear and a real screen to appear.
+- extendedWaitUntil:
+    notVisible: "Hang tight..."
+    timeout: 10000
+
+# Accept any system permission dialogs (notifications, health, etc.)
+# that may appear on first launch.
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
+
+# ── Path A: authenticated user lands on Home tab ──────────────────────
+- runFlow:
+    when:
+      visible: "Home"
+    commands:
+      # The bottom tab bar renders tab labels: Home, Log, Progress, Settings.
+      # assertVisible checks the "Home" tab label is present.
+      - assertVisible: "Home"
+      - assertVisible: "Log"
+      - assertVisible: "Progress"
+      - assertVisible: "Settings"
+
+# ── Path B: unauthenticated user lands on Welcome / onboarding ────────
+- runFlow:
+    when:
+      visible: "Let's Go"
+    commands:
+      - assertVisible: "Let's Go"
+
+# ── Path C: unauthenticated, older onboarding copy ────────────────────
+- runFlow:
+    when:
+      visible: "Track What"
+    commands:
+      - assertVisible: "Track What"
+
+# Confirm the app did not crash (splash must be gone)
+- assertNotVisible: "Hang tight..."

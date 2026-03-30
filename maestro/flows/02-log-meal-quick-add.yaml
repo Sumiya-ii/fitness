@@ -1,0 +1,56 @@
+---
+# Flow 02: Log a meal via Quick Add
+# Navigates to the Log tab, opens Quick Add, enters a calorie value,
+# selects a meal type, saves, and confirms the screen dismisses.
+#
+# Prerequisites: user is authenticated and has completed onboarding so
+# the main tab bar is visible.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+# Wait for the main tabs to appear (Home tab label is the anchor)
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 12000
+
+# ── Navigate to the Log tab ────────────────────────────────────────────
+# The Log tab renders a circular + button with an accessibilityLabel "Log"
+# derived from the tabs.log translation ("Log").
+- tapOn: "Log"
+- waitForAnimationToEnd
+
+# The LogScreen header reads "Log a Meal" (logging.logMeal in en.ts)
+- assertVisible: "Log a Meal"
+
+# ── Open Quick Add ─────────────────────────────────────────────────────
+# The Quick Add action button has accessibilityLabel from logging.quick = "Quick"
+- tapOn: "Quick"
+- waitForAnimationToEnd
+
+# QuickAddScreen header text (quickAdd.title key — check en.ts QuickAdd section)
+# The screen renders: Text "Quick Add" via t('quickAdd.title')
+- assertVisible: "Quick Add"
+
+# ── Select a meal type ─────────────────────────────────────────────────
+# Meal type chips use accessibilityLabel t(`mealTypes.${type}`)
+# Default is "lunch"; tap "Breakfast" to test selection works.
+- tapOn: "Breakfast"
+- waitForAnimationToEnd
+
+# ── Enter a calorie value ──────────────────────────────────────────────
+# The calorie Input has accessibilityLabel from quickAdd.calories = "Calories"
+- tapOn:
+    text: "Calories"
+- typeText: "450"
+
+# ── Save the entry ─────────────────────────────────────────────────────
+# The save Button has accessibilityLabel t('common.save') = "Save"
+- tapOn: "Save"
+- waitForAnimationToEnd
+
+# After saving, navigation.goBack() is called, returning to the Log home.
+# Verify we are back on the Log screen (header "Log a Meal" is visible again).
+- assertVisible: "Log a Meal"

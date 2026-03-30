@@ -1,0 +1,6 @@
+---
+# Maestro configuration for the Coach iOS app
+appId: com.coach.mobile
+
+# Android app ID (same package name)
+# appId: com.coach.mobile

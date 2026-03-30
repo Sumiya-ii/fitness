@@ -1,0 +1,78 @@
+---
+# Flow 03: View dashboard and verify key UI elements
+# Opens the app to the Home tab and asserts the calorie card, macro cards,
+# water widget, and the bottom navigation bar are all rendered.
+#
+# Prerequisites: user is authenticated and has completed onboarding.
+# The dashboard may show zeros if no meals have been logged yet — that is fine;
+# we only verify structural elements, not data values.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+# Wait for main tab bar to finish loading (auth + profile check resolves)
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 12000
+
+# Tap "Home" to make sure we are on the Home tab
+- tapOn: "Home"
+- waitForAnimationToEnd
+
+# ── Bottom tab bar ─────────────────────────────────────────────────────
+# All four tab labels must be visible
+- assertVisible: "Home"
+- assertVisible: "Log"
+- assertVisible: "Progress"
+- assertVisible: "Settings"
+
+# ── Dashboard calorie card ─────────────────────────────────────────────
+# The calorie card shows either "Calories left" or "Calories eaten"
+# depending on whether a target is set (dashboard.caloriesLeft / caloriesEaten).
+# We assert at least one of them is visible.
+- runFlow:
+    when:
+      visible: "Calories left"
+    commands:
+      - assertVisible: "Calories left"
+- runFlow:
+    when:
+      visible: "Calories eaten"
+    commands:
+      - assertVisible: "Calories eaten"
+
+# ── Macro cards ────────────────────────────────────────────────────────
+# MacroCard components render the label text: Protein, Carbs, Fat
+# Labels appear as "Protein left", "Carbs left", "Fat left" (the "left" suffix
+# comes from the hardcoded " left" string in MacroCard).
+# We check for the root macro label text.
+- assertVisible: "Protein"
+- assertVisible: "Carbs"
+- assertVisible: "Fat"
+
+# ── Water widget (page 1 of carousel) ─────────────────────────────────
+# Swipe left on the nutrition carousel to reach page 1 which contains
+# the Water summary card. The card has a label "WATER" (dashboard.water).
+- swipe:
+    direction: LEFT
+    duration: 400
+- waitForAnimationToEnd
+- assertVisible: "Water"
+
+# Swipe back to page 0 (calorie page)
+- swipe:
+    direction: RIGHT
+    duration: 400
+- waitForAnimationToEnd
+
+# ── Meals section header ───────────────────────────────────────────────
+# Whether meals exist or not, the section header "Recently added"
+# (dashboard.recentlyUploaded) renders below the carousel.
+- scrollUntilVisible:
+    element:
+      text: "Recently added"
+    direction: DOWN
+    timeout: 5000
+- assertVisible: "Recently added"

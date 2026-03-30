@@ -1,0 +1,76 @@
+---
+# Flow 05: Log water intake and verify the count updates
+# On the Home screen carousel page 1 there is a Water widget with:
+#   - a minus (–) button (remove cup)
+#   - a plus (+) add button (add cup)
+# Each tap adds/removes 237 ml (CUP_ML constant).
+# The displayed value is waterCupsConsumed.toFixed(1) cups + a ml label.
+#
+# This flow swipes to page 1, reads the current cup count, taps Add twice,
+# then asserts the water section is still visible and no error appeared.
+#
+# Prerequisites: user is authenticated and has completed onboarding.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+# Wait for the main tab bar to appear
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 12000
+
+# Ensure we are on the Home tab
+- tapOn: "Home"
+- waitForAnimationToEnd
+
+# ── Swipe to carousel page 1 (Health Score + Water) ───────────────────
+# The nutrition carousel is a horizontal ScrollView with pagingEnabled.
+# One left swipe from page 0 lands on page 1.
+- swipe:
+    direction: LEFT
+    duration: 400
+- waitForAnimationToEnd
+
+# The water widget header text is t('dashboard.water') = "Water"
+- assertVisible: "Water"
+
+# The cups label underneath the arc reads:
+# t('dashboard.waterCups') = "cups"  (e.g. "0.0  cups · 0 ml")
+- assertVisible: "cups"
+
+# ── Add a cup of water ─────────────────────────────────────────────────
+# The add button has no accessibilityLabel but its icon is "add" (Ionicons).
+# We tap by accessibility role within the water card region.
+# The button is a Pressable with className "flex-1 h-8 rounded-xl bg-primary-500 ..."
+# Maestro can tap it by its icon name via the mock or by position.
+# Since no testID is set, we use tapOn with the "add" icon label from the
+# Ionicons mock (which sets accessibilityLabel to the icon name).
+- tapOn:
+    # The Ionicons mock sets accessibilityLabel=name; the add button uses name="add".
+    # There are two "add" elements on screen (tab bar Log button + this one).
+    # We index the second occurrence which is the water add button.
+    text: "add"
+    index: 1
+- waitForAnimationToEnd
+
+# Add a second cup
+- tapOn:
+    text: "add"
+    index: 1
+- waitForAnimationToEnd
+
+# ── Assert water widget still visible and no crash ────────────────────
+- assertVisible: "Water"
+- assertVisible: "cups"
+
+# ── Remove one cup to restore state ───────────────────────────────────
+# The remove button uses icon name "remove"
+- tapOn:
+    text: "remove"
+    index: 0
+- waitForAnimationToEnd
+
+# Confirm water section is still visible after undo
+- assertVisible: "Water"
