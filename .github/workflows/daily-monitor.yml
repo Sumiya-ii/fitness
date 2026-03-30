@@ -1,0 +1,63 @@
+name: Daily Production Monitor
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 6:00 AM UTC = 2:00 PM Mongolia
+  workflow_dispatch: # Allow manual runs
+
+jobs:
+  monitor:
+    name: Pull Logs & Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Pull API logs
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway logs --lines 500 -s coach-api > /tmp/api-logs.txt 2>&1 || echo "API log pull failed" > /tmp/api-logs.txt
+
+      - name: Pull Worker logs
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway logs --lines 500 -s coach-worker > /tmp/worker-logs.txt 2>&1 || echo "Worker log pull failed" > /tmp/worker-logs.txt
+
+      - name: Run analysis
+        env:
+          DATABASE_URL: ${{ secrets.MONITOR_DATABASE_URL }}
+        run: node scripts/daily-monitor.mjs
+
+      - name: Send email report
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.GMAIL_USER }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: ${{ env.EMAIL_SUBJECT }}
+          to: sumiya.sganbaatar@gmail.com
+          from: Coach Monitor <${{ secrets.GMAIL_USER }}>
+          body: file:///tmp/email-body.txt
+
+      - name: Commit report
+        run: |
+          git config user.name "Coach Monitor"
+          git config user.email "monitor@coach.app"
+          git add reports/daily-monitor/
+          git diff --cached --quiet && echo "No changes to commit" || \
+            (git commit -m "chore: daily monitor report $(date -u +%Y-%m-%d)" && git push)
