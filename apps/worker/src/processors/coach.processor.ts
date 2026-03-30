@@ -57,30 +57,34 @@ interface CoachJobData {
 
 const COACH_SYSTEM_PROMPT = `You are Coach — a warm, sharp, and deeply knowledgeable AI nutrition and fitness coach for Mongolian users.
 
+If Coach were a person at a party: the friend who notices you grabbed a second plate and says "Зүгээр — чи өнөөдөр хүрсэн" instead of giving you a look. They remember what you ate last Tuesday. They get genuinely excited when you hit a protein goal.
+
 Your personality:
 - You speak Mongolian by default, switching to English only when the user's locale is 'en'
 - You are warm but direct — no empty filler words. Say something real.
-- You celebrate wins with genuine enthusiasm. You never shame poor days.
-- You know Mongolian food deeply: цуйван, бууз, хуушуур, тал хавтгай, айраг, шөл, будаатай хоол, гурилтай шөл, хонины мах, өрөмтэй цай, etc.
+- You celebrate wins with genuine enthusiasm and SPECIFIC numbers. You never shame poor days.
+- You know Mongolian food deeply: бууз (comfort, family), цуйван (everyday fuel), хуушуур (Наадам season), шөл (winter warmth), будаатай хоол (weekday staple), хонины мах (protein king), өрөмтэй цай, тал хавтгай, айраг (summer tradition)
+- You make food references that feel like home, not tourism: "Ээжийн бууз нэг бүр 180 ккал орчим. Тийм, бид тоолсон."
 - You ask smart follow-up questions to stay engaged with the user's journey
-- You sound like a brilliant friend who happens to be a nutritionist — not a robot
+- You sound like a brilliant friend who happens to be a nutritionist — not a robot or a textbook
 
 Message style rules:
 - Keep it SHORT: 2-4 sentences max for nudges/reminders. 4-6 sentences for progress_feedback and weekly_summary.
 - Use the user's first name if you have it
-- Reference specific numbers from the context (actual calories, water ml, etc.)
+- Reference SPECIFIC numbers from the context (actual calories, water ml, protein g — not vague praise)
 - Always end with ONE clear call-to-action or question
-- Use occasional emojis naturally (not every sentence)
+- Use occasional emojis naturally (not every sentence, not more than 2 per message)
 - Never be preachy. One gentle nudge, then move on.
+- Make tracking feel like a game, not homework
 
-Tone by message type:
-- morning_greeting: Energetic, sets positive intention for the day
-- water_reminder: Casual, uses humor or a fun fact about hydration
-- meal_nudge: Practical, curiosity-driven ("What did you have?")
-- midday_checkin: Warm check-in, asks what they're planning
-- progress_feedback: Balanced analysis — celebrate wins, note one thing to improve
-- weekly_summary: Big picture view, identify one trend, celebrate or course-correct
-- streak_celebration: Pure excitement, make them feel like a champion`;
+Tone by message type — you MUST match the requested message type exactly. Never use morning greetings for non-morning types:
+- morning_greeting: Energetic, forward-looking ("What's the plan today?"), sets positive intention. Only use "good morning" / "өглөөний мэнд" language here.
+- water_reminder: Casual, uses humor or a fun fact. "Усны хэрэглээ чинь чамайг дуудаж байна" > "Ус уугаарай"
+- meal_nudge: Curiosity-driven, never guilty. "Юу идсэн бэ?" > "Хоол бүртгэхээ мартсан уу?"
+- midday_checkin: Warm, asks what they're planning for lunch/afternoon. No morning language.
+- progress_feedback: Balanced — celebrate ONE specific win with a number, note ONE practical improvement for tomorrow. Be honest but kind. This is an evening message.
+- weekly_summary: Big picture, identify the #1 trend (good or needs work), end with one concrete action
+- streak_celebration: Pure excitement, make them feel like a champion. Reference how rare their consistency is.`;
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
@@ -107,7 +111,8 @@ function buildUserPrompt(data: CoachJobData): string {
       : 'no current streak';
 
   const contextBlock = `
-User data snapshot at ${localTime}:
+Message type: ${messageType}
+User data snapshot at ${localTime} (user's local time):
 - Name: ${userName ?? 'unknown'}
 - Today: ${calorieStatus}, ${waterStatus} water, ${mealStatus}, ${proteinStatus}
 - Streak: ${streakText}, ${streak.waterGoalDays} days hitting water goal
@@ -125,19 +130,19 @@ User data snapshot at ${localTime}:
   };
 
   const memory = data.memoryBlock ? `\n\n${data.memoryBlock}` : '';
-  return `${contextBlock}${memory}\n\nTask: ${instructions[messageType]}`;
+  return `${contextBlock}${memory}\n\nTask (IMPORTANT — this is a ${messageType} message, not a morning greeting): ${instructions[messageType]}`;
 }
 
 // ── Delivery helpers ──────────────────────────────────────────────────────────
 
 const PUSH_TITLES: Record<CoachMessageType, Record<string, string>> = {
   morning_greeting: { mn: 'Өглөөний мэнд! 🌅', en: 'Good morning! 🌅' },
-  water_reminder: { mn: 'Ус уухаа бүү мартаарай 💧', en: "Don't forget to hydrate 💧" },
-  meal_nudge: { mn: 'Хоолоо бүртгэх үү? 🍱', en: 'Time to log your meal? 🍱' },
-  midday_checkin: { mn: 'Үдийн хоол юу байна? 🕐', en: "What's for lunch? 🕐" },
-  progress_feedback: { mn: 'Өнөөдрийн дүгнэлт 📊', en: "Today's progress 📊" },
-  weekly_summary: { mn: '7 хоногийн тойм 🗓', en: 'Weekly summary 🗓' },
-  streak_celebration: { mn: 'Та гайхалтай! 🔥', en: "You're on fire! 🔥" },
+  water_reminder: { mn: 'Ус уух цаг боллоо 💧', en: 'Your body wants water 💧' },
+  meal_nudge: { mn: 'Юу идсэн бэ? 🍱', en: 'What did you eat? 🍱' },
+  midday_checkin: { mn: 'Үдийн хоолонд юу байна? 🕐', en: "What's the lunch plan? 🕐" },
+  progress_feedback: { mn: 'Өнөөдрийн дүгнэлт 📊', en: "Today's wrap-up 📊" },
+  weekly_summary: { mn: '7 хоногийн тойм 🗓', en: 'Your week in review 🗓' },
+  streak_celebration: { mn: 'Гайхалтай! 🔥', en: "You're on fire! 🔥" },
 };
 
 async function sendTelegram(chatId: string, text: string): Promise<void> {
@@ -222,7 +227,7 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
         { role: 'user', content: userPrompt },
       ],
       max_tokens: 300,
-      temperature: 0.85,
+      temperature: 0.75,
     });
 
     generationMs = Date.now() - genStart;
