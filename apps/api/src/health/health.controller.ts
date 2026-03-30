@@ -16,9 +16,16 @@ export class HealthController {
   @Public()
   @Get()
   async check() {
-    await this.prisma.$queryRaw`SELECT 1`;
+    let dbOk = false;
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      dbOk = true;
+    } catch {
+      // DB temporarily unreachable — return 200 so Railway keeps the process alive.
+      // A degraded status is better than a crash loop; the DB usually recovers on its own.
+    }
     return {
-      status: 'ok',
+      status: dbOk ? 'ok' : 'degraded',
       app: APP_NAME,
       timestamp: new Date().toISOString(),
     };

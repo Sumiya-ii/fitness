@@ -1,9 +1,12 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api"
+# db:push runs at build time so it never eats into the 300s health-check window.
+# --schema is explicit so the path resolves correctly from the repo root regardless of CWD.
+# --skip-generate is safe because db:generate already ran in the step above.
+buildCommand = "npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api && apps/api/node_modules/.bin/prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate --accept-data-loss"
 
 [deploy]
-startCommand = "npm run db:push --workspace=apps/api -- --skip-generate --accept-data-loss && npm run start:prod --workspace=apps/api"
+startCommand = "npm run start:prod --workspace=apps/api"
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
