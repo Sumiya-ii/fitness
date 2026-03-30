@@ -5,6 +5,9 @@ on:
     - cron: '0 6 * * *' # 6:00 AM UTC = 2:00 PM Mongolia
   workflow_dispatch: # Allow manual runs
 
+permissions:
+  contents: write
+
 jobs:
   monitor:
     name: Pull Logs & Analyze
