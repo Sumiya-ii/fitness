@@ -4,7 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import request from 'supertest';
 import { NotificationsController } from '../../src/notifications/notifications.controller';
 import { NotificationsService } from '../../src/notifications/notifications.service';
-import { FakeAuthGuard, createTestApp, url, TEST_USER } from './setup';
+import { FakeAuthGuard, createTestApp, url } from './setup';
 
 describe('Notifications (e2e)', () => {
   let app: INestApplication;

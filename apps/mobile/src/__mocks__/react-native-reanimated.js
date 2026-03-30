@@ -11,7 +11,15 @@ const Animated = {
     React.forwardRef((props, ref) => React.createElement(Component, { ...props, ref })),
 };
 
-const noopLayout = { duration: () => noopLayout, delay: () => noopLayout };
+const noopLayout = {
+  duration: () => noopLayout,
+  delay: () => noopLayout,
+  springify: () => noopLayout,
+  damping: () => noopLayout,
+  stiffness: () => noopLayout,
+  mass: () => noopLayout,
+  overshootClamping: () => noopLayout,
+};
 
 module.exports = {
   __esModule: true,

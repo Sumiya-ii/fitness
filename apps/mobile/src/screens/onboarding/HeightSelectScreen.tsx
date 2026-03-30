@@ -40,7 +40,7 @@ export function HeightSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={7}
+      step={5}
       totalSteps={TOTAL_STEPS}
       title={t('onboarding.heightTitle')}
       subtitle={t('onboarding.heightSubtitle')}

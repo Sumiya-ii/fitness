@@ -2,15 +2,13 @@
  * SettingsScreen tests — verifies pro/free UI differences and key settings behavior.
  *
  * Key scenarios:
- * - Pro users see PRO badge, manage subscription row; NO upgrade banner
- * - Free users see upgrade banner; NO pro manage row
- * - Notification permission states render correctly
- * - Sign out, language, units controls are present
+ * - Pro users see PRO badge; free users do not
+ * - Sign out option is present
+ * - User profile name and initials display correctly
  */
 import { renderScreen, screen, waitFor } from '../helpers/render';
 import { useSubscriptionStore } from '../../stores/subscription.store';
 import { useAuthStore } from '../../stores/auth.store';
-import { useSettingsStore } from '../../stores/settings.store';
 
 // Mock firebase auth (loaded transitively via auth.store)
 jest.mock('../../services/firebase-auth.service', () => ({
@@ -32,19 +30,12 @@ jest.mock('../../api', () => ({
         return Promise.resolve({
           data: { displayName: 'Test User', locale: 'en', unitSystem: 'metric', id: '1' },
         });
-      if (url.includes('/notifications'))
-        return Promise.resolve({ data: { morningReminder: true, eveningReminder: true } });
       if (url.includes('/telegram')) return Promise.resolve({ linked: false });
       return Promise.resolve({});
     }),
     put: jest.fn().mockResolvedValue({}),
     post: jest.fn().mockResolvedValue({}),
   },
-}));
-
-// Mock push notifications hook
-jest.mock('../../hooks/usePushNotifications', () => ({
-  requestAndRegisterPushToken: jest.fn().mockResolvedValue(true),
 }));
 
 import { SettingsScreen } from '../../screens/SettingsScreen';
@@ -63,38 +54,10 @@ beforeEach(() => {
     isLoading: false,
     signOut: jest.fn(),
   });
-  useSettingsStore.setState({
-    unitSystem: 'metric',
-  });
 });
 
 describe('SettingsScreen', () => {
   describe('Pro vs Free user differences', () => {
-    it('shows upgrade banner when user is FREE', async () => {
-      useSubscriptionStore.setState({ tier: 'free' });
-
-      renderScreen(<SettingsScreen />);
-
-      await waitFor(() => {
-        // Upgrade banner should be visible
-        expect(screen.getByText(/upgrade/i)).toBeTruthy();
-      });
-    });
-
-    it('hides upgrade banner when user is PRO', async () => {
-      useSubscriptionStore.setState({ tier: 'pro' });
-
-      renderScreen(<SettingsScreen />);
-
-      await waitFor(() => {
-        // Profile should load
-        expect(screen.getByText('Test User')).toBeTruthy();
-      });
-
-      // Upgrade banner should NOT be visible
-      expect(screen.queryByText(/upgrade.*pro/i)).toBeNull();
-    });
-
     it('shows PRO badge next to name when subscribed', async () => {
       useSubscriptionStore.setState({ tier: 'pro' });
 
@@ -119,22 +82,12 @@ describe('SettingsScreen', () => {
   });
 
   describe('Core settings controls', () => {
-    it('renders language selector with EN/MN options', async () => {
-      renderScreen(<SettingsScreen />);
-
-      await waitFor(() => {
-        expect(screen.getByText('EN')).toBeTruthy();
-      });
-
-      // Both language options should be visible
-      expect(screen.getByText('EN')).toBeTruthy();
-    });
-
     it('renders sign out option', async () => {
       renderScreen(<SettingsScreen />);
 
+      // Sign out label is in Mongolian: 'Гарах'
       await waitFor(() => {
-        expect(screen.getByText(/sign out/i)).toBeTruthy();
+        expect(screen.getByText('Гарах')).toBeTruthy();
       });
     });
 

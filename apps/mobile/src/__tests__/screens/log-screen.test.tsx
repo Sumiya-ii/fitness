@@ -3,14 +3,15 @@
  *
  * Key scenarios:
  * - Camera and voice actions require pro (show paywall if free)
- * - Barcode and quick-add work for all users
  * - Recent meals display correctly
  * - Empty state when no recents
- * - Loading skeleton while fetching recents
+ * - All action buttons are rendered
+ * - Search bar is rendered
+ *
+ * Note: UI text is rendered in Mongolian (default locale).
  */
 import { renderScreen, screen, waitFor, fireEvent } from '../helpers/render';
 import { useSubscriptionStore } from '../../stores/subscription.store';
-import { useDashboardStore } from '../../stores/dashboard.store';
 
 const mockGetRecents = jest.fn();
 
@@ -57,8 +58,9 @@ describe('LogScreen', () => {
 
       renderScreen(<LogScreen />);
 
+      // t('logging.noRecents') = 'Түүх алга'
       await waitFor(() => {
-        expect(screen.getByText(/no.*recent/i)).toBeTruthy();
+        expect(screen.getByText('Түүх алга')).toBeTruthy();
       });
     });
 
@@ -104,13 +106,13 @@ describe('LogScreen', () => {
       mockGetRecents.mockResolvedValue({ data: [] });
       renderScreen(<LogScreen />);
 
+      // t('logging.noRecents') = 'Түүх алга'
       await waitFor(() => {
-        expect(screen.getByText(/no.*recent/i)).toBeTruthy();
+        expect(screen.getByText('Түүх алга')).toBeTruthy();
       });
 
-      // The camera action button should exist (icon name 'camera')
-      // Tapping it should trigger paywall, not navigation
-      const photoButton = screen.getByText(/photo/i);
+      // t('logging.photo') = 'Зураг'
+      const photoButton = screen.getByText('Зураг');
       fireEvent.press(photoButton);
 
       // Should NOT navigate to PhotoLog
@@ -125,11 +127,13 @@ describe('LogScreen', () => {
       mockGetRecents.mockResolvedValue({ data: [] });
       renderScreen(<LogScreen />);
 
+      // t('logging.noRecents') = 'Түүх алга'
       await waitFor(() => {
-        expect(screen.getByText(/no.*recent/i)).toBeTruthy();
+        expect(screen.getByText('Түүх алга')).toBeTruthy();
       });
 
-      const photoButton = screen.getByText(/photo/i);
+      // t('logging.photo') = 'Зураг'
+      const photoButton = screen.getByText('Зураг');
       fireEvent.press(photoButton);
 
       await waitFor(() => {
@@ -143,11 +147,13 @@ describe('LogScreen', () => {
       mockGetRecents.mockResolvedValue({ data: [] });
       renderScreen(<LogScreen />);
 
+      // t('logging.photo') = 'Зураг', t('logging.voice') = 'Дуу',
+      // t('logging.scan') = 'Скан', t('logging.quick') = 'Шууд'
       await waitFor(() => {
-        expect(screen.getByText(/photo/i)).toBeTruthy();
-        expect(screen.getByText(/voice/i)).toBeTruthy();
-        expect(screen.getByText(/scan/i)).toBeTruthy();
-        expect(screen.getByText(/quick/i)).toBeTruthy();
+        expect(screen.getByText('Зураг')).toBeTruthy();
+        expect(screen.getByText('Дуу')).toBeTruthy();
+        expect(screen.getByText('Скан')).toBeTruthy();
+        expect(screen.getByText('Шууд')).toBeTruthy();
       });
     });
 
@@ -155,8 +161,9 @@ describe('LogScreen', () => {
       mockGetRecents.mockResolvedValue({ data: [] });
       renderScreen(<LogScreen />);
 
+      // t('logging.findFoods') = 'Хоол хайх'
       await waitFor(() => {
-        expect(screen.getByText(/find foods/i)).toBeTruthy();
+        expect(screen.getByText('Хоол хайх')).toBeTruthy();
       });
     });
   });

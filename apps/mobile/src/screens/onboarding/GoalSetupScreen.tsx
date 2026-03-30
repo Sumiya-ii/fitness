@@ -59,7 +59,7 @@ export function GoalSetupScreen({ navigation }: Props) {
       title={t('onboarding.goalTitle')}
       subtitle={t('onboarding.goalSubtitle')}
       onBack={() => navigation.goBack()}
-      onContinue={() => navigation.navigate('DesiredWeight')}
+      onContinue={() => navigation.navigate('GenderSelect')}
       continueDisabled={!goalType}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>

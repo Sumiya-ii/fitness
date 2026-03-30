@@ -38,12 +38,12 @@ export function WeightSelectScreen({ navigation }: Props) {
 
   const handleContinue = () => {
     setWeightKg(selectedWeight);
-    navigation.navigate('ActivityLevelSelect');
+    navigation.navigate('DesiredWeight');
   };
 
   return (
     <OnboardingLayout
-      step={8}
+      step={6}
       totalSteps={TOTAL_STEPS}
       title={t('onboarding.weightTitle')}
       subtitle={t('onboarding.weightSubtitle')}

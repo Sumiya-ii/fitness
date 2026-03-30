@@ -91,6 +91,7 @@ describe('CoachService', () => {
   afterEach(() => {
     jest.useRealTimers();
     // Reset the ioredis mock store between tests
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Redis = require('ioredis');
     const instance = new Redis();
     instance._reset?.();

@@ -85,14 +85,11 @@ export class StreaksService {
       start.setDate(start.getDate() - 1);
     }
     const cursor = new Date(start);
-    while (true) {
-      const key = this.toDateKey(cursor);
-      if (loggedSet.has(key)) {
-        streak++;
-        cursor.setDate(cursor.getDate() - 1);
-      } else {
-        break;
-      }
+    let key = this.toDateKey(cursor);
+    while (loggedSet.has(key)) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+      key = this.toDateKey(cursor);
     }
     return streak;
   }

@@ -10,6 +10,7 @@ import {
 import type { FirebaseError } from 'firebase/app';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import { getFirebaseAuth } from '../lib/firebase';
 
 export interface FirebaseSessionUser {
@@ -124,11 +125,18 @@ export async function signInWithGoogle(): Promise<FirebaseSession> {
 
 export async function signInWithApple(): Promise<FirebaseSession> {
   try {
+    const rawNonce = Crypto.randomUUID();
+    const hashedNonce = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      rawNonce,
+    );
+
     const appleCredential = await AppleAuthentication.signInAsync({
       requestedScopes: [
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
+      nonce: hashedNonce,
     });
 
     const { identityToken } = appleCredential;
@@ -136,7 +144,7 @@ export async function signInWithApple(): Promise<FirebaseSession> {
 
     const auth = getFirebaseAuth();
     const provider = new OAuthProvider('apple.com');
-    const credential = provider.credential({ idToken: identityToken });
+    const credential = provider.credential({ idToken: identityToken, rawNonce });
     await signInWithCredential(auth, credential);
 
     const session = await sessionFromCurrentUser(true);
@@ -148,6 +156,13 @@ export async function signInWithApple(): Promise<FirebaseSession> {
     if (appleError?.code === 'ERR_REQUEST_CANCELED') {
       throw new Error('CANCELLED');
     }
+    const firebaseError = error as FirebaseError;
+    console.error(
+      '[AppleSignIn] error code:',
+      firebaseError?.code,
+      'message:',
+      firebaseError?.message,
+    );
     throw toAuthError(error);
   }
 }

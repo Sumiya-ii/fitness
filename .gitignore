@@ -49,6 +49,13 @@ google-services.json
 *.p12
 *.mobileprovision
 
+# Stray root-level files from Expo prebuild
+/ios/
+/android/
+/app.json
+/GoogleService-Info.plist
+claude-code-review.html
+
 # Claude Code
 .claude/
 !.claude/commands/

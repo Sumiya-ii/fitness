@@ -4,7 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import request from 'supertest';
 import { WorkoutLogsController } from '../../src/workout-logs/workout-logs.controller';
 import { WorkoutLogsService } from '../../src/workout-logs/workout-logs.service';
-import { FakeAuthGuard, createTestApp, url, TEST_USER } from './setup';
+import { FakeAuthGuard, createTestApp, url } from './setup';
 
 const LOG_ID = '00000000-0000-4000-a000-000000000w01';
 

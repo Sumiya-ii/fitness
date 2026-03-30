@@ -34,7 +34,7 @@ export function GenderSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={5}
+      step={3}
       totalSteps={TOTAL_STEPS}
       title={t('onboarding.genderTitle')}
       subtitle={t('onboarding.genderSubtitle')}

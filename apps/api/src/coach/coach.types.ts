@@ -45,7 +45,29 @@ export interface CoachJobData {
   pushTokens?: string[];
   context: CoachContext;
   memoryBlock?: string;
+  timezone: string;
 }
+
+/**
+ * Valid time windows (in minutes from midnight) for each message type.
+ * Used by the processor to reject stale/delayed jobs whose content
+ * would no longer match the user's current time of day.
+ */
+export const MESSAGE_TIME_WINDOWS: Record<CoachMessageType, Array<[number, number]>> = {
+  morning_greeting: [[7 * 60 + 30, 9 * 60 + 30]], // 7:30–9:30 (1h grace)
+  water_reminder: [
+    [10 * 60, 12 * 60],
+    [15 * 60, 19 * 60],
+  ],
+  meal_nudge: [
+    [11 * 60, 13 * 60],
+    [18 * 60, 20 * 60],
+  ],
+  midday_checkin: [[12 * 60, 14 * 60]],
+  progress_feedback: [[20 * 60, 22 * 60]],
+  weekly_summary: [[9 * 60, 11 * 60]],
+  streak_celebration: [[9 * 60, 11 * 60]],
+};
 
 /** Cooldown durations in seconds per message type */
 export const COACH_COOLDOWNS: Record<CoachMessageType, number> = {

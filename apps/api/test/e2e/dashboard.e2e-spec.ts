@@ -51,7 +51,11 @@ describe('Dashboard (e2e)', () => {
           expect(res.body.data).toHaveProperty('targets');
           expect(res.body.data).toHaveProperty('remaining');
           expect(res.body.data).toHaveProperty('waterConsumed');
-          expect(mockService.getDailyDashboard).toHaveBeenCalledWith(TEST_USER.id, undefined);
+          expect(mockService.getDailyDashboard).toHaveBeenCalledWith(
+            TEST_USER.id,
+            undefined,
+            undefined,
+          );
         }));
 
     it('accepts a specific date', () =>
@@ -59,7 +63,11 @@ describe('Dashboard (e2e)', () => {
         .get(url('dashboard?date=2025-06-15'))
         .expect(200)
         .expect(() => {
-          expect(mockService.getDailyDashboard).toHaveBeenCalledWith(TEST_USER.id, '2025-06-15');
+          expect(mockService.getDailyDashboard).toHaveBeenCalledWith(
+            TEST_USER.id,
+            '2025-06-15',
+            undefined,
+          );
         }));
   });
 
@@ -69,7 +77,7 @@ describe('Dashboard (e2e)', () => {
         .get(url('dashboard/history'))
         .expect(200)
         .expect(() => {
-          expect(mockService.getHistory).toHaveBeenCalledWith(TEST_USER.id, 7);
+          expect(mockService.getHistory).toHaveBeenCalledWith(TEST_USER.id, 7, undefined);
         }));
 
     it('clamps days to min 7', () =>
@@ -77,7 +85,7 @@ describe('Dashboard (e2e)', () => {
         .get(url('dashboard/history?days=3'))
         .expect(200)
         .expect(() => {
-          expect(mockService.getHistory).toHaveBeenCalledWith(TEST_USER.id, 7);
+          expect(mockService.getHistory).toHaveBeenCalledWith(TEST_USER.id, 7, undefined);
         }));
 
     it('clamps days to max 90', () =>
@@ -85,7 +93,7 @@ describe('Dashboard (e2e)', () => {
         .get(url('dashboard/history?days=200'))
         .expect(200)
         .expect(() => {
-          expect(mockService.getHistory).toHaveBeenCalledWith(TEST_USER.id, 90);
+          expect(mockService.getHistory).toHaveBeenCalledWith(TEST_USER.id, 90, undefined);
         }));
   });
 });

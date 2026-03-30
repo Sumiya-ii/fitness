@@ -89,10 +89,11 @@ describe('Theme Store', () => {
 
   // -- Initialisation --
 
-  test('defaults to dark mode when nothing is stored in MMKV', () => {
+  test('defaults to system mode when nothing is stored in MMKV', () => {
     const { useThemeStore } = require('../stores/theme.store');
     const state = useThemeStore.getState();
-    expect(state.mode).toBe('dark');
+    expect(state.mode).toBe('system');
+    // scheme resolves to the current system scheme (dark in this test setup)
     expect(state.scheme).toBe('dark');
   });
 
@@ -120,21 +121,21 @@ describe('Theme Store', () => {
     expect(state.scheme).toBe('light');
   });
 
-  test('ignores invalid stored values and falls back to dark', () => {
+  test('ignores invalid stored values and falls back to system', () => {
     const { MMKV } = require('react-native-mmkv');
     const storage = new MMKV({ id: 'coach-theme' });
     storage.set('theme_mode', 'invalid-value');
 
     const { useThemeStore } = require('../stores/theme.store');
-    expect(useThemeStore.getState().mode).toBe('dark');
+    expect(useThemeStore.getState().mode).toBe('system');
   });
 
   // -- Appearance.setColorScheme sync on init --
 
-  test('calls Appearance.setColorScheme("dark") on init when stored mode is dark', () => {
+  test('calls Appearance.setColorScheme("unspecified") on init when no mode is stored (defaults to system)', () => {
     _setColorSchemeCalls = [];
     require('../stores/theme.store');
-    expect(_setColorSchemeCalls).toContain('dark');
+    expect(_setColorSchemeCalls).toContain('unspecified');
   });
 
   test('calls Appearance.setColorScheme("light") on init when stored mode is light', () => {

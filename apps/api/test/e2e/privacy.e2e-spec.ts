@@ -4,7 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import request from 'supertest';
 import { PrivacyController } from '../../src/privacy/privacy.controller';
 import { PrivacyService } from '../../src/privacy/privacy.service';
-import { FakeAuthGuard, createTestApp, url, TEST_USER } from './setup';
+import { FakeAuthGuard, createTestApp, url } from './setup';
 
 describe('Privacy (e2e)', () => {
   let app: INestApplication;

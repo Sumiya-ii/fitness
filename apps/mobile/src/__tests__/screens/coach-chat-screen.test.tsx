@@ -76,8 +76,8 @@ describe('CoachChatScreen', () => {
       expect(mockGetHistory).toHaveBeenCalled();
     });
 
-    // Type a message
-    const input = screen.getByPlaceholderText(/ask/i);
+    // Type a message — placeholder is Mongolian
+    const input = screen.getByPlaceholderText(/оройн хоолонд/i);
     fireEvent.changeText(input, 'Help me with my diet');
 
     // Send
@@ -102,8 +102,9 @@ describe('CoachChatScreen', () => {
 
     renderScreen(<CoachChatScreen />);
 
+    // accessibilityLabel uses t('common.back') = 'Буцах'
     await waitFor(() => {
-      expect(screen.getByLabelText('Go back')).toBeTruthy();
+      expect(screen.getByLabelText('Буцах')).toBeTruthy();
     });
   });
 
@@ -112,8 +113,9 @@ describe('CoachChatScreen', () => {
 
     renderScreen(<CoachChatScreen />);
 
+    // accessibilityLabel uses t('coachChat.clearConversation') = 'Яриа устгах'
     await waitFor(() => {
-      expect(screen.getByLabelText('Clear conversation')).toBeTruthy();
+      expect(screen.getByLabelText('Яриа устгах')).toBeTruthy();
     });
   });
 });

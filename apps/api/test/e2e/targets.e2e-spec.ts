@@ -4,7 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import request from 'supertest';
 import { TargetsController } from '../../src/targets/targets.controller';
 import { TargetsService } from '../../src/targets/targets.service';
-import { FakeAuthGuard, createTestApp, url, TEST_USER } from './setup';
+import { FakeAuthGuard, createTestApp, url } from './setup';
 
 describe('Targets (e2e)', () => {
   let app: INestApplication;

@@ -65,7 +65,7 @@ describe('Water Logs (e2e)', () => {
         .get(url('water-logs?date=2025-06-15'))
         .expect(200)
         .expect(() => {
-          expect(mockService.getDaily).toHaveBeenCalledWith(TEST_USER.id, '2025-06-15');
+          expect(mockService.getDaily).toHaveBeenCalledWith(TEST_USER.id, '2025-06-15', undefined);
         }));
   });
 

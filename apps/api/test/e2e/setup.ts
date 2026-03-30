@@ -4,10 +4,8 @@
  * Every controller is tested through real HTTP calls (supertest).
  * External boundaries (Prisma, Firebase, Redis, queues) are mocked.
  */
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
 import { API_PREFIX } from '@coach/shared';
 import { AuthenticatedUser } from '../../src/auth/auth.service';
 
@@ -27,15 +25,6 @@ export const ADMIN_USER: AuthenticatedUser = {
   email: 'admin@coach.mn',
   phone: '+97611111111',
 };
-
-/* ------------------------------------------------------------------ */
-/*  No-op ThrottlerGuard so tests are never rate-limited              */
-/* ------------------------------------------------------------------ */
-class NoopThrottlerGuard {
-  canActivate() {
-    return true;
-  }
-}
 
 /* ------------------------------------------------------------------ */
 /*  Fake AuthGuard that always passes and attaches TEST_USER           */

@@ -52,17 +52,17 @@ export function WeeklyRateScreen({ navigation }: Props) {
   const handleContinue = () => {
     if (isMaintain) {
       setWeeklyRateKg(0);
-      navigation.navigate('GenderSelect');
+      navigation.navigate('ActivityLevelSelect');
     } else if (selected !== null) {
       setWeeklyRateKg(selected);
-      navigation.navigate('GenderSelect');
+      navigation.navigate('ActivityLevelSelect');
     }
   };
 
   if (isMaintain) {
     return (
       <OnboardingLayout
-        step={4}
+        step={8}
         totalSteps={TOTAL_STEPS}
         title={t('onboarding.weeklyRateMaintainTitle')}
         subtitle={t('onboarding.weeklyRateMaintainSubtitle')}

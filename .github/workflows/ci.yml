@@ -42,5 +42,8 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: API E2E Tests
+        run: npm run test:e2e --workspace=apps/api
+
       - name: Format check
         run: npm run format:check

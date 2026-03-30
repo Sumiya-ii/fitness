@@ -41,12 +41,12 @@ export function OnboardingStack() {
       />
       <Stack.Screen name="ThemeSelect" component={ThemeSelectScreen} />
       <Stack.Screen name="GoalSetup" component={GoalSetupScreen} />
-      <Stack.Screen name="DesiredWeight" component={DesiredWeightScreen} />
-      <Stack.Screen name="WeeklyRate" component={WeeklyRateScreen} />
       <Stack.Screen name="GenderSelect" component={GenderSelectScreen} />
       <Stack.Screen name="BirthDateSelect" component={BirthDateSelectScreen} />
       <Stack.Screen name="HeightSelect" component={HeightSelectScreen} />
       <Stack.Screen name="WeightSelect" component={WeightSelectScreen} />
+      <Stack.Screen name="DesiredWeight" component={DesiredWeightScreen} />
+      <Stack.Screen name="WeeklyRate" component={WeeklyRateScreen} />
       <Stack.Screen name="ActivityLevelSelect" component={ActivityLevelSelectScreen} />
       <Stack.Screen name="DietPreferenceSelect" component={DietPreferenceSelectScreen} />
       <Stack.Screen name="Motivation" component={MotivationScreen} />

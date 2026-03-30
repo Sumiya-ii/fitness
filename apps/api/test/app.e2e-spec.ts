@@ -4,6 +4,7 @@ import request from 'supertest';
 import { API_PREFIX } from '@coach/shared';
 import { HealthController } from '../src/health/health.controller';
 import { QueueHealthService } from '../src/queue';
+import { PrismaService } from '../src/prisma';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -17,6 +18,10 @@ describe('AppController (e2e)', () => {
           useValue: {
             getHealth: jest.fn().mockResolvedValue([]),
           },
+        },
+        {
+          provide: PrismaService,
+          useValue: { $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]) },
         },
       ],
     }).compile();

@@ -80,7 +80,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={6}
+      step={4}
       totalSteps={TOTAL_STEPS}
       title={t('onboarding.birthDateTitle')}
       subtitle={t('onboarding.birthDateSubtitle')}
