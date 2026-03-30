@@ -1,5 +1,6 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
+import * as Sentry from '@sentry/node';
 import { STT_NUTRITION_SYSTEM_PROMPT } from '@coach/shared';
 import { downloadFromS3, deleteFromS3 } from '../s3';
 import { setVoiceDraftActive, setVoiceDraftCompleted, setVoiceDraftFailed } from '../db';
@@ -40,6 +41,10 @@ async function markFailed(draftId: string, errorMessage: string): Promise<void> 
     await setVoiceDraftFailed(draftId, errorMessage);
   } catch (err) {
     console.error('[STT] Failed to mark draft as failed:', err);
+    Sentry.captureException(err, {
+      tags: { processor: 'stt', stage: 'mark_draft_failed' },
+      extra: { draftId },
+    });
   }
 }
 
@@ -82,6 +87,10 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
   } catch (err) {
     const msg = `Audio retrieval failed: ${String(err)}`;
     console.error(`[STT] ${msg}`);
+    Sentry.captureException(err, {
+      tags: { processor: 'stt', stage: 'audio_retrieval' },
+      extra: { draftId, s3Key },
+    });
     if (draftId) await markFailed(draftId, msg);
     throw err;
   }
@@ -116,6 +125,10 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
   } catch (err) {
     const msg = `Transcription failed: ${String(err)}`;
     console.error(`[STT] ${msg}`);
+    Sentry.captureException(err, {
+      tags: { processor: 'stt', stage: 'whisper_transcription' },
+      extra: { draftId, locale },
+    });
     if (draftId) await markFailed(draftId, msg);
     if (s3Key && process.env.S3_BUCKET) await deleteFromS3(s3Key);
     throw err;
@@ -175,6 +188,10 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
     }));
   } catch (err) {
     console.error('[STT] Nutrition parse failed:', err);
+    Sentry.captureException(err, {
+      tags: { processor: 'stt', stage: 'nutrition_parse' },
+      extra: { draftId, textLength: text.length },
+    });
     // Don't fail the whole job — return transcription with empty items
   }
 

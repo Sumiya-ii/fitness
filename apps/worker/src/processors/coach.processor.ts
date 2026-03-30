@@ -2,6 +2,8 @@ import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
 import Redis from 'ioredis';
+import { DateTime } from 'luxon';
+import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
 
@@ -51,6 +53,51 @@ interface CoachJobData {
   pushTokens?: string[];
   context: CoachContext;
   memoryBlock?: string;
+  timezone?: string;
+}
+
+// ── Time window validation ───────────────────────────────────────────────────
+
+const MESSAGE_TIME_WINDOWS: Record<CoachMessageType, Array<[number, number]>> = {
+  morning_greeting: [[7 * 60 + 30, 9 * 60 + 30]],
+  water_reminder: [
+    [10 * 60, 12 * 60],
+    [15 * 60, 19 * 60],
+  ],
+  meal_nudge: [
+    [11 * 60, 13 * 60],
+    [18 * 60, 20 * 60],
+  ],
+  midday_checkin: [[12 * 60, 14 * 60]],
+  progress_feedback: [[20 * 60, 22 * 60]],
+  weekly_summary: [[9 * 60, 11 * 60]],
+  streak_celebration: [[9 * 60, 11 * 60]],
+};
+
+/**
+ * Check whether the message type is still appropriate for the user's current local time.
+ * Returns false if the job is stale (e.g., morning_greeting job processed in the afternoon).
+ */
+export function isMessageTypeValidForTime(
+  messageType: CoachMessageType,
+  currentLocalTime: string,
+): boolean {
+  const [h, m] = currentLocalTime.split(':').map(Number);
+  const totalMin = (h ?? 0) * 60 + (m ?? 0);
+  const windows = MESSAGE_TIME_WINDOWS[messageType];
+  return windows.some(([start, end]) => totalMin >= start && totalMin < end);
+}
+
+/**
+ * Get the time-of-day period label for AI prompt context.
+ */
+export function getTimePeriod(localTime: string): string {
+  const [h] = localTime.split(':').map(Number);
+  const hour = h ?? 0;
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 21) return 'evening';
+  return 'night';
 }
 
 // ── Coach Persona ─────────────────────────────────────────────────────────────
@@ -88,9 +135,12 @@ Tone by message type — you MUST match the requested message type exactly. Neve
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
-function buildUserPrompt(data: CoachJobData): string {
+export function buildUserPrompt(data: CoachJobData, currentLocalTime?: string): string {
   const { context, messageType } = data;
-  const { today, streak, weekly, userName, localTime } = context;
+  const { today, streak, weekly, userName } = context;
+  // Use fresh local time if available (recalculated at processing time), fall back to enqueue time
+  const localTime = currentLocalTime ?? context.localTime;
+  const timePeriod = getTimePeriod(localTime);
 
   const name = userName ? `, ${userName}` : '';
   const calorieStatus = today.caloriesTarget
@@ -112,7 +162,7 @@ function buildUserPrompt(data: CoachJobData): string {
 
   const contextBlock = `
 Message type: ${messageType}
-User data snapshot at ${localTime} (user's local time):
+Current time: ${localTime} (${timePeriod}) — user's local time
 - Name: ${userName ?? 'unknown'}
 - Today: ${calorieStatus}, ${waterStatus} water, ${mealStatus}, ${proteinStatus}
 - Streak: ${streakText}, ${streak.waterGoalDays} days hitting water goal
@@ -129,8 +179,13 @@ User data snapshot at ${localTime} (user's local time):
     streak_celebration: `They've been logging meals for ${streak.mealLoggingDays} days straight! Celebrate their consistency with real enthusiasm. Make them feel like a champion. Mention one benefit of consistent logging.`,
   };
 
+  const timeConstraint =
+    messageType === 'morning_greeting'
+      ? ''
+      : ` CRITICAL: It is currently ${timePeriod} (${localTime}). Do NOT use morning greetings, "good morning", or breakfast references. Match your tone to the ${timePeriod}.`;
+
   const memory = data.memoryBlock ? `\n\n${data.memoryBlock}` : '';
-  return `${contextBlock}${memory}\n\nTask (IMPORTANT — this is a ${messageType} message, not a morning greeting): ${instructions[messageType]}`;
+  return `${contextBlock}${memory}\n\nTask: ${instructions[messageType]}${timeConstraint}`;
 }
 
 // ── Delivery helpers ──────────────────────────────────────────────────────────
@@ -200,12 +255,33 @@ async function injectIntoChatHistory(redis: Redis, userId: string, message: stri
 // ── Main processor ────────────────────────────────────────────────────────────
 
 export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<void> {
-  const { userId, messageType, channels, chatId, locale = 'mn', pushTokens = [] } = job.data;
+  const {
+    userId,
+    messageType,
+    channels,
+    chatId,
+    locale = 'mn',
+    pushTokens = [],
+    timezone,
+  } = job.data;
 
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     console.warn('[CoachProcessor] OPENAI_API_KEY not set, skipping');
     return;
+  }
+
+  // ── Staleness guard: reject jobs whose message type no longer fits the time ──
+  let currentLocalTime: string | undefined;
+  if (timezone) {
+    const now = DateTime.now().setZone(timezone);
+    currentLocalTime = now.toFormat('HH:mm');
+    if (!isMessageTypeValidForTime(messageType, currentLocalTime)) {
+      console.warn(
+        `[CoachProcessor] Stale job: ${messageType} no longer valid at ${currentLocalTime} (${timezone}) for user ${userId}, skipping`,
+      );
+      return;
+    }
   }
 
   const openai = new OpenAI({ apiKey: openaiKey });
@@ -217,7 +293,7 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
   let generationMs: number | undefined;
 
   try {
-    const userPrompt = buildUserPrompt(job.data);
+    const userPrompt = buildUserPrompt(job.data, currentLocalTime);
     const genStart = Date.now();
 
     const response = await openai.chat.completions.create({
@@ -241,6 +317,10 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
         : "Hey! Don't forget to log your meals today. 💪");
   } catch (err) {
     console.error('[CoachProcessor] OpenAI error:', err);
+    Sentry.captureException(err, {
+      tags: { processor: 'coach', stage: 'openai_generation' },
+      extra: { userId, messageType },
+    });
     redis.disconnect();
     throw err;
   }
@@ -252,6 +332,10 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
     await injectIntoChatHistory(redis, userId, coachMessage);
   } catch (err) {
     console.error('[CoachProcessor] Failed to inject into chat history:', err);
+    Sentry.captureException(err, {
+      tags: { processor: 'coach', stage: 'chat_history_inject' },
+      extra: { userId },
+    });
   } finally {
     redis.disconnect();
   }
@@ -294,6 +378,10 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
           });
         } catch (err) {
           console.error(`[CoachProcessor] Telegram delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'coach', stage: 'telegram_delivery' },
+            extra: { userId, messageType },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'telegram',
@@ -323,6 +411,10 @@ export async function processCoachMessageJob(job: Job<CoachJobData>): Promise<vo
           });
         } catch (err) {
           console.error(`[CoachProcessor] Push delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'coach', stage: 'push_delivery' },
+            extra: { userId, messageType },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'push',

@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
 import OpenAI from 'openai';
 import Redis from 'ioredis';
@@ -126,6 +127,7 @@ export class TelegramFoodParserService implements OnModuleDestroy {
         'Food parsing failed — falling back to chat',
         err instanceof Error ? err.message : String(err),
       );
+      Sentry.captureException(err, { tags: { service: 'telegram_food_parser', stage: 'parse' } });
       return empty;
     }
   }
@@ -166,6 +168,9 @@ export class TelegramFoodParserService implements OnModuleDestroy {
         'Voice transcription failed',
         err instanceof Error ? err.message : String(err),
       );
+      Sentry.captureException(err, {
+        tags: { service: 'telegram_food_parser', stage: 'transcribe_voice' },
+      });
       return '';
     }
   }

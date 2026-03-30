@@ -3,6 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { DateTime } from 'luxon';
 import Redis from 'ioredis';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
 import { QUEUE_NAMES } from '@coach/shared';
@@ -214,7 +215,11 @@ export class CoachService implements OnModuleDestroy {
           info.timezone,
           'morning_greeting',
         );
-      } catch {
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { service: 'coach', stage: 'build_context' },
+          extra: { userId: info.userId },
+        });
         continue;
       }
 
@@ -235,6 +240,7 @@ export class CoachService implements OnModuleDestroy {
         pushTokens: info.pushTokens,
         context,
         memoryBlock: memoryBlock ?? undefined,
+        timezone: info.timezone,
       };
 
       await this.coachQueue.add(messageType, jobData, {

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import * as Sentry from '@sentry/node';
 import { QUEUE_NAMES } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import { S3Service } from '../storage';
@@ -64,6 +65,7 @@ export class VoiceService {
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to create voice draft: ${msg}`);
+      Sentry.captureException(error, { tags: { service: 'voice', stage: 'create_draft' } });
       if (msg.includes("doesn't exist") || msg.includes('does not exist')) {
         throw new InternalServerErrorException(
           'Voice drafts table is not available. Please run database migrations.',

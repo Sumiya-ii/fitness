@@ -1,6 +1,7 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { Pool } from 'pg';
+import * as Sentry from '@sentry/node';
 
 interface CoachMemoryJobData {
   userId: string;
@@ -217,6 +218,10 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
     console.log(`[CoachMemory] Refreshed memory for user ${userId}`);
   } catch (err) {
     console.error(`[CoachMemory] Error for user ${userId}:`, err);
+    Sentry.captureException(err, {
+      tags: { processor: 'coach_memory' },
+      extra: { userId },
+    });
     throw err;
   } finally {
     await pool.end();

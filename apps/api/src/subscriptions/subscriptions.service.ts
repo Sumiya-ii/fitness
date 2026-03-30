@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
 import type { WebhookPayloadDto, RevenueCatWebhookDto } from './subscriptions.dto';
@@ -115,7 +116,14 @@ export class SubscriptionsService {
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           },
         })
-        .catch(() => {});
+        .catch((err) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (!msg.includes('Unique constraint')) {
+            Sentry.captureException(err, {
+              tags: { service: 'subscriptions', stage: 'idempotency_key_create' },
+            });
+          }
+        });
     }
 
     await this.prisma.subscriptionLedger.create({
@@ -228,7 +236,14 @@ export class SubscriptionsService {
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       })
-      .catch(() => {}); // race-safe: ignore duplicate key errors
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes('Unique constraint')) {
+          Sentry.captureException(err, {
+            tags: { service: 'subscriptions', stage: 'rc_idempotency_key_create' },
+          });
+        }
+      });
 
     return { success: true };
   }
@@ -264,6 +279,10 @@ export class SubscriptionsService {
       rcData = (await res.json()) as typeof rcData;
     } catch (err) {
       this.logger.warn(`verifyAndActivate: RC API call failed: ${err}`);
+      Sentry.captureException(err, {
+        tags: { service: 'subscriptions', stage: 'revenuecat_verify' },
+        extra: { userId },
+      });
       return { tier: (await this.getStatus(userId)).tier };
     }
 

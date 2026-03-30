@@ -5,6 +5,7 @@ import {
   DeleteObjectCommand,
   HeadBucketCommand,
 } from '@aws-sdk/client-s3';
+import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
 
 @Injectable()
@@ -81,6 +82,10 @@ export class S3Service {
       );
     } catch (err) {
       this.logger.warn(`Failed to delete S3 object ${key}: ${String(err)}`);
+      Sentry.captureException(err, {
+        tags: { service: 's3', stage: 'delete_object' },
+        extra: { key },
+      });
     }
   }
 }

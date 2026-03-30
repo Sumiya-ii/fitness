@@ -1,5 +1,6 @@
 import { Job } from 'bullmq';
 import { Telegraf } from 'telegraf';
+import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
 
@@ -12,34 +13,78 @@ interface ReminderJobData {
   pushTokens?: string[];
 }
 
-const MORNING_MESSAGES: Record<string, { title: string; body: string }> = {
-  mn: {
-    title: 'Өглөөний мэнд! 💪',
-    body: 'Өнөөдрийн хоолоо бүртгэхээ бүү мартаарай.',
+const MORNING_VARIANTS_MN: Array<{ title: string; body: string }> = [
+  {
+    title: 'Өглөөний мэнд! 🌅',
+    body: 'Шинэ өдөр, шинэ боломж. Өглөөний цайгаа юу болгох вэ?',
   },
-  en: {
-    title: 'Good morning! 💪',
-    body: "Don't forget to log your meals today.",
+  {
+    title: 'Өглөө болж байна! ☀️',
+    body: 'Өнөөдөр юу идэхээ төлөвлөж байна уу? Coach бэлэн.',
   },
-};
+  {
+    title: 'Сайн уу! 💪',
+    body: 'Өчигдөр сайн хоол бүртгэсэн. Өнөөдөр ч тэгцгээе!',
+  },
+];
 
-const EVENING_MESSAGES: Record<string, { title: string; body: string }> = {
-  mn: {
-    title: 'Оройн мэнд!',
-    body: 'Өнөөдөр хоол бүртгэлээгүй байна. Одоо бүртгэх үү?',
+const MORNING_VARIANTS_EN: Array<{ title: string; body: string }> = [
+  {
+    title: 'Good morning! 🌅',
+    body: "New day, fresh start. What's the breakfast plan?",
   },
-  en: {
-    title: 'Good evening!',
-    body: "You haven't logged any meals today. Want to log now?",
+  {
+    title: 'Rise and shine! ☀️',
+    body: "What's on the menu today? Coach is ready when you are.",
   },
-};
+  {
+    title: 'Morning! 💪',
+    body: "You logged well yesterday. Let's keep the momentum going!",
+  },
+];
+
+const EVENING_VARIANTS_MN: Array<{ title: string; body: string }> = [
+  {
+    title: 'Оройн мэнд! 🌙',
+    body: 'Өнөөдрийн хоолоо бүртгэхээ мартсан уу? Орохоосоо өмнө нэмж болно.',
+  },
+  {
+    title: 'Өдөр дуусаж байна 📊',
+    body: 'Өнөөдрийн хоолоо нэмвэл бүрэн зураг харагдана.',
+  },
+];
+
+const EVENING_VARIANTS_EN: Array<{ title: string; body: string }> = [
+  {
+    title: 'Good evening! 🌙',
+    body: "Forgot to log today? There's still time before bed.",
+  },
+  {
+    title: "Day's wrapping up 📊",
+    body: 'Add your meals to see the full picture of today.',
+  },
+];
+
+function getReminderMessage(
+  type: 'morning' | 'evening',
+  lang: string,
+): { title: string; body: string } {
+  const variants =
+    type === 'morning'
+      ? lang === 'en'
+        ? MORNING_VARIANTS_EN
+        : MORNING_VARIANTS_MN
+      : lang === 'en'
+        ? EVENING_VARIANTS_EN
+        : EVENING_VARIANTS_MN;
+  return variants[Math.floor(Math.random() * variants.length)]!;
+}
 
 export async function processReminderJob(job: Job<ReminderJobData>): Promise<void> {
   const { userId, type, channels, chatId, locale, pushTokens = [] } = job.data;
 
   const lang = locale ?? 'mn';
-  const messageMap = type === 'morning' ? MORNING_MESSAGES : EVENING_MESSAGES;
-  const message = messageMap[lang] ?? messageMap['en']!;
+  const message = getReminderMessage(type, lang);
 
   const hasTelegram = channels.includes('telegram') && Boolean(chatId);
   const hasPush = channels.includes('push') && pushTokens.length > 0;
@@ -72,6 +117,10 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
           });
         } catch (err) {
           console.error(`[Reminders] Telegram delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'reminders', stage: 'telegram_delivery' },
+            extra: { userId, type },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'telegram',
@@ -98,6 +147,10 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
           });
         } catch (err) {
           console.error(`[Reminders] Push delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'reminders', stage: 'push_delivery' },
+            extra: { userId, type },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'push',

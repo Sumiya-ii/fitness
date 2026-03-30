@@ -2,6 +2,7 @@ import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
 import Redis from 'ioredis';
+import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
 
@@ -40,22 +41,24 @@ Every Monday morning you send users a personalized weekly performance report.
 Your personality:
 - Speak Mongolian by default; use English only when locale is 'en'
 - Direct and data-driven but genuinely warm — this is a mentor-style debrief, not a report card
-- Celebrate genuine wins with specific numbers; never shame poor weeks
-- You know Mongolian food: цуйван, бууз, хуушуур, тал хавтгай, хонины мах, etc.
+- Celebrate genuine wins with SPECIFIC numbers; never shame poor weeks
+- You know Mongolian food and culture deeply: бууз, цуйван, хуушуур, шөл, хонины мах, will reference them when it adds warmth
+- Use humor sparingly but effectively — a smirk-worthy observation lands harder than generic encouragement
 
 Report structure (4–6 sentences, no headers or bullet points):
 1. Opening: greet by name if available, briefly acknowledge last week
-2. Win: highlight the #1 thing they did well (be specific with numbers)
-3. Focus: identify ONE clear area to improve this week (practical, not preachy)
-4. Close: short, energizing encouragement for the week ahead
+2. Win: highlight the #1 thing they did well (be SPECIFIC with numbers — "42г уураг үдэд" not "уураг сайн идсэн")
+3. Focus: identify ONE clear area to improve this week (practical, actionable, not preachy)
+4. Close: short, energizing encouragement for the week ahead with ONE concrete action
 
 Rules:
 - Always reference real numbers from the data (daysLogged/7, averageCalories, averageProtein, weightDelta)
-- If they hit their calorie target most days, celebrate it; if they didn't log often, note it gently
-- Weight loss: celebrate; weight gain: frame neutrally (muscle, data variability)
-- No weight data? Skip weight entirely
-- End with a concrete, single action for this week
-- Keep it under 120 words total`;
+- If they hit their calorie target most days, celebrate it; if they didn't log often, note it gently with curiosity, not guilt
+- Weight loss: celebrate with the actual number; weight gain: frame neutrally (muscle, normal fluctuation)
+- No weight data? Skip weight entirely — don't mention it
+- End with a concrete, single action for this week (e.g. "Энэ долоо хоногт өглөөний цайг бүртгэхэд анхаараарай")
+- Keep it under 120 words total
+- Make them feel like you actually looked at their data, not just generated generic text`;
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 
@@ -171,6 +174,10 @@ export async function processWeeklyReportJob(job: Job<WeeklyReportJobData>): Pro
     reportMessage = response.choices[0]?.message?.content?.trim() ?? fallback;
   } catch (err) {
     console.error('[WeeklyReport] OpenAI error:', err);
+    Sentry.captureException(err, {
+      tags: { processor: 'weekly_report', stage: 'openai_generation' },
+      extra: { userId },
+    });
     redis.disconnect();
     throw err;
   }
@@ -181,6 +188,10 @@ export async function processWeeklyReportJob(job: Job<WeeklyReportJobData>): Pro
     await injectIntoChatHistory(redis, userId, reportMessage);
   } catch (err) {
     console.error('[WeeklyReport] Failed to inject into chat history:', err);
+    Sentry.captureException(err, {
+      tags: { processor: 'weekly_report', stage: 'chat_history_inject' },
+      extra: { userId },
+    });
   } finally {
     redis.disconnect();
   }
@@ -222,6 +233,10 @@ export async function processWeeklyReportJob(job: Job<WeeklyReportJobData>): Pro
           });
         } catch (err) {
           console.error(`[WeeklyReport] Telegram delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'weekly_report', stage: 'telegram_delivery' },
+            extra: { userId },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'telegram',
@@ -251,6 +266,10 @@ export async function processWeeklyReportJob(job: Job<WeeklyReportJobData>): Pro
           });
         } catch (err) {
           console.error(`[WeeklyReport] Push delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'weekly_report', stage: 'push_delivery' },
+            extra: { userId },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'push',

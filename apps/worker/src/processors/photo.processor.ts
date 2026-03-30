@@ -1,6 +1,7 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import * as Sentry from '@sentry/node';
 import { MONGOLIAN_FOOD_REFERENCE } from '@coach/shared';
 
 interface PhotoJobData {
@@ -231,6 +232,10 @@ export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoPars
       return await parseWithGemini(photoBuffer, geminiKey, systemPrompt, userPrompt);
     } catch (err) {
       console.warn('[Photo] Gemini failed, falling back to GPT-4o:', err);
+      Sentry.captureException(err, {
+        tags: { processor: 'photo', stage: 'gemini_parse', fallback: 'openai' },
+        extra: { mode },
+      });
       if (openaiKey) {
         return await parseWithOpenAI(photoBuffer, openaiKey, systemPrompt, userPrompt);
       }

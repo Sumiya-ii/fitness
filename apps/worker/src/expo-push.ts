@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { deactivateExpiredTokens } from './db';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
@@ -63,8 +64,12 @@ export async function sendExpoPush(
 
   if (deadTokens.length > 0) {
     console.log(`[ExpoPush] Deactivating ${deadTokens.length} expired token(s)`);
-    await deactivateExpiredTokens(deadTokens).catch((err) =>
-      console.error('[ExpoPush] Failed to deactivate tokens:', err),
-    );
+    await deactivateExpiredTokens(deadTokens).catch((err) => {
+      console.error('[ExpoPush] Failed to deactivate tokens:', err);
+      Sentry.captureException(err, {
+        tags: { service: 'expo_push', stage: 'deactivate_tokens' },
+        extra: { deadTokenCount: deadTokens.length },
+      });
+    });
   }
 }

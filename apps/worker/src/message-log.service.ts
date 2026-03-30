@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import * as Sentry from '@sentry/node';
 
 export interface LogParams {
   userId: string;
@@ -61,5 +62,9 @@ export async function logMessage(params: LogParams): Promise<void> {
     );
   } catch (err) {
     console.error('[MessageLog] Failed to persist log:', err instanceof Error ? err.message : err);
+    Sentry.captureException(err, {
+      tags: { service: 'message_log' },
+      extra: { userId: params.userId, channel: params.channel, messageType: params.messageType },
+    });
   }
 }

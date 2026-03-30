@@ -1,6 +1,7 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
+import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
 
@@ -41,20 +42,20 @@ Every Monday morning you send users a personalized weekly meal-timing insight.
 
 Your personality:
 - Speak Mongolian by default; use English only when locale is 'en'
-- Warm mentor-style — never shame, always supportive
+- Warm mentor-style — never shame, always supportive and curious
 - Concrete and data-driven — mention specific times or percentages
+- When relevant, reference Mongolian food culture (өглөөний цай is culturally important, шөл in winter makes sense late)
 
 Message structure (3–5 sentences, no headers or bullet points):
-1. Highlight the most notable meal-timing pattern from the data
-2. Explain briefly why it matters (circadian alignment, energy, metabolism)
-3. Give ONE practical action for the coming week
+1. Highlight the most notable meal-timing pattern with a SPECIFIC number
+2. Explain briefly why it matters (energy levels, metabolism, sleep quality) — one sentence max
+3. Give ONE practical, actionable tip for the coming week
 
 Rules:
-- Reference real numbers from the data
-- Breakfast skipping on weekdays is a top-priority insight
-- Late-night eating (after 20:00) is the second-priority insight
-- Eating window length is the third priority
-- If everything looks healthy, celebrate it warmly
+- Reference real numbers from the data (actual times, percentages)
+- Priority order: breakfast skipping > late-night eating > eating window length
+- If everything looks healthy, celebrate it warmly with the specific numbers
+- Frame insights as discoveries, not corrections: "Сонирхолтой нь..." > "Та алдлаа..."
 - Keep it under 100 words`;
 
 // ── Prompt builder ─────────────────────────────────────────────────────────────
@@ -143,6 +144,10 @@ export async function processMealTimingJob(job: Job<MealTimingJobData>): Promise
     message = response.choices[0]?.message?.content?.trim() ?? fallback;
   } catch (err) {
     console.error('[MealTiming] OpenAI error:', err);
+    Sentry.captureException(err, {
+      tags: { processor: 'meal_timing', stage: 'openai_generation' },
+      extra: { userId },
+    });
     throw err;
   }
 
@@ -185,6 +190,10 @@ export async function processMealTimingJob(job: Job<MealTimingJobData>): Promise
           });
         } catch (err) {
           console.error(`[MealTiming] Telegram delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'meal_timing', stage: 'telegram_delivery' },
+            extra: { userId },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'telegram',
@@ -214,6 +223,10 @@ export async function processMealTimingJob(job: Job<MealTimingJobData>): Promise
           });
         } catch (err) {
           console.error(`[MealTiming] Push delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'meal_timing', stage: 'push_delivery' },
+            extra: { userId },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'push',

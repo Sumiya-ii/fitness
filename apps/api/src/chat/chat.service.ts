@@ -1,4 +1,5 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { PrismaService } from '../prisma';
@@ -89,8 +90,8 @@ export class ChatService implements OnModuleDestroy {
           `- Meals logged: ${mealCount}`,
         ].join('\n');
       }
-    } catch {
-      // Use default message above
+    } catch (err) {
+      Sentry.captureException(err, { tags: { service: 'chat', stage: 'load_dashboard' } });
     }
 
     // Inject long-term coach memory if available
@@ -108,8 +109,8 @@ export class ChatService implements OnModuleDestroy {
         });
         memoryBlock = `\n\n=== Coach memory (last 30 days) ===\n${lines.join('\n')}`;
       }
-    } catch {
-      // Memory is non-critical — proceed without it
+    } catch (err) {
+      Sentry.captureException(err, { tags: { service: 'chat', stage: 'load_coach_memory' } });
     }
 
     const systemPrompt = `${SYSTEM_PROMPT_BASE}\n\n${nutritionContext}${memoryBlock}`;

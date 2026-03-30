@@ -1,5 +1,6 @@
 import { Job } from 'bullmq';
 import { Telegraf } from 'telegraf';
+import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
 
@@ -29,26 +30,26 @@ function buildMessage(data: AdaptiveTargetJobData): LocalizedMessage {
   if (lang === 'en') {
     if (data.reason === 'too_fast') {
       return {
-        title: 'Calorie target adjusted 📈',
-        body: `You've been losing weight faster than planned, so we've ${directionEn} your daily target by ${kcal} kcal to ${data.newCalorieTarget} kcal. Keep it sustainable!`,
+        title: 'Coach adjusted your target 📈',
+        body: `Great progress, but let's slow down a bit to protect muscle. Daily target ${directionEn} by ${kcal} kcal to ${data.newCalorieTarget} kcal. Sustainable wins.`,
       };
     }
     return {
-      title: 'Calorie target adjusted 🔄',
-      body: `Progress has been slower than expected, so we've ${directionEn} your daily target by ${kcal} kcal to ${data.newCalorieTarget} kcal. Stay consistent!`,
+      title: 'Coach tweaked your target 🔄',
+      body: `Things have been slower than expected. Daily target ${directionEn} by ${kcal} kcal to ${data.newCalorieTarget} kcal. Small shift, big difference.`,
     };
   }
 
   // Default: Mongolian
   if (data.reason === 'too_fast') {
     return {
-      title: 'Калорийн зорилт өөрчлөгдлөө 📈',
-      body: `Жин хэт хурдан буурч байна. Өдрийн зорилтод ${kcal} ккал ${direction} — одоо ${data.newCalorieTarget} ккал боллоо. Тогтвортой явцыг хадгал!`,
+      title: 'Coach зорилтыг тохируулав 📈',
+      body: `Сайн явж байна, гэхдээ булчингаа хамгаалахын тулд бага зэрэг аажмаар. Өдрийн зорилт ${kcal} ккал ${direction} — одоо ${data.newCalorieTarget} ккал. Тогтвортой ялалт.`,
     };
   }
   return {
-    title: 'Калорийн зорилт өөрчлөгдлөө 🔄',
-    body: `Ахиц удаашилсан байна. Өдрийн зорилтоос ${kcal} ккал ${direction} — одоо ${data.newCalorieTarget} ккал боллоо. Тогтмол байгаарай!`,
+    title: 'Coach зорилтыг тохируулав 🔄',
+    body: `Ахиц удаашилсан байна. Өдрийн зорилт ${kcal} ккал ${direction} — одоо ${data.newCalorieTarget} ккал. Жижиг өөрчлөлт, том ялгаа.`,
   };
 }
 
@@ -95,6 +96,10 @@ export async function processAdaptiveTargetJob(job: Job<AdaptiveTargetJobData>):
           });
         } catch (err) {
           console.error(`[AdaptiveTarget] Telegram delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'adaptive_target', stage: 'telegram_delivery' },
+            extra: { userId },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'telegram',
@@ -125,6 +130,10 @@ export async function processAdaptiveTargetJob(job: Job<AdaptiveTargetJobData>):
           });
         } catch (err) {
           console.error(`[AdaptiveTarget] Push delivery error for user ${userId}:`, err);
+          Sentry.captureException(err, {
+            tags: { processor: 'adaptive_target', stage: 'push_delivery' },
+            extra: { userId },
+          });
           await logMessage({
             ...sharedLogFields,
             channel: 'push',

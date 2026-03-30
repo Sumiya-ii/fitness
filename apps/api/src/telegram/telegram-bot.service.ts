@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
 import { TelegramService } from './telegram.service';
 import { IdempotencyService } from './idempotency.service';
@@ -68,6 +69,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
     this.bot.catch((err) => {
       this.logger.error('Telegram bot error', err instanceof Error ? err.message : String(err));
+      Sentry.captureException(err, { tags: { service: 'telegram_bot', stage: 'bot_catch' } });
     });
   }
 
@@ -96,6 +98,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         '✅ Account linked!\n\nYou can now chat with your AI nutrition coach right here. Ask me anything — calories, meal ideas, your daily progress.',
       );
     } catch (err) {
+      Sentry.captureException(err, { tags: { service: 'telegram_bot', stage: 'start_with_code' } });
       const msg = err instanceof Error ? err.message : 'Failed to link account';
       await ctx.reply(
         `❌ ${msg}\n\nThe code may have expired. Go back to the Coach app and tap "Connect with Telegram" again.`,
@@ -119,6 +122,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       await this.telegramService.confirmLink(String(from.id), String(chat.id), code, from.username);
       await ctx.reply('✅ Account linked! You can now chat with your AI nutrition coach.');
     } catch (err) {
+      Sentry.captureException(err, { tags: { service: 'telegram_bot', stage: 'link_command' } });
       const msg = err instanceof Error ? err.message : 'Failed to link account';
       await ctx.reply(`❌ ${msg}`);
     }
@@ -198,6 +202,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         'Failed to process message',
         err instanceof Error ? err.message : String(err),
       );
+      Sentry.captureException(err, { tags: { service: 'telegram_bot', stage: 'text_message' } });
       await ctx.reply('Sorry, I had trouble responding. Please try again.');
     }
   }
@@ -321,6 +326,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         'Failed to process voice message',
         err instanceof Error ? err.message : String(err),
       );
+      Sentry.captureException(err, { tags: { service: 'telegram_bot', stage: 'voice_message' } });
       await ctx.telegram.editMessageText(
         ctx.chat!.id,
         processingMsg.message_id,
@@ -377,6 +383,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         'Failed to create meal log from Telegram',
         err instanceof Error ? err.message : String(err),
       );
+      Sentry.captureException(err, { tags: { service: 'telegram_bot', stage: 'log_confirm' } });
       await ctx.answerCbQuery();
       await ctx.editMessageText('Алдаа гарлаа. Дахин оролдоно уу.');
     }
