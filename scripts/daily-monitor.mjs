@@ -83,7 +83,7 @@ async function queryDatabase() {
   const queries = [
     {
       name: 'outbound_messages',
-      sql: `SELECT status, count(*)::int as count FROM outbound_messages WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY status ORDER BY count DESC`,
+      sql: `SELECT status, count(*)::int as count FROM outbound_messages WHERE sent_at > NOW() - INTERVAL '24 hours' GROUP BY status ORDER BY count DESC`,
     },
     {
       name: 'stuck_voice_drafts',
