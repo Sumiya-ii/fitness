@@ -325,7 +325,7 @@ describe('SubscriptionsService', () => {
       expect(result.success).toBe(false);
     });
 
-    it('silently skips non-UUID app_user_id (e.g. RC anonymous ID)', async () => {
+    it('silently skips non-UUID app_user_id (e.g. $RCAnonymousID format)', async () => {
       const result = await service.handleRevenueCatWebhook({
         api_version: '1.0',
         event: {
@@ -344,6 +344,69 @@ describe('SubscriptionsService', () => {
       });
       expect(result.success).toBe(true);
       expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('silently skips non-UUID app_user_id (alphanumeric format without $ prefix)', async () => {
+      // RC may send new anonymous ID formats not prefixed with "$" — e.g. "rck_abc123"
+      const result = await service.handleRevenueCatWebhook({
+        api_version: '1.0',
+        event: {
+          type: 'INITIAL_PURCHASE',
+          id: 'rc-event-anon-2',
+          app_user_id: 'rck_abc123xyz',
+          original_app_user_id: 'rck_abc123xyz',
+          environment: 'PRODUCTION' as const,
+          event_timestamp_ms: Date.now(),
+          store: 'APP_STORE' as const,
+          purchased_at_ms: Date.now(),
+          expiration_at_ms: new Date('2026-04-01').getTime(),
+          transaction_id: 'txn-anon-2',
+          original_transaction_id: 'txn-anon-2-0',
+        },
+      });
+      expect(result.success).toBe(true);
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('silently skips when original_app_user_id is a non-UUID even if app_user_id is a UUID', async () => {
+      const result = await service.handleRevenueCatWebhook({
+        api_version: '1.0',
+        event: {
+          type: 'INITIAL_PURCHASE',
+          id: 'rc-event-anon-3',
+          app_user_id: RC_USER_UUID,
+          original_app_user_id: '$RCAnonymousID:originalanon',
+          environment: 'PRODUCTION' as const,
+          event_timestamp_ms: Date.now(),
+          store: 'APP_STORE' as const,
+          purchased_at_ms: Date.now(),
+          expiration_at_ms: new Date('2026-04-01').getTime(),
+          transaction_id: 'txn-anon-3',
+          original_transaction_id: 'txn-anon-3-0',
+        },
+      });
+      expect(result.success).toBe(true);
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('returns success and does not throw when Prisma rejects the UUID (catch-all safety net)', async () => {
+      // Simulates a Prisma "Inconsistent column data" error slipping through the regex guard
+      prisma.user.findUnique.mockRejectedValue(
+        new Error('Inconsistent column data: Error creating UUID, invalid character at 1'),
+      );
+
+      const result = await service.handleRevenueCatWebhook(makeRcPayload('INITIAL_PURCHASE'));
+
+      expect(result.success).toBe(true);
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
+    });
+
+    it('re-throws non-UUID Prisma errors from findUnique', async () => {
+      prisma.user.findUnique.mockRejectedValue(new Error('Connection refused'));
+
+      await expect(
+        service.handleRevenueCatWebhook(makeRcPayload('INITIAL_PURCHASE')),
+      ).rejects.toThrow('Connection refused');
     });
   });
 });

@@ -174,19 +174,43 @@ export class SubscriptionsService {
       return { success: true };
     }
 
-    // Validate app_user_id is a UUID before querying — RevenueCat anonymous IDs
-    // like "$RCAnonymousID:xxx" are not our users and will crash the UUID column.
+    // Validate both app_user_id and original_app_user_id are UUIDs before querying.
+    // RevenueCat anonymous IDs like "$RCAnonymousID:xxx", "rck_xxx", or any other
+    // non-UUID format are not our users and will crash Prisma's UUID column parser.
+    // Guard both fields here even though we only query by app_user_id, to be safe
+    // if the logic ever changes.
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!UUID_REGEX.test(event.app_user_id)) {
       this.logger.warn(`RevenueCat webhook: skipping non-UUID app_user_id="${event.app_user_id}"`);
       return { success: true };
     }
+    if (!UUID_REGEX.test(event.original_app_user_id)) {
+      this.logger.warn(
+        `RevenueCat webhook: skipping non-UUID original_app_user_id="${event.original_app_user_id}"`,
+      );
+      return { success: true };
+    }
 
-    // Find user — app_user_id is our internal UUID passed to Purchases.logIn()
-    const user = await this.prisma.user.findUnique({
-      where: { id: event.app_user_id },
-      include: { subscription: true },
-    });
+    // Find user — app_user_id is our internal UUID passed to Purchases.logIn().
+    // Wrap in try/catch as a final safety net: if Prisma rejects the UUID (e.g.
+    // RC introduces a new anonymous ID format we haven't seen before), return 200
+    // so RC stops retrying rather than receiving a 500 and re-enqueueing the event.
+    let user: Prisma.UserGetPayload<{ include: { subscription: true } }> | null = null;
+    try {
+      user = await this.prisma.user.findUnique({
+        where: { id: event.app_user_id },
+        include: { subscription: true },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Error creating UUID') || msg.includes('Inconsistent column data')) {
+        this.logger.warn(
+          `RevenueCat webhook: invalid UUID passed to findUnique app_user_id="${event.app_user_id}" — skipping`,
+        );
+        return { success: true };
+      }
+      throw err;
+    }
 
     if (!user) {
       this.logger.warn(`RevenueCat webhook: user not found for app_user_id=${event.app_user_id}`);
