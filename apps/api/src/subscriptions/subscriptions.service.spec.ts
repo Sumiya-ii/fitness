@@ -237,13 +237,14 @@ describe('SubscriptionsService', () => {
   });
 
   describe('handleRevenueCatWebhook', () => {
+    const RC_USER_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
     const makeRcPayload = (type: string, overrides = {}) => ({
       api_version: '1.0',
       event: {
         type,
         id: 'rc-event-id-1',
-        app_user_id: 'user-uuid',
-        original_app_user_id: 'user-uuid',
+        app_user_id: RC_USER_UUID,
+        original_app_user_id: RC_USER_UUID,
         environment: 'PRODUCTION' as const,
         event_timestamp_ms: Date.now(),
         store: 'APP_STORE' as const,
@@ -257,7 +258,7 @@ describe('SubscriptionsService', () => {
 
     it('upgrades to pro on INITIAL_PURCHASE', async () => {
       prisma.user.findUnique.mockResolvedValue({
-        id: 'user-uuid',
+        id: RC_USER_UUID,
         subscription: mockSubscription,
       });
 
@@ -280,18 +281,18 @@ describe('SubscriptionsService', () => {
 
     it('creates a subscription row if none exists', async () => {
       prisma.subscription.create = jest.fn().mockResolvedValue(mockSubscription);
-      prisma.user.findUnique.mockResolvedValue({ id: 'user-uuid', subscription: null });
+      prisma.user.findUnique.mockResolvedValue({ id: RC_USER_UUID, subscription: null });
 
       await service.handleRevenueCatWebhook(makeRcPayload('INITIAL_PURCHASE'));
 
       expect(prisma.subscription.create).toHaveBeenCalledWith({
-        data: { userId: 'user-uuid', tier: 'free', status: 'active' },
+        data: { userId: RC_USER_UUID, tier: 'free', status: 'active' },
       });
     });
 
     it('downgrades to free on EXPIRATION', async () => {
       prisma.user.findUnique.mockResolvedValue({
-        id: 'user-uuid',
+        id: RC_USER_UUID,
         subscription: mockProSubscription,
       });
 
@@ -322,6 +323,27 @@ describe('SubscriptionsService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
       const result = await service.handleRevenueCatWebhook(makeRcPayload('INITIAL_PURCHASE'));
       expect(result.success).toBe(false);
+    });
+
+    it('silently skips non-UUID app_user_id (e.g. RC anonymous ID)', async () => {
+      const result = await service.handleRevenueCatWebhook({
+        api_version: '1.0',
+        event: {
+          type: 'INITIAL_PURCHASE',
+          id: 'rc-event-anon',
+          app_user_id: '$RCAnonymousID:abc123xyz',
+          original_app_user_id: '$RCAnonymousID:abc123xyz',
+          environment: 'PRODUCTION' as const,
+          event_timestamp_ms: Date.now(),
+          store: 'APP_STORE' as const,
+          purchased_at_ms: Date.now(),
+          expiration_at_ms: new Date('2026-04-01').getTime(),
+          transaction_id: 'txn-anon',
+          original_transaction_id: 'txn-anon-0',
+        },
+      });
+      expect(result.success).toBe(true);
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
     });
   });
 });

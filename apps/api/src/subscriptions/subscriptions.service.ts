@@ -166,6 +166,14 @@ export class SubscriptionsService {
       return { success: true };
     }
 
+    // Validate app_user_id is a UUID before querying — RevenueCat anonymous IDs
+    // like "$RCAnonymousID:xxx" are not our users and will crash the UUID column.
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(event.app_user_id)) {
+      this.logger.warn(`RevenueCat webhook: skipping non-UUID app_user_id="${event.app_user_id}"`);
+      return { success: true };
+    }
+
     // Find user — app_user_id is our internal UUID passed to Purchases.logIn()
     const user = await this.prisma.user.findUnique({
       where: { id: event.app_user_id },
