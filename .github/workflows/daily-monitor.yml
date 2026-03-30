@@ -36,6 +36,9 @@ jobs:
         run: |
           railway logs --lines 500 -s coach-worker > /tmp/worker-logs.txt 2>&1 || echo "Worker log pull failed" > /tmp/worker-logs.txt
 
+      - name: Install monitor dependencies
+        run: npm install pg
+
       - name: Run analysis
         env:
           DATABASE_URL: ${{ secrets.MONITOR_DATABASE_URL }}
