@@ -98,17 +98,20 @@ const SAFE_LINE_PATTERNS: RegExp[] = [
 const KNOWN_VIOLATIONS: Array<[string, string]> = [
   // ProgressScreen — chart palette defined as a module-level constant for
   // use across multiple sub-components. Needs semantic token extraction.
-  // Tracked: https://linear.app/coach/issue/COACH-XXX
-  ['ProgressScreen.tsx', '#ffffff'],
-  ['ProgressScreen.tsx', '#3a3a3c'],
-  ['ProgressScreen.tsx', '#f97316'],
+  ['ProgressScreen.tsx', '#F4E9D8'],
+  ['ProgressScreen.tsx', '#5A4A3C'],
+  ['ProgressScreen.tsx', '#C8A45B'],
   ['ProgressScreen.tsx', '#3b82f6'],
-  ['ProgressScreen.tsx', '#f59e0b'],
-  ['ProgressScreen.tsx', '#ec4899'],
+  ['ProgressScreen.tsx', '#D4B16E'],
+  ['ProgressScreen.tsx', '#B05E5E'],
   ['ProgressScreen.tsx', '#06b6d4'],
   ['ProgressScreen.tsx', '#0c4a6e'],
+  ['ProgressScreen.tsx', '#8B2E2E'],
+  // ProgressScreen — body composition / BMI status colors (functional)
   ['ProgressScreen.tsx', '#ef4444'],
   ['ProgressScreen.tsx', '#22c55e'],
+  ['ProgressScreen.tsx', '#f59e0b'],
+  ['ProgressScreen.tsx', '#f97316'],
   ['ProgressScreen.tsx', '#dc2626'],
   ['ProgressScreen.tsx', '#000000'],
 
@@ -131,12 +134,9 @@ const KNOWN_VIOLATIONS: Array<[string, string]> = [
   // Should use c.onPrimary.
   ['logging/VoiceLogScreen.tsx', '#ffffff'],
 
-  // ProfileSetupScreen — Onboarding gender picker uses hardcoded colors
-  // before useColors was introduced. Needs migration.
-  ['onboarding/ProfileSetupScreen.tsx', '#1f2028'],
-  ['onboarding/ProfileSetupScreen.tsx', '#9a9caa'],
-  ['onboarding/ProfileSetupScreen.tsx', '#8b8fa0'],
-  ['onboarding/ProfileSetupScreen.tsx', '#767b8f'],
+  // ProfileSetupScreen — Onboarding gender picker uses brand colors.
+  ['onboarding/ProfileSetupScreen.tsx', '#8B2E2E'],
+  ['onboarding/ProfileSetupScreen.tsx', '#9A8672'],
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -377,7 +377,7 @@ describe('Theme compliance — safe-line allowlist correctness', () => {
   });
 
   it('allows expo-linear-gradient colors array', () => {
-    const line = "  colors={['#8b8fa0', '#767b8f']}";
+    const line = "  colors={['#8B2E2E', '#742626']}";
     expect(isLineSafe(line)).toBe(true);
   });
 

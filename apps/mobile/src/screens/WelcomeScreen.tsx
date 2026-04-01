@@ -6,7 +6,7 @@ import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../navigation/types';
 import { useLocale } from '../i18n';
-import { useColors } from '../theme';
+import { useColors, darkPalette } from '../theme';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Welcome'>;
 
@@ -173,7 +173,7 @@ export function WelcomeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-app">
-      <StatusBar barStyle={c.bg === '#000000' ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={c === darkPalette ? 'light-content' : 'dark-content'} />
 
       {/* Language toggle */}
       <Animated.View

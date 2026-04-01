@@ -48,20 +48,20 @@ type QuickAction = {
 
 // Bottom-to-top: index 0 = closest to + button, index 3 = farthest
 const MENU_ITEMS: QuickAction[] = [
-  { key: 'quick', icon: 'flash', labelKey: 'logging.quick', color: '#a78bfa', screen: 'QuickAdd' },
+  { key: 'quick', icon: 'flash', labelKey: 'logging.quick', color: '#C8A45B', screen: 'QuickAdd' },
   {
     key: 'scan',
     icon: 'barcode-outline',
     labelKey: 'logging.scan',
-    color: '#22c55e',
+    color: '#2F855A',
     screen: 'BarcodeScan',
   },
-  { key: 'voice', icon: 'mic', labelKey: 'logging.voice', color: '#f97316', screen: 'VoiceLog' },
+  { key: 'voice', icon: 'mic', labelKey: 'logging.voice', color: '#B05E5E', screen: 'VoiceLog' },
   {
     key: 'photo',
     icon: 'camera',
     labelKey: 'logging.photo',
-    color: '#ffffff',
+    color: '#F4E9D8',
     screen: 'PhotoLog',
   },
 ];

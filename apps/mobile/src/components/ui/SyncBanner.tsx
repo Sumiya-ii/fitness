@@ -21,7 +21,7 @@ export function SyncBanner() {
     }).start();
   }, [shouldShow, insets.top, translateY]);
 
-  const bgColor = isSyncing ? '#2563eb' : '#d97706'; // blue-600 : amber-600
+  const bgColor = isSyncing ? '#8B2E2E' : '#C8A45B'; // brand-burgundy : brand-gold
 
   const label = isSyncing
     ? 'Syncing offline data…'

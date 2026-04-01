@@ -21,7 +21,17 @@ module.exports = {
           900: colors.brand.primary['900'],
         },
         'on-primary': 'rgb(var(--color-on-primary) / <alpha-value>)',
-        accent: colors.accent,
+        accent: {
+          50: colors.accent['50'],
+          100: colors.accent['100'],
+          200: colors.accent['200'],
+          300: colors.accent['300'],
+          400: colors.accent['400'],
+          500: 'rgb(var(--color-accent-500) / <alpha-value>)',
+          600: 'rgb(var(--color-accent-600) / <alpha-value>)',
+          700: colors.accent['700'],
+        },
+        gold: colors.brand.gold,
         surface: {
           DEFAULT: 'rgb(var(--color-surface-default) / <alpha-value>)',
           secondary: 'rgb(var(--color-surface-secondary) / <alpha-value>)',
@@ -41,7 +51,6 @@ module.exports = {
         danger: colors.status.danger,
         warning: colors.status.warning,
         success: colors.status.success,
-        orange: colors.brand.orange,
       },
       fontFamily: {
         sans: ['Inter'],

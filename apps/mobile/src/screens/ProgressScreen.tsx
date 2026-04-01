@@ -50,12 +50,12 @@ const HISTORY_PERIODS: HistoryPeriod[] = [7, 30, 90];
 // ─── Chart colors ─────────────────────────────────────────────────────────────
 
 const C = {
-  calories: '#ffffff',
-  caloriesLight: '#3a3a3c',
-  goal: '#f97316',
+  calories: '#F4E9D8',
+  caloriesLight: '#5A4A3C',
+  goal: '#C8A45B',
   protein: '#3b82f6',
-  carbs: '#f59e0b',
-  fat: '#ec4899',
+  carbs: '#D4B16E',
+  fat: '#B05E5E',
   water: '#06b6d4',
   waterLight: '#0c4a6e',
 };
@@ -191,8 +191,8 @@ function WeekHistoryChart({
               <View style={{ width: '55%', height: barH, borderRadius: 4, overflow: 'hidden' }}>
                 {hasData ? (
                   <>
-                    <View style={{ flex: pcal || 0.001, backgroundColor: '#f97316' }} />
-                    <View style={{ flex: ccal || 0.001, backgroundColor: '#f59e0b' }} />
+                    <View style={{ flex: pcal || 0.001, backgroundColor: '#8B2E2E' }} />
+                    <View style={{ flex: ccal || 0.001, backgroundColor: '#C8A45B' }} />
                     <View style={{ flex: fcal || 0.001, backgroundColor: '#3b82f6' }} />
                   </>
                 ) : (

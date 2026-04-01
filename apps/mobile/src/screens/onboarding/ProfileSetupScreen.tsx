@@ -76,7 +76,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
     <SafeAreaView className="flex-1 bg-surface-app" edges={['top']}>
       <View className="relative">
         <LinearGradient
-          colors={['#8b8fa0', '#767b8f']}
+          colors={['#8B2E2E', '#742626']}
           className="pt-8 pb-12 px-6"
           style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
         >
@@ -101,7 +101,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
                 : 'border-surface-border bg-surface-card'
             }`}
           >
-            <Ionicons name="male" size={20} color={gender === 'male' ? '#1f2028' : '#9a9caa'} />
+            <Ionicons name="male" size={20} color={gender === 'male' ? '#8B2E2E' : '#9A8672'} />
             <Text
               className={`ml-2 font-sans-medium ${
                 gender === 'male' ? 'text-primary-500' : 'text-text-secondary'
@@ -118,7 +118,7 @@ export function ProfileSetupScreen({ navigation }: Props) {
                 : 'border-surface-border bg-surface-card'
             }`}
           >
-            <Ionicons name="female" size={20} color={gender === 'female' ? '#1f2028' : '#9a9caa'} />
+            <Ionicons name="female" size={20} color={gender === 'female' ? '#8B2E2E' : '#9A8672'} />
             <Text
               className={`ml-2 font-sans-medium ${
                 gender === 'female' ? 'text-primary-500' : 'text-text-secondary'

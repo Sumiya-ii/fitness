@@ -40,7 +40,7 @@ export function buildNavigationTheme(palette: ColorPalette): Theme {
       card: palette.card,
       border: palette.border,
       text: palette.text,
-      notification: palette.warning,
+      notification: palette.accent,
     },
   };
 }

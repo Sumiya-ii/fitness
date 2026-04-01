@@ -31,29 +31,29 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     icon: 'camera',
-    iconColor: '#F472B6',
-    iconBg: 'rgba(244,114,182,0.15)',
+    iconColor: '#B05E5E',
+    iconBg: 'rgba(139,46,46,0.15)',
     titleKey: 'paywall.feature1Title',
     descKey: 'paywall.feature1Desc',
   },
   {
     icon: 'mic',
-    iconColor: '#60A5FA',
-    iconBg: 'rgba(96,165,250,0.15)',
+    iconColor: '#C8A45B',
+    iconBg: 'rgba(200,164,91,0.15)',
     titleKey: 'paywall.feature2Title',
     descKey: 'paywall.feature2Desc',
   },
   {
     icon: 'chatbubble-ellipses',
-    iconColor: '#34D399',
-    iconBg: 'rgba(52,211,153,0.15)',
+    iconColor: '#68D391',
+    iconBg: 'rgba(104,211,145,0.15)',
     titleKey: 'paywall.feature3Title',
     descKey: 'paywall.feature3Desc',
   },
   {
     icon: 'bar-chart',
-    iconColor: '#FBBF24',
-    iconBg: 'rgba(251,191,36,0.15)',
+    iconColor: '#D4B16E',
+    iconBg: 'rgba(212,177,110,0.15)',
     titleKey: 'paywall.feature4Title',
     descKey: 'paywall.feature4Desc',
   },
@@ -180,7 +180,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
       <View
         style={{
           flex: 1,
-          backgroundColor: '#0A0A0A',
+          backgroundColor: '#1A0F0A',
           alignItems: 'center',
           justifyContent: 'center',
           padding: 32,
@@ -193,19 +193,19 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                 width: 96,
                 height: 96,
                 borderRadius: 48,
-                backgroundColor: 'rgba(34,197,94,0.2)',
+                backgroundColor: 'rgba(200,164,91,0.2)',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 24,
               }}
             >
-              <Ionicons name="checkmark-circle" size={64} color="#22C55E" />
+              <Ionicons name="checkmark-circle" size={64} color="#C8A45B" />
             </View>
             <Text
               style={{
                 fontSize: 28,
                 fontWeight: '800',
-                color: '#FFFFFF',
+                color: '#F4E9D8',
                 textAlign: 'center',
                 marginBottom: 10,
               }}
@@ -215,7 +215,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             <Text
               style={{
                 fontSize: 16,
-                color: '#9CA3AF',
+                color: '#B8A896',
                 textAlign: 'center',
                 lineHeight: 24,
                 marginBottom: 36,
@@ -226,13 +226,13 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             <Pressable
               onPress={onClose}
               style={{
-                backgroundColor: '#22C55E',
+                backgroundColor: '#C8A45B',
                 borderRadius: 16,
                 paddingVertical: 16,
                 paddingHorizontal: 48,
               }}
             >
-              <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '700' }}>
+              <Text style={{ color: '#1A0F0A', fontSize: 17, fontWeight: '700' }}>
                 {t('subscription.successCta')}
               </Text>
             </Pressable>
@@ -247,7 +247,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
 
   // ── Main paywall ──────────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: '#0A0A0A' }}>
+    <View style={{ flex: 1, backgroundColor: '#1A0F0A' }}>
       <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
         {/* Close button */}
         <Pressable
@@ -261,12 +261,12 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             width: 32,
             height: 32,
             borderRadius: 16,
-            backgroundColor: 'rgba(255,255,255,0.1)',
+            backgroundColor: 'rgba(244,233,216,0.1)',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="close" size={18} color="#9CA3AF" />
+          <Ionicons name="close" size={18} color="#B8A896" />
         </Pressable>
 
         <ScrollView
@@ -284,7 +284,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             }}
           >
             <LinearGradient
-              colors={['#22C55E', '#16A34A']}
+              colors={['#C8A45B', '#B08D3E']}
               style={{
                 width: 88,
                 height: 88,
@@ -292,20 +292,20 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 24,
-                shadowColor: '#22C55E',
+                shadowColor: '#C8A45B',
                 shadowOpacity: 0.4,
                 shadowRadius: 20,
                 shadowOffset: { width: 0, height: 8 },
               }}
             >
-              <Ionicons name="fitness" size={48} color="#FFFFFF" />
+              <Ionicons name="fitness" size={48} color="#1A0F0A" />
             </LinearGradient>
 
             <Text
               style={{
                 fontSize: 34,
                 fontWeight: '800',
-                color: '#FFFFFF',
+                color: '#F4E9D8',
                 textAlign: 'center',
                 letterSpacing: -0.5,
                 marginBottom: 10,
@@ -316,7 +316,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             <Text
               style={{
                 fontSize: 16,
-                color: '#9CA3AF',
+                color: '#B8A896',
                 textAlign: 'center',
                 lineHeight: 24,
                 maxWidth: 280,
@@ -328,12 +328,12 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             {/* Star rating */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 3 }}>
               {([1, 2, 3, 4, 5] as const).map((i) => (
-                <Ionicons key={i} name="star" size={15} color="#F59E0B" />
+                <Ionicons key={i} name="star" size={15} color="#C8A45B" />
               ))}
-              <Text style={{ color: '#F59E0B', fontWeight: '700', fontSize: 14, marginLeft: 6 }}>
+              <Text style={{ color: '#C8A45B', fontWeight: '700', fontSize: 14, marginLeft: 6 }}>
                 4.8
               </Text>
-              <Text style={{ color: '#6B7280', fontSize: 14, marginLeft: 4 }}>
+              <Text style={{ color: '#8A7A68', fontSize: 14, marginLeft: 4 }}>
                 · {t('paywall.reviewCount')}
               </Text>
             </View>
@@ -344,7 +344,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             entering={FadeInDown.delay(80).duration(500)}
             style={{ paddingHorizontal: 20, marginBottom: 28 }}
           >
-            <View style={{ backgroundColor: '#141414', borderRadius: 20, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: '#2A1C15', borderRadius: 20, overflow: 'hidden' }}>
               {FEATURES.map((feature, i) => (
                 <View key={feature.titleKey}>
                   <View
@@ -366,7 +366,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                     <View style={{ flex: 1 }}>
                       <Text
                         style={{
-                          color: '#FFFFFF',
+                          color: '#F4E9D8',
                           fontWeight: '600',
                           fontSize: 15,
                           marginBottom: 3,
@@ -374,14 +374,14 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                       >
                         {t(feature.titleKey)}
                       </Text>
-                      <Text style={{ color: '#6B7280', fontSize: 13, lineHeight: 18 }}>
+                      <Text style={{ color: '#8A7A68', fontSize: 13, lineHeight: 18 }}>
                         {t(feature.descKey)}
                       </Text>
                     </View>
-                    <Ionicons name="checkmark-circle" size={22} color="#22C55E" />
+                    <Ionicons name="checkmark-circle" size={22} color="#C8A45B" />
                   </View>
                   {i < FEATURES.length - 1 && (
-                    <View style={{ height: 1, backgroundColor: '#1F1F1F', marginHorizontal: 16 }} />
+                    <View style={{ height: 1, backgroundColor: '#3D2E23', marginHorizontal: 16 }} />
                   )}
                 </View>
               ))}
@@ -393,13 +393,13 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             entering={FadeInDown.delay(160).duration(500)}
             style={{ paddingHorizontal: 20 }}
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 18, marginBottom: 14 }}>
+            <Text style={{ color: '#F4E9D8', fontWeight: '700', fontSize: 18, marginBottom: 14 }}>
               {t('subscription.choosePlan')}
             </Text>
 
             {loadingOfferings ? (
               <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-                <ActivityIndicator size="large" color="#22C55E" />
+                <ActivityIndicator size="large" color="#C8A45B" />
               </View>
             ) : (
               <View style={{ gap: 10 }}>
@@ -410,9 +410,9 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                     style={{
                       borderRadius: 18,
                       borderWidth: 1.5,
-                      borderColor: selectedPkg === 'annual' ? '#22C55E' : '#2A2A2A',
+                      borderColor: selectedPkg === 'annual' ? '#C8A45B' : '#3D2E23',
                       backgroundColor:
-                        selectedPkg === 'annual' ? 'rgba(34,197,94,0.08)' : '#141414',
+                        selectedPkg === 'annual' ? 'rgba(200,164,91,0.08)' : '#2A1C15',
                       padding: 18,
                       overflow: 'visible',
                     }}
@@ -423,7 +423,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                           position: 'absolute',
                           top: -13,
                           left: 16,
-                          backgroundColor: '#22C55E',
+                          backgroundColor: '#C8A45B',
                           paddingHorizontal: 10,
                           paddingVertical: 4,
                           borderRadius: 8,
@@ -431,7 +431,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                       >
                         <Text
                           style={{
-                            color: '#FFFFFF',
+                            color: '#1A0F0A',
                             fontWeight: '700',
                             fontSize: 11,
                             letterSpacing: 0.5,
@@ -457,31 +457,31 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                             marginBottom: 5,
                           }}
                         >
-                          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
+                          <Text style={{ color: '#F4E9D8', fontWeight: '700', fontSize: 16 }}>
                             {t('subscription.annual')}
                           </Text>
                           <View
                             style={{
-                              backgroundColor: '#22C55E',
+                              backgroundColor: '#8B2E2E',
                               paddingHorizontal: 7,
                               paddingVertical: 3,
                               borderRadius: 6,
                             }}
                           >
-                            <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 11 }}>
+                            <Text style={{ color: '#F4E9D8', fontWeight: '800', fontSize: 11 }}>
                               {t('subscription.annualSavings')}
                             </Text>
                           </View>
                         </View>
-                        <Text style={{ color: '#6B7280', fontSize: 13 }}>
+                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
                           {`${Math.round(offerings.annual.product.price / 12).toLocaleString()}₮ / ${t('subscription.monthly').toLowerCase()}`}
                         </Text>
                       </View>
                       <View style={{ alignItems: 'flex-end', marginLeft: 12 }}>
-                        <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 22 }}>
+                        <Text style={{ color: '#F4E9D8', fontWeight: '800', fontSize: 22 }}>
                           {offerings.annual.product.priceString}
                         </Text>
-                        <Text style={{ color: '#6B7280', fontSize: 13 }}>
+                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
                           {t('subscription.perYear')}
                         </Text>
                       </View>
@@ -496,9 +496,9 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                     style={{
                       borderRadius: 18,
                       borderWidth: 1.5,
-                      borderColor: selectedPkg === 'monthly' ? '#22C55E' : '#2A2A2A',
+                      borderColor: selectedPkg === 'monthly' ? '#C8A45B' : '#3D2E23',
                       backgroundColor:
-                        selectedPkg === 'monthly' ? 'rgba(34,197,94,0.08)' : '#141414',
+                        selectedPkg === 'monthly' ? 'rgba(200,164,91,0.08)' : '#2A1C15',
                       padding: 18,
                     }}
                   >
@@ -512,7 +512,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                       <View>
                         <Text
                           style={{
-                            color: '#FFFFFF',
+                            color: '#F4E9D8',
                             fontWeight: '700',
                             fontSize: 16,
                             marginBottom: 5,
@@ -520,15 +520,15 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                         >
                           {t('subscription.monthly')}
                         </Text>
-                        <Text style={{ color: '#6B7280', fontSize: 13 }}>
+                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
                           {t('subscription.billedMonthly')}
                         </Text>
                       </View>
                       <View style={{ alignItems: 'flex-end', marginLeft: 12 }}>
-                        <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 22 }}>
+                        <Text style={{ color: '#F4E9D8', fontWeight: '800', fontSize: 22 }}>
                           {offerings.monthly.product.priceString}
                         </Text>
-                        <Text style={{ color: '#6B7280', fontSize: 13 }}>
+                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
                           {t('subscription.perMonth')}
                         </Text>
                       </View>
@@ -540,7 +540,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                 {!hasOfferings && (
                   <View
                     style={{
-                      backgroundColor: '#141414',
+                      backgroundColor: '#2A1C15',
                       borderRadius: 18,
                       padding: 28,
                       alignItems: 'center',
@@ -548,7 +548,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                   >
                     <Text
                       style={{
-                        color: '#6B7280',
+                        color: '#8A7A68',
                         fontSize: 14,
                         textAlign: 'center',
                         marginBottom: 16,
@@ -563,10 +563,10 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                         paddingVertical: 10,
                         borderRadius: 10,
                         borderWidth: 1,
-                        borderColor: '#3A3A3A',
+                        borderColor: '#5A4A3C',
                       }}
                     >
-                      <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 14 }}>
+                      <Text style={{ color: '#F4E9D8', fontWeight: '600', fontSize: 14 }}>
                         {t('common.retry')}
                       </Text>
                     </Pressable>
@@ -581,16 +581,16 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             entering={FadeInDown.delay(240).duration(500)}
             style={{ paddingHorizontal: 20, marginTop: 24 }}
           >
-            <View style={{ backgroundColor: '#141414', borderRadius: 16, padding: 18 }}>
+            <View style={{ backgroundColor: '#2A1C15', borderRadius: 16, padding: 18 }}>
               <View style={{ flexDirection: 'row', marginBottom: 8 }}>
                 {([1, 2, 3, 4, 5] as const).map((i) => (
-                  <Ionicons key={i} name="star" size={13} color="#F59E0B" />
+                  <Ionicons key={i} name="star" size={13} color="#C8A45B" />
                 ))}
               </View>
-              <Text style={{ color: '#E5E7EB', fontSize: 14, lineHeight: 22, fontStyle: 'italic' }}>
+              <Text style={{ color: '#F4E9D8', fontSize: 14, lineHeight: 22, fontStyle: 'italic' }}>
                 "{t('paywall.review1Text')}"
               </Text>
-              <Text style={{ color: '#6B7280', fontSize: 13, marginTop: 10, fontWeight: '600' }}>
+              <Text style={{ color: '#8A7A68', fontSize: 13, marginTop: 10, fontWeight: '600' }}>
                 — {t('paywall.review1Author')}
               </Text>
             </View>
@@ -604,33 +604,33 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: '#0A0A0A',
+            backgroundColor: '#1A0F0A',
             paddingHorizontal: 20,
             paddingTop: 16,
             paddingBottom: Platform.OS === 'ios' ? 34 : 20,
             borderTopWidth: 1,
-            borderTopColor: '#1A1A1A',
+            borderTopColor: '#3D2E23',
           }}
         >
           <Pressable
             onPress={() => void handlePurchase()}
             disabled={ctaDisabled}
             style={{
-              backgroundColor: ctaDisabled ? '#1F2937' : '#22C55E',
+              backgroundColor: ctaDisabled ? '#382A20' : '#C8A45B',
               borderRadius: 16,
               paddingVertical: 17,
               alignItems: 'center',
               marginBottom: 14,
-              shadowColor: ctaDisabled ? 'transparent' : '#22C55E',
+              shadowColor: ctaDisabled ? 'transparent' : '#C8A45B',
               shadowOpacity: 0.35,
               shadowRadius: 12,
               shadowOffset: { width: 0, height: 4 },
             }}
           >
             {purchasing ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color="#1A0F0A" />
             ) : (
-              <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '700' }}>
+              <Text style={{ color: '#1A0F0A', fontSize: 17, fontWeight: '700' }}>
                 {activePkg
                   ? `${t('paywall.getProCta')} · ${activePkg.product.priceString}`
                   : t('subscription.subscribe')}
@@ -649,21 +649,21 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             }}
           >
             <Pressable onPress={() => void handleRestore()} disabled={restoring} hitSlop={8}>
-              <Text style={{ color: '#6B7280', fontSize: 13 }}>
+              <Text style={{ color: '#8A7A68', fontSize: 13 }}>
                 {restoring ? t('common.loading') : t('subscription.restore')}
               </Text>
             </Pressable>
-            <Text style={{ color: '#374151', fontSize: 13, marginHorizontal: 6 }}>·</Text>
+            <Text style={{ color: '#5A4A3C', fontSize: 13, marginHorizontal: 6 }}>·</Text>
             <Pressable onPress={() => void handleLegalLink('terms')} hitSlop={8}>
-              <Text style={{ color: '#6B7280', fontSize: 13 }}>{t('auth.termsOfService')}</Text>
+              <Text style={{ color: '#8A7A68', fontSize: 13 }}>{t('auth.termsOfService')}</Text>
             </Pressable>
-            <Text style={{ color: '#374151', fontSize: 13, marginHorizontal: 6 }}>·</Text>
+            <Text style={{ color: '#5A4A3C', fontSize: 13, marginHorizontal: 6 }}>·</Text>
             <Pressable onPress={() => void handleLegalLink('privacy')} hitSlop={8}>
-              <Text style={{ color: '#6B7280', fontSize: 13 }}>{t('auth.privacyPolicy')}</Text>
+              <Text style={{ color: '#8A7A68', fontSize: 13 }}>{t('auth.privacyPolicy')}</Text>
             </Pressable>
           </View>
 
-          <Text style={{ color: '#4B5563', fontSize: 12, textAlign: 'center' }}>
+          <Text style={{ color: '#6B5544', fontSize: 12, textAlign: 'center' }}>
             {t('subscription.iapDisclaimer')}
           </Text>
         </View>
