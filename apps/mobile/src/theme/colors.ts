@@ -4,6 +4,12 @@
  * instead of hardcoding hex values.
  *
  * ~20 semantic tokens — kept intentionally small.
+ *
+ * Brand palette:
+ *   Burgundy  #8B2E2E  — primary CTA (light) / accent (dark)
+ *   Gold      #C8A45B  — accent (light) / primary CTA (dark)
+ *   Cream     #F4E9D8  — light app background / dark text
+ *   Dark      #1A0F0A  — dark app background / light text
  */
 
 export interface ColorPalette {
@@ -23,6 +29,8 @@ export interface ColorPalette {
   primary: string; // main CTA color
   primaryMuted: string; // primary-400 equivalent (subdued)
   onPrimary: string; // text/icons on primary bg
+  accent: string; // teal accent
+  onAccent: string; // text/icons on accent bg
 
   // Status
   danger: string;
@@ -40,55 +48,59 @@ export interface ColorPalette {
 }
 
 export const lightPalette: ColorPalette = {
-  bg: '#f4f7fb',
-  card: '#ffffff',
-  cardAlt: '#f0f4f9',
-  border: '#dde5f0',
-  muted: '#c3cedf',
+  bg: '#F4E9D8',
+  card: '#FEFAF5',
+  cardAlt: '#F0E4CC',
+  border: '#CDB99E',
+  muted: '#B8A896',
 
-  text: '#0b1220',
-  textSecondary: '#51617a',
-  textTertiary: '#7687a2',
+  text: '#2D1A10',
+  textSecondary: '#6B5544',
+  textTertiary: '#8A7A68',
 
-  primary: '#0f172a',
-  primaryMuted: '#475569',
-  onPrimary: '#ffffff',
+  primary: '#8B2E2E',
+  primaryMuted: '#A53535',
+  onPrimary: '#F4E9D8',
+  accent: '#C8A45B',
+  onAccent: '#1A0F0A',
 
-  danger: '#ef4444',
-  warning: '#f59e0b',
-  success: '#22c55e',
+  danger: '#C0392B',
+  warning: '#D4A017',
+  success: '#2D7A3A',
 
-  trackBg: '#e8eef5',
+  trackBg: '#E8D5BB',
 
-  shadow: '#0b1220',
-  tabBarBg: '#ffffff',
-  tabBarBorder: 'rgba(0,0,0,0.08)',
-  tabInactive: '#94a3b8',
+  shadow: '#2D1A10',
+  tabBarBg: '#FEFAF5',
+  tabBarBorder: 'rgba(45, 26, 16, 0.08)',
+  tabInactive: '#B8A896',
 };
 
 export const darkPalette: ColorPalette = {
-  bg: '#000000',
-  card: '#1c1c1e',
-  cardAlt: '#2c2c2e',
-  border: '#2c2c2e',
-  muted: '#48484a',
+  bg: '#1A0F0A',
+  card: '#2A1C15',
+  cardAlt: '#2F2018',
+  border: '#3D2E23',
+  muted: '#5A4A3C',
 
-  text: '#ffffff',
-  textSecondary: '#a1a1aa',
-  textTertiary: '#71717a',
+  text: '#F4E9D8',
+  textSecondary: '#B8A896',
+  textTertiary: '#8A7A68',
 
-  primary: '#ffffff',
-  primaryMuted: '#94a3b8',
-  onPrimary: '#000000',
+  primary: '#C8A45B',
+  primaryMuted: '#A8843B',
+  onPrimary: '#1A0F0A',
+  accent: '#8B2E2E',
+  onAccent: '#F4E9D8',
 
-  danger: '#ef4444',
-  warning: '#f59e0b',
-  success: '#22c55e',
+  danger: '#F87171',
+  warning: '#FBBF24',
+  success: '#4ADE80',
 
-  trackBg: '#2c2c2e',
+  trackBg: '#2A1C15',
 
   shadow: '#000000',
-  tabBarBg: '#0a0a0a',
-  tabBarBorder: 'rgba(255,255,255,0.08)',
-  tabInactive: '#71717a',
+  tabBarBg: '#130A06',
+  tabBarBorder: 'rgba(244, 233, 216, 0.08)',
+  tabInactive: '#5A4A3C',
 };

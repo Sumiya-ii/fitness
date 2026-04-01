@@ -299,23 +299,26 @@ describe('Color Palettes', () => {
     // bg should be a light color (high hex values)
     expect(lightPalette.bg).toMatch(/^#[a-fA-F0-9]{6}$/);
     // text should be dark
-    expect(lightPalette.text).toBe('#0b1220');
-    // primary CTA should be dark in light mode
-    expect(lightPalette.onPrimary).toBe('#ffffff');
+    expect(lightPalette.text).toBe('#2D1A10');
+    // primary CTA text should be cream (warm white) on burgundy in light mode
+    expect(lightPalette.onPrimary).toBe('#F4E9D8');
   });
 
   test('dark palette has dark backgrounds and light text', () => {
     const { darkPalette } = require('../theme/colors');
-    expect(darkPalette.bg).toBe('#000000');
-    expect(darkPalette.text).toBe('#ffffff');
-    expect(darkPalette.onPrimary).toBe('#000000');
+    expect(darkPalette.bg).toBe('#1A0F0A');
+    expect(darkPalette.text).toBe('#F4E9D8');
+    expect(darkPalette.onPrimary).toBe('#1A0F0A');
   });
 
-  test('status colors are the same in both palettes', () => {
+  test('both palettes have status colors', () => {
     const { lightPalette, darkPalette } = require('../theme/colors');
-    expect(lightPalette.danger).toBe(darkPalette.danger);
-    expect(lightPalette.warning).toBe(darkPalette.warning);
-    expect(lightPalette.success).toBe(darkPalette.success);
+    expect(lightPalette.danger).toBeTruthy();
+    expect(lightPalette.warning).toBeTruthy();
+    expect(lightPalette.success).toBeTruthy();
+    expect(darkPalette.danger).toBeTruthy();
+    expect(darkPalette.warning).toBeTruthy();
+    expect(darkPalette.success).toBeTruthy();
   });
 });
 
