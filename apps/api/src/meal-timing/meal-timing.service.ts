@@ -232,7 +232,10 @@ export class MealTimingService {
     let enqueued = 0;
 
     for (const pref of prefs) {
-      const now = DateTime.now().setZone(pref.reminderTimezone);
+      // Resolve timezone from profile first (single source of truth)
+      const profile = await this.prisma.profile.findUnique({ where: { userId: pref.userId } });
+      const tz = profile?.timezone ?? pref.reminderTimezone;
+      const now = DateTime.now().setZone(tz);
 
       // Only fire on Monday between 9:00–10:00 AM local time
       if (now.weekday !== 1 || now.hour < 9 || now.hour >= 10) continue;
@@ -247,12 +250,11 @@ export class MealTimingService {
       const from = lastMonday.toJSDate();
       const to = lastMonday.plus({ days: 7 }).toJSDate();
 
-      const [mealLogs, profile, tgLink, deviceTokens] = await Promise.all([
+      const [mealLogs, tgLink, deviceTokens] = await Promise.all([
         this.prisma.mealLog.findMany({
           where: { userId: pref.userId, loggedAt: { gte: from, lt: to } },
           select: { loggedAt: true, mealType: true },
         }),
-        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.deviceToken.findMany({
           where: { userId: pref.userId, active: true },
@@ -263,7 +265,7 @@ export class MealTimingService {
       // Skip users with no meal data last week
       if (mealLogs.length === 0) continue;
 
-      const insights = this.computeInsights(mealLogs, pref.reminderTimezone, lastMonday);
+      const insights = this.computeInsights(mealLogs, tz, lastMonday);
 
       const jobData: MealTimingJobData = {
         userId: pref.userId,

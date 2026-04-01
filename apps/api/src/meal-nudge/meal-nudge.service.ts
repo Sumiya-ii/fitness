@@ -43,10 +43,21 @@ export class MealNudgeService {
     let enqueued = 0;
 
     for (const pref of prefs) {
-      const localHour = getLocalHour(pref.reminderTimezone);
+      const [tgLink, profile, deviceTokens] = await Promise.all([
+        this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.deviceToken.findMany({
+          where: { userId: pref.userId },
+          select: { token: true },
+        }),
+      ]);
+
+      const tz = profile?.timezone ?? pref.reminderTimezone;
+
+      const localHour = getLocalHour(tz);
       if (localHour < 20 || localHour >= 21) continue;
 
-      const todayStart = getLocalDayStart(pref.reminderTimezone);
+      const todayStart = getLocalDayStart(tz);
       const todayEnd = new Date(todayStart);
       todayEnd.setDate(todayEnd.getDate() + 1);
 
@@ -59,15 +70,6 @@ export class MealNudgeService {
 
       // Only nudge users who logged exactly 1 meal — 0 is handled by evening reminder
       if (mealCount !== 1) continue;
-
-      const [tgLink, profile, deviceTokens] = await Promise.all([
-        this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
-        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
-        this.prisma.deviceToken.findMany({
-          where: { userId: pref.userId },
-          select: { token: true },
-        }),
-      ]);
 
       await this.nudgeQueue.add(
         'meal-nudge',

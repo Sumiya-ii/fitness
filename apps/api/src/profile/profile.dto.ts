@@ -10,6 +10,7 @@ import {
 export const updateProfileSchema = z.object({
   displayName: z.string().min(1).max(100).optional(),
   locale: z.enum(SUPPORTED_LOCALES).optional(),
+  timezone: z.string().max(50).optional(),
   unitSystem: z.enum(UNIT_SYSTEMS).optional(),
   gender: z.enum(GENDERS).optional(),
   birthDate: z

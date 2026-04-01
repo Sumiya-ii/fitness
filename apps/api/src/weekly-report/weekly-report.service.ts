@@ -134,7 +134,10 @@ export class WeeklyReportService implements OnModuleDestroy {
     let enqueued = 0;
 
     for (const pref of prefs) {
-      const now = DateTime.now().setZone(pref.reminderTimezone);
+      // Resolve timezone from profile first (single source of truth)
+      const profile = await this.prisma.profile.findUnique({ where: { userId: pref.userId } });
+      const tz = profile?.timezone ?? pref.reminderTimezone;
+      const now = DateTime.now().setZone(tz);
 
       // Only fire on Monday between 9:00–10:00 AM local time
       if (now.weekday !== 1 || now.hour < 9 || now.hour >= 10) continue;
@@ -150,7 +153,7 @@ export class WeeklyReportService implements OnModuleDestroy {
       const weekStartDate = lastMonday.toJSDate();
       const weekEndDate = lastMonday.plus({ days: 7 }).toJSDate();
 
-      const [mealLogs, weightLogs, profile, target, tgLink, deviceTokens] = await Promise.all([
+      const [mealLogs, weightLogs, target, tgLink, deviceTokens] = await Promise.all([
         this.prisma.mealLog.findMany({
           where: { userId: pref.userId, loggedAt: { gte: weekStartDate, lt: weekEndDate } },
           select: { loggedAt: true, totalCalories: true, totalProtein: true },
@@ -159,7 +162,6 @@ export class WeeklyReportService implements OnModuleDestroy {
           where: { userId: pref.userId, loggedAt: { gte: weekStartDate, lt: weekEndDate } },
           orderBy: { loggedAt: 'asc' },
         }),
-        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
         this.prisma.target.findFirst({
           where: { userId: pref.userId, effectiveTo: null },
           orderBy: { effectiveFrom: 'desc' },
@@ -176,7 +178,7 @@ export class WeeklyReportService implements OnModuleDestroy {
         weightLogs,
         target?.calorieTarget ?? null,
         target ? Number(target.proteinGrams) : null,
-        pref.reminderTimezone,
+        tz,
         lastMonday,
       );
 

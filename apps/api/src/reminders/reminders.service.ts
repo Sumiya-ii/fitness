@@ -104,15 +104,6 @@ export class RemindersService implements OnModuleDestroy {
     let enqueued = 0;
 
     for (const pref of prefs) {
-      const { hour: localHour } = getLocalTimeParts(pref.reminderTimezone);
-      if (localHour < 8 || localHour >= 9) continue;
-
-      if (this.isInQuietHours(pref.reminderTimezone, pref.quietHoursStart, pref.quietHoursEnd)) {
-        continue;
-      }
-
-      if (await this.hasBeenSentToday(pref.userId, 'morning', pref.reminderTimezone)) continue;
-
       const [tgLink, profile, deviceTokens] = await Promise.all([
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
@@ -121,6 +112,17 @@ export class RemindersService implements OnModuleDestroy {
           select: { token: true },
         }),
       ]);
+
+      const tz = profile?.timezone ?? pref.reminderTimezone;
+
+      const { hour: localHour } = getLocalTimeParts(tz);
+      if (localHour < 8 || localHour >= 9) continue;
+
+      if (this.isInQuietHours(tz, pref.quietHoursStart, pref.quietHoursEnd)) {
+        continue;
+      }
+
+      if (await this.hasBeenSentToday(pref.userId, 'morning', tz)) continue;
 
       await this.reminderQueue.add(
         'morning',
@@ -134,7 +136,7 @@ export class RemindersService implements OnModuleDestroy {
         } satisfies ReminderJobData,
         { jobId: `morning-${pref.userId}-${Date.now()}` },
       );
-      await this.markReminderSent(pref.userId, 'morning', pref.reminderTimezone);
+      await this.markReminderSent(pref.userId, 'morning', tz);
       enqueued++;
     }
 
@@ -153,16 +155,27 @@ export class RemindersService implements OnModuleDestroy {
     let enqueued = 0;
 
     for (const pref of prefs) {
-      const { hour: localHour } = getLocalTimeParts(pref.reminderTimezone);
+      const [tgLink, profile, deviceTokens] = await Promise.all([
+        this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
+        this.prisma.deviceToken.findMany({
+          where: { userId: pref.userId, active: true },
+          select: { token: true },
+        }),
+      ]);
+
+      const tz = profile?.timezone ?? pref.reminderTimezone;
+
+      const { hour: localHour } = getLocalTimeParts(tz);
       if (localHour < 20 || localHour >= 21) continue;
 
-      if (this.isInQuietHours(pref.reminderTimezone, pref.quietHoursStart, pref.quietHoursEnd)) {
+      if (this.isInQuietHours(tz, pref.quietHoursStart, pref.quietHoursEnd)) {
         continue;
       }
 
-      if (await this.hasBeenSentToday(pref.userId, 'evening', pref.reminderTimezone)) continue;
+      if (await this.hasBeenSentToday(pref.userId, 'evening', tz)) continue;
 
-      const todayStart = this.getLocalDayStart(pref.reminderTimezone);
+      const todayStart = this.getLocalDayStart(tz);
       const todayEnd = new Date(todayStart);
       todayEnd.setDate(todayEnd.getDate() + 1);
 
@@ -174,15 +187,6 @@ export class RemindersService implements OnModuleDestroy {
       });
 
       if (mealCount > 0) continue;
-
-      const [tgLink, profile, deviceTokens] = await Promise.all([
-        this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
-        this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
-        this.prisma.deviceToken.findMany({
-          where: { userId: pref.userId, active: true },
-          select: { token: true },
-        }),
-      ]);
 
       await this.reminderQueue.add(
         'evening',
@@ -196,7 +200,7 @@ export class RemindersService implements OnModuleDestroy {
         } satisfies ReminderJobData,
         { jobId: `evening-${pref.userId}-${Date.now()}` },
       );
-      await this.markReminderSent(pref.userId, 'evening', pref.reminderTimezone);
+      await this.markReminderSent(pref.userId, 'evening', tz);
       enqueued++;
     }
 

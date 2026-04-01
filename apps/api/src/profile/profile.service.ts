@@ -32,6 +32,7 @@ export class ProfileService {
         data: {
           ...(dto.displayName !== undefined && { displayName: dto.displayName }),
           ...(dto.locale !== undefined && { locale: dto.locale }),
+          ...(dto.timezone !== undefined && { timezone: dto.timezone }),
           ...(dto.unitSystem !== undefined && { unitSystem: dto.unitSystem }),
           ...(dto.gender !== undefined && { gender: dto.gender }),
           ...(dto.birthDate !== undefined && { birthDate: new Date(dto.birthDate) }),
@@ -48,6 +49,14 @@ export class ProfileService {
       }),
     ]);
 
+    // Keep NotificationPreference.reminderTimezone in sync
+    if (dto.timezone !== undefined) {
+      await this.prisma.notificationPreference.updateMany({
+        where: { userId },
+        data: { reminderTimezone: dto.timezone },
+      });
+    }
+
     return this.formatProfile(profile, latestWeightLog ? Number(latestWeightLog.weightKg) : null);
   }
 
@@ -57,6 +66,7 @@ export class ProfileService {
       userId: string;
       displayName: string | null;
       locale: string;
+      timezone: string;
       unitSystem: string;
       gender: string | null;
       birthDate: Date | null;
@@ -80,6 +90,7 @@ export class ProfileService {
       userId: profile.userId,
       displayName: profile.displayName,
       locale: profile.locale,
+      timezone: profile.timezone,
       unitSystem: profile.unitSystem,
       gender: profile.gender,
       birthDate: profile.birthDate?.toISOString().split('T')[0] ?? null,

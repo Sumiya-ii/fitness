@@ -14,6 +14,8 @@ import { useSettingsStore } from './src/stores/settings.store';
 import { setPaywallCallback } from './src/api/client';
 import { useColors, buildNavigationTheme } from './src/theme';
 import { useThemeStore } from './src/stores/theme.store';
+import { getDeviceTimezone } from './src/utils/timezone';
+import { api } from './src/api';
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
@@ -66,6 +68,21 @@ export default Sentry.wrap(function App() {
       loadUnitSystem();
     }
   }, [isAuthenticated, loadUnitSystem]);
+
+  // Set device timezone as default for new users whose profile still has the schema default.
+  // Once the user picks a timezone in settings, this won't overwrite it.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const deviceTz = getDeviceTimezone();
+    api
+      .get<{ data: { timezone: string } }>('/profile')
+      .then((res) => {
+        if (res.data.timezone === 'Asia/Ulaanbaatar' && deviceTz !== 'Asia/Ulaanbaatar') {
+          api.put('/profile', { timezone: deviceTz }).catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   // Sync RevenueCat login state with our auth state
   useEffect(() => {
