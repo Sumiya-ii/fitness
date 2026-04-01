@@ -618,8 +618,16 @@ function MacroStackedChart({ points, chartWidth }: { points: ChartPoint[]; chart
 
 // ─── Water bar chart ──────────────────────────────────────────────────────────
 
-function WaterBarChart({ points, chartWidth }: { points: ChartPoint[]; chartWidth: number }) {
-  const GOAL_ML = 2000;
+function WaterBarChart({
+  points,
+  chartWidth,
+  goalMl,
+}: {
+  points: ChartPoint[];
+  chartWidth: number;
+  goalMl: number;
+}) {
+  const GOAL_ML = goalMl;
   const CHART_H = 80;
   const PAD = { top: 8, bottom: 4 };
   const plotH = CHART_H - PAD.top - PAD.bottom;
@@ -834,10 +842,16 @@ function NutritionTab({ chartWidth }: { chartWidth: number }) {
             <Text className="text-sm font-sans-semibold text-text">{t('progressTab.water')}</Text>
             <View className="flex-row items-center gap-1.5">
               <View style={{ width: 8, height: 2, backgroundColor: C.water, borderRadius: 1 }} />
-              <Text className="text-[10px] text-text-tertiary font-sans-medium">2,000 ml goal</Text>
+              <Text className="text-[10px] text-text-tertiary font-sans-medium">
+                {(historyData?.waterTarget ?? 2000).toLocaleString()} ml goal
+              </Text>
             </View>
           </View>
-          <WaterBarChart points={points} chartWidth={chartWidth} />
+          <WaterBarChart
+            points={points}
+            chartWidth={chartWidth}
+            goalMl={historyData?.waterTarget ?? 2000}
+          />
         </View>
       </Animated.View>
 

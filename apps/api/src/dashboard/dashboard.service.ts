@@ -179,7 +179,7 @@ export class DashboardService {
     const startKey = startDate.toISOString().split('T')[0]!;
     const { dayStart: start } = dayBoundaries(startKey, tz);
 
-    const [mealLogs, waterLogs, target] = await Promise.all([
+    const [mealLogs, waterLogs, target, profile] = await Promise.all([
       this.prisma.mealLog.findMany({
         where: { userId, loggedAt: { gte: start, lte: end } },
         select: {
@@ -201,6 +201,10 @@ export class DashboardService {
       this.prisma.target.findFirst({
         where: { userId, effectiveTo: null },
         orderBy: { effectiveFrom: 'desc' },
+      }),
+      this.prisma.profile.findUnique({
+        where: { userId },
+        select: { waterTargetMl: true },
       }),
     ]);
 
@@ -277,6 +281,7 @@ export class DashboardService {
             fat: Number(target.fatGrams),
           }
         : null,
+      waterTarget: profile?.waterTargetMl ?? 2000,
     };
   }
 }

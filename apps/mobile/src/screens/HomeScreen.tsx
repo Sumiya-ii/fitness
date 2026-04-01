@@ -29,6 +29,7 @@ import { useWorkoutStore } from '../stores/workout.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
+import { getDeviceTimezone } from '../utils/timezone';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -633,7 +634,7 @@ export function HomeScreen() {
           history: { date: string; calories: number }[];
           target: { calories: number } | null;
         };
-      }>('/dashboard/history?days=35');
+      }>(`/dashboard/history?days=35&tz=${encodeURIComponent(getDeviceTimezone())}`);
       const map = new Map<string, number>();
       for (const day of res.data.history) {
         map.set(day.date, day.calories);

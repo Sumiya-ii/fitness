@@ -84,7 +84,7 @@ export class CoachContextService {
       totalDays > 0
         ? Number((weekDays.reduce((s, d) => s + d.mealCount, 0) / totalDays).toFixed(1))
         : 0;
-    const waterTarget = 2000;
+    const waterTarget = profile?.waterTargetMl ?? 2000;
     const daysWithWaterGoalMet = weekDays.filter((d) => d.waterMl >= waterTarget).length;
 
     // Streak calculation — consecutive days WITH at least 1 meal logged (backwards from yesterday)

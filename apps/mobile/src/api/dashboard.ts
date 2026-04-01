@@ -1,4 +1,5 @@
 import { api } from './client';
+import { getDeviceTimezone } from '../utils/timezone';
 
 export interface DayHistory {
   date: string;
@@ -20,9 +21,12 @@ export interface NutritionTarget {
 export interface NutritionHistoryData {
   history: DayHistory[];
   target: NutritionTarget | null;
+  waterTarget: number;
 }
 
 export const dashboardApi = {
-  getHistory: (days: number) =>
-    api.get<{ data: NutritionHistoryData }>(`/dashboard/history?days=${days}`),
+  getHistory: (days: number) => {
+    const tz = encodeURIComponent(getDeviceTimezone());
+    return api.get<{ data: NutritionHistoryData }>(`/dashboard/history?days=${days}&tz=${tz}`);
+  },
 };
