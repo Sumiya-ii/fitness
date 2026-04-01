@@ -205,6 +205,8 @@ PODS:
     - ExpoModulesCore
     - ZXingObjC/OneD
     - ZXingObjC/PDF417
+  - ExpoCrypto (55.0.10):
+    - ExpoModulesCore
   - ExpoDomWebView (55.0.3):
     - ExpoModulesCore
   - ExpoFileSystem (55.0.12):
@@ -2560,6 +2562,7 @@ DEPENDENCIES:
   - ExpoAsset (from `../../../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../../../node_modules/expo-audio/ios`)
   - ExpoCamera (from `../../../node_modules/expo-camera/ios`)
+  - ExpoCrypto (from `../../../node_modules/expo-crypto/ios`)
   - "ExpoDomWebView (from `../../../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../../../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../../../node_modules/expo-font/ios`)
@@ -2709,6 +2712,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-audio/ios"
   ExpoCamera:
     :path: "../../../node_modules/expo-camera/ios"
+  ExpoCrypto:
+    :path: "../../../node_modules/expo-crypto/ios"
   ExpoDomWebView:
     :path: "../../../node_modules/@expo/dom-webview/ios"
   ExpoFileSystem:
@@ -2931,6 +2936,7 @@ SPEC CHECKSUMS:
   ExpoAsset: 4efd0227e808dfa84d286aa3663ded641ef73479
   ExpoAudio: 9c6c4b4c9669be8e8892b423cc967c09d801bad4
   ExpoCamera: fee0aadc5cc2968f39a51d0b2f1ddbdf4dfe5d72
+  ExpoCrypto: 33a6c4fb9ccac7a4d784954d0db6c3ba292123e9
   ExpoDomWebView: f101fb3db4b6eec4163fca51f7507189b7e48661
   ExpoFileSystem: 4ed8ccc90671813c861f212fba3668fe133b7e68
   ExpoFont: 1aa465cf9f8ac6b670405becba8b15473581b2dd
