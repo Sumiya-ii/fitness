@@ -22,6 +22,16 @@ interface TelegramStatus {
   telegramUsername?: string;
 }
 
+interface PrivacyRequest {
+  id: string;
+  requestType: string;
+  status: string;
+  completedAt: string | null;
+  resultUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function getInitials(name: string | null | undefined): string {
   if (!name) return 'U';
   const parts = name.trim().split(/\s+/);
@@ -105,6 +115,93 @@ function Divider() {
   return <View className="h-px bg-surface-secondary" />;
 }
 
+type RequestStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
+function privacyStatusColor(status: string, c: ReturnType<typeof useColors>): string {
+  switch (status as RequestStatus) {
+    case 'pending':
+      return c.warning;
+    case 'processing':
+      return c.primary;
+    case 'completed':
+      return c.success;
+    case 'failed':
+      return c.danger;
+    default:
+      return c.muted;
+  }
+}
+
+function PrivacyRequestBadge({
+  request,
+  type,
+}: {
+  request: PrivacyRequest | null;
+  type: 'export' | 'deletion';
+}) {
+  const c = useColors();
+  const { t } = useLocale();
+
+  if (!request) return null;
+
+  const isActiveRequest = request.status === 'pending' || request.status === 'processing';
+  const statusColor = privacyStatusColor(request.status, c);
+
+  const statusLabel = (() => {
+    if (type === 'export') {
+      switch (request.status as RequestStatus) {
+        case 'pending':
+          return t('settings.exportStatusPending');
+        case 'processing':
+          return t('settings.exportStatusProcessing');
+        case 'completed':
+          return t('settings.exportStatusCompleted');
+        case 'failed':
+          return t('settings.exportStatusFailed');
+      }
+    } else {
+      switch (request.status as RequestStatus) {
+        case 'pending':
+          return t('settings.deleteStatusPending');
+        case 'processing':
+          return t('settings.deleteStatusProcessing');
+        case 'completed':
+          return t('settings.deleteStatusCompleted');
+        case 'failed':
+          return t('settings.deleteStatusFailed');
+      }
+    }
+    return request.status;
+  })();
+
+  return (
+    <View className="pb-3">
+      <View
+        className="flex-row items-center gap-2 px-3 py-2 rounded-xl"
+        style={{ backgroundColor: `${statusColor}15` }}
+      >
+        <View className="h-2 w-2 rounded-full" style={{ backgroundColor: statusColor }} />
+        <Text className="flex-1 text-xs font-sans-medium" style={{ color: statusColor }}>
+          {statusLabel}
+        </Text>
+        {!isActiveRequest && type === 'export' && request.resultUrl ? (
+          <Pressable
+            onPress={() => {
+              if (request.resultUrl) Linking.openURL(request.resultUrl);
+            }}
+            accessibilityRole="link"
+            accessibilityLabel={t('settings.exportDownload')}
+          >
+            <Text className="text-xs font-sans-bold" style={{ color: c.primary }}>
+              {t('settings.exportDownload')}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 /* ---- Main screen ---- */
 
 export function SettingsScreen() {
@@ -115,16 +212,28 @@ export function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [telegramStatus, setTelegramStatus] = useState<TelegramStatus | null>(null);
+  const [latestExportRequest, setLatestExportRequest] = useState<PrivacyRequest | null>(null);
+  const [latestDeletionRequest, setLatestDeletionRequest] = useState<PrivacyRequest | null>(null);
   const isPro = useSubscriptionStore((s) => s.tier === 'pro');
 
   const loadData = useCallback(async () => {
     try {
-      const [profileRes, telegramRes] = await Promise.all([
+      const [profileRes, telegramRes, privacyRes] = await Promise.all([
         api.get<{ data: ProfileData }>('/profile'),
         api.get<TelegramStatus>('/telegram/status'),
+        api.get<{ data: PrivacyRequest[]; meta: { total: number; page: number; limit: number } }>(
+          '/privacy/requests?limit=20',
+        ),
       ]);
       setProfile(profileRes.data);
       setTelegramStatus(telegramRes);
+
+      // Find the most recent request of each type
+      const requests = privacyRes.data ?? [];
+      const exportReq = requests.find((r) => r.requestType === 'export') ?? null;
+      const deletionReq = requests.find((r) => r.requestType === 'deletion') ?? null;
+      setLatestExportRequest(exportReq);
+      setLatestDeletionRequest(deletionReq);
     } catch {
       /* keep previous state */
     }
@@ -147,19 +256,34 @@ export function SettingsScreen() {
   };
 
   const handleExportData = () => {
+    // If there is an active pending/processing request, don't allow a new one
+    const hasActiveExport =
+      latestExportRequest?.status === 'pending' || latestExportRequest?.status === 'processing';
+    if (hasActiveExport) return;
+
     Alert.alert(t('settings.exportData'), t('settings.exportConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('settings.export'),
-        onPress: () => {
-          api.post('/privacy/export').catch(() => {});
-          Alert.alert(t('common.success'), t('settings.exportSuccess'));
+        onPress: async () => {
+          try {
+            const res = await api.post<{ data: PrivacyRequest }>('/privacy/export');
+            setLatestExportRequest(res.data);
+            Alert.alert(t('common.success'), t('settings.exportSuccess'));
+          } catch {
+            Alert.alert(t('common.error'), t('settings.exportStatusFailed'));
+          }
         },
       },
     ]);
   };
 
   const handleDeleteAccount = () => {
+    // If there is an active deletion request, don't allow another
+    const hasActiveDeletion =
+      latestDeletionRequest?.status === 'pending' || latestDeletionRequest?.status === 'processing';
+    if (hasActiveDeletion) return;
+
     Alert.alert(t('settings.deleteAccount'), t('settings.deleteConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -167,7 +291,8 @@ export function SettingsScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await api.post('/privacy/delete-account');
+            const res = await api.post<{ data: PrivacyRequest }>('/privacy/delete-account');
+            setLatestDeletionRequest(res.data);
             Alert.alert(t('settings.deleteRequested'), t('settings.deleteRequestedDesc'), [
               { text: t('common.ok'), onPress: signOut },
             ]);
@@ -180,6 +305,11 @@ export function SettingsScreen() {
   };
 
   const appVersion = Constants.expoConfig?.version ?? '0.0.1';
+
+  const hasActiveExport =
+    latestExportRequest?.status === 'pending' || latestExportRequest?.status === 'processing';
+  const hasActiveDeletion =
+    latestDeletionRequest?.status === 'pending' || latestDeletionRequest?.status === 'processing';
 
   return (
     <View className="flex-1 bg-surface-app">
@@ -292,11 +422,20 @@ export function SettingsScreen() {
           {/* -- Support & Legal -- */}
           <Animated.View entering={FadeInDown.duration(400).delay(150).springify()}>
             <Section title={t('settings.supportLegal')}>
+              {/* Export row + status badge */}
               <Row
                 icon="download-outline"
                 label={t('settings.exportMyData')}
-                onPress={handleExportData}
+                onPress={hasActiveExport ? undefined : handleExportData}
+                right={
+                  hasActiveExport ? (
+                    <View className="h-2 w-2 rounded-full" style={{ backgroundColor: c.warning }} />
+                  ) : undefined
+                }
               />
+              {latestExportRequest ? (
+                <PrivacyRequestBadge request={latestExportRequest} type="export" />
+              ) : null}
               <Divider />
               <Row
                 icon="shield-checkmark-outline"
@@ -331,8 +470,16 @@ export function SettingsScreen() {
                 icon="trash-outline"
                 label={t('settings.deleteAccount')}
                 danger
-                onPress={handleDeleteAccount}
+                onPress={hasActiveDeletion ? undefined : handleDeleteAccount}
+                right={
+                  hasActiveDeletion ? (
+                    <View className="h-2 w-2 rounded-full" style={{ backgroundColor: c.warning }} />
+                  ) : undefined
+                }
               />
+              {latestDeletionRequest ? (
+                <PrivacyRequestBadge request={latestDeletionRequest} type="deletion" />
+              ) : null}
             </Section>
           </Animated.View>
 

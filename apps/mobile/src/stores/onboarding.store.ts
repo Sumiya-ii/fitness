@@ -79,6 +79,17 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       dietPreference: data.dietPreference,
     });
 
+    // Fire-and-forget: record health data consent at onboarding completion
+    api
+      .post('/privacy/consent', {
+        consentType: 'health_data',
+        version: '1.0',
+        accepted: true,
+      })
+      .catch(() => {
+        // Non-blocking — don't prevent onboarding from completing
+      });
+
     await AsyncStorage.setItem(PROFILE_SETUP_COMPLETE_KEY, 'true');
     set({ profileSetupComplete: true });
     profile.clearDraft();
