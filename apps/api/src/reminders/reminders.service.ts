@@ -1,4 +1,5 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { DateTime } from 'luxon';
@@ -134,7 +135,7 @@ export class RemindersService implements OnModuleDestroy {
           locale: profile?.locale ?? undefined,
           pushTokens: deviceTokens.map((d) => d.token),
         } satisfies ReminderJobData,
-        { jobId: `morning-${pref.userId}-${Date.now()}` },
+        { jobId: `morning-${pref.userId}-${randomUUID()}` },
       );
       await this.markReminderSent(pref.userId, 'morning', tz);
       enqueued++;
@@ -198,7 +199,7 @@ export class RemindersService implements OnModuleDestroy {
           locale: profile?.locale ?? undefined,
           pushTokens: deviceTokens.map((d) => d.token),
         } satisfies ReminderJobData,
-        { jobId: `evening-${pref.userId}-${Date.now()}` },
+        { jobId: `evening-${pref.userId}-${randomUUID()}` },
       );
       await this.markReminderSent(pref.userId, 'evening', tz);
       enqueued++;

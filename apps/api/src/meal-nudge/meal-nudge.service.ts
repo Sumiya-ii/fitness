@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { DateTime } from 'luxon';
@@ -81,7 +82,7 @@ export class MealNudgeService {
           pushTokens: deviceTokens.map((d) => d.token),
           mealCount,
         } satisfies MealNudgeJobData,
-        { jobId: `meal-nudge-${pref.userId}-${Date.now()}` },
+        { jobId: `meal-nudge-${pref.userId}-${randomUUID()}` },
       );
       enqueued++;
     }

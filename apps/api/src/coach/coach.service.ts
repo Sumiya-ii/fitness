@@ -1,4 +1,5 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { DateTime } from 'luxon';
@@ -244,7 +245,7 @@ export class CoachService implements OnModuleDestroy {
       };
 
       await this.coachQueue.add(messageType, jobData, {
-        jobId: `coach-${info.userId}-${messageType}-${Date.now()}`,
+        jobId: `coach-${info.userId}-${messageType}-${randomUUID()}`,
       });
 
       await this.markSent(info.userId, messageType, info.timezone);
