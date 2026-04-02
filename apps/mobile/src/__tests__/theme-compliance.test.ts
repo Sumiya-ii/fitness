@@ -133,10 +133,6 @@ const KNOWN_VIOLATIONS: Array<[string, string]> = [
   // VoiceLogScreen — Icon colors on a dark recording UI.
   // Should use c.onPrimary.
   ['logging/VoiceLogScreen.tsx', '#ffffff'],
-
-  // ProfileSetupScreen — Onboarding gender picker uses brand colors.
-  ['onboarding/ProfileSetupScreen.tsx', '#8B2E2E'],
-  ['onboarding/ProfileSetupScreen.tsx', '#9A8672'],
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

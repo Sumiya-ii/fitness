@@ -1,7 +1,7 @@
 /**
  * Unit tests for useWaterStore.
  *
- * Covers: initial state, fetchDaily, addWater (optimistic), removeCup, undoLast.
+ * Covers: initial state, fetchDaily, addWater (optimistic), removeCup.
  * The waterApi is mocked at module level to avoid real HTTP calls.
  */
 
@@ -55,7 +55,6 @@ describe('useWaterStore', () => {
       expect(typeof state.fetchDaily).toBe('function');
       expect(typeof state.addWater).toBe('function');
       expect(typeof state.removeCup).toBe('function');
-      expect(typeof state.undoLast).toBe('function');
     });
   });
 
@@ -226,46 +225,6 @@ describe('useWaterStore', () => {
 
       expect(useWaterStore.getState().consumed).toBe(750);
       expect(useWaterStore.getState().error).toBeNull();
-    });
-  });
-
-  // ─── undoLast ─────────────────────────────────────────────────────────────
-
-  describe('undoLast', () => {
-    it('calls fetchDaily when server confirms deletion', async () => {
-      mockWaterApi.deleteLast.mockResolvedValue({ data: { deleted: true } } as any);
-      mockWaterApi.getDaily.mockResolvedValue({
-        data: { consumed: 500, target: 2000, entries: [] },
-      } as any);
-
-      await useWaterStore.getState().undoLast();
-
-      expect(mockWaterApi.deleteLast).toHaveBeenCalled();
-      expect(mockWaterApi.getDaily).toHaveBeenCalled();
-    });
-
-    it('does not call fetchDaily when nothing was deleted', async () => {
-      mockWaterApi.deleteLast.mockResolvedValue({ data: { deleted: false } } as any);
-
-      await useWaterStore.getState().undoLast();
-
-      expect(mockWaterApi.getDaily).not.toHaveBeenCalled();
-    });
-
-    it('sets error when deleteLast throws', async () => {
-      mockWaterApi.deleteLast.mockRejectedValue(new Error('Server error'));
-
-      await useWaterStore.getState().undoLast();
-
-      expect(useWaterStore.getState().error).toBe('Server error');
-    });
-
-    it('sets generic error message for non-Error rejections', async () => {
-      mockWaterApi.deleteLast.mockRejectedValue('unexpected');
-
-      await useWaterStore.getState().undoLast();
-
-      expect(useWaterStore.getState().error).toBe('Failed to undo');
     });
   });
 });

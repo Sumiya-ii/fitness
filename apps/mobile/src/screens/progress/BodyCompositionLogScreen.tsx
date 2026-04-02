@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -81,6 +81,7 @@ function ResultTile({
 export function BodyCompositionLogScreen() {
   const c = useColors();
   const { t } = useLocale();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
   const { logMeasurement } = useBodyCompositionStore();
@@ -254,7 +255,7 @@ export function BodyCompositionLogScreen() {
                       <Button
                         variant="primary"
                         size="md"
-                        onPress={handleLogAnother}
+                        onPress={() => navigation.goBack()}
                         accessibilityLabel={t('bodyCompositionLog.done')}
                       >
                         {t('bodyCompositionLog.done')}

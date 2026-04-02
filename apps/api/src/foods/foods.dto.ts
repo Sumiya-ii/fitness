@@ -35,7 +35,6 @@ export const createFoodSchema = z.object({
   normalizedName: z.string().min(1).max(500),
   locale: z.enum(SUPPORTED_LOCALES).default('mn'),
   sourceType: z.enum(['seed', 'user', 'admin', 'import']).default('admin'),
-  sourceRef: z.string().optional(),
   servings: z.array(servingSchema).min(1),
   nutrients: nutrientSchema,
   localizations: z.array(localizationSchema).optional(),
@@ -45,7 +44,6 @@ export const createFoodSchema = z.object({
 
 export const updateFoodSchema = createFoodSchema.partial().omit({
   sourceType: true,
-  sourceRef: true,
 });
 
 export const foodQuerySchema = z.object({

@@ -25,7 +25,7 @@ describe('SubscriptionsService', () => {
     tier: 'pro',
     provider: 'apple',
     providerSubId: 'apple-sub-123',
-    currentPeriodEnd: new Date('2026-04-01'),
+    currentPeriodEnd: new Date('2027-12-31'),
   };
 
   beforeEach(() => {
@@ -71,7 +71,7 @@ describe('SubscriptionsService', () => {
       const result = await service.getStatus('user-uuid');
       expect(result.tier).toBe('pro');
       expect(result.status).toBe('active');
-      expect(result.currentPeriodEnd).toBe('2026-04-01T00:00:00.000Z');
+      expect(result.currentPeriodEnd).toBe('2027-12-31T00:00:00.000Z');
     });
   });
 
@@ -104,7 +104,7 @@ describe('SubscriptionsService', () => {
             entitlements: {
               'Coach Pro': {
                 purchase_date: '2026-03-01T00:00:00Z',
-                expires_date: '2026-04-01T00:00:00Z',
+                expires_date: '2027-12-31T00:00:00Z',
               },
             },
           },
@@ -138,7 +138,7 @@ describe('SubscriptionsService', () => {
             entitlements: {
               'Coach Pro': {
                 purchase_date: '2026-03-01T00:00:00Z',
-                expires_date: '2026-04-01T00:00:00Z',
+                expires_date: '2027-12-31T00:00:00Z',
               },
             },
           },
@@ -197,7 +197,7 @@ describe('SubscriptionsService', () => {
         providerEventId: 'evt-123',
         userId: 'user-uuid',
         currentPeriodStart: '2026-03-01T00:00:00Z',
-        currentPeriodEnd: '2026-04-01T00:00:00Z',
+        currentPeriodEnd: '2027-12-31T00:00:00Z',
       });
 
       expect(result.success).toBe(true);
@@ -249,7 +249,7 @@ describe('SubscriptionsService', () => {
         event_timestamp_ms: Date.now(),
         store: 'APP_STORE' as const,
         purchased_at_ms: Date.now(),
-        expiration_at_ms: new Date('2026-04-01').getTime(),
+        expiration_at_ms: new Date('2027-12-31').getTime(),
         transaction_id: 'txn-001',
         original_transaction_id: 'txn-000',
         ...overrides,
@@ -337,7 +337,7 @@ describe('SubscriptionsService', () => {
           event_timestamp_ms: Date.now(),
           store: 'APP_STORE' as const,
           purchased_at_ms: Date.now(),
-          expiration_at_ms: new Date('2026-04-01').getTime(),
+          expiration_at_ms: new Date('2027-12-31').getTime(),
           transaction_id: 'txn-anon',
           original_transaction_id: 'txn-anon-0',
         },
@@ -359,7 +359,7 @@ describe('SubscriptionsService', () => {
           event_timestamp_ms: Date.now(),
           store: 'APP_STORE' as const,
           purchased_at_ms: Date.now(),
-          expiration_at_ms: new Date('2026-04-01').getTime(),
+          expiration_at_ms: new Date('2027-12-31').getTime(),
           transaction_id: 'txn-anon-2',
           original_transaction_id: 'txn-anon-2-0',
         },
@@ -380,7 +380,7 @@ describe('SubscriptionsService', () => {
           event_timestamp_ms: Date.now(),
           store: 'APP_STORE' as const,
           purchased_at_ms: Date.now(),
-          expiration_at_ms: new Date('2026-04-01').getTime(),
+          expiration_at_ms: new Date('2027-12-31').getTime(),
           transaction_id: 'txn-anon-3',
           original_transaction_id: 'txn-anon-3-0',
         },

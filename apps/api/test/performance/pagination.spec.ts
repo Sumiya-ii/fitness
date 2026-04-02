@@ -57,8 +57,6 @@ describe('Performance: Pagination (NFR-001..003)', () => {
         locale: 'mn',
         status: 'approved',
         sourceType: 'seed',
-        sourceRef: null,
-        confidence: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         servings: [

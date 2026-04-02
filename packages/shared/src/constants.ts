@@ -3,12 +3,8 @@ export const APP_NAME = 'Coach';
 export const SUPPORTED_LOCALES = ['mn', 'en'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
-export const DEFAULT_LOCALE: SupportedLocale = 'mn';
-
 export const UNIT_SYSTEMS = ['metric'] as const;
 export type UnitSystem = 'metric';
-
-export const DEFAULT_UNIT_SYSTEM: UnitSystem = 'metric';
 
 export const GOAL_TYPES = ['lose_fat', 'maintain', 'gain'] as const;
 export type GoalType = (typeof GOAL_TYPES)[number];

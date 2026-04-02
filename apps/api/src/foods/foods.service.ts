@@ -13,7 +13,6 @@ export class FoodsService {
         normalizedName: dto.normalizedName,
         locale: dto.locale,
         sourceType: dto.sourceType,
-        sourceRef: dto.sourceRef,
         status: dto.sourceType === 'admin' ? 'approved' : 'pending',
         servings: {
           create: dto.servings.map((s) => ({
@@ -181,8 +180,6 @@ export class FoodsService {
     locale: string;
     status: string;
     sourceType: string;
-    sourceRef: string | null;
-    confidence: unknown;
     createdAt: Date;
     updatedAt: Date;
     servings: Array<{
@@ -214,8 +211,6 @@ export class FoodsService {
       locale: food.locale,
       status: food.status,
       sourceType: food.sourceType,
-      sourceRef: food.sourceRef,
-      confidence: food.confidence ? Number(food.confidence) : null,
       servings: food.servings.map((s) => ({
         id: s.id,
         label: s.label,

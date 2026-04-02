@@ -23,11 +23,13 @@ jest.mock('../../api/chat', () => ({
 }));
 
 import { CoachChatScreen } from '../../screens/CoachChatScreen';
+import { useSubscriptionStore } from '../../stores/subscription.store';
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetHistory.mockResolvedValue({ messages: [] });
   mockSendMessage.mockResolvedValue({ message: 'AI response', timestamp: '2026-03-27T12:00:00Z' });
+  useSubscriptionStore.setState({ tier: 'pro', initialLoadDone: true });
 });
 
 describe('CoachChatScreen', () => {

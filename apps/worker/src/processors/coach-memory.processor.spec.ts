@@ -228,7 +228,7 @@ describe('processCoachMemoryJob', () => {
     const upsertCalls = mockPoolQuery.mock.calls.slice(7);
     const summaries = upsertCalls.map((call) => call[1][2]);
     summaries.forEach((summary: string) => {
-      expect(summary).toContain('available yet');
+      expect(summary).toContain('байхгүй байна');
     });
   });
 

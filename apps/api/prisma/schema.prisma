@@ -94,8 +94,7 @@ model Food {
   locale         String    @default("mn") @db.VarChar(5)
   status         String    @default("approved") @db.VarChar(20) // approved | pending | rejected
   sourceType     String    @map("source_type") @db.VarChar(30) // seed | user | admin | import
-  sourceRef      String?   @map("source_ref")
-  confidence     Decimal?  @db.Decimal(3, 2)
+  /// Soft reference to admin User.id — no FK to allow admin deletion without cascading
   verifiedBy     String?   @map("verified_by") @db.Uuid
   verifiedAt     DateTime? @map("verified_at")
   createdAt      DateTime  @default(now()) @map("created_at")
@@ -640,7 +639,7 @@ model Favorite {
 // ─── Outbound Message Log ────────────────────────────────────────
 
 model OutboundMessage {
-  id               String   @id @default(uuid())
+  id               String   @id @default(uuid()) @db.Uuid
   userId           String   @map("user_id") @db.Uuid
   channel          String   @db.VarChar(20) // telegram | push
   messageType      String   @map("message_type") @db.VarChar(50)

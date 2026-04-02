@@ -8,7 +8,6 @@ interface WaterState {
   error: string | null;
   addWater: (amountMl: number, date?: string) => Promise<void>;
   removeCup: (cupMl: number) => Promise<void>;
-  undoLast: () => Promise<void>;
   fetchDaily: (date?: string) => Promise<void>;
 }
 
@@ -53,17 +52,6 @@ export const useWaterStore = create<WaterState>((set, get) => ({
       }
     } catch (_e) {
       // Silently keep optimistic state
-    }
-  },
-
-  undoLast: async () => {
-    try {
-      const res = await waterApi.deleteLast();
-      if (res.data.deleted) {
-        await get().fetchDaily();
-      }
-    } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Failed to undo' });
     }
   },
 }));

@@ -88,10 +88,10 @@ describe('ProfileService', () => {
     });
 
     it('should update unitSystem', async () => {
-      prisma.profile.update.mockResolvedValue({ ...mockProfile, unitSystem: 'imperial' });
+      prisma.profile.update.mockResolvedValue({ ...mockProfile, unitSystem: 'metric' });
 
-      const result = await service.updateProfile('user-uuid', { unitSystem: 'imperial' });
-      expect(result.unitSystem).toBe('imperial');
+      const result = await service.updateProfile('user-uuid', { unitSystem: 'metric' });
+      expect(result.unitSystem).toBe('metric');
     });
 
     it('should update multiple fields at once', async () => {
