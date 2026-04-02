@@ -1,4 +1,5 @@
 import { createHmac } from 'crypto';
+import { Queue } from 'bullmq';
 import { PrivacyService } from './privacy.service';
 import { PrismaService } from '../prisma';
 
@@ -53,7 +54,8 @@ describe('PrivacyService', () => {
         count: jest.fn().mockResolvedValue(1),
       },
     };
-    service = new PrivacyService(prisma as unknown as PrismaService);
+    const mockQueue = { add: jest.fn().mockResolvedValue({ id: 'job-id' }) } as unknown as Queue;
+    service = new PrivacyService(mockQueue, prisma as unknown as PrismaService);
   });
 
   afterEach(() => {

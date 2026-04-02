@@ -9,6 +9,7 @@ import { processAdaptiveTargetJob } from './adaptive-target.processor';
 import { processMealTimingJob } from './meal-timing.processor';
 import { processCoachMemoryJob } from './coach-memory.processor';
 import { processMealNudgeJob } from './meal-nudge.processor';
+import { processPrivacyJob } from './privacy.processor';
 
 export async function processJob(queueName: QueueName, job: Job): Promise<unknown> {
   switch (queueName) {
@@ -38,6 +39,9 @@ export async function processJob(queueName: QueueName, job: Job): Promise<unknow
 
     case QUEUE_NAMES.MEAL_NUDGE:
       return processMealNudgeJob(job);
+
+    case QUEUE_NAMES.PRIVACY:
+      return processPrivacyJob(job);
 
     default:
       console.warn(`No processor for queue: ${queueName}`);

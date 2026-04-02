@@ -1,11 +1,17 @@
 import { createHmac } from 'crypto';
 import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { QUEUE_NAMES } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import type { CreateConsentDto, PaginationDto } from './privacy.dto';
 
 @Injectable()
 export class PrivacyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectQueue(QUEUE_NAMES.PRIVACY) private readonly privacyQueue: Queue,
+    private readonly prisma: PrismaService,
+  ) {}
 
   private hashIp(ip: string): string {
     const secret = process.env.IP_HASH_SECRET;
@@ -41,6 +47,13 @@ export class PrivacyService {
         status: 'pending',
       },
     });
+
+    await this.privacyQueue.add('process-privacy', {
+      requestId: request.id,
+      userId,
+      requestType: 'export',
+    });
+
     return this.formatRequest(request);
   }
 
@@ -52,6 +65,13 @@ export class PrivacyService {
         status: 'pending',
       },
     });
+
+    await this.privacyQueue.add('process-privacy', {
+      requestId: request.id,
+      userId,
+      requestType: 'deletion',
+    });
+
     return this.formatRequest(request);
   }
 

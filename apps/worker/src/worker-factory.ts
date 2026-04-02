@@ -71,6 +71,9 @@ function getConcurrency(queueName: QueueName): number {
     case QUEUE_NAMES.STT_PROCESSING:
     case QUEUE_NAMES.PHOTO_PARSING:
       return 2;
+    case QUEUE_NAMES.PRIVACY:
+      // Sequential for safety — export/deletion jobs are heavy and must not interleave
+      return 1;
     default:
       return 5;
   }

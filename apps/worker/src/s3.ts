@@ -1,4 +1,10 @@
-import { S3Client, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Readable } from 'stream';
 
 function createClient(): S3Client {
@@ -45,4 +51,25 @@ export async function deleteFromS3(key: string): Promise<void> {
     // Best-effort cleanup — log but don't fail the job
     console.warn(`[S3] Failed to delete object: ${key}`);
   }
+}
+
+export async function uploadToS3(key: string, buffer: Buffer, contentType: string): Promise<void> {
+  const client = createClient();
+  await client.send(
+    new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET!,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    }),
+  );
+}
+
+export async function getPresignedUrl(key: string, expiresInSeconds: number): Promise<string> {
+  const client = createClient();
+  const command = new GetObjectCommand({
+    Bucket: process.env.S3_BUCKET!,
+    Key: key,
+  });
+  return getSignedUrl(client, command, { expiresIn: expiresInSeconds });
 }
