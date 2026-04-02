@@ -170,13 +170,12 @@ export class DashboardService {
   }
 
   async getHistory(userId: string, days: number, tz?: string) {
-    const now = new Date();
-    const endKey = now.toISOString().split('T')[0]!;
+    // Compute today and the range start in the user's timezone so the window
+    // aligns with their calendar days rather than UTC calendar days.
+    const endKey = toDateKeyInTZ(new Date(), tz);
     const { dayEnd: end } = dayBoundaries(endKey, tz);
 
-    const startDate = new Date(now);
-    startDate.setUTCDate(startDate.getUTCDate() - days + 1);
-    const startKey = startDate.toISOString().split('T')[0]!;
+    const startKey = this.subtractDays(endKey, days - 1);
     const { dayStart: start } = dayBoundaries(startKey, tz);
 
     const [mealLogs, waterLogs, target, profile] = await Promise.all([
@@ -210,9 +209,7 @@ export class DashboardService {
 
     const byDate = new Map<string, DayHistory>();
     for (let i = 0; i < days; i++) {
-      const d = new Date(start);
-      d.setUTCDate(d.getUTCDate() + i);
-      const key = toDateKeyInTZ(d, tz);
+      const key = this.addDays(startKey, i);
       byDate.set(key, {
         date: key,
         calories: 0,
@@ -283,5 +280,19 @@ export class DashboardService {
         : null,
       waterTarget: profile?.waterTargetMl ?? 2000,
     };
+  }
+
+  /** Add `n` days to a YYYY-MM-DD date key using UTC noon to avoid DST edge cases. */
+  private addDays(dateKey: string, n: number): string {
+    const d = new Date(dateKey + 'T12:00:00.000Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().split('T')[0]!;
+  }
+
+  /** Subtract `n` days from a YYYY-MM-DD date key using UTC noon to avoid DST edge cases. */
+  private subtractDays(dateKey: string, n: number): string {
+    const d = new Date(dateKey + 'T12:00:00.000Z');
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().split('T')[0]!;
   }
 }

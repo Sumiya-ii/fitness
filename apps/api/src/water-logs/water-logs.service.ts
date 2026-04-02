@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { dayBoundaries } from '@coach/shared';
+import { dayBoundaries, toDateKeyInTZ } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import { AddWaterDto } from './water-logs.dto';
 
@@ -53,7 +53,7 @@ export class WaterLogsService {
   }
 
   async deleteLast(userId: string, tz?: string) {
-    const todayKey = new Date().toISOString().split('T')[0]!;
+    const todayKey = toDateKeyInTZ(new Date(), tz);
     const { dayStart, dayEnd } = dayBoundaries(todayKey, tz);
 
     const last = await this.prisma.waterLog.findFirst({

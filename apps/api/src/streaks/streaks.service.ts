@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toDateKeyInTZ } from '@coach/shared';
 import { PrismaService } from '../prisma';
 
 export interface StreakCalendarDay {
@@ -25,11 +26,12 @@ export interface StreakData {
 export class StreaksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getStreaks(userId: string): Promise<StreakData> {
-    // Fetch every distinct calendar date the user has logged a meal.
-    // Cast to text so the driver always returns a plain 'YYYY-MM-DD' string.
+  async getStreaks(userId: string, tz?: string): Promise<StreakData> {
+    // Fetch every distinct calendar date the user has logged a meal, converted
+    // to the user's local timezone before extracting the date. Cast to text so
+    // the driver always returns a plain 'YYYY-MM-DD' string.
     const rows = await this.prisma.$queryRaw<{ log_date: string }[]>`
-      SELECT DISTINCT DATE(logged_at)::text AS log_date
+      SELECT DISTINCT DATE(logged_at AT TIME ZONE 'UTC' AT TIME ZONE ${tz ?? 'UTC'})::text AS log_date
       FROM "meal_logs"
       WHERE "user_id" = ${userId}::uuid
       ORDER BY log_date
@@ -37,15 +39,13 @@ export class StreaksService {
 
     const loggedSet = new Set(rows.map((r) => r.log_date));
 
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
-    const todayKey = this.toDateKey(todayDate);
+    const todayKey = toDateKeyInTZ(new Date(), tz);
     const todayLogged = loggedSet.has(todayKey);
 
     // ── Current streak ───────────────────────────────────────────────────────
     // Walk backwards from today (if logged) or yesterday (grace period) so the
     // streak number doesn't drop to 0 the moment a new day starts.
-    const currentStreak = this.computeCurrentStreak(loggedSet, todayDate, todayLogged);
+    const currentStreak = this.computeCurrentStreak(loggedSet, todayKey, todayLogged);
 
     // ── Longest streak (all-time) ─────────────────────────────────────────────
     const longestStreak = this.computeLongestStreak(rows.map((r) => r.log_date));
@@ -53,9 +53,7 @@ export class StreaksService {
     // ── 30-day calendar ───────────────────────────────────────────────────────
     const calendar: StreakCalendarDay[] = [];
     for (let i = 29; i >= 0; i--) {
-      const d = new Date(todayDate);
-      d.setDate(d.getDate() - i);
-      const key = this.toDateKey(d);
+      const key = this.subtractDays(todayKey, i);
       calendar.push({ date: key, logged: loggedSet.has(key) });
     }
 
@@ -74,22 +72,16 @@ export class StreaksService {
 
   private computeCurrentStreak(
     loggedSet: Set<string>,
-    todayDate: Date,
+    todayKey: string,
     todayLogged: boolean,
   ): number {
     let streak = 0;
-    const start = new Date(todayDate);
     // If today has no logs yet, start counting from yesterday so the streak
     // doesn't visually drop to 0 at midnight (same behaviour as Duolingo).
-    if (!todayLogged) {
-      start.setDate(start.getDate() - 1);
-    }
-    const cursor = new Date(start);
-    let key = this.toDateKey(cursor);
-    while (loggedSet.has(key)) {
+    let cursor = todayLogged ? todayKey : this.subtractDays(todayKey, 1);
+    while (loggedSet.has(cursor)) {
       streak++;
-      cursor.setDate(cursor.getDate() - 1);
-      key = this.toDateKey(cursor);
+      cursor = this.subtractDays(cursor, 1);
     }
     return streak;
   }
@@ -112,10 +104,13 @@ export class StreaksService {
     return longest;
   }
 
-  private toDateKey(date: Date): string {
-    const y = date.getFullYear();
-    const m = `${date.getMonth() + 1}`.padStart(2, '0');
-    const d = `${date.getDate()}`.padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  /**
+   * Subtract `n` days from a YYYY-MM-DD date key using UTC noon to avoid any
+   * DST edge case when crossing date boundaries.
+   */
+  private subtractDays(dateKey: string, n: number): string {
+    const d = new Date(dateKey + 'T12:00:00.000Z');
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().split('T')[0]!;
   }
 }

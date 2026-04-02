@@ -218,6 +218,49 @@ describe('WorkoutLogsService', () => {
       expect(summary.activeDays).toBe(2);
       expect(summary.byType).toEqual({ running: 1, yoga: 1 });
     });
+
+    it('passes timezone-aware boundaries to Prisma when tz is provided', async () => {
+      prisma.workoutLog.findMany.mockResolvedValue([]);
+      await service.getWeeklySummary('user-1', 'Asia/Ulaanbaatar');
+      expect(prisma.workoutLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            loggedAt: expect.objectContaining({
+              gte: expect.any(Date),
+              lt: expect.any(Date),
+            }),
+          }),
+        }),
+      );
+      // The week boundaries must be UTC Date objects (from dayBoundaries), not
+      // raw UTC midnight — for UTC+8 the Monday midnight is 16:00 previous day UTC.
+      const call = prisma.workoutLog.findMany.mock.calls[0][0];
+      const weekStartUTC = call.where.loggedAt.gte as Date;
+      // Asia/Ulaanbaatar is UTC+8, so local midnight = 16:00 prior day UTC
+      expect(weekStartUTC.getUTCHours()).toBe(16);
+    });
+
+    it('counts activeDays in user timezone, not UTC', async () => {
+      // A workout logged at 23:00 UB time (15:00 UTC) — UTC date is one day earlier
+      // Both entries should resolve to the same local date in Asia/Ulaanbaatar
+      prisma.workoutLog.findMany.mockResolvedValue([
+        {
+          workoutType: 'running',
+          durationMin: 30,
+          calorieBurned: 200,
+          loggedAt: new Date('2026-03-26T15:00:00Z'), // 23:00 UB = 2026-03-26 local
+        },
+        {
+          workoutType: 'yoga',
+          durationMin: 45,
+          calorieBurned: 150,
+          loggedAt: new Date('2026-03-26T14:00:00Z'), // 22:00 UB = same local date
+        },
+      ]);
+      const summary = await service.getWeeklySummary('user-1', 'Asia/Ulaanbaatar');
+      // Both entries fall on the same local date, so activeDays should be 1
+      expect(summary.activeDays).toBe(1);
+    });
   });
 
   describe('getDailyBurn', () => {

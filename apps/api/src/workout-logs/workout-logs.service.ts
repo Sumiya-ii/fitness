@@ -49,9 +49,10 @@ export class WorkoutLogsService {
       const { dayStart, dayEnd } = dayBoundaries(query.date, query.tz);
       where.loggedAt = { gte: dayStart, lt: dayEnd };
     } else if (query.days) {
-      const todayDate = new Date();
-      todayDate.setDate(todayDate.getDate() - query.days);
-      const sinceKey = toDateKeyInTZ(todayDate, query.tz);
+      // Compute the "days ago" start boundary in the user's timezone so the
+      // range aligns with their calendar days rather than UTC calendar days.
+      const todayKey = toDateKeyInTZ(new Date(), query.tz);
+      const sinceKey = this.subtractDays(todayKey, query.days);
       const { dayStart } = dayBoundaries(sinceKey, query.tz);
       where.loggedAt = { gte: dayStart };
     }
@@ -177,16 +178,19 @@ export class WorkoutLogsService {
   }
 
   /** Weekly summary: total workouts, duration, calories burned. */
-  async getWeeklySummary(userId: string, _tz?: string) {
-    const now = new Date();
-    const dayOfWeek = now.getUTCDay(); // 0=Sun
+  async getWeeklySummary(userId: string, tz?: string) {
+    // Determine "today" in the user's timezone, then find Monday of this week.
+    const todayKey = toDateKeyInTZ(new Date(), tz);
+    // Parse weekday from the dateKey using UTC noon — the calendar date is
+    // correct for the user's TZ, so getUTCDay() on noon gives the right weekday.
+    const todayNoon = new Date(todayKey + 'T12:00:00.000Z');
+    const dayOfWeek = todayNoon.getUTCDay(); // 0=Sun
     const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const weekStart = new Date(now);
-    weekStart.setUTCDate(weekStart.getUTCDate() - mondayOffset);
-    weekStart.setUTCHours(0, 0, 0, 0);
+    const weekStartKey = this.subtractDays(todayKey, mondayOffset);
+    const weekEndKey = this.addDays(weekStartKey, 7);
 
-    const weekEnd = new Date(weekStart);
-    weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
+    const { dayStart: weekStart } = dayBoundaries(weekStartKey, tz);
+    const { dayStart: weekEnd } = dayBoundaries(weekEndKey, tz);
 
     const entries = await this.prisma.workoutLog.findMany({
       where: {
@@ -206,12 +210,12 @@ export class WorkoutLogsService {
       byType[e.workoutType] = (byType[e.workoutType] ?? 0) + 1;
     }
 
-    // Days active (unique dates)
-    const activeDays = new Set(entries.map((e) => e.loggedAt.toISOString().split('T')[0])).size;
+    // Days active (unique dates in user's timezone)
+    const activeDays = new Set(entries.map((e) => toDateKeyInTZ(e.loggedAt, tz))).size;
 
     return {
-      weekStart: weekStart.toISOString().split('T')[0],
-      weekEnd: new Date(weekEnd.getTime() - 1).toISOString().split('T')[0],
+      weekStart: weekStartKey,
+      weekEnd: this.subtractDays(weekEndKey, 1),
       workoutCount: entries.length,
       totalDurationMin,
       totalCaloriesBurned,
@@ -241,6 +245,20 @@ export class WorkoutLogsService {
     });
 
     return entries.reduce((sum, e) => sum + (e.calorieBurned ?? 0), 0);
+  }
+
+  /** Add `n` days to a YYYY-MM-DD date key using UTC noon to avoid DST edge cases. */
+  private addDays(dateKey: string, n: number): string {
+    const d = new Date(dateKey + 'T12:00:00.000Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().split('T')[0]!;
+  }
+
+  /** Subtract `n` days from a YYYY-MM-DD date key using UTC noon to avoid DST edge cases. */
+  private subtractDays(dateKey: string, n: number): string {
+    const d = new Date(dateKey + 'T12:00:00.000Z');
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().split('T')[0]!;
   }
 
   private format(entry: {
