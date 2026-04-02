@@ -22,12 +22,6 @@ export class SentryProvider implements OnModuleInit {
       dsn,
       environment: this.config.get('NODE_ENV'),
       sampleRate: 1.0,
-      beforeSend(event) {
-        console.log(
-          `[Sentry] Sending event: ${event.event_id} — ${event.exception?.values?.[0]?.value ?? event.message}`,
-        );
-        return event;
-      },
     });
     this.initialized = true;
     this.logger.log('Sentry initialized');
