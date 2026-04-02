@@ -657,22 +657,47 @@ export function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // `cancelled` guards against stale responses overwriting fresh local state when
+      // the user rapidly switches away and back before in-flight requests complete.
+      // Zustand store actions use internal set() so last-write-wins is acceptable there;
+      // the flag specifically protects the local setWeekHistory / setWeekCalorieTarget
+      // calls inside loadWeekHistory from applying after a newer focus cycle has started.
+      let cancelled = false;
+
+      const loadWeekHistoryGuarded = async () => {
+        try {
+          const res = await api.get<{
+            data: {
+              history: { date: string; calories: number }[];
+              target: { calories: number } | null;
+            };
+          }>(`/dashboard/history?days=35&tz=${encodeURIComponent(getDeviceTimezone())}`);
+          if (cancelled) return;
+          const map = new Map<string, number>();
+          for (const day of res.data.history) {
+            map.set(day.date, day.calories);
+          }
+          setWeekHistory(map);
+          if (res.data.target) {
+            setWeekCalorieTarget(res.data.target.calories);
+          }
+        } catch {
+          /* keep previous state */
+        }
+      };
+
       fetchDashboard(selectedDateKey);
-      loadWeekHistory();
+      loadWeekHistoryGuarded();
       if (selectedDateKey === todayKey) {
         fetchWater();
         fetchStreaks();
         fetchWorkoutSummary();
       }
-    }, [
-      fetchDashboard,
-      fetchWater,
-      fetchStreaks,
-      fetchWorkoutSummary,
-      loadWeekHistory,
-      selectedDateKey,
-      todayKey,
-    ]),
+
+      return () => {
+        cancelled = true;
+      };
+    }, [fetchDashboard, fetchWater, fetchStreaks, fetchWorkoutSummary, selectedDateKey, todayKey]),
   );
 
   useEffect(() => {
