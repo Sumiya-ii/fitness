@@ -143,15 +143,35 @@ async function aggregateUserData(pool: Pool, userId: string, since: Date): Promi
 
 // ── GPT summary generation ────────────────────────────────────────────────────
 
-async function generateSummaries(openai: OpenAI, dataBlock: string): Promise<MemorySummaries> {
+const SUMMARY_CHAR_LIMIT = 500;
+
+function truncateSummaries(summaries: MemorySummaries): MemorySummaries {
+  return {
+    foods: summaries.foods.slice(0, SUMMARY_CHAR_LIMIT),
+    patterns: summaries.patterns.slice(0, SUMMARY_CHAR_LIMIT),
+    goals: summaries.goals.slice(0, SUMMARY_CHAR_LIMIT),
+    preferences: summaries.preferences.slice(0, SUMMARY_CHAR_LIMIT),
+  };
+}
+
+async function generateSummaries(
+  openai: OpenAI,
+  dataBlock: string,
+  locale: string,
+): Promise<MemorySummaries> {
+  const isMn = locale === 'mn';
+  const languageInstruction = isMn
+    ? 'Generate summaries in Mongolian (Cyrillic script). Use Mongolian food names in Cyrillic where applicable (e.g., бууз, цуйван, хуушуур, хонины мах).'
+    : 'Generate summaries in English. Include Mongolian food names in Cyrillic where they appear in the data (e.g., бууз, цуйван).';
+
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       {
         role: 'system',
         content: `You generate concise coach memory summaries from user nutrition data.
-Each summary must be 1–3 sentences, specific (use real numbers/food names), and written in English.
-Mention Mongolian food names where they appear (e.g., бууз, цуйван, хуушуур).
+Each summary must be 1–3 sentences, specific (use real numbers/food names).
+${languageInstruction}
 Return ONLY valid JSON with exactly these 4 keys: foods, patterns, goals, preferences.`,
       },
       {
@@ -167,18 +187,28 @@ Return ONLY valid JSON with exactly these 4 keys: foods, patterns, goals, prefer
   const raw = response.choices[0]?.message?.content ?? '{}';
   const parsed = JSON.parse(raw) as Partial<MemorySummaries>;
 
-  return {
-    foods: parsed.foods ?? 'No food pattern data available yet.',
-    patterns: parsed.patterns ?? 'No pattern data available yet.',
-    goals: parsed.goals ?? 'No goal data available yet.',
-    preferences: parsed.preferences ?? 'No preference data available yet.',
+  const summaries: MemorySummaries = {
+    foods:
+      parsed.foods ??
+      (isMn ? 'Хоолны загварын мэдээлэл байхгүй байна.' : 'No food pattern data available yet.'),
+    patterns:
+      parsed.patterns ??
+      (isMn ? 'Загварын мэдээлэл байхгүй байна.' : 'No pattern data available yet.'),
+    goals:
+      parsed.goals ?? (isMn ? 'Зорилгын мэдээлэл байхгүй байна.' : 'No goal data available yet.'),
+    preferences:
+      parsed.preferences ??
+      (isMn ? 'Сонголтын мэдээлэл байхгүй байна.' : 'No preference data available yet.'),
   };
+
+  // Cap each category at 500 chars to prevent prompt overflow downstream
+  return truncateSummaries(summaries);
 }
 
 // ── Main processor ────────────────────────────────────────────────────────────
 
 export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promise<void> {
-  const { userId } = job.data;
+  const { userId, locale = 'mn' } = job.data;
 
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
@@ -199,7 +229,7 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const dataBlock = await aggregateUserData(pool, userId, since);
 
-    const summaries = await generateSummaries(openai, dataBlock);
+    const summaries = await generateSummaries(openai, dataBlock, locale);
 
     // Upsert all 4 category summaries
     const categories = ['foods', 'patterns', 'goals', 'preferences'] as const;

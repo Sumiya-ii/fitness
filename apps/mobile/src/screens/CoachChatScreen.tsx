@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { chatApi, type ChatMessage } from '../api/chat';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
+import { useSubscriptionStore } from '../stores/subscription.store';
 
 interface DisplayMessage extends ChatMessage {
   id: string;
@@ -82,6 +83,10 @@ export function CoachChatScreen() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
+
+  const tier = useSubscriptionStore((s) => s.tier);
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+  const isPro = tier === 'pro';
 
   const loadHistory = useCallback(async () => {
     setLoading(true);
@@ -179,14 +184,16 @@ export function CoachChatScreen() {
             <Text className="text-lg font-sans-bold text-text">{t('coachChat.title')}</Text>
             <Text className="text-xs text-text-secondary font-sans">{t('coachChat.subtitle')}</Text>
           </View>
-          <Pressable
-            onPress={handleClear}
-            className="h-11 w-11 rounded-full bg-surface-card items-center justify-center"
-            accessibilityRole="button"
-            accessibilityLabel={t('coachChat.clearConversation')}
-          >
-            <Ionicons name="trash-outline" size={18} color={c.textSecondary} />
-          </Pressable>
+          {isPro && (
+            <Pressable
+              onPress={handleClear}
+              className="h-11 w-11 rounded-full bg-surface-card items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel={t('coachChat.clearConversation')}
+            >
+              <Ionicons name="trash-outline" size={18} color={c.textSecondary} />
+            </Pressable>
+          )}
         </View>
 
         <KeyboardAvoidingView
@@ -230,46 +237,101 @@ export function CoachChatScreen() {
             />
           )}
 
-          {/* Input */}
-          <SafeAreaView
-            edges={['bottom']}
-            className="border-t border-surface-border bg-surface-app"
-          >
-            <View className="flex-row items-end px-5 py-3 gap-2">
-              <TextInput
-                className="flex-1 bg-surface-card border border-surface-border rounded-2xl px-4 py-3 text-text text-sm font-sans max-h-28"
-                placeholder={t('coachChat.placeholder')}
-                placeholderTextColor={c.textTertiary}
-                value={input}
-                onChangeText={setInput}
-                multiline
-                returnKeyType="send"
-                blurOnSubmit={false}
-                onSubmitEditing={handleSend}
-                editable={!sending}
-                accessibilityLabel={t('coachChat.placeholder')}
-              />
+          {/* Input area — full input for Pro, upgrade banner for free */}
+          {isPro ? (
+            <SafeAreaView
+              edges={['bottom']}
+              className="border-t border-surface-border bg-surface-app"
+            >
+              <View className="flex-row items-end px-5 py-3 gap-2">
+                <TextInput
+                  className="flex-1 bg-surface-card border border-surface-border rounded-2xl px-4 py-3 text-text text-sm font-sans max-h-28"
+                  placeholder={t('coachChat.placeholder')}
+                  placeholderTextColor={c.textTertiary}
+                  value={input}
+                  onChangeText={setInput}
+                  multiline
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                  onSubmitEditing={handleSend}
+                  editable={!sending}
+                  accessibilityLabel={t('coachChat.placeholder')}
+                />
+                <Pressable
+                  onPress={handleSend}
+                  disabled={!input.trim() || sending}
+                  className={`h-11 w-11 rounded-full items-center justify-center ${
+                    input.trim() && !sending ? 'bg-primary-500' : 'bg-surface-card'
+                  }`}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send message"
+                >
+                  {sending ? (
+                    <ActivityIndicator size="small" color={c.textTertiary} />
+                  ) : (
+                    <Ionicons
+                      name="arrow-up"
+                      size={20}
+                      color={input.trim() ? c.onPrimary : c.textTertiary}
+                    />
+                  )}
+                </Pressable>
+              </View>
+            </SafeAreaView>
+          ) : (
+            <SafeAreaView
+              edges={['bottom']}
+              className="border-t border-surface-border bg-surface-app"
+            >
               <Pressable
-                onPress={handleSend}
-                disabled={!input.trim() || sending}
-                className={`h-11 w-11 rounded-full items-center justify-center ${
-                  input.trim() && !sending ? 'bg-primary-500' : 'bg-surface-card'
-                }`}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  showPaywall();
+                }}
+                className="mx-5 my-3 rounded-2xl overflow-hidden"
                 accessibilityRole="button"
-                accessibilityLabel="Send message"
+                accessibilityLabel={t('coachChat.upgradeBannerCta')}
               >
-                {sending ? (
-                  <ActivityIndicator size="small" color={c.textTertiary} />
-                ) : (
-                  <Ionicons
-                    name="arrow-up"
-                    size={20}
-                    color={input.trim() ? c.onPrimary : c.textTertiary}
-                  />
-                )}
+                <View
+                  className="flex-row items-center justify-between px-4 py-3 rounded-2xl"
+                  style={{
+                    backgroundColor: c.primary + '15',
+                    borderWidth: 1,
+                    borderColor: c.primary + '30',
+                  }}
+                >
+                  <View className="flex-row items-center gap-3 flex-1">
+                    <View
+                      className="h-9 w-9 rounded-xl items-center justify-center shrink-0"
+                      style={{ backgroundColor: c.primary + '20' }}
+                    >
+                      <Ionicons name="sparkles" size={18} color={c.primary} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-sm font-sans-semibold text-text">
+                        {t('coachChat.upgradeBannerTitle')}
+                      </Text>
+                      <Text
+                        className="text-xs font-sans leading-4 mt-0.5"
+                        style={{ color: c.textSecondary }}
+                        numberOfLines={1}
+                      >
+                        {t('coachChat.upgradeBannerDesc')}
+                      </Text>
+                    </View>
+                  </View>
+                  <View
+                    className="ml-3 px-3 py-1.5 rounded-xl"
+                    style={{ backgroundColor: c.primary }}
+                  >
+                    <Text className="text-xs font-sans-bold" style={{ color: c.onPrimary }}>
+                      {t('coachChat.upgradeBannerCta')}
+                    </Text>
+                  </View>
+                </View>
               </Pressable>
-            </View>
-          </SafeAreaView>
+            </SafeAreaView>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>

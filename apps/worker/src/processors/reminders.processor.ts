@@ -1,8 +1,10 @@
 import { Job } from 'bullmq';
+import OpenAI from 'openai';
 import { Telegraf } from 'telegraf';
 import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
+import { COACH_SYSTEM_PROMPT } from './coach-persona';
 
 interface ReminderJobData {
   userId: string;
@@ -11,7 +13,13 @@ interface ReminderJobData {
   chatId?: string;
   locale?: string;
   pushTokens?: string[];
+  /** Optional: yesterday's calorie total passed from the scheduler for context */
+  yesterdayCalories?: number;
+  /** Optional: user's first name */
+  userName?: string;
 }
+
+// ── Static fallbacks (used when OpenAI is unavailable) ───────────────────────
 
 const MORNING_VARIANTS_MN: Array<{ title: string; body: string }> = [
   {
@@ -65,7 +73,7 @@ const EVENING_VARIANTS_EN: Array<{ title: string; body: string }> = [
   },
 ];
 
-function getReminderMessage(
+function getFallbackMessage(
   type: 'morning' | 'evening',
   lang: string,
 ): { title: string; body: string } {
@@ -80,11 +88,105 @@ function getReminderMessage(
   return variants[Math.floor(Math.random() * variants.length)]!;
 }
 
+// ── AI generation ─────────────────────────────────────────────────────────────
+
+async function generateReminderMessage(
+  openai: OpenAI,
+  data: ReminderJobData,
+  today: string,
+): Promise<{ title: string; body: string } | null> {
+  const lang = data.locale === 'en' ? 'en' : 'mn';
+  const name = data.userName ? data.userName : null;
+  const greeting = data.type === 'morning' ? 'morning' : 'evening';
+
+  const yesterdayContext =
+    data.yesterdayCalories !== undefined
+      ? lang === 'mn'
+        ? `Өчигдөр ${data.yesterdayCalories} ккал бүртгэсэн.`
+        : `Yesterday they logged ${data.yesterdayCalories} kcal.`
+      : null;
+
+  const userPrompt = [
+    `Reminder type: ${greeting}`,
+    `User locale: ${lang}`,
+    `Today's date: ${today}`,
+    name ? `User's name: ${name}` : 'User name: unknown',
+    yesterdayContext,
+    '',
+    lang === 'mn'
+      ? `${greeting === 'morning' ? 'Өглөөний' : 'Оройн'} мэндчилгээ бич. Богино, дулаан, 2 өгүүлбэр хангалттай.`
+      : `Write a ${greeting} reminder message. Keep it short and warm — 2 sentences is perfect.`,
+    '',
+    'Return ONLY valid JSON: {"title":"...","body":"..."}',
+    'The title should be 3-5 words max (notification title). The body is the message text.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: COACH_SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 150,
+      temperature: 0.8,
+      response_format: { type: 'json_object' },
+    });
+
+    const raw = response.choices[0]?.message?.content ?? '{}';
+    const parsed = JSON.parse(raw) as { title?: string; body?: string };
+
+    if (!parsed.title || !parsed.body) return null;
+    return { title: parsed.title, body: parsed.body };
+  } catch {
+    return null;
+  }
+}
+
+// ── Delivery helpers ──────────────────────────────────────────────────────────
+
+async function sendTelegramReminder(userId: string, chatId: string, text: string): Promise<void> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    console.warn('[Reminders] TELEGRAM_BOT_TOKEN not set, skipping Telegram delivery');
+    return;
+  }
+  const bot = new Telegraf(botToken);
+  await bot.telegram.sendMessage(chatId, text);
+  console.log(`[Reminders] Telegram reminder sent to user ${userId}`);
+}
+
+// ── Main processor ────────────────────────────────────────────────────────────
+
 export async function processReminderJob(job: Job<ReminderJobData>): Promise<void> {
   const { userId, type, channels, chatId, locale, pushTokens = [] } = job.data;
 
   const lang = locale ?? 'mn';
-  const message = getReminderMessage(type, lang);
+
+  // ── Attempt AI generation ─────────────────────────────────────────────────
+  let message: { title: string; body: string } | undefined;
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    const openai = new OpenAI({ apiKey: openaiKey });
+    const today = new Date().toISOString().split('T')[0]!;
+    const aiMessage = await generateReminderMessage(openai, job.data, today);
+    if (aiMessage) {
+      message = aiMessage;
+      console.log(`[Reminders] AI-generated ${type} reminder for user ${userId}`);
+    } else {
+      console.warn(`[Reminders] AI generation returned empty for user ${userId}, using fallback`);
+    }
+  } else {
+    console.warn('[Reminders] OPENAI_API_KEY not set, using static fallback');
+  }
+
+  // Fall back to static variant if AI failed or key missing
+  if (!message) {
+    message = getFallbackMessage(type, lang);
+  }
 
   const hasTelegram = channels.includes('telegram') && Boolean(chatId);
   const hasPush = channels.includes('push') && pushTokens.length > 0;
@@ -108,7 +210,7 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
       (async () => {
         const start = Date.now();
         try {
-          await sendTelegramReminder(userId, chatId!, message.body);
+          await sendTelegramReminder(userId, chatId!, message!.body);
           await logMessage({
             ...sharedLogFields,
             channel: 'telegram',
@@ -138,7 +240,7 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
       (async () => {
         const start = Date.now();
         try {
-          await sendExpoPush(pushTokens, message.title, message.body, { type: 'reminder' });
+          await sendExpoPush(pushTokens, message!.title, message!.body, { type: 'reminder' });
           await logMessage({
             ...sharedLogFields,
             channel: 'push',
@@ -168,15 +270,4 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
   console.log(
     `[Reminders] Sent ${type} reminder to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`,
   );
-}
-
-async function sendTelegramReminder(userId: string, chatId: string, text: string): Promise<void> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!botToken) {
-    console.warn('[Reminders] TELEGRAM_BOT_TOKEN not set, skipping Telegram delivery');
-    return;
-  }
-  const bot = new Telegraf(botToken);
-  await bot.telegram.sendMessage(chatId, text);
-  console.log(`[Reminders] Telegram reminder sent to user ${userId}`);
 }

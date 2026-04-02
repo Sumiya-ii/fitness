@@ -573,6 +573,7 @@ export function HomeScreen() {
   const [carouselPage, setCarouselPage] = useState(0);
   const [streakModalVisible, setStreakModalVisible] = useState(false);
   const [showEaten, setShowEaten] = useState(false);
+  const [showMicronutrients, setShowMicronutrients] = useState(false);
   const [weekHistory, setWeekHistory] = useState<Map<string, number>>(new Map());
   const [weekCalorieTarget, setWeekCalorieTarget] = useState<number | null>(null);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
@@ -708,7 +709,16 @@ export function HomeScreen() {
   }
 
   const targets = data?.targets ?? null;
-  const consumed = data?.consumed ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  const consumed = data?.consumed ?? {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: null,
+    sugar: null,
+    sodium: null,
+    saturatedFat: null,
+  };
   const hasTargets = targets !== null;
   const remaining = hasTargets ? Math.max(targets.calories - consumed.calories, 0) : 0;
   const calProg =
@@ -1042,6 +1052,129 @@ export function HomeScreen() {
                   onToggle={() => setShowEaten((v) => !v)}
                 />
               </View>
+
+              {/* ── Expandable Micronutrients ── */}
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowMicronutrients((v) => !v);
+                }}
+                className="mt-3 flex-row items-center justify-center py-2 rounded-2xl"
+                style={{ backgroundColor: c.cardAlt }}
+                accessibilityRole="button"
+                accessibilityLabel={t('dashboard.moreNutrients')}
+              >
+                <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.textTertiary }}>
+                  {showMicronutrients ? t('dashboard.hideNutrients') : t('dashboard.moreNutrients')}
+                </Text>
+                <Ionicons
+                  name={showMicronutrients ? 'chevron-up' : 'chevron-down'}
+                  size={14}
+                  color={c.textTertiary}
+                  style={{ marginLeft: 4 }}
+                />
+              </Pressable>
+
+              {showMicronutrients ? (
+                <Animated.View entering={FadeInDown.duration(250)} className="mt-3">
+                  <View className="flex-row gap-3 mb-3">
+                    <View
+                      className="flex-1 rounded-2xl px-3 py-2.5"
+                      style={{ backgroundColor: c.card }}
+                    >
+                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
+                        {consumed.fiber != null ? `${Math.round(consumed.fiber)}` : '–'}
+                      </Text>
+                      <Text
+                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                      >
+                        g
+                      </Text>
+                      <View className="flex-row items-center gap-1 mt-1.5">
+                        <Text style={{ fontSize: 14 }}>🥦</Text>
+                        <Text
+                          style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.success }}
+                          numberOfLines={1}
+                        >
+                          {t('dashboard.fiber')}
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      className="flex-1 rounded-2xl px-3 py-2.5"
+                      style={{ backgroundColor: c.card }}
+                    >
+                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
+                        {consumed.sugar != null ? `${Math.round(consumed.sugar)}` : '–'}
+                      </Text>
+                      <Text
+                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                      >
+                        g
+                      </Text>
+                      <View className="flex-row items-center gap-1 mt-1.5">
+                        <Text style={{ fontSize: 14 }}>🍬</Text>
+                        <Text
+                          style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.danger }}
+                          numberOfLines={1}
+                        >
+                          {t('dashboard.sugar')}
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      className="flex-1 rounded-2xl px-3 py-2.5"
+                      style={{ backgroundColor: c.card }}
+                    >
+                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
+                        {consumed.sodium != null ? `${Math.round(consumed.sodium)}` : '–'}
+                      </Text>
+                      <Text
+                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                      >
+                        mg
+                      </Text>
+                      <View className="flex-row items-center gap-1 mt-1.5">
+                        <Text style={{ fontSize: 14 }}>🧂</Text>
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontFamily: 'Inter-SemiBold',
+                            color: c.primaryMuted,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {t('dashboard.sodium')}
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      className="flex-1 rounded-2xl px-3 py-2.5"
+                      style={{ backgroundColor: c.card }}
+                    >
+                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
+                        {consumed.saturatedFat != null
+                          ? `${Math.round(consumed.saturatedFat)}`
+                          : '–'}
+                      </Text>
+                      <Text
+                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
+                      >
+                        g
+                      </Text>
+                      <View className="flex-row items-center gap-1 mt-1.5">
+                        <Text style={{ fontSize: 14 }}>🧈</Text>
+                        <Text
+                          style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.warning }}
+                          numberOfLines={1}
+                        >
+                          {t('dashboard.saturatedFat')}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </Animated.View>
+              ) : null}
             </View>
 
             {/* ── Page 1: Health Score + Water + Nutrients ── */}
@@ -1163,32 +1296,41 @@ export function HomeScreen() {
                 </View>
               </View>
 
-              {/* Row 3: Fiber / Sugar / Sodium (coming soon) */}
-              <View className="flex-row gap-3">
+              {/* Row 3: Fiber / Sugar / Sodium / Saturated Fat */}
+              <View className="flex-row gap-3 mb-3">
                 <NutrientMiniCard
                   label={t('dashboard.fiber')}
-                  value="–"
+                  value={consumed.fiber != null ? `${Math.round(consumed.fiber)}` : '–'}
                   unit="g"
                   color={c.success}
                   icon="🥦"
-                  sublabel={t('dashboard.comingSoon')}
                 />
                 <NutrientMiniCard
                   label={t('dashboard.sugar')}
-                  value="–"
+                  value={consumed.sugar != null ? `${Math.round(consumed.sugar)}` : '–'}
                   unit="g"
                   color={c.danger}
                   icon="🍬"
-                  sublabel={t('dashboard.comingSoon')}
                 />
                 <NutrientMiniCard
                   label={t('dashboard.sodium')}
-                  value="–"
+                  value={consumed.sodium != null ? `${Math.round(consumed.sodium)}` : '–'}
                   unit="mg"
                   color={c.primaryMuted}
                   icon="🧂"
-                  sublabel={t('dashboard.comingSoon')}
                 />
+              </View>
+              <View className="flex-row gap-3">
+                <NutrientMiniCard
+                  label={t('dashboard.saturatedFat')}
+                  value={
+                    consumed.saturatedFat != null ? `${Math.round(consumed.saturatedFat)}` : '–'
+                  }
+                  unit="g"
+                  color={c.warning}
+                  icon="🧈"
+                />
+                <View className="flex-[2]" />
               </View>
             </View>
 

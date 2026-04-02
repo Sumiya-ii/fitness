@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, Text, Switch, Linking } from 'react-native';
+import { View, Text, Switch, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,12 +27,16 @@ export function RemindersScreen() {
   const [osPermission, setOsPermission] = useState<'granted' | 'denied' | 'undetermined'>(
     'undetermined',
   );
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
+      let cancelled = false;
+
       // Check OS permission independently
       Notifications.getPermissionsAsync()
         .then((permResult) => {
+          if (cancelled) return;
           setOsPermission(
             permResult.status === 'granted'
               ? 'granted'
@@ -43,10 +47,24 @@ export function RemindersScreen() {
         })
         .catch(() => {});
 
+      setLoadingPrefs(true);
       api
         .get<{ data: NotificationPrefs }>('/notifications/preferences')
-        .then((notifRes) => setNotifPrefs(notifRes.data))
-        .catch(() => {});
+        .then((notifRes) => {
+          if (cancelled) return;
+          setNotifPrefs({
+            morningReminder: notifRes.data.morningReminder,
+            eveningReminder: notifRes.data.eveningReminder,
+          });
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setLoadingPrefs(false);
+        });
+
+      return () => {
+        cancelled = true;
+      };
     }, []),
   );
 
@@ -136,6 +154,16 @@ export function RemindersScreen() {
             >
               {t('settings.turnOnNotifications')}
             </Button>
+          </View>
+        </Animated.View>
+      );
+    }
+
+    if (loadingPrefs) {
+      return (
+        <Animated.View entering={FadeInDown.duration(400).springify()}>
+          <View className="bg-surface-card rounded-2xl border border-surface-border py-10 items-center justify-center">
+            <ActivityIndicator color={c.primary} />
           </View>
         </Animated.View>
       );
