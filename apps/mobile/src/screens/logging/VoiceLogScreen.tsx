@@ -74,8 +74,10 @@ const MEAL_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   dinner: 'moon-outline',
   snack: 'cafe-outline',
 };
-const POLL_INTERVAL_MS = 2000;
-const MAX_POLL_ATTEMPTS = 30;
+const POLL_INTERVAL_FAST_MS = 2000;
+const POLL_INTERVAL_SLOW_MS = 4000;
+const POLL_FAST_THRESHOLD = 15;
+const MAX_POLL_ATTEMPTS = 60;
 const MAX_RECORDING_SECONDS = 60;
 const WARN_RECORDING_SECONDS = 45;
 
@@ -355,7 +357,8 @@ export function VoiceLogScreen() {
         return;
       }
 
-      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), POLL_INTERVAL_MS);
+      const delay = attempt < POLL_FAST_THRESHOLD ? POLL_INTERVAL_FAST_MS : POLL_INTERVAL_SLOW_MS;
+      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), delay);
     } catch {
       setError(t('voiceLog.statusCheckFailed'));
       setScreenState('idle');

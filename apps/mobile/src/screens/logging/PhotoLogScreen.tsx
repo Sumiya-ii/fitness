@@ -62,8 +62,10 @@ type NutrientField = keyof Pick<
   'calories' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'sodium' | 'saturatedFat'
 >;
 
-const POLL_INTERVAL_MS = 2000;
-const MAX_POLL_ATTEMPTS = 30;
+const POLL_INTERVAL_FAST_MS = 2000;
+const POLL_INTERVAL_SLOW_MS = 4000;
+const POLL_FAST_THRESHOLD = 15;
+const MAX_POLL_ATTEMPTS = 60;
 const SERVING_STEP = 0.25;
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 const MEAL_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -458,7 +460,8 @@ export function PhotoLogScreen() {
         return;
       }
 
-      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), POLL_INTERVAL_MS);
+      const delay = attempt < POLL_FAST_THRESHOLD ? POLL_INTERVAL_FAST_MS : POLL_INTERVAL_SLOW_MS;
+      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), delay);
     } catch {
       setError(t('photoLog.statusCheckFailed'));
       setAnalyzing(false);
@@ -577,7 +580,6 @@ export function PhotoLogScreen() {
         normalizedName: item.name,
         locale: 'mn',
         sourceType: 'user',
-        sourceRef: 'label-scan',
         servings: [
           { label: `1 serving (${servingGrams}g)`, gramsPerUnit: servingGrams, isDefault: true },
           { label: '100g', gramsPerUnit: 100, isDefault: false },
