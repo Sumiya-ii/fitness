@@ -12,7 +12,8 @@ export class RemindersCron {
     private readonly sentry: SentryProvider,
   ) {}
 
-  @Cron('*/15 * * * *') // Every 15 minutes
+  // Runs at :05, :20, :35, :50 every hour (staggered 5 min from coach at :00)
+  @Cron('5,20,35,50 * * * *')
   async handleMorningReminders() {
     try {
       await this.remindersService.scheduleMorningReminders();
@@ -22,7 +23,8 @@ export class RemindersCron {
     }
   }
 
-  @Cron('*/15 * * * *') // Every 15 minutes
+  // Runs at :10, :25, :40, :55 every hour (staggered 10 min from coach at :00)
+  @Cron('10,25,40,55 * * * *')
   async handleEveningReminders() {
     try {
       await this.remindersService.scheduleEveningReminders();

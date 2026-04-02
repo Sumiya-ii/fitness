@@ -12,7 +12,8 @@ export class MealNudgeCron {
     private readonly sentry: SentryProvider,
   ) {}
 
-  @Cron('*/15 * * * *') // Every 15 minutes — filters to 8–9 PM window inside the service
+  // Runs at :07, :22, :37, :52 every hour (staggered 7 min from coach at :00) — filters to 8–9 PM window inside the service
+  @Cron('7,22,37,52 * * * *')
   async handleMealNudges() {
     try {
       await this.mealNudgeService.scheduleMealNudges();

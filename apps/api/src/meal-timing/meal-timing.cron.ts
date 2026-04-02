@@ -12,8 +12,8 @@ export class MealTimingCron {
     private readonly sentry: SentryProvider,
   ) {}
 
-  // Monday 01:00 UTC = Monday 09:00 Asia/Ulaanbaatar
-  @Cron('0 1 * * 1')
+  // Monday 01:15 UTC = Monday 09:15 Asia/Ulaanbaatar (staggered 15 min from weekly-report at 01:00)
+  @Cron('15 1 * * 1')
   async handleMealTimingInsights() {
     try {
       const count = await this.mealTimingService.scheduleMealTimingInsights();

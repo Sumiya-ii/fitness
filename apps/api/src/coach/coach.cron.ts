@@ -12,7 +12,8 @@ export class CoachCron {
     private readonly sentry: SentryProvider,
   ) {}
 
-  @Cron('*/15 * * * *')
+  // Runs at :00, :15, :30, :45 every hour — anchor job; all other 15-min crons are staggered off this
+  @Cron('0,15,30,45 * * * *')
   async handleCoachMessages() {
     try {
       const count = await this.coachService.scheduleCoachMessages();
