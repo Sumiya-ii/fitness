@@ -1,5 +1,6 @@
 import './global.css';
 import { useEffect } from 'react';
+import * as Updates from 'expo-updates';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,7 +11,6 @@ import { SyncBanner } from './src/components/ui/SyncBanner';
 import { PaywallModal } from './src/components/PaywallModal';
 import { useAuthStore } from './src/stores/auth.store';
 import { useSubscriptionStore } from './src/stores/subscription.store';
-import { useSettingsStore } from './src/stores/settings.store';
 import { setPaywallCallback } from './src/api/client';
 import { useColors, buildNavigationTheme } from './src/theme';
 import { useThemeStore } from './src/stores/theme.store';
@@ -61,14 +61,6 @@ export default Sentry.wrap(function App() {
     };
   }, [handleCustomerInfoUpdate]);
 
-  // Load unit system preference when authenticated
-  const loadUnitSystem = useSettingsStore((s) => s.loadUnitSystem);
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadUnitSystem();
-    }
-  }, [isAuthenticated, loadUnitSystem]);
-
   // Set device timezone as default for new users whose profile still has the schema default.
   // Once the user picks a timezone in settings, this won't overwrite it.
   useEffect(() => {
@@ -106,6 +98,23 @@ export default Sentry.wrap(function App() {
   useEffect(() => {
     loadToken();
   }, [loadToken]);
+
+  // Check for OTA updates once on launch — fire-and-forget, never blocks the app
+  useEffect(() => {
+    if (__DEV__) return;
+    const checkForUpdates = async () => {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch {
+        // Silent failure — OTA check is not critical
+      }
+    };
+    checkForUpdates();
+  }, []);
 
   const colors = useColors();
   const navTheme = buildNavigationTheme(colors);
