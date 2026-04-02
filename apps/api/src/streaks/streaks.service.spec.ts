@@ -5,15 +5,13 @@ describe('StreaksService', () => {
   let service: StreaksService;
   let prisma: { $queryRaw: jest.Mock };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  // Use UTC dates to match toDateKeyInTZ(new Date(), undefined) which defaults to UTC.
   function dateKey(daysAgo: number): string {
-    const d = new Date(today);
-    d.setDate(d.getDate() - daysAgo);
-    const y = d.getFullYear();
-    const m = `${d.getMonth() + 1}`.padStart(2, '0');
-    const day = `${d.getDate()}`.padStart(2, '0');
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - daysAgo);
+    const y = d.getUTCFullYear();
+    const m = `${d.getUTCMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getUTCDate()}`.padStart(2, '0');
     return `${y}-${m}-${day}`;
   }
 

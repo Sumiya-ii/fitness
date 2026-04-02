@@ -136,7 +136,7 @@ export class WeeklyReportService implements OnModuleDestroy {
     for (const pref of prefs) {
       // Resolve timezone from profile first (single source of truth)
       const profile = await this.prisma.profile.findUnique({ where: { userId: pref.userId } });
-      const tz = profile?.timezone ?? pref.reminderTimezone;
+      const tz = profile?.timezone ?? pref.reminderTimezone ?? 'Asia/Ulaanbaatar';
       const now = DateTime.now().setZone(tz);
 
       // Only fire on Monday between 9:00–10:00 AM local time
@@ -186,7 +186,7 @@ export class WeeklyReportService implements OnModuleDestroy {
 
       const jobData: WeeklyReportJobData = {
         userId: pref.userId,
-        channels: pref.channels,
+        channels: pref.channels ?? ['push'],
         chatId: tgLink?.active ? (tgLink.chatId ?? undefined) : undefined,
         locale: profile?.locale ?? undefined,
         pushTokens: deviceTokens.map((d) => d.token),

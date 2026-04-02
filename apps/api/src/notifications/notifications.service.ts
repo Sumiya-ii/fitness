@@ -121,7 +121,7 @@ export class NotificationsService {
       sent: true,
       tokenCount: tokens.length,
       tickets: tickets.map((t, i) => ({
-        token: tokens[i].token.slice(0, 30) + '...',
+        token: (tokens[i]?.token ?? '').slice(0, 30) + '...',
         status: t.status,
         error: t.details?.error,
       })),

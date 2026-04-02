@@ -48,12 +48,12 @@ export class MealNudgeService {
         this.prisma.telegramLink.findUnique({ where: { userId: pref.userId } }),
         this.prisma.profile.findUnique({ where: { userId: pref.userId } }),
         this.prisma.deviceToken.findMany({
-          where: { userId: pref.userId },
+          where: { userId: pref.userId, active: true },
           select: { token: true },
         }),
       ]);
 
-      const tz = profile?.timezone ?? pref.reminderTimezone;
+      const tz = profile?.timezone ?? pref.reminderTimezone ?? 'Asia/Ulaanbaatar';
 
       const localHour = getLocalHour(tz);
       if (localHour < 20 || localHour >= 21) continue;

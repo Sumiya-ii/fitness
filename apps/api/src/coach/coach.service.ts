@@ -186,8 +186,8 @@ export class CoachService implements OnModuleDestroy {
 
       users.push({
         userId: pref.userId,
-        timezone: profile?.timezone ?? pref.reminderTimezone,
-        channels: pref.channels,
+        timezone: profile?.timezone ?? pref.reminderTimezone ?? 'Asia/Ulaanbaatar',
+        channels: pref.channels ?? ['push'],
         chatId: tgLink?.active ? (tgLink.chatId ?? undefined) : undefined,
         locale: profile?.locale ?? undefined,
         pushTokens: deviceTokens.map((d) => d.token),

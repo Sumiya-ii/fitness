@@ -59,7 +59,9 @@ export async function sendExpoPush(
 
   const deadTokens = tokens.filter(
     (_, i) =>
-      tickets[i]?.status === 'error' && tickets[i]?.details?.error === 'DeviceNotRegistered',
+      i < tickets.length &&
+      tickets[i]?.status === 'error' &&
+      tickets[i]?.details?.error === 'DeviceNotRegistered',
   );
 
   if (deadTokens.length > 0) {

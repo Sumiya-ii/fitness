@@ -60,8 +60,8 @@ export class WorkoutLogsController {
 
   /** This week's workout summary. */
   @Get('summary')
-  async getSummary(@CurrentUser() user: AuthenticatedUser) {
-    return { data: await this.workoutLogsService.getWeeklySummary(user.id) };
+  async getSummary(@CurrentUser() user: AuthenticatedUser, @Query('tz') tz?: string) {
+    return { data: await this.workoutLogsService.getWeeklySummary(user.id, tz) };
   }
 
   @Post()

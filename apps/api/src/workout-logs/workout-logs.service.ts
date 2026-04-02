@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { dayBoundaries } from '@coach/shared';
+import { dayBoundaries, toDateKeyInTZ } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import {
   calculateCaloriesBurned,
@@ -49,10 +49,11 @@ export class WorkoutLogsService {
       const { dayStart, dayEnd } = dayBoundaries(query.date, query.tz);
       where.loggedAt = { gte: dayStart, lt: dayEnd };
     } else if (query.days) {
-      const since = new Date();
-      since.setUTCDate(since.getUTCDate() - query.days);
-      since.setUTCHours(0, 0, 0, 0);
-      where.loggedAt = { gte: since };
+      const todayDate = new Date();
+      todayDate.setDate(todayDate.getDate() - query.days);
+      const sinceKey = toDateKeyInTZ(todayDate, query.tz);
+      const { dayStart } = dayBoundaries(sinceKey, query.tz);
+      where.loggedAt = { gte: dayStart };
     }
 
     const [entries, total] = await Promise.all([
@@ -176,7 +177,7 @@ export class WorkoutLogsService {
   }
 
   /** Weekly summary: total workouts, duration, calories burned. */
-  async getWeeklySummary(userId: string) {
+  async getWeeklySummary(userId: string, _tz?: string) {
     const now = new Date();
     const dayOfWeek = now.getUTCDay(); // 0=Sun
     const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;

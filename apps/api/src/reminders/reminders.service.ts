@@ -114,7 +114,7 @@ export class RemindersService implements OnModuleDestroy {
         }),
       ]);
 
-      const tz = profile?.timezone ?? pref.reminderTimezone;
+      const tz = profile?.timezone ?? pref.reminderTimezone ?? 'Asia/Ulaanbaatar';
 
       const { hour: localHour } = getLocalTimeParts(tz);
       if (localHour < 8 || localHour >= 9) continue;
@@ -165,7 +165,7 @@ export class RemindersService implements OnModuleDestroy {
         }),
       ]);
 
-      const tz = profile?.timezone ?? pref.reminderTimezone;
+      const tz = profile?.timezone ?? pref.reminderTimezone ?? 'Asia/Ulaanbaatar';
 
       const { hour: localHour } = getLocalTimeParts(tz);
       if (localHour < 20 || localHour >= 21) continue;

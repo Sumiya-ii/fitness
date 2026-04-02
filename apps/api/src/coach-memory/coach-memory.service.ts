@@ -42,6 +42,13 @@ export class CoachMemoryService {
    */
   async scheduleRefresh(): Promise<number> {
     const users = await this.prisma.user.findMany({
+      where: {
+        profile: {
+          is: {
+            onboardingCompletedAt: { not: null },
+          },
+        },
+      },
       select: { id: true, profile: { select: { locale: true } } },
     });
 
