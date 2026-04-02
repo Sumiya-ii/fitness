@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../navigation/types';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, {
@@ -26,13 +28,7 @@ import { mealTimingApi, type MealTimingInsights } from '../api/meal-timing';
 import { useBodyCompositionStore } from '../stores/body-composition.store';
 import { useProfileStore } from '../stores/profile.store';
 import { useWorkoutStore } from '../stores/workout.store';
-import {
-  displayWeight,
-  inputToKg,
-  displayMeasurement,
-  inputToCm,
-  weightRange,
-} from '../utils/units';
+import { displayWeight, inputToKg, inputToCm, weightRange } from '../utils/units';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1474,7 +1470,7 @@ function WeeklyBudgetCard() {
 function BodyTab({ viewportWidth }: { viewportWidth: number }) {
   const c = useColors();
   const { t } = useLocale();
-  const _navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const wRange = weightRange();
   const [period, setPeriod] = useState<WeightPeriod>('week');
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -1494,7 +1490,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
   const isFemale = profile.gender === 'female';
 
   const { history, trend, isLoading, fetchHistory, fetchTrend, logWeight } = useWeightStore();
-  const { latest, logMeasurement } = useBodyCompositionStore();
+  const { logMeasurement } = useBodyCompositionStore();
 
   const load = useCallback(() => {
     fetchHistory(PERIOD_DAYS[period]);
@@ -1784,13 +1780,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
       {/* Body Composition */}
       <BodyCompositionCard
         onLogMeasurements={() => {
-          // Pre-fill with last values for easier re-entry
-          if (latest) {
-            setWaistInput(String(displayMeasurement(latest.waistCm)));
-            setNeckInput(String(displayMeasurement(latest.neckCm)));
-            if (latest.hipCm) setHipInput(String(displayMeasurement(latest.hipCm)));
-          }
-          setMeasureSheetVisible(true);
+          navigation.navigate('BodyCompositionLog');
         }}
       />
 
@@ -1811,14 +1801,7 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
           </Text>
         </Pressable>
         <Pressable
-          onPress={() => {
-            if (latest) {
-              setWaistInput(String(displayMeasurement(latest.waistCm)));
-              setNeckInput(String(displayMeasurement(latest.neckCm)));
-              if (latest.hipCm) setHipInput(String(displayMeasurement(latest.hipCm)));
-            }
-            setMeasureSheetVisible(true);
-          }}
+          onPress={() => navigation.navigate('BodyCompositionLog')}
           className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-surface-card border border-surface-border py-3.5"
           accessibilityRole="button"
           accessibilityLabel={t('progress.logMeasurements')}

@@ -63,6 +63,8 @@ export type MainStackParamList = {
   WorkoutActive: { workoutType: string };
   WorkoutHistory: undefined;
   WorkoutDetail: { id: string };
+  EditTargets: undefined;
+  BodyCompositionLog: undefined;
 };
 
 export type RootStackParamList = {

@@ -10,8 +10,10 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import type { MainStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -105,6 +107,7 @@ export function PersonalDetailsScreen() {
   const c = useColors();
   const { t } = useLocale();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stepGoal, setStepGoal] = useState<number>(10000);
@@ -355,6 +358,32 @@ export function PersonalDetailsScreen() {
                   isLast
                 />
               </View>
+            </Animated.View>
+
+            {/* -- Edit Targets -- */}
+            <Animated.View entering={FadeInDown.duration(400).delay(200).springify()}>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate('EditTargets');
+                }}
+                className="flex-row items-center justify-between bg-surface-card rounded-2xl px-4 py-4 mt-0 mb-4 border border-surface-border"
+                accessibilityRole="button"
+                accessibilityLabel={t('editTargets.editTargetsButton')}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View
+                    className="h-9 w-9 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: `${c.primary}1a` }}
+                  >
+                    <Ionicons name="trophy-outline" size={18} color={c.primary} />
+                  </View>
+                  <Text className="text-base font-sans-medium text-text">
+                    {t('editTargets.editTargetsButton')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={c.textTertiary} />
+              </Pressable>
             </Animated.View>
 
             {/* -- Inline editor -- */}

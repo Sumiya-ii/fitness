@@ -17,6 +17,8 @@ import {
   WorkoutHistoryScreen,
   WorkoutDetailScreen,
 } from '../screens/workout';
+import { EditTargetsScreen } from '../screens/settings/EditTargetsScreen';
+import { BodyCompositionLogScreen } from '../screens/progress/BodyCompositionLogScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -45,6 +47,16 @@ export function MainStack() {
       <Stack.Screen name="WorkoutActive" component={WorkoutActiveScreen} />
       <Stack.Screen name="WorkoutHistory" component={WorkoutHistoryScreen} />
       <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
+      <Stack.Screen
+        name="EditTargets"
+        component={EditTargetsScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="BodyCompositionLog"
+        component={BodyCompositionLogScreen}
+        options={{ presentation: 'modal' }}
+      />
     </Stack.Navigator>
   );
 }
