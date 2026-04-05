@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { getDeviceTimezone } from '../utils/timezone';
 
 // Paywall callback — registered from App.tsx after store is initialized.
 // Avoids a circular dependency between client ↔ subscription store.
@@ -98,6 +99,7 @@ async function request<T>(
   const token = await getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Timezone': getDeviceTimezone(),
     ...options?.headers,
   };
   if (token) {
@@ -162,7 +164,7 @@ export const api = {
       ? path
       : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
     const token = await getToken();
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { 'X-Timezone': getDeviceTimezone() };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const doFetch = () =>

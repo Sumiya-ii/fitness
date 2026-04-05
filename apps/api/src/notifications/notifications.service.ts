@@ -21,12 +21,16 @@ export class NotificationsService {
     });
 
     if (!prefs) {
+      const profile = await this.prisma.profile.findUnique({
+        where: { userId },
+        select: { timezone: true },
+      });
       prefs = await this.prisma.notificationPreference.create({
         data: {
           userId,
           morningReminder: true,
           eveningReminder: true,
-          reminderTimezone: 'Asia/Ulaanbaatar',
+          reminderTimezone: profile?.timezone ?? 'Asia/Ulaanbaatar',
           channels: ['push'],
         },
       });
@@ -52,13 +56,21 @@ export class NotificationsService {
   }
 
   async updatePreferences(userId: string, dto: UpdatePreferencesDto) {
+    let defaultTimezone = 'Asia/Ulaanbaatar';
+    if (dto.reminderTimezone === undefined) {
+      const profile = await this.prisma.profile.findUnique({
+        where: { userId },
+        select: { timezone: true },
+      });
+      if (profile?.timezone) defaultTimezone = profile.timezone;
+    }
     const prefs = await this.prisma.notificationPreference.upsert({
       where: { userId },
       create: {
         userId,
         morningReminder: dto.morningReminder ?? true,
         eveningReminder: dto.eveningReminder ?? true,
-        reminderTimezone: dto.reminderTimezone ?? 'Asia/Ulaanbaatar',
+        reminderTimezone: dto.reminderTimezone ?? defaultTimezone,
         quietHoursStart: dto.quietHoursStart ?? null,
         quietHoursEnd: dto.quietHoursEnd ?? null,
         channels: dto.channels ?? ['push'],

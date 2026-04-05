@@ -13,7 +13,7 @@ export interface AuthenticatedUser {
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findOrCreateUser(decoded: DecodedIdToken): Promise<AuthenticatedUser> {
+  async findOrCreateUser(decoded: DecodedIdToken, timezone?: string): Promise<AuthenticatedUser> {
     const existing = await this.prisma.user.findUnique({
       where: { firebaseUid: decoded.uid },
     });
@@ -36,6 +36,7 @@ export class AuthService {
           create: {
             locale: 'mn',
             unitSystem: 'metric',
+            ...(timezone && { timezone }),
           },
         },
         subscription: {

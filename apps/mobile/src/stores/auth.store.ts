@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../api';
+import { getDeviceTimezone } from '../utils/timezone';
 import {
   configureGoogleSignIn,
   resetPassword as firebaseResetPassword,
@@ -14,6 +15,11 @@ import {
 } from '../services/firebase-auth.service';
 
 configureGoogleSignIn();
+
+/** Fire-and-forget: sync device timezone to backend profile. */
+function syncTimezone() {
+  api.put('/profile', { timezone: getDeviceTimezone() }).catch(() => {});
+}
 
 // Keeps the stored token in sync when Firebase auto-refreshes it (every ~1 hr).
 let _tokenRefreshUnsub: (() => void) | null = null;
@@ -72,6 +78,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: true,
       user: { id: session.user.id, email: session.user.email },
     });
+    syncTimezone();
   },
 
   signUp: async (email: string, password: string) => {
@@ -83,6 +90,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: true,
       user: { id: session.user.id, email: session.user.email },
     });
+    syncTimezone();
   },
 
   signInWithGoogle: async () => {
@@ -94,6 +102,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: true,
       user: { id: session.user.id, email: session.user.email },
     });
+    syncTimezone();
   },
 
   signInWithApple: async () => {
@@ -105,6 +114,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: true,
       user: { id: session.user.id, email: session.user.email },
     });
+    syncTimezone();
   },
 
   signOut: async () => {
@@ -134,6 +144,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           },
           isLoading: false,
         });
+        syncTimezone();
         return;
       }
 

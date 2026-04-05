@@ -38,7 +38,8 @@ export class AuthGuard implements CanActivate {
 
     try {
       const decoded = await this.firebase.verifyToken(token);
-      const user = await this.authService.findOrCreateUser(decoded);
+      const timezone = request.headers['x-timezone'] as string | undefined;
+      const user = await this.authService.findOrCreateUser(decoded, timezone);
       (request as Request & { user: unknown }).user = user;
       return true;
     } catch (err) {
