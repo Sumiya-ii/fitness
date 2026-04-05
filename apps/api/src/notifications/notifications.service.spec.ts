@@ -25,6 +25,9 @@ describe('NotificationsService', () => {
         create: jest.fn().mockResolvedValue(mockPreferences),
         upsert: jest.fn().mockResolvedValue(mockPreferences),
       },
+      profile: {
+        findUnique: jest.fn().mockResolvedValue({ timezone: 'Asia/Ulaanbaatar' }),
+      },
     };
     service = new NotificationsService(prisma as unknown as PrismaService);
   });

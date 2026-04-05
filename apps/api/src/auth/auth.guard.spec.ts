@@ -159,7 +159,7 @@ describe('AuthGuard', () => {
       const ctx = createMockContext('Bearer some-token');
       await guard.canActivate(ctx);
 
-      expect(authService.findOrCreateUser).toHaveBeenCalledWith(decoded);
+      expect(authService.findOrCreateUser).toHaveBeenCalledWith(decoded, undefined);
     });
   });
 
