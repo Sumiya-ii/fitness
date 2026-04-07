@@ -87,10 +87,17 @@ export async function processSttJob(job: Job<SttJobData>): Promise<SttResult> {
   } catch (err) {
     const msg = `Audio retrieval failed: ${String(err)}`;
     console.error(`[STT] ${msg}`);
-    Sentry.captureException(err, {
-      tags: { processor: 'stt', stage: 'audio_retrieval' },
-      extra: { draftId, s3Key },
-    });
+    // NoSuchKey means the S3 object was deleted before the job processed
+    // (e.g. TTL expiry or user cancellation) — expected, not an actionable error.
+    const errName = err instanceof Error ? err.name : '';
+    const errMsg = String(err);
+    const isExpectedS3Miss = errName === 'NoSuchKey' || errMsg.includes('NoSuchKey');
+    if (!isExpectedS3Miss) {
+      Sentry.captureException(err, {
+        tags: { processor: 'stt', stage: 'audio_retrieval' },
+        extra: { draftId, s3Key },
+      });
+    }
     if (draftId) await markFailed(draftId, msg);
     throw err;
   }
