@@ -322,3 +322,116 @@ cd apps/mobile && npx expo start --tunnel
 - Daily production monitoring (automated GitHub Action)
 - i18n: Mongolian + English
 - Dark/light theme support
+
+## Engineering Workflow
+
+### Core Philosophy
+- Optimize for shipping velocity, but never through reckless large rewrites.
+- Prefer the smallest correct change that moves the product forward.
+- Work in short iteration loops: inspect → plan → patch → test → verify → summarize.
+- Use existing architecture and conventions unless there is a strong reason to change them.
+- Do not overengineer. Build the simplest production-worthy solution first.
+- When uncertain, investigate with available tools before guessing.
+- Treat logs, traces, analytics, crash reports, and runtime signals as first-class sources of truth.
+- Be proactive about finding the real root cause, not just suppressing symptoms.
+
+### How to Work
+For every non-trivial task:
+1. First understand the request and inspect the relevant code paths.
+2. Produce a short plan with concrete steps.
+3. Identify the minimum viable code change.
+4. Check whether MCP tools, Sentry, or Railway logs can provide useful context before making assumptions.
+5. Implement in small, reviewable edits.
+6. Run the fastest meaningful verification: `npm run lint && npm run typecheck && npm run test --workspaces`
+7. Summarize: what changed, why it changed, risks/follow-ups, confidence level.
+
+### Iteration Rules
+- Do not make broad refactors unless explicitly requested or clearly necessary.
+- Do not rewrite large files just because you can.
+- Preserve naming, NestJS module architecture, Zustand stores, and existing patterns.
+- When touching a large file, isolate the change to the smallest safe surface area.
+- If you see unrelated issues, mention them separately instead of mixing them into the same patch.
+- If there are multiple possible fixes, prefer the one with the lowest blast radius.
+
+### MCP Usage
+Actively use connected MCP tools whenever they reduce guesswork. Use MCP to:
+- Inspect Sentry error reports and crash traces
+- Inspect Railway deployment logs
+- Inspect database state via Prisma
+- Inspect BullMQ job failures
+- Inspect Telegram bot delivery status
+
+Prefer MCP evidence over speculation. When debugging:
+1. Gather evidence from Sentry/logs/traces first
+2. Identify exact failing path
+3. Form 1-3 likely hypotheses
+4. Test the most likely hypothesis with available evidence
+5. Then patch the root cause
+
+### Debugging Standard
+When debugging:
+1. Restate the symptom precisely.
+2. Identify likely layer: Mobile UI → Zustand state → API client → NestJS controller → Service → Prisma/DB → BullMQ worker → OpenAI → QPay → Firebase Auth → Telegram → build/config
+3. Use code inspection + Sentry/Railway logs together.
+4. Find the root cause — fix root cause first.
+5. Add or improve instrumentation if observability is weak.
+6. Add a guardrail test or assertion when appropriate.
+
+### Logging & Observability
+When touching meaningful runtime behavior, ask:
+- If this breaks again, how would we know?
+- Would current Sentry/Pino logs make the bug obvious?
+- Should we add structured logging or a Sentry breadcrumb?
+
+Instrument at critical boundaries:
+- User action (meal log, workout, weight entry)
+- API request/response
+- BullMQ job lifecycle (enqueue, process, complete, fail)
+- OpenAI GPT-4 Vision calls (food photo analysis)
+- QPay payment flow
+- Firebase auth flow
+- Telegram notification delivery
+- Weekly summary generation
+- App startup / initialization
+
+Rules: no secrets/tokens in logs, include userId and requestId for correlation, use Pino structured logging in API/worker, use Sentry for client-side errors.
+
+### Testing & Verification
+After making changes:
+- Run targeted workspace tests first: `npm run test --workspace=apps/api`
+- Then broader suite only if needed: `npm run test --workspaces`
+- If tests are missing, say so clearly.
+- For bug fixes, provide at least one of: reproduction explanation, regression test, logging improvement, or validation checklist.
+
+### Output Format
+For each task, respond with:
+1. **Understanding** — brief restatement of task and affected area
+2. **Plan** — short, concrete steps
+3. **Investigation** — code findings, Sentry/MCP findings if available, most likely root cause
+4. **Changes made** — specific files/functions/behaviors changed
+5. **Verification** — tests run, checks performed
+6. **Risks / follow-ups** — anything uncertain, deferred, or worth monitoring
+
+### Decision Rules
+- If the request is ambiguous but implementation can proceed safely, make the most reasonable assumption and state it.
+- If a missing secret, environment variable, or Railway config blocks the task, stop and state exactly what is missing.
+- If a proposed change conflicts with best practices, warn clearly with ❗❗❗.
+- If the issue appears broader than the requested fix, fix the smallest safe scope first and call out the broader problem separately.
+
+### Large Tasks
+Break work into phases:
+- **Phase 1**: smallest working path
+- **Phase 2**: hardening (tests, error handling, Sentry instrumentation)
+- **Phase 3**: polish / cleanup
+
+Always get Phase 1 working first before expanding scope.
+
+### Priorities
+1. Fast product iteration
+2. Clean user experience
+3. Production stability (Railway uptime, Sentry-clean)
+4. Debuggability (structured Pino logs, Sentry breadcrumbs)
+5. Low blast radius changes
+6. Shipping useful increments quickly
+
+Never prioritize elegance over a working, testable, reviewable solution.
