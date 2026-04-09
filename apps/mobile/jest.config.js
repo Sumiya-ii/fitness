@@ -36,6 +36,16 @@ module.exports = {
     '^@expo/vector-icons$': '<rootDir>/src/__mocks__/@expo/vector-icons.js',
     '^react-native-gesture-handler$': '<rootDir>/src/__mocks__/react-native-gesture-handler.js',
   },
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__mocks__/**'],
+  coverageDirectory: 'coverage',
+  coverageThreshold: {
+    global: {
+      statements: 40,
+      branches: 40,
+      functions: 40,
+      lines: 40,
+    },
+  },
   // Transform expo-* packages (they ship ESM) and react-native internals with Flow
   transformIgnorePatterns: [
     'node_modules/(?!(@react-native|react-native|react-native-svg|@react-navigation|expo|expo-[a-z-]+|@expo|firebase|@firebase|@sentry)/)',

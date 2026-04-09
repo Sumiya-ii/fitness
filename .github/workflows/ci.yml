@@ -40,7 +40,7 @@ jobs:
         run: npm run typecheck
 
       - name: Test
-        run: npm run test
+        run: npm run test -- -- --coverage
 
       - name: API E2E Tests
         run: npm run test:e2e --workspace=apps/api

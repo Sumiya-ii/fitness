@@ -9,6 +9,14 @@ const config: Config = {
   },
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
+  coverageThreshold: {
+    global: {
+      statements: 60,
+      branches: 60,
+      functions: 60,
+      lines: 60,
+    },
+  },
   testEnvironment: 'node',
   moduleNameMapper: {
     '^@coach/shared$': '<rootDir>/../../../packages/shared/src',

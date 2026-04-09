@@ -59,6 +59,42 @@ Ask before:
 - If scope shifts between features, update all impacted feature docs so PM/dev docs stay consistent with code.
 - A task is not complete until code and matching feature docs are aligned.
 
+## Testing requirements
+
+### Coverage thresholds (enforced by Jest)
+
+| Workspace      | Statements | Branches | Functions | Lines | Rationale                        |
+| -------------- | ---------- | -------- | --------- | ----- | -------------------------------- |
+| `apps/api`     | 60%        | 60%      | 60%       | 60%   | Backend logic is testable        |
+| `apps/mobile`  | 40%        | 40%      | 40%       | 40%   | Mobile has many native stubs     |
+
+CI runs `npm run test -- -- --coverage` to enforce these thresholds. If coverage drops below the threshold, CI will fail.
+
+### Where to put tests
+
+- **API**: co-located `*.spec.ts` next to the source file (e.g., `auth.service.spec.ts` beside `auth.service.ts`)
+- **Mobile**: `src/__tests__/` directory, matching `**/__tests__/**/*.test.{ts,tsx}`
+- **Worker**: co-located `*.spec.ts` next to the processor file
+- **Shared**: co-located `*.spec.ts` in `packages/shared/src/`
+
+### Mock patterns
+
+- **PrismaService** (API): inline plain object of `jest.Mock` fields (see `auth.service.spec.ts` for reference)
+- **Firebase**: mock whole module; include `configureGoogleSignIn: jest.fn()` and `subscribeToTokenRefresh: jest.fn(() => jest.fn())`
+- **Mobile native modules**: globally stubbed via `moduleNameMapper` in `apps/mobile/jest.config.js`
+- **API client in mobile**: `jest.mock('../api/client', () => ({ api: { get: jest.fn(), ... } }))`
+- **External services** (OpenAI, Telegraf, Redis, pg): always mock at module level; never call real services in tests
+- **Environment variables**: save in `beforeEach`, restore in `afterEach` (`let originalEnv = { ...process.env }`)
+
+### Running tests
+
+```bash
+npm run test --workspaces              # all workspaces
+npm run test --workspace=apps/api      # API only
+npm run test --workspace=apps/mobile   # mobile only
+npm run test:cov --workspace=apps/api  # API with coverage report
+```
+
 ## Output requirements
 
 When finishing a task, report:
