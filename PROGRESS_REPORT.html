@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach App — Complete Architecture &amp; Progress Report</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #333;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --accent: #c8a96e;
+    --accent2: #8b1a2b;
+    --green: #4caf50;
+    --red: #ef5350;
+    --orange: #ff9800;
+    --blue: #42a5f5;
+    --purple: #ab47bc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px 30px; }
+
+  /* Header */
+  .hero {
+    background: linear-gradient(135deg, var(--accent2) 0%, #1a0a10 100%);
+    padding: 60px 30px;
+    text-align: center;
+    border-bottom: 2px solid var(--accent);
+  }
+  .hero h1 { font-size: 2.5rem; color: var(--accent); margin-bottom: 10px; }
+  .hero .subtitle { color: var(--text-dim); font-size: 1.1rem; }
+  .hero .date { color: var(--accent); margin-top: 15px; font-size: 0.9rem; }
+
+  /* Navigation */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 25px;
+    margin: 30px 0;
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+  }
+  .toc h2 { color: var(--accent); margin-bottom: 15px; font-size: 1.2rem; }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 8px;
+  }
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: block;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+  .toc a:hover { background: var(--surface2); color: var(--accent); }
+  .toc .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-red { background: var(--red); color: white; }
+  .badge-orange { background: var(--orange); color: black; }
+  .badge-green { background: var(--green); color: white; }
+  .badge-blue { background: var(--blue); color: white; }
+
+  /* Sections */
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 30px;
+    margin: 25px 0;
+  }
+  section h2 {
+    color: var(--accent);
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  section h3 {
+    color: var(--accent);
+    font-size: 1.2rem;
+    margin: 25px 0 12px 0;
+  }
+  section h4 {
+    color: var(--text);
+    font-size: 1rem;
+    margin: 18px 0 8px 0;
+  }
+  p { margin: 8px 0; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 0.9rem;
+  }
+  th, td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+  }
+  tr:hover { background: rgba(200, 169, 110, 0.05); }
+
+  /* Code */
+  code {
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--accent);
+  }
+  pre {
+    background: var(--surface2);
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 12px 0;
+    border: 1px solid var(--border);
+  }
+  pre code { background: none; padding: 0; color: var(--text); }
+
+  /* Status indicators */
+  .status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .status-ok { background: rgba(76,175,80,0.2); color: var(--green); }
+  .status-warn { background: rgba(255,152,0,0.2); color: var(--orange); }
+  .status-error { background: rgba(239,83,80,0.2); color: var(--red); }
+  .status-info { background: rgba(66,165,245,0.2); color: var(--blue); }
+
+  /* Issue cards */
+  .issue {
+    background: var(--surface2);
+    border-left: 4px solid var(--red);
+    padding: 15px 20px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .issue.warn { border-left-color: var(--orange); }
+  .issue.info { border-left-color: var(--blue); }
+  .issue.ok { border-left-color: var(--green); }
+  .issue .title { font-weight: 600; margin-bottom: 5px; }
+  .issue .detail { color: var(--text-dim); font-size: 0.9rem; }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+  }
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat-card .number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-card .label {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+
+  /* Flow diagrams */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    font-size: 0.9rem;
+  }
+  .flow .step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+  .flow .arrow { color: var(--accent); font-weight: bold; }
+
+  /* Collapsible */
+  details {
+    margin: 10px 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  summary {
+    padding: 12px 16px;
+    background: var(--surface2);
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+  }
+  summary:hover { background: rgba(200, 169, 110, 0.1); }
+  details > div, details > table, details > pre { margin: 0 16px 16px; }
+  details[open] > summary { border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+
+  /* Feature matrix */
+  .feature-matrix td:nth-child(2),
+  .feature-matrix td:nth-child(3),
+  .feature-matrix td:nth-child(4) {
+    text-align: center;
+    width: 100px;
+  }
+
+  /* ER diagram text */
+  .er-block {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 8px 0;
+    display: inline-block;
+    min-width: 280px;
+    vertical-align: top;
+  }
+  .er-block .model-name {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.05rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+  }
+  .er-block .field { font-size: 0.8rem; color: var(--text-dim); }
+  .er-block .field.pk { color: var(--accent); }
+  .er-block .field.fk { color: var(--blue); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .toc-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; }
+    section { border: 1px solid #ccc; }
+    .toc { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- HERO -->
+<!-- ============================================================ -->
+<div class="hero">
+  <h1>Coach App</h1>
+  <div class="subtitle">Complete Architecture, Data Model &amp; Progress Report</div>
+  <div class="date">Generated: April 1, 2026 &mdash; Full Codebase Audit (every file read)</div>
+</div>
+
+<div class="container">
+
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ============================================================ -->
+<nav class="toc">
+  <h2>Table of Contents</h2>
+  <div class="toc-grid">
+    <a href="#stats">1. Codebase at a Glance</a>
+    <a href="#architecture">2. System Architecture</a>
+    <a href="#data-model">3. Data Model (33 tables)</a>
+    <a href="#api-layer">4. API Layer (150+ endpoints)</a>
+    <a href="#mobile-app">5. Mobile App (48 screens)</a>
+    <a href="#worker-ai">6. Worker &amp; AI System (9 processors)</a>
+    <a href="#ai-prompts">7. AI Prompt Quality &amp; Mongolian</a>
+    <a href="#feature-matrix">8. Feature Completeness Matrix <span class="badge badge-red">CRITICAL</span></a>
+    <a href="#mismatches">9. Frontend-Backend Mismatches <span class="badge badge-orange">17 found</span></a>
+    <a href="#bugs">10. Bugs &amp; Issues <span class="badge badge-red">12 found</span></a>
+    <a href="#dead-code">11. Dead Code &amp; Unused Fields <span class="badge badge-orange">8 items</span></a>
+    <a href="#unwired">12. Things Not Wired Together <span class="badge badge-red">CRITICAL</span></a>
+    <a href="#ai-quality">13. AI Message Quality Problems</a>
+    <a href="#recommendations">14. Prioritized Fix Plan</a>
+  </div>
+</nav>
+
+<!-- ============================================================ -->
+<!-- 1. STATS -->
+<!-- ============================================================ -->
+<section id="stats">
+  <h2>1. Codebase at a Glance</h2>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="number">33</div><div class="label">Database Models</div></div>
+    <div class="stat-card"><div class="number">150+</div><div class="label">API Endpoints</div></div>
+    <div class="stat-card"><div class="number">48</div><div class="label">Mobile Screens</div></div>
+    <div class="stat-card"><div class="number">16</div><div class="label">Zustand Stores</div></div>
+    <div class="stat-card"><div class="number">9</div><div class="label">Worker Processors</div></div>
+    <div class="stat-card"><div class="number">35</div><div class="label">NestJS Modules</div></div>
+    <div class="stat-card"><div class="number">7+</div><div class="label">External Integrations</div></div>
+    <div class="stat-card"><div class="number">2</div><div class="label">Languages (mn/en)</div></div>
+  </div>
+
+  <h3>Tech Stack</h3>
+  <table>
+    <tr><th>Layer</th><th>Technology</th></tr>
+    <tr><td>Mobile</td><td>React Native 0.83, Expo 55, NativeWind 4, Zustand, React Navigation 7</td></tr>
+    <tr><td>API</td><td>NestJS 10, Prisma 5, PostgreSQL 16, Redis 7, Firebase Auth</td></tr>
+    <tr><td>Worker</td><td>BullMQ (Redis), 9 processors, Sentry</td></tr>
+    <tr><td>AI &mdash; Vision</td><td>Gemini 2.0 Flash (primary) + GPT-4o (fallback)</td></tr>
+    <tr><td>AI &mdash; STT</td><td>OpenAI Whisper (gpt-4o-transcribe)</td></tr>
+    <tr><td>AI &mdash; Coaching</td><td>GPT-4o (messages, reports), GPT-4o-mini (memory, nutrition parsing)</td></tr>
+    <tr><td>Payments</td><td>RevenueCat (iOS/Android) + QPay (Mongolian banks)</td></tr>
+    <tr><td>Notifications</td><td>Expo Push + Telegram Bot</td></tr>
+    <tr><td>Search</td><td>Typesense 0.25</td></tr>
+    <tr><td>Storage</td><td>AWS S3 (voice audio, photos)</td></tr>
+    <tr><td>Observability</td><td>Sentry, Pino, OpenTelemetry</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 2. ARCHITECTURE -->
+<!-- ============================================================ -->
+<section id="architecture">
+  <h2>2. System Architecture</h2>
+
+  <h3>Workspace Layout</h3>
+  <pre><code>fitness/
+├── packages/
+│   └── shared/          @coach/shared — Zod schemas, types, constants, AI prompts, date utils
+├── apps/
+│   ├── api/             @coach/api — NestJS REST backend (35 modules, 150+ routes)
+│   ├── mobile/          @coach/mobile — React Native Expo app (48 screens)
+│   ├── worker/          @coach/worker — BullMQ job processor (9 processors)
+│   └── integration-test/ Contract &amp; integration tests
+├── docker-compose.yml   Local dev: Postgres, Redis, Typesense
+├── railway.toml         Railway deploy config
+└── render.yaml          Render deploy config</code></pre>
+
+  <h3>Request Flow</h3>
+  <div class="flow">
+    <span class="step">Mobile App</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Firebase Auth Token</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">NestJS API (AuthGuard)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Prisma &rarr; PostgreSQL</span>
+  </div>
+  <div class="flow">
+    <span class="step">API enqueues job</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">BullMQ (Redis)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Worker processor</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">AI (OpenAI/Gemini)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Telegram / Push / DB</span>
+  </div>
+
+  <h3>Authentication Flow</h3>
+  <div class="flow">
+    <span class="step">User signs in (email/Google/Apple)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Firebase Auth</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">ID Token (JWT)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">SecureStore on device</span>
+  </div>
+  <div class="flow">
+    <span class="step">API request</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Bearer token</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Global AuthGuard verifies via Firebase Admin</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">@CurrentUser() decorator</span>
+  </div>
+
+  <h3>Subscription &amp; Gating Flow</h3>
+  <div class="flow">
+    <span class="step">Purchase (RevenueCat / QPay)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Webhook &rarr; API updates Subscription table</span>
+  </div>
+  <div class="flow">
+    <span class="step">Mobile checks</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">RevenueCat client SDK</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Falls back to server <code>/subscriptions/status</code></span>
+  </div>
+  <div class="flow">
+    <span class="step">Pro features gated by</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step"><code>SubscriptionGuard</code> (API) + <code>useProGate</code> hook (mobile)</span>
+  </div>
+  <p><strong>Pro-only features:</strong> Coach Chat, Photo Analysis</p>
+
+  <h3>Offline Support</h3>
+  <p>Write operations (meal logs, quick-add, workouts, weight) are queued locally in MMKV when offline. The <code>useSyncQueue</code> hook flushes them in FIFO order when connectivity returns. 4xx errors are dropped; 5xx are retried on next reconnect.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- 3. DATA MODEL -->
+<!-- ============================================================ -->
+<section id="data-model">
+  <h2>3. Data Model (33 Prisma Models)</h2>
+  <p>All models use UUID primary keys (<code>@default(uuid()) @db.Uuid</code>), camelCase in TypeScript mapped to snake_case in PostgreSQL.</p>
+
+  <h3>Model Relationship Map</h3>
+  <pre><code>User (1)
+ ├── Profile (1:1)
+ ├── Target[] (1:many) ── time-series, latest has effectiveTo=null
+ ├── MealLog[] (1:many) ── each has MealLogItem[] children
+ ├── WeightLog[] (1:many) ── one per day (unique userId+loggedAt)
+ ├── WaterLog[] (1:many) ── simple time-series
+ ├── WorkoutLog[] (1:many)
+ ├── BodyMeasurementLog[] (1:many) ── Navy body fat calculation
+ ├── VoiceDraft[] (1:many) ── STT pipeline state machine
+ ├── CoachMemory[] (1:many) ── 4 categories per user (unique userId+category)
+ ├── MealTemplate[] (1:many) ── each has MealTemplateItem[] children
+ ├── Favorite[] (1:many) ── unique userId+foodId
+ ├── Subscription (1:1) ── has SubscriptionLedger[] children
+ ├── TelegramLink (1:1)
+ ├── NotificationPreference (1:1)
+ ├── DeviceToken[] (1:many) ── multiple devices
+ ├── QPayInvoice[] (1:many)
+ ├── OutboundMessage[] (1:many) ── delivery log
+ ├── Consent[] (1:many) ── GDPR
+ └── PrivacyRequest[] (1:many)
+
+Food (1)
+ ├── FoodServing[] (1:many)
+ ├── FoodNutrient (1:1) ── per-100g macros
+ ├── FoodAlias[] (1:many) ── search aliases by locale
+ ├── FoodLocalization[] (1:many) ── unique foodId+locale
+ ├── Barcode[] (1:many) ── EAN codes
+ ├── MealLogItem[] (SetNull on delete)
+ ├── MealTemplateItem[] (Cascade)
+ └── Favorite[] (Cascade)
+
+Standalone:
+ ├── ModerationQueue ── soft refs to entityId, submittedBy, reviewedBy
+ ├── AuditLog ── soft refs to actorId, entityId
+ ├── AnalyticsEvent ── product analytics
+ └── IdempotencyKey ── webhook dedup (auto-expires)</code></pre>
+
+  <h3>All 33 Models — Field Details</h3>
+
+  <details>
+    <summary>User &amp; Profile</summary>
+    <div>
+    <h4>User (table: <code>users</code>)</h4>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+      <tr><td>id</td><td>UUID PK</td><td>Auto-generated</td></tr>
+      <tr><td>email</td><td>String?</td><td>Unique, nullable</td></tr>
+      <tr><td>phone</td><td>String?</td><td>Unique, nullable</td></tr>
+      <tr><td>firebaseUid</td><td>String</td><td>Unique — Firebase identity</td></tr>
+      <tr><td>createdAt / updatedAt</td><td>DateTime</td><td>Auto-managed</td></tr>
+    </table>
+    <p>20 outgoing relations to all user-owned data.</p>
+
+    <h4>Profile (table: <code>profiles</code>)</h4>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+      <tr><td>userId</td><td>UUID FK</td><td>Unique — one profile per user</td></tr>
+      <tr><td>displayName</td><td>String?</td><td></td></tr>
+      <tr><td>locale</td><td>VARCHAR(5)</td><td>Default 'mn'</td></tr>
+      <tr><td>timezone</td><td>VARCHAR(50)</td><td>Default 'Asia/Ulaanbaatar'</td></tr>
+      <tr><td>unitSystem</td><td>VARCHAR(10)</td><td>Default 'metric'</td></tr>
+      <tr><td>gender</td><td>VARCHAR(20)?</td><td>For body fat calculation</td></tr>
+      <tr><td>birthDate</td><td>Date?</td><td>For BMR calculation</td></tr>
+      <tr><td>heightCm</td><td>Decimal(5,1)?</td><td>For BMI, targets</td></tr>
+      <tr><td>weightKg</td><td>Decimal(5,1)?</td><td>Denormalized current weight</td></tr>
+      <tr><td>goalWeightKg</td><td>Decimal(5,1)?</td><td></td></tr>
+      <tr><td>activityLevel</td><td>VARCHAR(30)?</td><td>For Mifflin-St Jeor</td></tr>
+      <tr><td>dietPreference</td><td>VARCHAR(30)?</td><td>Informational only — not enforced</td></tr>
+      <tr><td>waterTargetMl</td><td>Int</td><td>Default 2000 — used for water tracking</td></tr>
+      <tr><td>onboardingCompletedAt</td><td>DateTime?</td><td></td></tr>
+    </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Food Database (Food, FoodServing, FoodNutrient, FoodAlias, FoodLocalization, Barcode)</summary>
+    <div>
+    <h4>Food (table: <code>foods</code>)</h4>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+      <tr><td>normalizedName</td><td>VARCHAR(500)</td><td>Canonical ASCII name</td></tr>
+      <tr><td>locale</td><td>VARCHAR(5)</td><td>Default 'mn'</td></tr>
+      <tr><td>status</td><td>VARCHAR(20)</td><td>'approved' | 'pending' | 'rejected'</td></tr>
+      <tr><td>sourceType</td><td>VARCHAR(30)</td><td>'seed' | 'user' | 'admin' | 'import'</td></tr>
+      <tr><td>sourceRef</td><td>String?</td><td><span class="status status-warn">Never queried</span></td></tr>
+      <tr><td>confidence</td><td>Decimal(3,2)?</td><td><span class="status status-warn">Never used</span></td></tr>
+      <tr><td>verifiedBy</td><td>UUID?</td><td><span class="status status-warn">No FK constraint</span></td></tr>
+      <tr><td>verifiedAt</td><td>DateTime?</td><td></td></tr>
+    </table>
+    <p><strong>Index:</strong> (locale, normalizedName)</p>
+
+    <h4>FoodServing (table: <code>food_servings</code>)</h4>
+    <p>Serving sizes with gram conversion: <code>label</code>, <code>labelMn</code> (Mongolian), <code>gramsPerUnit</code>, <code>isDefault</code></p>
+
+    <h4>FoodNutrient (table: <code>food_nutrients</code>)</h4>
+    <p>Per-100g: calories, protein, carbs, fat, fiber?, sugar?, sodium?, saturatedFat?. <strong>Unique on foodId.</strong></p>
+    <p>CHECK constraints: all base macros >= 0</p>
+
+    <h4>FoodAlias (table: <code>food_aliases</code>)</h4>
+    <p>Search aliases per locale. Index: (locale, alias)</p>
+
+    <h4>FoodLocalization (table: <code>food_localizations</code>)</h4>
+    <p>Translated names. Unique: (foodId, locale)</p>
+
+    <h4>Barcode (table: <code>barcodes</code>)</h4>
+    <p>EAN/UPC codes mapped to foods. Unique: code</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Meal Logging (MealLog, MealLogItem)</summary>
+    <div>
+    <h4>MealLog (table: <code>meal_logs</code>)</h4>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+      <tr><td>userId</td><td>UUID FK</td><td></td></tr>
+      <tr><td>mealType</td><td>VARCHAR(20)?</td><td>'breakfast' | 'lunch' | 'dinner' | 'snack'</td></tr>
+      <tr><td>source</td><td>VARCHAR(20)</td><td>'text' | 'quick_add' | 'barcode' | 'voice' | 'photo' | 'telegram'</td></tr>
+      <tr><td>loggedAt</td><td>DateTime</td><td></td></tr>
+      <tr><td>note</td><td>String?</td><td></td></tr>
+      <tr><td>totalCalories..totalSaturatedFat</td><td>Decimal?</td><td>Denormalized sums</td></tr>
+    </table>
+    <p><strong>Index:</strong> (userId, loggedAt DESC)</p>
+
+    <h4>MealLogItem (table: <code>meal_log_items</code>)</h4>
+    <p>Immutable nutrition snapshots. Fields: <code>snapshotCalories</code>, <code>snapshotProtein</code>, <code>snapshotCarbs</code>, <code>snapshotFat</code>, <code>snapshotFoodName</code>, <code>quantity</code>, <code>servingLabel</code>, <code>gramsPerUnit</code>.</p>
+    <p><strong>Design:</strong> Snapshots preserve history even if the Food record is later modified or deleted (foodId is SetNull on food delete).</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Weight, Water, Body Composition, Workouts</summary>
+    <div>
+    <h4>WeightLog</h4>
+    <p>One entry per day per user (UNIQUE userId+loggedAt). CHECK: weight_kg > 0</p>
+
+    <h4>WaterLog</h4>
+    <p>Simple time-series. <code>amountMl</code> per entry. CHECK: amount_ml > 0. Summed daily vs Profile.waterTargetMl.</p>
+
+    <h4>BodyMeasurementLog</h4>
+    <p>Anthropometry: <code>waistCm</code>, <code>neckCm</code>, <code>hipCm?</code> (females), <code>weightKg</code>. Computed: <code>bodyFatPercent</code> (Navy formula), <code>fatMassKg</code>, <code>leanMassKg</code>, <code>bmi</code>, <code>bmiCategory</code>.</p>
+
+    <h4>WorkoutLog</h4>
+    <p><code>workoutType</code>, <code>durationMin</code>, <code>calorieBurned</code> (MET-based calculation), <code>note</code>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>AI &amp; Voice (VoiceDraft, CoachMemory)</summary>
+    <div>
+    <h4>VoiceDraft — State Machine</h4>
+    <div class="flow">
+      <span class="step">waiting</span>
+      <span class="arrow">&rarr;</span>
+      <span class="step">active (processing)</span>
+      <span class="arrow">&rarr;</span>
+      <span class="step">completed / failed</span>
+    </div>
+    <p>Stores: transcription, parsedItems (JSON), mealType, macro totals, errorMessage. Auto-expires via <code>expiresAt</code>.</p>
+
+    <h4>CoachMemory — 4 Categories</h4>
+    <p>Unique: (userId, category). Categories: <code>foods</code>, <code>patterns</code>, <code>goals</code>, <code>preferences</code>. Updated weekly by coach-memory processor. Injected into coach message prompts as context block.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Subscriptions &amp; Payments (Subscription, SubscriptionLedger, QPayInvoice)</summary>
+    <div>
+    <h4>Subscription</h4>
+    <p>One per user. tier: 'free'|'pro'. status: 'active'|'canceled'|'expired'|'past_due'. provider: 'apple'|'google'|'qpay'. Multi-source: RevenueCat webhooks, QPay callbacks, client-side verification.</p>
+
+    <h4>SubscriptionLedger</h4>
+    <p>Immutable event log: 'started', 'renewed', 'canceled', 'expired', 'refunded'. Used for audit and reconciliation.</p>
+
+    <h4>QPayInvoice</h4>
+    <p>Mongolian QPay integration: invoice creation, QR codes, bank deeplinks. Status: 'pending'|'paid'|'expired'|'canceled'.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Other Models (Moderation, Privacy, Analytics, Templates, Favorites, Notifications)</summary>
+    <div>
+    <h4>ModerationQueue</h4>
+    <p>Approval workflow for user-submitted foods. Soft references (no FK) for entityId, submittedBy, reviewedBy.</p>
+
+    <h4>Consent / PrivacyRequest</h4>
+    <p>GDPR compliance: consent tracking (health_data, marketing, analytics) and data export/deletion requests.</p>
+
+    <h4>MealTemplate / MealTemplateItem</h4>
+    <p>Reusable meal combinations. Items reference Food + FoodServing with quantities. <code>usageCount</code> tracks popularity.</p>
+
+    <h4>Favorite</h4>
+    <p>Unique (userId, foodId). Optional <code>mealLogId</code> context.</p>
+
+    <h4>NotificationPreference</h4>
+    <p>Morning/evening toggles, quiet hours (HH:mm format), channels array: ['push', 'telegram'].</p>
+
+    <h4>DeviceToken</h4>
+    <p>Push tokens per device. Auto-deactivated on <code>DeviceNotRegistered</code> Expo error.</p>
+
+    <h4>OutboundMessage</h4>
+    <p>Delivery log for all AI/system messages. Tracks: channel, messageType, content, status, AI token usage, delivery timing.</p>
+
+    <h4>IdempotencyKey</h4>
+    <p>Webhook deduplication for Telegram, Apple IAP, Google Play, QPay. Auto-expires.</p>
+
+    <h4>AuditLog / AnalyticsEvent</h4>
+    <p>Audit trail (admin actions) and product analytics (event-based).</p>
+    </div>
+  </details>
+
+  <h3>Schema Issues Found</h3>
+  <div class="issue">
+    <div class="title">OutboundMessage.id — Missing @id Decorator</div>
+    <div class="detail">The <code>id</code> field has no <code>@id</code> attribute in the Prisma schema. This may cause issues with Prisma client operations (findUnique, etc). The SQL also has no PRIMARY KEY constraint.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">Food.verifiedBy — Not a Foreign Key</div>
+    <div class="detail">UUID string field without FK constraint to User. If the admin user is deleted, this reference becomes orphaned.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">ModerationQueue — All Soft References</div>
+    <div class="detail"><code>entityId</code>, <code>submittedBy</code>, <code>reviewedBy</code> have no FK constraints. Designed for flexibility but risks orphaned references.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 4. API LAYER -->
+<!-- ============================================================ -->
+<section id="api-layer">
+  <h2>4. API Layer — All Endpoints</h2>
+  <p>35 modules, global AuthGuard on all routes. Rate limiting: 60 req/min default, 10 req/sec burst.</p>
+
+  <h3>Guards &amp; Decorators</h3>
+  <table>
+    <tr><th>Guard</th><th>Scope</th><th>Purpose</th></tr>
+    <tr><td><code>AuthGuard</code></td><td>Global (all routes)</td><td>Firebase token verification, attaches @CurrentUser()</td></tr>
+    <tr><td><code>SubscriptionGuard</code></td><td>Chat, Photos</td><td>Requires Pro subscription (403 if free)</td></tr>
+    <tr><td><code>AdminGuard</code></td><td>Admin routes</td><td>Checks userId against ADMIN_USER_IDS env</td></tr>
+    <tr><td><code>ThrottlerGuard</code></td><td>Global</td><td>Rate limiting (skipped on health, Telegram webhook)</td></tr>
+  </table>
+
+  <h3>Complete Endpoint List</h3>
+
+  <details>
+    <summary>Profile &amp; Onboarding (5 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>GET</td><td>/profile</td><td>Get profile with BMI calculation</td></tr>
+      <tr><td>PUT</td><td>/profile</td><td>Update profile (name, locale, timezone, gender, weight, etc.)</td></tr>
+      <tr><td>POST</td><td>/onboarding/complete</td><td>Submit onboarding: sets profile, creates target, schedules coach memory</td></tr>
+      <tr><td>GET</td><td>/onboarding/status</td><td>Check if onboarding complete (profile + active target)</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Meal Logging (6 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>POST</td><td>/meal-logs</td><td>Create meal log from food items (with snapshot nutrition)</td></tr>
+      <tr><td>POST</td><td>/meal-logs/quick-add</td><td>Quick-add by manual calorie/macro input</td></tr>
+      <tr><td>GET</td><td>/meal-logs</td><td>List meals (paginated, date/tz filter)</td></tr>
+      <tr><td>GET</td><td>/meal-logs/:id</td><td>Get single meal detail</td></tr>
+      <tr><td>PATCH</td><td>/meal-logs/:id</td><td>Update meal (mealType, note, loggedAt)</td></tr>
+      <tr><td>DELETE</td><td>/meal-logs/:id</td><td>Delete meal log</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Food Database &amp; Barcodes (7 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>POST</td><td>/foods</td><td>Create food (with servings, nutrients, aliases, localizations)</td></tr>
+      <tr><td>GET</td><td>/foods</td><td>List/search foods (paginated, locale filter)</td></tr>
+      <tr><td>GET</td><td>/foods/:id</td><td>Get food detail</td></tr>
+      <tr><td>PUT</td><td>/foods/:id</td><td>Update food</td></tr>
+      <tr><td>DELETE</td><td>/foods/:id</td><td>Delete food</td></tr>
+      <tr><td>GET</td><td>/barcodes/:code</td><td>Lookup food by barcode</td></tr>
+      <tr><td>POST</td><td>/barcodes/submit</td><td>Submit unknown barcode (creates pending moderation)</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Favorites, Templates, Dashboard (12 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>POST</td><td>/favorites/:foodId</td><td>Add food to favorites</td></tr>
+      <tr><td>DELETE</td><td>/favorites/:foodId</td><td>Remove from favorites</td></tr>
+      <tr><td>GET</td><td>/favorites</td><td>Get favorite foods</td></tr>
+      <tr><td>GET</td><td>/favorites/recents</td><td>Get recently used foods</td></tr>
+      <tr><td>POST</td><td>/meal-templates</td><td>Create meal template</td></tr>
+      <tr><td>POST</td><td>/meal-templates/from-log/:mealLogId</td><td>Create template from existing meal log</td></tr>
+      <tr><td>GET</td><td>/meal-templates</td><td>List templates (sorted by usage)</td></tr>
+      <tr><td>GET</td><td>/meal-templates/:id</td><td>Template detail with nutrition</td></tr>
+      <tr><td>PATCH</td><td>/meal-templates/:id</td><td>Update template</td></tr>
+      <tr><td>DELETE</td><td>/meal-templates/:id</td><td>Delete template</td></tr>
+      <tr><td>POST</td><td>/meal-templates/:id/log</td><td>Log meal using template</td></tr>
+      <tr><td>GET</td><td>/dashboard</td><td>Daily nutrition summary (consumed/targets/remaining)</td></tr>
+      <tr><td>GET</td><td>/dashboard/history</td><td>Nutrition history (7-90 days)</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Weight, Water, Body Composition (9 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>POST</td><td>/weight-logs</td><td>Log weight (upsert — one per day)</td></tr>
+      <tr><td>GET</td><td>/weight-logs</td><td>Weight history (configurable days)</td></tr>
+      <tr><td>GET</td><td>/weight-logs/trend</td><td>Weight trend (current, weekly avg, delta)</td></tr>
+      <tr><td>POST</td><td>/water-logs</td><td>Add water entry</td></tr>
+      <tr><td>GET</td><td>/water-logs</td><td>Daily water consumption vs target</td></tr>
+      <tr><td>DELETE</td><td>/water-logs/last</td><td>Delete last water entry</td></tr>
+      <tr><td>POST</td><td>/body-composition/measurements</td><td>Log body measurements (Navy formula)</td></tr>
+      <tr><td>GET</td><td>/body-composition</td><td>Get latest body composition</td></tr>
+      <tr><td>GET</td><td>/body-composition/history</td><td>Measurement history (90 days default)</td></tr>
+      <tr><td>GET</td><td>/body-composition/weekly-budget</td><td>Weekly calorie budget from body comp</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Workouts (10 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>GET</td><td>/workout-logs/types</td><td>Categorized workout catalog (Public)</td></tr>
+      <tr><td>GET</td><td>/workout-logs/types/list</td><td>Flat list of workout types</td></tr>
+      <tr><td>GET</td><td>/workout-logs/estimate</td><td>Estimate calories burned (MET-based)</td></tr>
+      <tr><td>GET</td><td>/workout-logs/recents</td><td>Last 5 distinct workout types</td></tr>
+      <tr><td>GET</td><td>/workout-logs/summary</td><td>Weekly workout summary</td></tr>
+      <tr><td>POST</td><td>/workout-logs</td><td>Create workout log</td></tr>
+      <tr><td>GET</td><td>/workout-logs</td><td>List workouts (date/days filter)</td></tr>
+      <tr><td>GET</td><td>/workout-logs/:id</td><td>Get workout detail</td></tr>
+      <tr><td>PATCH</td><td>/workout-logs/:id</td><td>Update workout</td></tr>
+      <tr><td>DELETE</td><td>/workout-logs/:id</td><td>Delete workout</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Voice, Photos, Chat (7 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>POST</td><td>/voice/upload</td><td>Upload audio for STT (15MB max, 10 req/min)</td></tr>
+      <tr><td>GET</td><td>/voice/drafts/:id</td><td>Get voice draft status</td></tr>
+      <tr><td>GET</td><td>/voice/s3-health</td><td>S3 connectivity check</td></tr>
+      <tr><td>POST</td><td>/photos/upload</td><td>Upload photo for AI analysis <span class="status status-info">Pro only</span></td></tr>
+      <tr><td>GET</td><td>/photos/drafts/:id</td><td>Get photo parse status</td></tr>
+      <tr><td>GET</td><td>/chat/history</td><td>Chat history (Redis, 40 max) <span class="status status-info">Pro only</span></td></tr>
+      <tr><td>POST</td><td>/chat/message</td><td>Send message to AI coach <span class="status status-info">Pro only</span></td></tr>
+      <tr><td>DELETE</td><td>/chat/history</td><td>Clear chat history</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Notifications, Telegram, Subscriptions, QPay (15 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>GET</td><td>/notifications/preferences</td><td>Get notification preferences</td></tr>
+      <tr><td>POST</td><td>/notifications/device-token</td><td>Register device push token</td></tr>
+      <tr><td>POST</td><td>/notifications/test</td><td>Send test notification</td></tr>
+      <tr><td>PUT</td><td>/notifications/preferences</td><td>Update preferences (times, quiet hours, channels)</td></tr>
+      <tr><td>POST</td><td>/telegram/link-code</td><td>Generate 6-digit Telegram link code (5-min TTL)</td></tr>
+      <tr><td>POST</td><td>/telegram/confirm</td><td>Confirm Telegram link (Public)</td></tr>
+      <tr><td>GET</td><td>/telegram/status</td><td>Get Telegram link status</td></tr>
+      <tr><td>POST</td><td>/telegram/unlink</td><td>Unlink Telegram account</td></tr>
+      <tr><td>POST</td><td>/telegram/webhook</td><td>Telegram bot webhook (Public)</td></tr>
+      <tr><td>GET</td><td>/subscriptions/status</td><td>Get subscription tier &amp; status</td></tr>
+      <tr><td>POST</td><td>/subscriptions/verify</td><td>Client-initiated RevenueCat verification</td></tr>
+      <tr><td>POST</td><td>/subscriptions/revenuecat-webhook</td><td>RevenueCat server webhook</td></tr>
+      <tr><td>POST</td><td>/qpay/invoice</td><td>Create QPay invoice (monthly/yearly)</td></tr>
+      <tr><td>GET</td><td>/qpay/callback</td><td>QPay payment callback (Public)</td></tr>
+      <tr><td>GET</td><td>/qpay/invoice/:invoiceId/status</td><td>Check payment status</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Analytics, Insights, Streaks, Admin, Privacy (12 endpoints)</summary>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+      <tr><td>GET</td><td>/weekly-summary</td><td>Weekly summary (daysLogged, averages, adherence, weight delta)</td></tr>
+      <tr><td>GET</td><td>/insights/meal-timing</td><td>Meal timing insights (breakfast freq, late-night, eating window)</td></tr>
+      <tr><td>GET</td><td>/streaks</td><td>Streak data (current, longest, calendar)</td></tr>
+      <tr><td>POST</td><td>/analytics/events</td><td>Emit analytics event (whitelisted events)</td></tr>
+      <tr><td>GET</td><td>/targets/current</td><td>Get active nutrition target</td></tr>
+      <tr><td>POST</td><td>/targets</td><td>Create nutrition target</td></tr>
+      <tr><td>GET</td><td>/targets/history</td><td>Get target history</td></tr>
+      <tr><td>GET</td><td>/admin/moderation</td><td>List moderation queue <span class="status status-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/admin/moderation/:id/approve</td><td>Approve item <span class="status status-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/admin/moderation/:id/reject</td><td>Reject item <span class="status status-info">Admin</span></td></tr>
+      <tr><td>GET</td><td>/admin/messages</td><td>List outbound messages <span class="status status-info">Admin</span></td></tr>
+      <tr><td>GET</td><td>/admin/messages/stats</td><td>Message statistics <span class="status status-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/privacy/consent</td><td>Record consent</td></tr>
+      <tr><td>POST</td><td>/privacy/export</td><td>Request data export</td></tr>
+      <tr><td>POST</td><td>/privacy/delete-account</td><td>Request account deletion</td></tr>
+      <tr><td>GET</td><td>/privacy/requests</td><td>List privacy requests</td></tr>
+    </table>
+  </details>
+
+  <h3>Key Business Logic</h3>
+  <table>
+    <tr><th>Calculation</th><th>Formula</th><th>Where Used</th></tr>
+    <tr><td>BMR</td><td>Mifflin-St Jeor (gender, age, height, weight)</td><td>Target creation</td></tr>
+    <tr><td>TDEE</td><td>BMR × activity multiplier</td><td>Target creation</td></tr>
+    <tr><td>Calorie Target</td><td>TDEE ± goal deficit/surplus</td><td>Target creation</td></tr>
+    <tr><td>Macro Split</td><td>Based on dietPreference (high_protein, low_carb, etc.)</td><td>Target creation</td></tr>
+    <tr><td>BMI</td><td>weight / (height/100)²</td><td>Profile, body comp</td></tr>
+    <tr><td>Body Fat %</td><td>Navy formula (gender, waist, neck, hip, height)</td><td>Body composition</td></tr>
+    <tr><td>Calories Burned</td><td>MET × weight × duration / 60</td><td>Workout logging</td></tr>
+    <tr><td>Nutrition Snapshot</td><td>(nutrientPer100g × gramsPerUnit × quantity) / 100</td><td>Meal logging</td></tr>
+    <tr><td>Adherence Score</td><td>(daysLogged / 7) × 100</td><td>Weekly summary</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 5. MOBILE APP -->
+<!-- ============================================================ -->
+<section id="mobile-app">
+  <h2>5. Mobile App — 48 Screens</h2>
+
+  <h3>Navigation Structure</h3>
+  <pre><code>RootNavigator
+├── OnboardingStack (13 screens)
+│   Welcome → ThemeSelect → GoalSetup → DesiredWeight → WeeklyRate
+│   → GenderSelect → BirthDateSelect → HeightSelect → WeightSelect
+│   → ActivityLevel → DietPreference → Motivation → TargetReview
+│   → SubscriptionPitch → NotificationPermission
+│   └── AuthStack: SignIn, SignUp, ForgotPassword
+│
+└── MainStack
+    ├── MainTabs
+    │   ├── Home (daily dashboard)
+    │   ├── Progress (trends, body comp, meal timing)
+    │   ├── Log → LogStack (11 screens)
+    │   │   ├── TextSearch, QuickAdd, BarcodeScan, BarcodeSubmit
+    │   │   ├── VoiceLog, PhotoLog, FavoritesRecents
+    │   │   └── MealTemplates, SaveTemplate, LogTemplate
+    │   └── Settings
+    │
+    └── Modal Screens
+        ├── WeeklySummary, CoachChat, Subscription
+        ├── TelegramConnect, EditProfile, PersonalDetails
+        ├── AppSettings, Reminders, RingColorsExplained
+        └── WorkoutHome → WorkoutTypePicker → WorkoutActive
+            → WorkoutHistory → WorkoutDetail</code></pre>
+
+  <h3>Zustand Stores (16 total)</h3>
+  <table>
+    <tr><th>Store</th><th>Key State</th><th>Status</th></tr>
+    <tr><td>auth.store</td><td>token, user, isAuthenticated</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>profile.store</td><td>Onboarding data, local calculation (BMR, targets)</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>onboarding.store</td><td>onboardingComplete, profileSetupComplete</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>subscription.store</td><td>tier, status, RevenueCat integration</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>dashboard.store</td><td>DashboardData (meals, macros, water, targets)</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>nutrition-history.store</td><td>7/30/90 day data</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>weight.store</td><td>history, trend, offline queue</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>water.store</td><td>consumed, target, optimistic updates</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>body-composition.store</td><td>latest, history, weeklyBudget</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>steps.store</td><td>Pedometer (HealthKit)</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>streak.store</td><td>current, longest, calendar</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>workout.store</td><td>catalog, summary, history, active timer</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>sync.store</td><td>Offline queue status</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>theme.store</td><td>light/dark/system mode</td><td><span class="status status-ok">OK</span></td></tr>
+    <tr><td>settings.store</td><td>unitSystem</td><td><span class="status status-warn">Stub — no-op methods</span></td></tr>
+  </table>
+
+  <h3>Custom Hooks</h3>
+  <table>
+    <tr><th>Hook</th><th>Purpose</th></tr>
+    <tr><td><code>useProGate()</code></td><td>Premium feature gating — checks store → RevenueCat → server → shows paywall</td></tr>
+    <tr><td><code>usePushNotifications()</code></td><td>Token refresh, permission request, deep link to CoachChat on notification tap</td></tr>
+    <tr><td><code>useSyncQueue()</code></td><td>Offline queue flush on reconnect (NetInfo monitoring)</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 6. WORKER & AI -->
+<!-- ============================================================ -->
+<section id="worker-ai">
+  <h2>6. Worker &amp; AI System — 9 Processors</h2>
+
+  <table>
+    <tr><th>Queue</th><th>Processor</th><th>Concurrency</th><th>AI Model</th><th>Delivery</th></tr>
+    <tr><td>stt-processing</td><td>STT (voice transcription)</td><td>2</td><td>Whisper + GPT-4o-mini</td><td>DB only</td></tr>
+    <tr><td>photo-parsing</td><td>Photo analysis</td><td>2</td><td>Gemini 2.0 Flash → GPT-4o fallback</td><td>DB only</td></tr>
+    <tr><td>reminders</td><td>Morning/evening reminders</td><td>5</td><td>None (static templates)</td><td>Telegram + Push</td></tr>
+    <tr><td>coach-messages</td><td>AI coaching messages</td><td>5</td><td>GPT-4o (temp 0.75)</td><td>Telegram + Push + Redis chat</td></tr>
+    <tr><td>weekly-report</td><td>Weekly performance report</td><td>5</td><td>GPT-4o (temp 0.75)</td><td>Telegram + Push + Redis chat</td></tr>
+    <tr><td>adaptive-target</td><td>Calorie target adjustment</td><td>5</td><td>None (static templates)</td><td>Telegram + Push</td></tr>
+    <tr><td>meal-timing-insights</td><td>Meal timing analysis</td><td>5</td><td>GPT-4o</td><td>Telegram + Push</td></tr>
+    <tr><td>coach-memory</td><td>Memory refresh (30-day)</td><td>5</td><td>GPT-4o-mini (temp 0.3)</td><td>DB only (internal)</td></tr>
+    <tr><td>meal-nudge</td><td>Log more meals nudge</td><td>5</td><td>None (static templates)</td><td>Telegram + Push</td></tr>
+  </table>
+
+  <h3>Message Time Windows</h3>
+  <table>
+    <tr><th>Message Type</th><th>Window(s)</th><th>Purpose</th></tr>
+    <tr><td>morning_greeting</td><td>7:30 – 9:30 AM</td><td>Start the day, set nutrition intention</td></tr>
+    <tr><td>water_reminder</td><td>10 AM – 12 PM, 3 – 7 PM</td><td>Hydration nudge</td></tr>
+    <tr><td>meal_nudge</td><td>11 AM – 1 PM, 6 – 8 PM</td><td>Encourage meal logging</td></tr>
+    <tr><td>midday_checkin</td><td>12 – 2 PM</td><td>Lunch planning</td></tr>
+    <tr><td>progress_feedback</td><td>8 – 10 PM</td><td>Evening day review</td></tr>
+    <tr><td>weekly_summary</td><td>9 – 11 AM (Monday)</td><td>Weekly performance report</td></tr>
+    <tr><td>streak_celebration</td><td>9 – 11 AM</td><td>Milestone celebration</td></tr>
+  </table>
+
+  <h3>AI Coaching Pipeline</h3>
+  <div class="flow">
+    <span class="step">Cron triggers scheduleCoachMessages()</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">For each user: build context (calories, water, streak, weekly avg)</span>
+  </div>
+  <div class="flow">
+    <span class="arrow">&rarr;</span>
+    <span class="step">Pick message type based on time + progress</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Inject coach memory (foods, patterns, goals, preferences)</span>
+  </div>
+  <div class="flow">
+    <span class="arrow">&rarr;</span>
+    <span class="step">Enqueue to BullMQ</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Worker: GPT-4o generates personalized message</span>
+    <span class="arrow">&rarr;</span>
+    <span class="step">Deliver via Telegram + Push + inject into Redis chat history</span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 7. AI PROMPT QUALITY -->
+<!-- ============================================================ -->
+<section id="ai-prompts">
+  <h2>7. AI Prompt Design &amp; Mongolian Language</h2>
+
+  <h3>Coach Persona (GPT-4o)</h3>
+  <p>The system prompt defines Coach as:</p>
+  <ul>
+    <li>A warm, sharp, deeply knowledgeable nutrition coach for Mongolian users</li>
+    <li>Speaks Mongolian by default, switches to English only when locale='en'</li>
+    <li>Celebrates wins with <strong>specific numbers</strong>, never shames poor days</li>
+    <li>Knows Mongolian food deeply: бууз, цуйван, хуушуур, шөл, будаатай хоол</li>
+    <li>Uses cultural references: "Ээжийн бууз нэг бүр 180 ккал орчим. Тийм, бид тоолсон."</li>
+    <li>Asks smart follow-up questions</li>
+    <li>Sounds like "a brilliant friend who happens to be a nutritionist"</li>
+  </ul>
+
+  <h3>Mongolian Food Reference Database</h3>
+  <p>Embedded in prompts — ~80 Mongolian dishes with full nutrition data per serving:</p>
+  <table>
+    <tr><th>Food</th><th>Cal</th><th>Protein</th><th>Carbs</th><th>Fat</th><th>Serving</th></tr>
+    <tr><td>Бууз (buuz)</td><td>90</td><td>5g</td><td>8g</td><td>4g</td><td>1 piece</td></tr>
+    <tr><td>Цуйван (tsuivan)</td><td>550</td><td>25g</td><td>60g</td><td>22g</td><td>1 bowl</td></tr>
+    <tr><td>Хуушуур (khuushuur)</td><td>220</td><td>10g</td><td>18g</td><td>12g</td><td>1 piece</td></tr>
+    <tr><td>Хонины шөл (mutton soup)</td><td>200</td><td>15g</td><td>12g</td><td>10g</td><td>1 bowl</td></tr>
+    <tr><td colspan="6" style="text-align:center; color:var(--text-dim)">...and ~76 more dishes</td></tr>
+  </table>
+
+  <h3>AI Models Used</h3>
+  <table>
+    <tr><th>Task</th><th>Model</th><th>Temp</th><th>Max Tokens</th><th>Format</th></tr>
+    <tr><td>Coach messages</td><td>GPT-4o</td><td>0.75</td><td>300</td><td>Plain text</td></tr>
+    <tr><td>Weekly report</td><td>GPT-4o</td><td>0.75</td><td>400</td><td>Plain text</td></tr>
+    <tr><td>Meal timing insight</td><td>GPT-4o</td><td>0.75</td><td>300</td><td>Plain text</td></tr>
+    <tr><td>Coach chat</td><td>GPT-4o</td><td>(default)</td><td>600</td><td>Plain text</td></tr>
+    <tr><td>Voice nutrition parsing</td><td>GPT-4o-mini</td><td>0.2</td><td>800</td><td>JSON</td></tr>
+    <tr><td>Photo analysis (primary)</td><td>Gemini 2.0 Flash</td><td>0.2</td><td>2000</td><td>JSON</td></tr>
+    <tr><td>Photo analysis (fallback)</td><td>GPT-4o</td><td>0.2</td><td>2000</td><td>JSON</td></tr>
+    <tr><td>Coach memory summaries</td><td>GPT-4o-mini</td><td>0.3</td><td>400</td><td>JSON</td></tr>
+    <tr><td>Audio transcription</td><td>Whisper (gpt-4o-transcribe)</td><td>—</td><td>—</td><td>Text</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 8. FEATURE MATRIX -->
+<!-- ============================================================ -->
+<section id="feature-matrix">
+  <h2>8. Feature Completeness Matrix</h2>
+  <p>This shows every feature and whether it's fully wired across all layers.</p>
+
+  <table class="feature-matrix">
+    <tr><th>Feature</th><th>Backend</th><th>Mobile UI</th><th>Worker</th><th>Status</th></tr>
+    <tr><td>User registration &amp; auth</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Onboarding flow</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Profile management</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Food search &amp; database</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Meal logging (text search)</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Meal logging (quick add)</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Meal logging (barcode)</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Meal logging (voice)</td><td>✅</td><td>✅</td><td>✅ STT</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Meal logging (photo)</td><td>✅</td><td>✅</td><td>✅ Photo</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Barcode submission</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Favorites &amp; recents</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Meal templates</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Daily dashboard</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Weight logging</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Weight trend</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Water tracking</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Workout logging</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Workout timer</td><td>—</td><td>✅ (local)</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Step tracking (HealthKit)</td><td>—</td><td>✅ (local)</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Streak tracking</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Nutrition history (7/30/90d)</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Meal timing insights</td><td>✅</td><td>✅</td><td>✅</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>AI Coach Chat</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete (Pro)</span></td></tr>
+    <tr><td>Coach messages (push/TG)</td><td>✅ cron</td><td>— (receives)</td><td>✅</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Morning/evening reminders</td><td>✅ cron</td><td>✅ prefs</td><td>✅</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Weekly report</td><td>✅ cron</td><td>— (receives)</td><td>✅</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Telegram linking</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>RevenueCat subscriptions</td><td>✅</td><td>✅</td><td>—</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Coach memory</td><td>✅ cron</td><td>—</td><td>✅</td><td><span class="status status-ok">Complete (internal)</span></td></tr>
+    <tr><td>Meal nudge</td><td>✅ cron</td><td>— (receives)</td><td>✅</td><td><span class="status status-ok">Complete</span></td></tr>
+    <tr><td>Streak celebration</td><td>✅ cron</td><td>— (receives)</td><td>✅</td><td><span class="status status-ok">Complete</span></td></tr>
+
+    <tr style="background: rgba(239,83,80,0.1);">
+      <td><strong>Nutrition targets UI</strong></td><td>✅ Full CRUD</td><td>❌ No UI</td><td>—</td>
+      <td><span class="status status-error">Backend exists, no mobile UI</span></td>
+    </tr>
+    <tr style="background: rgba(239,83,80,0.1);">
+      <td><strong>Body composition logging UI</strong></td><td>✅ POST endpoint</td><td>❌ No UI to log</td><td>—</td>
+      <td><span class="status status-error">Backend exists, no mobile UI</span></td>
+    </tr>
+    <tr style="background: rgba(239,83,80,0.1);">
+      <td><strong>Adaptive target</strong></td><td>✅</td><td>❌ No adjustment UI</td><td>✅ notify</td>
+      <td><span class="status status-error">Notifies but user can't view/confirm</span></td>
+    </tr>
+    <tr style="background: rgba(255,152,0,0.1);">
+      <td><strong>QPay payments UI</strong></td><td>✅ Full system</td><td>❌ No UI</td><td>—</td>
+      <td><span class="status status-warn">Backend ready, no mobile payment screen</span></td>
+    </tr>
+    <tr style="background: rgba(255,152,0,0.1);">
+      <td><strong>Admin moderation</strong></td><td>✅ Full system</td><td>❌ No UI</td><td>—</td>
+      <td><span class="status status-warn">No admin panel</span></td>
+    </tr>
+    <tr style="background: rgba(255,152,0,0.1);">
+      <td><strong>Weekly summary endpoint</strong></td><td>✅ /weekly-summary</td><td>❌ Not called</td><td>✅ (via chat)</td>
+      <td><span class="status status-warn">Redundant — mobile uses chat injection instead</span></td>
+    </tr>
+    <tr style="background: rgba(255,152,0,0.1);">
+      <td><strong>Food CRUD from mobile</strong></td><td>✅ POST/PUT/DELETE</td><td>❌ No UI</td><td>—</td>
+      <td><span class="status status-warn">Admin-only or planned feature?</span></td>
+    </tr>
+    <tr style="background: rgba(255,152,0,0.1);">
+      <td><strong>Privacy consent tracking</strong></td><td>✅ POST /privacy/consent</td><td>❌ Not called</td><td>—</td>
+      <td><span class="status status-warn">Not collecting consent from mobile</span></td>
+    </tr>
+    <tr style="background: rgba(255,152,0,0.1);">
+      <td><strong>Privacy request status</strong></td><td>✅ GET /privacy/requests</td><td>❌ Not fetched</td><td>—</td>
+      <td><span class="status status-warn">User can't check export/deletion status</span></td>
+    </tr>
+    <tr style="background: rgba(255,152,0,0.1);">
+      <td><strong>Notification prefs fetch</strong></td><td>✅ GET endpoint</td><td>❌ Not fetched</td><td>—</td>
+      <td><span class="status status-warn">Mobile writes prefs but never reads them</span></td>
+    </tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 9. MISMATCHES -->
+<!-- ============================================================ -->
+<section id="mismatches">
+  <h2>9. Frontend-Backend Mismatches</h2>
+
+  <h3>Backend endpoints NOT called from mobile</h3>
+  <div class="issue warn">
+    <div class="title">POST /targets — No target creation UI</div>
+    <div class="detail">The backend has a full target management system (create, current, history) but the mobile app has zero UI for it. Targets are only created during onboarding. Users cannot adjust targets after onboarding.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">POST /body-composition/measurements — No logging UI</div>
+    <div class="detail">Backend can log waist/neck/hip measurements and calculate body fat %, but mobile only reads existing data (from ProgressScreen). No screen for inputting measurements.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">POST/PUT/DELETE /foods — No food management UI</div>
+    <div class="detail">Backend supports full food CRUD but mobile only reads foods. May be admin-only, but no admin UI exists either.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">GET /weekly-summary — Never called</div>
+    <div class="detail">Dedicated endpoint exists but WeeklySummaryScreen presumably shows data another way or via the chat-injected weekly report.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">QPay endpoints — No mobile UI</div>
+    <div class="detail">POST /qpay/invoice, GET /qpay/invoice/:id/status exist but mobile has no QPay payment flow. Mongolian local payment is backend-ready but not surfaced.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">GET /notifications/preferences — Not fetched</div>
+    <div class="detail">RemindersScreen updates preferences (PUT) but never fetches current state. Toggles may not reflect actual server state on screen load.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">POST /notifications/test — Not used</div>
+    <div class="detail">Test notification endpoint exists but mobile never calls it.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">POST /privacy/consent — Not called</div>
+    <div class="detail">Consent tracking infrastructure exists but mobile never records consent events.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">GET /privacy/requests — Not fetched</div>
+    <div class="detail">User can trigger data export/deletion but can't check request status.</div>
+  </div>
+  <div class="issue warn">
+    <div class="title">Admin endpoints — No mobile admin UI</div>
+    <div class="detail">Full moderation queue and message stats endpoints exist but there's no admin screen.</div>
+  </div>
+
+  <h3>Micronutrients underutilized</h3>
+  <div class="issue info">
+    <div class="title">Fiber, sugar, sodium, saturated fat — tracked but barely displayed</div>
+    <div class="detail">Backend stores and returns these in meal logs. Photo/voice AI calculates them. But the mobile dashboard and progress screens only prominently show calories, protein, carbs, fat. The detailed micronutrients are fetched but not meaningfully surfaced.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 10. BUGS & ISSUES -->
+<!-- ============================================================ -->
+<section id="bugs">
+  <h2>10. Bugs &amp; Issues Found</h2>
+
+  <div class="issue">
+    <div class="title">BUG: OutboundMessage table has no primary key</div>
+    <div class="detail">The <code>id</code> field in the Prisma schema for OutboundMessage is missing the <code>@id</code> decorator. This can cause Prisma client issues when trying to do findUnique, update, or delete operations on outbound messages. The SQL migration also has no PRIMARY KEY constraint. <strong>Fix: Add @id to the id field and create a migration.</strong></div>
+  </div>
+
+  <div class="issue">
+    <div class="title">BUG: RemindersScreen doesn't fetch current notification preferences</div>
+    <div class="detail">When the RemindersScreen loads, it writes preferences (PUT) but never reads them (GET /notifications/preferences). This means the toggle states on the screen may not match the actual server state. If the user set morning reminder OFF on another device, this screen would still show it as ON. <strong>Fix: Fetch preferences on screen mount (useFocusEffect).</strong></div>
+  </div>
+
+  <div class="issue">
+    <div class="title">BUG: Coach message jobId uses Date.now() — potential duplicates</div>
+    <div class="detail">Format is <code>coach-${userId}-${messageType}-${Date.now()}</code>. If the cron runs fast, two jobs for the same user could get the same millisecond timestamp, causing BullMQ to silently deduplicate (one message lost). <strong>Fix: Use UUID or ULID for jobId uniqueness.</strong></div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">ISSUE: Food.verifiedBy has no FK constraint</div>
+    <div class="detail">If an admin user is deleted, the verifiedBy reference becomes orphaned. Currently works but could cause data integrity issues over time.</div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">ISSUE: settings.store methods are no-ops</div>
+    <div class="detail"><code>loadUnitSystem()</code> and <code>setUnitSystem()</code> are empty stub functions. The unitSystem is hardcoded to 'metric'. If imperial support is not planned, the store should be cleaned up. If planned, it needs implementation.</div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">ISSUE: ProfileSetupScreen exists but is dead code</div>
+    <div class="detail">File exists at <code>src/screens/onboarding/ProfileSetupScreen.tsx</code> but is not exported from the onboarding index and not registered in any navigator. It should be deleted.</div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">ISSUE: water.store.undoLast() exists but is never called from UI</div>
+    <div class="detail">The <code>undoLast()</code> action in water store exists but no screen calls it. The HomeScreen uses <code>removeCup()</code> instead. Redundant action.</div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">ISSUE: Coach memory block has no size limit</div>
+    <div class="detail">The memory block injected into coach message prompts has no length validation. If summaries are long (500+ characters each × 4 categories), it could consume significant prompt tokens and potentially push the prompt past token limits.</div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">ISSUE: No UI to modify nutrition targets after onboarding</div>
+    <div class="detail">Users complete onboarding → targets are created → but there's no way to change them later. If a user's weight, activity level, or goals change, they're stuck with the original target. The backend has POST /targets but no mobile UI calls it.</div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">ISSUE: Adaptive target notifies but user can't see/confirm adjustment</div>
+    <div class="detail">When the adaptive target processor adjusts calories (too_fast/too_slow), it sends a push/Telegram message. But there's no in-app view showing the user's updated target or letting them accept/reject the change.</div>
+  </div>
+
+  <div class="issue info">
+    <div class="title">NOTE: WeeklySummaryScreen vs weekly-report processor</div>
+    <div class="detail">Backend has a GET /weekly-summary endpoint AND a weekly-report worker processor. The processor injects into chat history. The endpoint exists but mobile doesn't call it directly. May need to decide: use the endpoint for the WeeklySummaryScreen, or keep using chat injection.</div>
+  </div>
+
+  <div class="issue info">
+    <div class="title">NOTE: Telegram Markdown fallback</div>
+    <div class="detail">Coach messages are sent to Telegram with Markdown parsing. If GPT-4o generates invalid Markdown, it falls back to plain text. This works but could be improved by sanitizing AI output before sending.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 11. DEAD CODE -->
+<!-- ============================================================ -->
+<section id="dead-code">
+  <h2>11. Dead Code &amp; Unused Fields</h2>
+
+  <table>
+    <tr><th>Item</th><th>Location</th><th>Why It's Dead</th><th>Action</th></tr>
+    <tr>
+      <td><code>ProfileSetupScreen.tsx</code></td>
+      <td>apps/mobile/src/screens/onboarding/</td>
+      <td>Not exported from index, not in any navigator</td>
+      <td><span class="status status-error">Delete</span></td>
+    </tr>
+    <tr>
+      <td><code>settings.store</code> methods</td>
+      <td>apps/mobile/src/stores/settings.store.ts</td>
+      <td><code>loadUnitSystem</code>, <code>setUnitSystem</code> are empty no-ops</td>
+      <td><span class="status status-warn">Implement or delete</span></td>
+    </tr>
+    <tr>
+      <td><code>water.store.undoLast()</code></td>
+      <td>apps/mobile/src/stores/water.store.ts</td>
+      <td>Never called from any UI screen</td>
+      <td><span class="status status-warn">Delete or wire up</span></td>
+    </tr>
+    <tr>
+      <td><code>Food.confidence</code> field</td>
+      <td>Prisma schema + Food table</td>
+      <td>Stored but never queried or displayed anywhere</td>
+      <td><span class="status status-warn">Remove if not planned</span></td>
+    </tr>
+    <tr>
+      <td><code>Food.sourceRef</code> field</td>
+      <td>Prisma schema + Food table</td>
+      <td>Accepted in DTO, stored, but never queried in any service</td>
+      <td><span class="status status-warn">Remove if not planned</span></td>
+    </tr>
+    <tr>
+      <td><code>dayBoundariesUTC()</code></td>
+      <td>packages/shared/src/date.ts</td>
+      <td>Exported but never imported; <code>dayBoundaries</code> used instead</td>
+      <td><span class="status status-warn">Remove</span></td>
+    </tr>
+    <tr>
+      <td>Several shared type exports</td>
+      <td>packages/shared/src/types.ts</td>
+      <td><code>DEFAULT_LOCALE</code>, <code>DEFAULT_UNIT_SYSTEM</code>, <code>UNIT_SYSTEMS</code>, <code>UnitSystem</code> — exported but never imported</td>
+      <td><span class="status status-info">Low priority cleanup</span></td>
+    </tr>
+    <tr>
+      <td>Prompt fragment exports</td>
+      <td>packages/shared/src/prompts.ts</td>
+      <td><code>MEAL_TYPE_RULES</code>, <code>FOOD_ITEM_FIELD_RULES</code>, <code>MONGOLIAN_NUMBER_WORDS</code>, <code>MONGOLIAN_PARSING_RULES</code> — exported individually but only consumed as part of <code>STT_NUTRITION_SYSTEM_PROMPT</code></td>
+      <td><span class="status status-info">Low priority cleanup</span></td>
+    </tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 12. THINGS NOT WIRED TOGETHER -->
+<!-- ============================================================ -->
+<section id="unwired">
+  <h2>12. Things Not Wired Together</h2>
+  <p>These are features where the pieces exist across different layers but aren't connected end-to-end.</p>
+
+  <div class="issue">
+    <div class="title">1. Nutrition Targets — Backend CRUD exists, no mobile UI to edit</div>
+    <div class="detail">
+      <strong>Backend:</strong> POST /targets (create), GET /targets/current (read), GET /targets/history (list)<br>
+      <strong>Mobile:</strong> Targets created during onboarding only. PersonalDetailsScreen lets you edit weight/height/goals but doesn't recalculate or create new targets.<br>
+      <strong>Impact:</strong> Users can't adjust calorie/macro targets after onboarding. Weight changes, activity changes, or diet preference changes don't update their targets.<br>
+      <strong>Fix needed:</strong> PersonalDetailsScreen should recalculate and POST new targets when profile changes. Add a dedicated "Adjust Targets" screen.
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="title">2. Body Composition — Display-only, no way to log measurements</div>
+    <div class="detail">
+      <strong>Backend:</strong> POST /body-composition/measurements (with Navy body fat formula)<br>
+      <strong>Mobile:</strong> ProgressScreen fetches and displays body composition data, but there's no input form to log waist/neck/hip measurements.<br>
+      <strong>Impact:</strong> Body composition section shows empty data forever unless someone manually inserts data via API.<br>
+      <strong>Fix needed:</strong> Add a "Log Measurement" screen accessible from ProgressScreen.
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="title">3. Adaptive Target — Adjusts silently, user can't see current target</div>
+    <div class="detail">
+      <strong>Backend:</strong> Adaptive target processor calculates adjustment, updates Target in DB, sends notification.<br>
+      <strong>Mobile:</strong> No screen shows the current active target. No screen shows target history. User gets a push saying "target adjusted to 1850 kcal" but can't verify it in-app.<br>
+      <strong>Impact:</strong> User confusion — they receive notifications about target changes but have no way to see, confirm, or override them.<br>
+      <strong>Fix needed:</strong> Show current targets on dashboard or settings. Show target history on progress screen.
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="title">4. QPay Mongolian Payments — Complete backend, zero mobile UI</div>
+    <div class="detail">
+      <strong>Backend:</strong> POST /qpay/invoice (creates QR code + bank deeplinks), GET /qpay/callback (confirms payment), GET /qpay/invoice/:id/status<br>
+      <strong>Mobile:</strong> SubscriptionScreen only shows RevenueCat (Apple/Google). No QPay payment option.<br>
+      <strong>Impact:</strong> Mongolian users who want to pay via local banks can't. The QPay strategy (bypassing App Store fees) is not accessible.<br>
+      <strong>Fix needed:</strong> Add QPay payment option to SubscriptionScreen for Mongolian users.
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="title">5. Notification Preferences — Writes but never reads</div>
+    <div class="detail">
+      <strong>Backend:</strong> GET /notifications/preferences returns current settings, PUT updates them<br>
+      <strong>Mobile:</strong> RemindersScreen only calls PUT. Never fetches current state with GET.<br>
+      <strong>Impact:</strong> Toggle states on RemindersScreen may not match actual server state. If prefs were changed elsewhere (or set during onboarding), the screen shows default/stale values.<br>
+      <strong>Fix needed:</strong> Fetch preferences on screen focus and initialize toggles from server state.
+    </div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">6. Privacy — Delete/export work, but no status tracking</div>
+    <div class="detail">
+      <strong>Backend:</strong> POST /privacy/export (request), POST /privacy/delete-account (request), GET /privacy/requests (list), POST /privacy/consent<br>
+      <strong>Mobile:</strong> Settings triggers delete-account and export but never checks request status or records consent.<br>
+      <strong>Impact:</strong> User can't know if their data export is ready or if deletion is processing.<br>
+      <strong>Fix needed:</strong> Show request status after triggering. Record health_data consent during onboarding.
+    </div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">7. Weekly Summary — Endpoint exists but mobile uses chat injection</div>
+    <div class="detail">
+      <strong>Backend:</strong> GET /weekly-summary returns computed data (daysLogged, averages, adherence, weight delta)<br>
+      <strong>Worker:</strong> weekly-report processor generates AI narrative and injects into Redis chat history<br>
+      <strong>Mobile:</strong> WeeklySummaryScreen exists but likely doesn't call GET /weekly-summary (uses chat history data?)<br>
+      <strong>Impact:</strong> Redundant systems. The endpoint returns raw numbers while the worker generates prose. Need to decide which approach to use.<br>
+      <strong>Fix suggestion:</strong> Use GET /weekly-summary to populate WeeklySummaryScreen with structured data. Keep worker for Telegram/push delivery.
+    </div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">8. Micronutrients — Tracked end-to-end but invisible to user</div>
+    <div class="detail">
+      <strong>Backend:</strong> Stores fiber, sugar, sodium, saturated fat in FoodNutrient, MealLogItem snapshots, and MealLog totals<br>
+      <strong>AI:</strong> Photo parser and voice parser both extract these micronutrients<br>
+      <strong>Mobile:</strong> Dashboard shows only calories, protein, carbs, fat. Extended micronutrients are fetched but barely displayed.<br>
+      <strong>Impact:</strong> Users tracking sodium (hypertension) or fiber (digestion) have no visibility into their intake.<br>
+      <strong>Fix suggestion:</strong> Add expandable micronutrient section on dashboard or meal detail screen.
+    </div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">9. Coach Messages injected to chat — but chat is Pro only</div>
+    <div class="detail">
+      <strong>Worker:</strong> Coach messages are injected into Redis chat history for all users<br>
+      <strong>Mobile:</strong> CoachChatScreen is gated behind SubscriptionGuard (Pro only)<br>
+      <strong>Impact:</strong> Free users receive push/Telegram messages from Coach but can't see their chat history in-app. The chat accumulates messages they can never view.<br>
+      <strong>Fix suggestion:</strong> Either make chat read-only for free users (can see coach messages, can't send), or stop injecting into Redis for free users.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 13. AI MESSAGE QUALITY -->
+<!-- ============================================================ -->
+<section id="ai-quality">
+  <h2>13. AI Message Quality &amp; Engagement Problems</h2>
+
+  <h3>Current Issues with Message Quality</h3>
+
+  <div class="issue">
+    <div class="title">Problem: Static reminder messages are repetitive and robotic</div>
+    <div class="detail">
+      <strong>Reminders processor</strong> uses only 3 variants per type per locale (6 total for morning, 4 for evening). With daily sends, users see the same messages within 2-3 days. Variants like "Өглөөний мэнд! 🌅 — Шинэ өдөр, шинэ боломж" become stale fast.<br><br>
+      <strong>Fix:</strong> Either increase to 10+ variants per type, or switch to AI-generated reminders that incorporate daily context (like coach messages already do). Even simple templates with variable insertion (user name, yesterday's calorie count) would help.
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="title">Problem: Meal nudge messages are generic — "Only one meal logged"</div>
+    <div class="detail">
+      <strong>Meal nudge processor</strong> uses 3 static variants that all say the same thing differently: "you logged one meal, log more." No context about what meal was logged, what time it is, what the user typically eats at this time.<br><br>
+      <strong>Fix:</strong> Use GPT-4o for nudges too, with context: "You logged breakfast (бууз, 2 pieces, 180 kcal). It's 7 PM — what's for dinner?" This leverages the coach persona that's already well-defined.
+    </div>
+  </div>
+
+  <div class="issue">
+    <div class="title">Problem: Adaptive target messages feel clinical</div>
+    <div class="detail">
+      <strong>Adaptive target processor</strong> uses static templates that read like system notifications: "Өдрийн зорилт 150 ккал нэмлээ — одоо 1850 ккал." No personality, no explanation of why this matters to the user specifically.<br><br>
+      <strong>Fix:</strong> Use GPT-4o with the Coach persona to explain the adjustment in context: "You've been crushing it — lost 1.2kg in 2 weeks! But let's slow down to protect your muscle. I bumped your target to 1850 kcal. Think of it as one extra bowl of шөл."
+    </div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">Problem: Coach memory summaries are in English, injected into Mongolian prompts</div>
+    <div class="detail">
+      <strong>Coach memory processor</strong> generates summaries in English ("Alice loves buurz, frequently logs tea"). These are injected into coach message prompts that ask GPT-4o to respond in Mongolian. The language mixing may cause GPT to produce less natural Mongolian.<br><br>
+      <strong>Fix:</strong> Generate memory summaries in the user's locale, or at minimum add a prompt instruction: "The memory block below is in English. Your response must still be entirely in Mongolian."
+    </div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">Problem: No conversation continuity across coach messages</div>
+    <div class="detail">
+      Coach messages are injected into Redis chat history, but subsequent coach messages don't read the previous ones. Each message is generated in isolation. So the morning greeting might say "What's the plan today?" and the evening progress_feedback has no idea what the user said in response (if they replied via chat).<br><br>
+      <strong>Fix:</strong> Include the last 3-5 chat messages as context in the coach message prompt. This creates conversational continuity: "This morning I asked what you'd eat — looks like you went with цуйван. Smart choice, 25g protein!"
+    </div>
+  </div>
+
+  <div class="issue warn">
+    <div class="title">Problem: No user feedback loop on AI messages</div>
+    <div class="detail">
+      Users have no way to react to coach messages (like/dislike, helpful/not helpful). This means you can't improve message quality based on user feedback, and you can't tell which message types users value.<br><br>
+      <strong>Fix:</strong> Add simple reaction buttons to coach messages in chat (👍/👎). Store reactions in OutboundMessage.metadata. Use aggregate data to tune message frequency and types.
+    </div>
+  </div>
+
+  <h3>What's Already Good</h3>
+  <div class="issue ok">
+    <div class="title">Coach persona prompt is excellent</div>
+    <div class="detail">The system prompt for coach messages is detailed, culturally informed, and well-structured. The persona ("brilliant friend who happens to be a nutritionist"), Mongolian food references, and per-message-type tone rules are high quality.</div>
+  </div>
+  <div class="issue ok">
+    <div class="title">Context injection is thorough</div>
+    <div class="detail">Coach messages include calories, water, protein, streaks, weekly averages, and coach memory. This gives GPT-4o rich data to personalize messages with specific numbers.</div>
+  </div>
+  <div class="issue ok">
+    <div class="title">Time window validation prevents stale messages</div>
+    <div class="detail">Jobs processed outside their window are silently skipped. Morning greeting at 3 PM? Dropped. This prevents confusing out-of-context messages.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 14. RECOMMENDATIONS -->
+<!-- ============================================================ -->
+<section id="recommendations">
+  <h2>14. Prioritized Fix Plan</h2>
+  <p>Grouped by priority. Each item addresses a specific problem identified above.</p>
+
+  <h3>Priority 1 — Critical Bugs &amp; Broken Features</h3>
+  <table>
+    <tr><th>#</th><th>Fix</th><th>Effort</th><th>Impact</th></tr>
+    <tr><td>1.1</td><td><strong>Fix OutboundMessage @id</strong> — Add @id to Prisma schema, create migration</td><td>10 min</td><td>Prevents Prisma client errors</td></tr>
+    <tr><td>1.2</td><td><strong>Wire RemindersScreen to fetch preferences</strong> — GET /notifications/preferences on mount</td><td>30 min</td><td>Toggles show actual state</td></tr>
+    <tr><td>1.3</td><td><strong>Fix coach message jobId</strong> — Use UUID instead of Date.now() to prevent duplicate suppression</td><td>10 min</td><td>Prevents lost messages</td></tr>
+    <tr><td>1.4</td><td><strong>Delete ProfileSetupScreen</strong> — Dead code, confuses navigation</td><td>5 min</td><td>Code cleanup</td></tr>
+  </table>
+
+  <h3>Priority 2 — Wire Unwired Features</h3>
+  <table>
+    <tr><th>#</th><th>Fix</th><th>Effort</th><th>Impact</th></tr>
+    <tr><td>2.1</td><td><strong>Add "Edit Targets" screen</strong> — Accessible from PersonalDetailsScreen or Settings. Calls POST /targets with recalculated values when profile changes.</td><td>2-3 hrs</td><td>Users can update goals after onboarding</td></tr>
+    <tr><td>2.2</td><td><strong>Add Body Composition logging screen</strong> — Form for waist/neck/hip/weight, calls POST /body-composition/measurements. Show results with body fat %.</td><td>2-3 hrs</td><td>Body comp section becomes functional</td></tr>
+    <tr><td>2.3</td><td><strong>Show current targets on Dashboard</strong> — Display active target (calories, macros) prominently. Show in settings/profile area too.</td><td>1-2 hrs</td><td>Users can see their goals</td></tr>
+    <tr><td>2.4</td><td><strong>Add QPay payment flow to SubscriptionScreen</strong> — Show QPay option for Mongolian users. Create invoice, show QR, poll for payment confirmation.</td><td>4-6 hrs</td><td>Mongolian payment enabled</td></tr>
+    <tr><td>2.5</td><td><strong>Wire WeeklySummaryScreen to GET /weekly-summary</strong> — Use structured data for the screen, keep chat injection for notifications.</td><td>1-2 hrs</td><td>Proper weekly summary view</td></tr>
+    <tr><td>2.6</td><td><strong>Add privacy request status tracking</strong> — After requesting export/deletion, show status (pending/processing/completed).</td><td>1 hr</td><td>GDPR compliance</td></tr>
+  </table>
+
+  <h3>Priority 3 — AI &amp; Engagement Improvements</h3>
+  <table>
+    <tr><th>#</th><th>Fix</th><th>Effort</th><th>Impact</th></tr>
+    <tr><td>3.1</td><td><strong>Switch reminders to AI-generated</strong> — Use GPT-4o with Coach persona + daily context. Replace 3 static variants with personalized messages.</td><td>2-3 hrs</td><td>Dramatically more engaging</td></tr>
+    <tr><td>3.2</td><td><strong>Switch meal nudges to AI-generated</strong> — Include what they logged, current time, and what they usually eat at this time.</td><td>2 hrs</td><td>Much more natural nudges</td></tr>
+    <tr><td>3.3</td><td><strong>Switch adaptive target to AI-generated</strong> — Use Coach persona to explain adjustments in context.</td><td>1-2 hrs</td><td>Feels like coaching, not system alerts</td></tr>
+    <tr><td>3.4</td><td><strong>Add chat continuity to coach messages</strong> — Include last 3-5 chat messages as context in coach message prompts.</td><td>2 hrs</td><td>Conversational flow between messages</td></tr>
+    <tr><td>3.5</td><td><strong>Fix memory language mismatch</strong> — Generate coach memory summaries in user's locale, or add explicit instruction about language mixing.</td><td>30 min</td><td>More natural Mongolian output</td></tr>
+    <tr><td>3.6</td><td><strong>Make coach chat readable for free users</strong> — Show chat history read-only (coach messages visible, send button hidden), encourage upgrade.</td><td>2 hrs</td><td>Better free-to-pro conversion</td></tr>
+  </table>
+
+  <h3>Priority 4 — Cleanup &amp; Polish</h3>
+  <table>
+    <tr><th>#</th><th>Fix</th><th>Effort</th><th>Impact</th></tr>
+    <tr><td>4.1</td><td><strong>Remove dead code</strong> — ProfileSetupScreen, water.store.undoLast(), settings.store stubs, unused shared exports</td><td>30 min</td><td>Clean codebase</td></tr>
+    <tr><td>4.2</td><td><strong>Remove unused DB fields</strong> — Food.confidence, Food.sourceRef (if not planned)</td><td>30 min</td><td>Schema clarity</td></tr>
+    <tr><td>4.3</td><td><strong>Add micronutrient display</strong> — Expandable section in meal detail or dashboard showing fiber, sugar, sodium, saturated fat</td><td>2-3 hrs</td><td>Better nutrition visibility</td></tr>
+    <tr><td>4.4</td><td><strong>Add consent recording</strong> — Record health_data consent during onboarding, analytics consent in settings</td><td>1 hr</td><td>GDPR compliance</td></tr>
+    <tr><td>4.5</td><td><strong>Add Food.verifiedBy FK constraint</strong> — Or document as intentional soft reference</td><td>15 min</td><td>Data integrity</td></tr>
+    <tr><td>4.6</td><td><strong>Add coach memory size limit</strong> — Cap memory block at 500 chars per category to prevent prompt overflow</td><td>15 min</td><td>Prevents edge case failures</td></tr>
+    <tr><td>4.7</td><td><strong>Add message reaction buttons</strong> — 👍/👎 on coach messages in chat, store in metadata</td><td>3-4 hrs</td><td>User feedback loop for AI quality</td></tr>
+  </table>
+
+  <h3>Summary</h3>
+  <div class="stats-grid">
+    <div class="stat-card" style="border-color: var(--red);">
+      <div class="number">4</div>
+      <div class="label">Critical Bugs</div>
+    </div>
+    <div class="stat-card" style="border-color: var(--orange);">
+      <div class="number">6</div>
+      <div class="label">Unwired Features</div>
+    </div>
+    <div class="stat-card" style="border-color: var(--blue);">
+      <div class="number">6</div>
+      <div class="label">AI Improvements</div>
+    </div>
+    <div class="stat-card" style="border-color: var(--text-dim);">
+      <div class="number">7</div>
+      <div class="label">Cleanup Items</div>
+    </div>
+  </div>
+
+  <p style="margin-top: 20px; color: var(--accent); font-size: 1.1rem;">
+    <strong>Bottom line:</strong> The core architecture is solid — 33 models, 150+ endpoints, 48 screens, 9 processors, all well-structured.
+    The main problems are: (a) several backend features have no mobile UI (targets, body comp, QPay),
+    (b) static messages (reminders, nudges, adaptive target) feel robotic and need AI generation,
+    and (c) coach message continuity needs improvement for natural Mongolian conversations.
+  </p>
+</section>
+
+</div><!-- /container -->
+
+<footer style="text-align: center; padding: 40px 20px; color: var(--text-dim); border-top: 1px solid var(--border); margin-top: 40px;">
+  <p>Coach App — Full Codebase Audit Report</p>
+  <p>Generated by Claude Opus 4.6 on April 1, 2026</p>
+  <p style="margin-top: 10px; font-size: 0.8rem;">Every file in apps/api, apps/mobile, apps/worker, and packages/shared was read for this report.</p>
+</footer>
+
+</body>
+</html>

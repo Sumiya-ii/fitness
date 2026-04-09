@@ -33,6 +33,7 @@ packages/
 ## Commands
 
 ```bash
+# ── Workspace-scoped commands ────────────────────────────
 npm run lint --workspace=apps/api
 npm run typecheck --workspace=apps/api
 npm run test --workspace=apps/api
@@ -41,6 +42,32 @@ npm run format                              # prettier --write (all)
 npm run db:migrate --workspace=apps/api     # run pending migrations
 npm run db:generate --workspace=apps/api    # regenerate Prisma client
 npm run test --workspaces                   # all tests (same as CI)
+
+# ── Mobile (Expo) ────────────────────────────────────────
+cd apps/mobile
+npx expo start --tunnel                     # dev server (tunnel mode default)
+npx expo prebuild --clean                   # regenerate native projects
+eas build --profile development --platform ios   # dev client build
+eas build --profile production --platform ios    # production build
+eas submit --platform ios                        # submit to TestFlight
+eas update --branch production                   # OTA update via expo-updates
+
+# ── API (NestJS) ─────────────────────────────────────────
+npm run start:dev --workspace=apps/api      # dev server with watch
+npm run test:e2e --workspace=apps/api       # API integration tests
+
+# ── Worker (BullMQ) ──────────────────────────────────────
+npm run start:dev --workspace=apps/worker   # worker dev with watch
+
+# ── Docker (local infra) ─────────────────────────────────
+docker compose up -d                        # postgres, redis, typesense
+docker compose down                         # stop all services
+
+# ── Quality gates (run before push) ──────────────────────
+npm run lint && npm run typecheck && npm run test --workspaces
+
+# ── Maestro E2E (mobile) ─────────────────────────────────
+npm run test:e2e:mobile                     # runs maestro/flows/*.yaml
 ```
 
 ## Code style
@@ -194,3 +221,104 @@ afterEach(() => { process.env = originalEnv; jest.restoreAllMocks(); });
 ## Environment variables
 
 Copy `.env.example` to `.env` in repo root. Mobile env vars prefixed `EXPO_PUBLIC_*` in `apps/mobile/.env`.
+
+## Deployment & Infrastructure
+
+### Hosting
+
+| Service   | Platform    | Config file          | Notes                                      |
+| --------- | ----------- | -------------------- | ------------------------------------------ |
+| API       | Railway     | `railway.toml`       | Auto-deploys on push to `main`             |
+| Worker    | Railway     | `apps/worker/railway.toml` | Separate Railway service              |
+| Database  | Railway     | —                    | PostgreSQL 16, internal networking          |
+| Redis     | Railway     | —                    | Redis 7 for BullMQ + caching               |
+| Mobile    | Expo / EAS  | `apps/mobile/eas.json` | TestFlight (iOS), EAS Build + Submit      |
+
+### CI/CD (GitHub Actions)
+
+- **`.github/workflows/ci.yml`** — runs on push/PR to `main`: lint, typecheck, test, e2e, format check
+- **`.github/workflows/daily-monitor.yml`** — daily at 6 AM UTC: pulls Railway logs, runs DB analysis, emails report, commits to `reports/daily-monitor/`
+
+### Mobile release process
+
+```bash
+# 1. Build for TestFlight
+eas build --profile production --platform ios
+
+# 2. Submit to TestFlight
+eas submit --platform ios
+
+# 3. OTA update (JS-only changes, no native module changes)
+eas update --branch production --message "description of change"
+```
+
+- iOS bundle ID: `com.coach.mobile`
+- Apple Team ID: `DZ9RLGDX2M`
+- Current iOS build number: **17**
+- EAS project ID: `cf5c8344-d39a-4869-b00f-69b8720bfea8`
+
+### Local development setup
+
+```bash
+# 1. Clone and install
+git clone https://github.com/Sumiya-ii/fitness.git && cd fitness
+cp .env.example .env   # fill in secrets
+npm ci
+
+# 2. Start infrastructure
+docker compose up -d    # postgres, redis, typesense
+
+# 3. Set up database
+npm run db:generate --workspace=apps/api
+npm run db:migrate --workspace=apps/api
+
+# 4. Start services (in separate terminals)
+npm run start:dev --workspace=apps/api
+npm run start:dev --workspace=apps/worker
+cd apps/mobile && npx expo start --tunnel
+```
+
+## Claude Code configuration
+
+### Hooks (already configured in `.claude/settings.json`)
+
+- **Stop hook**: runs `typecheck` + `test` on all workspaces before completing a task
+- **PostToolUse hook** (local): auto-formats with Prettier and auto-lints with ESLint after every Edit/Write
+
+### Recommended Claude Code practices
+
+- Use `@coach/shared` for any cross-workspace imports — never relative paths
+- After changing Prisma schema, always run `npm run db:generate --workspace=apps/api`
+- After changing Babel/Metro/NativeWind config, restart Expo dev server
+- Run quality gates (`lint`, `typecheck`, `test`) before every push
+- Keep `docs/features/` in sync when changing feature behavior (per AGENTS.md)
+- Maestro E2E flows live in `maestro/flows/` — update when adding new screens
+
+## Project status
+
+**Status**: Beta (TestFlight, build 17)
+
+### Features built
+
+- Firebase auth (email/password, Google, Apple Sign-In)
+- Full onboarding flow (16 screens: gender, birthdate, height, weight, goals, activity, diet, targets)
+- AI meal logging: photo (GPT-4 Vision), voice (STT), text search, barcode scan, quick-add, favorites/recents, templates
+- Water logging with daily targets
+- Macro/calorie tracking dashboard with ring visualization
+- Weight logging and progress charts
+- Body composition logging
+- Workout logging (custom exercises, timer, history)
+- AI Coach chat (personalized, memory-enabled via coach-memory processor)
+- Adaptive calorie targets (auto-adjust based on progress)
+- Weekly summary reports (AI-generated, delivered via Telegram + push)
+- Meal nudge reminders (smart timing)
+- Telegram bot integration for notifications
+- Push notifications (Expo)
+- QPay payment integration (Mongolia)
+- Subscription management
+- GDPR privacy: data export + account deletion via BullMQ
+- OTA updates via expo-updates
+- Sentry error tracking
+- Daily production monitoring (automated GitHub Action)
+- i18n: Mongolian + English
+- Dark/light theme support
