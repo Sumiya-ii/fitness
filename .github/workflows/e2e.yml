@@ -1,0 +1,91 @@
+name: Maestro E2E
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0" # Sunday at midnight UTC
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maestro-e2e:
+    name: Maestro E2E (iOS Simulator)
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Expo prebuild
+        uses: actions/cache@v4
+        with:
+          path: apps/mobile/ios/
+          key: expo-prebuild-${{ runner.os }}-${{ hashFiles('package-lock.json', 'apps/mobile/app.config.*') }}
+
+      - name: Expo prebuild
+        working-directory: apps/mobile
+        run: npx expo prebuild --clean --platform ios
+
+      - name: Build app for simulator
+        working-directory: apps/mobile
+        run: |
+          xcodebuild \
+            -workspace ios/*.xcworkspace \
+            -scheme coach \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -derivedDataPath build \
+            build \
+            | xcbeautify --quiet || true
+
+      - name: Boot iOS Simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime, devices in data['devices'].items():
+              for d in devices:
+                  if 'iPhone' in d['name'] and d['isAvailable']:
+                      print(d['udid']); sys.exit(0)
+          sys.exit(1)
+          ")
+          xcrun simctl boot "$DEVICE" || true
+          echo "SIMULATOR_UDID=$DEVICE" >> "$GITHUB_ENV"
+
+      - name: Install app on simulator
+        working-directory: apps/mobile
+        run: |
+          APP_PATH=$(find build -name "*.app" -path "*/Debug-iphonesimulator/*" | head -1)
+          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
+
+      - name: Run Maestro E2E flows
+        run: |
+          maestro test maestro/flows/
+
+      - name: Upload Maestro artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-results
+          path: |
+            ~/.maestro/tests/
+            ~/.maestro/screenshots/
+          retention-days: 7

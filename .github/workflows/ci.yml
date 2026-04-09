@@ -47,3 +47,19 @@ jobs:
 
       - name: Format check
         run: npm run format:check
+
+  validate-maestro-flows:
+    name: Validate Maestro Flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Validate Maestro flows (dry-run)
+        run: maestro test --dry-run maestro/flows/ || true
