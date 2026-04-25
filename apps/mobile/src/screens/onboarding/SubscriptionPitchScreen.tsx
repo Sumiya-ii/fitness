@@ -43,12 +43,12 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
 
   const handleStartTrial = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('NotificationPermission');
+    navigation.navigate('ConnectTelegram');
   };
 
   const handleContinueFree = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('NotificationPermission');
+    navigation.navigate('ConnectTelegram');
   };
 
   return (

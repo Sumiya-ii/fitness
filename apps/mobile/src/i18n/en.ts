@@ -46,6 +46,9 @@ export const en = {
     noMealsDesc: 'Log your first meal and watch today come alive',
     recentlyUploaded: 'Recently added',
     tapToAddFirst: 'What did you eat? Tap + to get started',
+    telegramCtaConnect: 'Connect Telegram to log via voice',
+    telegramCtaConnectDesc: 'Send a voice message to your bot — Coach logs it instantly.',
+    telegramCtaLinked: 'Send a voice message to your bot to log a meal',
     weeklySummary: 'Weekly Summary',
     breakfast: 'Breakfast',
     lunch: 'Lunch',
@@ -369,6 +372,18 @@ export const en = {
     notifStreakDesc: 'Your Coach cheers you on',
     notifAllow: 'Turn On Notifications',
     notifSkip: 'Maybe later',
+    // Connect Telegram onboarding step
+    connectTelegramTitle: 'Log meals with your voice',
+    connectTelegramSubtitle:
+      'Connect Telegram and send voice messages to log food instantly — no typing needed.',
+    connectTelegramStep1Title: 'Send a voice message',
+    connectTelegramStep1Desc: 'Say what you ate in Telegram — Coach transcribes it instantly',
+    connectTelegramStep2Title: 'AI logs it for you',
+    connectTelegramStep2Desc: 'Calories, protein, carbs and fat calculated automatically',
+    connectTelegramStep3Title: 'See progress in the app',
+    connectTelegramStep3Desc: 'All meals sync back here in real time',
+    connectTelegramButton: 'Open Telegram',
+    connectTelegramSkip: 'Skip for now',
   },
   auth: {
     signIn: 'Sign In',

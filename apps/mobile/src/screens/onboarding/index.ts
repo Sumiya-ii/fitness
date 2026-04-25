@@ -11,4 +11,5 @@ export { DietPreferenceSelectScreen } from './DietPreferenceSelectScreen';
 export { MotivationScreen } from './MotivationScreen';
 export { TargetReviewScreen } from './TargetReviewScreen';
 export { SubscriptionPitchScreen } from './SubscriptionPitchScreen';
+export { ConnectTelegramScreen } from './ConnectTelegramScreen';
 export { NotificationPermissionScreen } from './NotificationPermissionScreen';

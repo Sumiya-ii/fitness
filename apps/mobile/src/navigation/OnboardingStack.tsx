@@ -18,6 +18,7 @@ import {
   MotivationScreen,
   TargetReviewScreen,
   SubscriptionPitchScreen,
+  ConnectTelegramScreen,
   NotificationPermissionScreen,
 } from '../screens/onboarding';
 
@@ -55,6 +56,7 @@ export function OnboardingStack() {
       <Stack.Screen name="SignIn" component={SignInScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="SubscriptionPitch" component={SubscriptionPitchScreen} />
+      <Stack.Screen name="ConnectTelegram" component={ConnectTelegramScreen} />
       <Stack.Screen
         name="NotificationPermission"
         component={NotificationPermissionScreen}

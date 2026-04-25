@@ -46,6 +46,9 @@ export const mn = {
     noMealsDesc: 'Эхний хоолоо бүртгээд өдрөө эхлүүлээрэй',
     recentlyUploaded: 'Сүүлд нэмсэн',
     tapToAddFirst: 'Юу идсэн бэ? + дарж эхлээрэй',
+    telegramCtaConnect: 'Telegram холбоод дуугаараа бүртгэ',
+    telegramCtaConnectDesc: 'Ботдоо дуут мессеж илгээхэд Coach шууд бүртгэнэ.',
+    telegramCtaLinked: 'Ботдоо дуут мессеж илгээж хоол бүртгэ',
     weeklySummary: '7 хоногийн тойм',
     breakfast: 'Өглөөний цай',
     lunch: 'Үдийн хоол',
@@ -354,6 +357,18 @@ export const mn = {
     notifStreakDesc: 'Coach чамайг дэмжиж, урамшуулна',
     notifAllow: 'Мэдэгдэл асаах',
     notifSkip: 'Дараа болъё',
+    // Connect Telegram onboarding step
+    connectTelegramTitle: 'Дуугаараа хоол бүртгэ',
+    connectTelegramSubtitle:
+      'Telegram холбоод дуут мессеж илгээхэд л хоол бүртгэгдэнэ — бичих шаардлагагүй.',
+    connectTelegramStep1Title: 'Дуут мессеж илгээ',
+    connectTelegramStep1Desc: 'Telegram-д юу идснээ хэлэхэд Coach шууд хөрвүүлнэ',
+    connectTelegramStep2Title: 'AI бүртгэл хийнэ',
+    connectTelegramStep2Desc: 'Калори, уураг, нүүрс ус, өөх тос автоматаар тооцоологдоно',
+    connectTelegramStep3Title: 'Ахицаа апп дотор хар',
+    connectTelegramStep3Desc: 'Бүх хоол шууд синхрончлогдоно',
+    connectTelegramButton: 'Telegram нээх',
+    connectTelegramSkip: 'Одоогоор алгасах',
   },
   auth: {
     signIn: 'Нэвтрэх',

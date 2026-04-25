@@ -162,6 +162,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
   };
 
   const handleLegalLink = async (kind: 'terms' | 'privacy') => {
+    // TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs.
     const url =
       kind === 'terms'
         ? process.env.EXPO_PUBLIC_TERMS_URL?.trim()

@@ -576,6 +576,7 @@ export function HomeScreen() {
   const [showMicronutrients, setShowMicronutrients] = useState(false);
   const [weekHistory, setWeekHistory] = useState<Map<string, number>>(new Map());
   const [weekCalorieTarget, setWeekCalorieTarget] = useState<number | null>(null);
+  const [telegramLinked, setTelegramLinked] = useState<boolean | null>(null);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
   const { data, isLoading, fetchDashboard, loadCachedDashboard } = useDashboardStore();
   const {
@@ -628,6 +629,15 @@ export function HomeScreen() {
     }
   }, []);
 
+  const loadTelegramStatus = useCallback(async () => {
+    try {
+      const res = await api.get<{ linked: boolean }>('/telegram/status');
+      setTelegramLinked(res.linked);
+    } catch {
+      // keep null — don't show CTA if we can't determine status
+    }
+  }, []);
+
   const loadWeekHistory = useCallback(async () => {
     try {
       const res = await api.get<{
@@ -653,7 +663,8 @@ export function HomeScreen() {
     loadCachedDashboard();
     loadProfile();
     loadWeekHistory();
-  }, [loadCachedDashboard, loadProfile, loadWeekHistory]);
+    void loadTelegramStatus();
+  }, [loadCachedDashboard, loadProfile, loadWeekHistory, loadTelegramStatus]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1540,31 +1551,78 @@ export function HomeScreen() {
                 />
               ))
           ) : (
-            <Pressable
-              onPress={handleLogMeal}
-              className="rounded-3xl p-5"
-              style={{ backgroundColor: c.card }}
-            >
-              <View
-                className="rounded-2xl p-4 mb-4 flex-row items-center gap-3"
-                style={{ backgroundColor: c.cardAlt }}
-              >
-                <Text style={{ fontSize: 32 }}>🥗</Text>
-                <View className="flex-1">
-                  <View
-                    className="h-2.5 rounded-full mb-2"
-                    style={{ backgroundColor: c.border, width: '80%' }}
-                  />
-                  <View
-                    className="h-2.5 rounded-full"
-                    style={{ backgroundColor: c.border, width: '55%' }}
-                  />
+            <>
+              {/* Telegram CTA — shown when no meals logged today */}
+              {telegramLinked === false ? (
+                <Pressable
+                  onPress={() =>
+                    (navigation as { navigate: (s: string) => void }).navigate('TelegramConnect')
+                  }
+                  className="rounded-3xl p-5 mb-3"
+                  style={{ backgroundColor: c.primary }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('dashboard.telegramCtaConnect')}
+                >
+                  <View className="flex-row items-center gap-3 mb-3">
+                    <Ionicons name="paper-plane" size={28} color={c.onPrimary} />
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontFamily: 'Inter-Bold',
+                        color: c.onPrimary,
+                        flex: 1,
+                      }}
+                    >
+                      {t('dashboard.telegramCtaConnect')}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={18} color={c.onPrimary} />
+                  </View>
+                  <Text
+                    style={{ fontSize: 13, fontFamily: 'Inter-Medium', color: `${c.onPrimary}cc` }}
+                  >
+                    {t('dashboard.telegramCtaConnectDesc')}
+                  </Text>
+                </Pressable>
+              ) : telegramLinked === true ? (
+                <View
+                  className="rounded-3xl p-4 mb-3 flex-row items-center gap-3"
+                  style={{ backgroundColor: c.card }}
+                >
+                  <Ionicons name="paper-plane-outline" size={22} color={c.primary} />
+                  <Text
+                    className="flex-1 text-sm font-sans-medium"
+                    style={{ color: c.textSecondary }}
+                  >
+                    {t('dashboard.telegramCtaLinked')}
+                  </Text>
                 </View>
-              </View>
-              <Text className="text-sm text-text-tertiary text-center font-sans-medium">
-                {t('dashboard.tapToAddFirst')}
-              </Text>
-            </Pressable>
+              ) : null}
+              <Pressable
+                onPress={handleLogMeal}
+                className="rounded-3xl p-5"
+                style={{ backgroundColor: c.card }}
+              >
+                <View
+                  className="rounded-2xl p-4 mb-4 flex-row items-center gap-3"
+                  style={{ backgroundColor: c.cardAlt }}
+                >
+                  <Text style={{ fontSize: 32 }}>🥗</Text>
+                  <View className="flex-1">
+                    <View
+                      className="h-2.5 rounded-full mb-2"
+                      style={{ backgroundColor: c.border, width: '80%' }}
+                    />
+                    <View
+                      className="h-2.5 rounded-full"
+                      style={{ backgroundColor: c.border, width: '55%' }}
+                    />
+                  </View>
+                </View>
+                <Text className="text-sm text-text-tertiary text-center font-sans-medium">
+                  {t('dashboard.tapToAddFirst')}
+                </Text>
+              </Pressable>
+            </>
           )}
         </Animated.View>
       </ScrollView>

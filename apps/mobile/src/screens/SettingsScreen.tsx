@@ -368,8 +368,35 @@ export function SettingsScreen() {
             </Pressable>
           </Animated.View>
 
-          {/* -- General -- */}
+          {/* -- Telegram (MVP v1: promoted to top as the primary logging interface) -- */}
           <Animated.View entering={FadeInDown.duration(400).delay(50).springify()}>
+            <Section title={t('settings.integrations')}>
+              <Row
+                icon="paper-plane-outline"
+                label={t('settings.telegramCoach')}
+                value={
+                  telegramStatus?.linked && telegramStatus.telegramUsername
+                    ? `@${telegramStatus.telegramUsername}`
+                    : undefined
+                }
+                right={
+                  <View className="flex-row items-center gap-2">
+                    <View
+                      className="h-2 w-2 rounded-full"
+                      style={{
+                        backgroundColor: telegramStatus?.linked ? c.success : c.muted,
+                      }}
+                    />
+                    <Ionicons name="chevron-forward" size={16} color={c.muted} />
+                  </View>
+                }
+                onPress={() => navigate('TelegramConnect')}
+              />
+            </Section>
+          </Animated.View>
+
+          {/* -- General -- */}
+          <Animated.View entering={FadeInDown.duration(400).delay(100).springify()}>
             <Section title={t('settings.general')}>
               <Row
                 icon="person-outline"
@@ -397,28 +424,6 @@ export function SettingsScreen() {
             </Section>
           </Animated.View>
 
-          {/* -- Integrations -- */}
-          <Animated.View entering={FadeInDown.duration(400).delay(100).springify()}>
-            <Section title={t('settings.integrations')}>
-              <Row
-                icon="paper-plane-outline"
-                label={t('settings.telegramCoach')}
-                right={
-                  <View className="flex-row items-center gap-2">
-                    <View
-                      className="h-2 w-2 rounded-full"
-                      style={{
-                        backgroundColor: telegramStatus?.linked ? c.success : c.muted,
-                      }}
-                    />
-                    <Ionicons name="chevron-forward" size={16} color={c.muted} />
-                  </View>
-                }
-                onPress={() => navigate('TelegramConnect')}
-              />
-            </Section>
-          </Animated.View>
-
           {/* -- Support & Legal -- */}
           <Animated.View entering={FadeInDown.duration(400).delay(150).springify()}>
             <Section title={t('settings.supportLegal')}>
@@ -437,18 +442,21 @@ export function SettingsScreen() {
                 <PrivacyRequestBadge request={latestExportRequest} type="export" />
               ) : null}
               <Divider />
+              {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
               <Row
                 icon="shield-checkmark-outline"
                 label={t('settings.privacyPolicy')}
                 onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/privacy')}
               />
               <Divider />
+              {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
               <Row
                 icon="document-text-outline"
                 label={t('settings.termsOfService')}
                 onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/terms')}
               />
               <Divider />
+              {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
               <Row
                 icon="help-circle-outline"
                 label={t('settings.support')}

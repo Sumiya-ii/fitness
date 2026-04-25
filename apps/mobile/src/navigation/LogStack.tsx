@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { LogStackParamList } from './types';
+import { features } from '../config/features';
 import {
   LogScreen,
   TextSearchScreen,
@@ -31,7 +32,8 @@ export function LogStack() {
       <Stack.Screen name="QuickAdd" component={QuickAddScreen} />
       <Stack.Screen name="BarcodeScan" component={BarcodeScanScreen} />
       <Stack.Screen name="BarcodeSubmit" component={BarcodeSubmitScreen} />
-      <Stack.Screen name="VoiceLog" component={VoiceLogScreen} />
+      {/* VoiceLog gated behind features.voiceLoggingInApp — off in MVP v1 (use Telegram bot) */}
+      {features.voiceLoggingInApp && <Stack.Screen name="VoiceLog" component={VoiceLogScreen} />}
       <Stack.Screen name="PhotoLog" component={PhotoLogScreen} />
       <Stack.Screen name="FavoritesRecents" component={FavoritesRecentsScreen} />
       <Stack.Screen name="MealTemplates" component={MealTemplatesScreen} />

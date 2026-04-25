@@ -19,6 +19,7 @@ import Svg, {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Button, BottomSheet, Input, Badge, SkeletonLoader } from '../components/ui';
+import { features } from '../config/features';
 import { useWeightStore, type WeightLogEntry } from '../stores/weight.store';
 import { useNutritionHistoryStore, type HistoryPeriod } from '../stores/nutrition-history.store';
 import { useLocale } from '../i18n';
@@ -1777,12 +1778,14 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
         )}
       </View>
 
-      {/* Body Composition */}
-      <BodyCompositionCard
-        onLogMeasurements={() => {
-          navigation.navigate('BodyCompositionLog');
-        }}
-      />
+      {/* Body Composition — gated behind features.bodyComposition in MVP v1 */}
+      {features.bodyComposition && (
+        <BodyCompositionCard
+          onLogMeasurements={() => {
+            navigation.navigate('BodyCompositionLog');
+          }}
+        />
+      )}
 
       {/* Weekly Calorie Budget (Rollover) */}
       <WeeklyBudgetCard />
@@ -1800,17 +1803,19 @@ function BodyTab({ viewportWidth }: { viewportWidth: number }) {
             {t('progress.logWeight')}
           </Text>
         </Pressable>
-        <Pressable
-          onPress={() => navigation.navigate('BodyCompositionLog')}
-          className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-surface-card border border-surface-border py-3.5"
-          accessibilityRole="button"
-          accessibilityLabel={t('progress.logMeasurements')}
-        >
-          <Ionicons name="body-outline" size={18} color={c.textSecondary} />
-          <Text className="font-sans-semibold text-text-secondary text-sm">
-            {t('progress.logMeasurements')}
-          </Text>
-        </Pressable>
+        {features.bodyComposition && (
+          <Pressable
+            onPress={() => navigation.navigate('BodyCompositionLog')}
+            className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-surface-card border border-surface-border py-3.5"
+            accessibilityRole="button"
+            accessibilityLabel={t('progress.logMeasurements')}
+          >
+            <Ionicons name="body-outline" size={18} color={c.textSecondary} />
+            <Text className="font-sans-semibold text-text-secondary text-sm">
+              {t('progress.logMeasurements')}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Log Weight Sheet */}
@@ -2080,19 +2085,21 @@ export function ProgressScreen() {
           <View className="px-5 pt-2 pb-4">
             <View className="flex-row items-center justify-between">
               <Text className="text-2xl font-sans-bold text-text">{t('progress.title')}</Text>
-              <Pressable
-                onPress={() =>
-                  (
-                    navigation.getParent() as { navigate: (s: string) => void } | undefined
-                  )?.navigate('WeeklySummary')
-                }
-                className="flex-row items-center gap-2 rounded-full bg-primary-500/15 px-4 py-2"
-              >
-                <Ionicons name="calendar-outline" size={16} color={c.primary} />
-                <Text className="font-sans-medium text-primary-400 text-sm">
-                  {t('progress.weekly')}
-                </Text>
-              </Pressable>
+              {features.weeklySummary && (
+                <Pressable
+                  onPress={() =>
+                    (
+                      navigation.getParent() as { navigate: (s: string) => void } | undefined
+                    )?.navigate('WeeklySummary')
+                  }
+                  className="flex-row items-center gap-2 rounded-full bg-primary-500/15 px-4 py-2"
+                >
+                  <Ionicons name="calendar-outline" size={16} color={c.primary} />
+                  <Text className="font-sans-medium text-primary-400 text-sm">
+                    {t('progress.weekly')}
+                  </Text>
+                </Pressable>
+              )}
             </View>
           </View>
 
@@ -2144,8 +2151,8 @@ export function ProgressScreen() {
             )}
           </View>
 
-          {/* Workout Summary */}
-          <WorkoutProgressSection />
+          {/* Workout Summary — gated behind features.workouts in MVP v1 */}
+          {features.workouts && <WorkoutProgressSection />}
         </ScrollView>
       </SafeAreaView>
     </View>

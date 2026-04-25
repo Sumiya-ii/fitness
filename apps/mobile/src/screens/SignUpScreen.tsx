@@ -354,6 +354,7 @@ export function SignUpScreen({ navigation }: Props) {
                 </View>
                 <Text className="flex-1 text-sm font-sans text-text-secondary leading-5">
                   {t('auth.agreePrefix')}{' '}
+                  {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
                   <Text
                     className="text-primary-600 font-sans-medium"
                     onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/terms')}
@@ -363,6 +364,7 @@ export function SignUpScreen({ navigation }: Props) {
                     {t('auth.termsOfService')}
                   </Text>{' '}
                   {t('auth.and')}{' '}
+                  {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
                   <Text
                     className="text-primary-600 font-sans-medium"
                     onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/privacy')}

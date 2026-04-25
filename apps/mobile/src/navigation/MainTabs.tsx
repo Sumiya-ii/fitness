@@ -13,6 +13,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import type { MainTabParamList, LogStackParamList } from './types';
+import { features } from '../config/features';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LogStack } from './LogStack';
 import { ProgressScreen } from '../screens/ProgressScreen';
@@ -46,7 +47,8 @@ type QuickAction = {
   screen: keyof LogStackParamList;
 };
 
-// Bottom-to-top: index 0 = closest to + button, index 3 = farthest
+// Bottom-to-top: index 0 = closest to + button
+// Voice is excluded in MVP v1 (voice logging happens via Telegram bot instead)
 const MENU_ITEMS: QuickAction[] = [
   { key: 'quick', icon: 'flash', labelKey: 'logging.quick', color: '#C8A45B', screen: 'QuickAdd' },
   {
@@ -56,7 +58,17 @@ const MENU_ITEMS: QuickAction[] = [
     color: '#2F855A',
     screen: 'BarcodeScan',
   },
-  { key: 'voice', icon: 'mic', labelKey: 'logging.voice', color: '#B05E5E', screen: 'VoiceLog' },
+  ...(features.voiceLoggingInApp
+    ? [
+        {
+          key: 'voice',
+          icon: 'mic' as const,
+          labelKey: 'logging.voice',
+          color: '#B05E5E',
+          screen: 'VoiceLog' as const,
+        },
+      ]
+    : []),
   {
     key: 'photo',
     icon: 'camera',
@@ -64,7 +76,7 @@ const MENU_ITEMS: QuickAction[] = [
     color: '#F4E9D8',
     screen: 'PhotoLog',
   },
-];
+] satisfies QuickAction[];
 
 const CIRCLE_SIZE = 48;
 const MENU_STEP = 66; // vertical distance between item centers

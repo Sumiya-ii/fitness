@@ -23,6 +23,7 @@ export type OnboardingStackParamList = {
   SignIn: undefined;
   ForgotPassword: undefined;
   SubscriptionPitch: undefined;
+  ConnectTelegram: undefined;
   NotificationPermission: undefined;
 };
 
@@ -49,21 +50,25 @@ export type MainTabParamList = {
 
 export type MainStackParamList = {
   MainTabs: undefined;
+  // WeeklySummary: gated behind features.weeklySummary (MVP v1 off)
   WeeklySummary: undefined;
   TelegramConnect: undefined;
   Subscription: undefined;
+  // CoachChat: gated behind features.aiChatInApp (MVP v1 off) — screen file kept for v1.1
   CoachChat: undefined;
   EditProfile: undefined;
   PersonalDetails: undefined;
   AppSettings: undefined;
   Reminders: undefined;
   RingColorsExplained: undefined;
+  // Workout screens: gated behind features.workouts (MVP v1 off)
   WorkoutHome: undefined;
   WorkoutTypePicker: { category?: string } | undefined;
   WorkoutActive: { workoutType: string };
   WorkoutHistory: undefined;
   WorkoutDetail: { id: string };
   EditTargets: undefined;
+  // BodyCompositionLog: gated behind features.bodyComposition (MVP v1 off)
   BodyCompositionLog: undefined;
 };
 
