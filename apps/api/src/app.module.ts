@@ -38,7 +38,9 @@ import { CoachMemoryModule } from './coach-memory/coach-memory.module';
 import { OnboardingModule } from './onboarding';
 import { StreaksModule } from './streaks/streaks.module';
 import { MealNudgeModule } from './meal-nudge';
-import { QPayModule } from './qpay';
+// QPayModule disabled for v1 iOS App Store ship — Apple requires IAP for digital subscriptions.
+// Re-enable when shipping Android (QPay is allowed there) or when an Android-only routing guard is in place.
+// import { QPayModule } from './qpay';
 import { WorkoutLogsModule } from './workout-logs';
 import { BodyCompositionModule } from './body-composition';
 import { HealthController } from './health/health.controller';
@@ -86,7 +88,7 @@ import { HealthController } from './health/health.controller';
     PhotosModule,
     TelegramModule,
     RemindersModule,
-    QPayModule,
+    // QPayModule, // disabled for v1 iOS — see import comment above
     ChatModule,
     CoachModule,
     WeeklyReportModule,

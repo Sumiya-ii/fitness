@@ -4,7 +4,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { QUEUE_NAMES } from '@coach/shared';
 import { MealTimingService } from './meal-timing.service';
 import { MealTimingController } from './meal-timing.controller';
-import { MealTimingCron } from './meal-timing.cron';
+// MealTimingCron disabled for v1 MVP — re-enable post-App Store launch.
+// import { MealTimingCron } from './meal-timing.cron';
 import { ObservabilityModule } from '../observability';
 
 @Module({
@@ -14,6 +15,6 @@ import { ObservabilityModule } from '../observability';
     ObservabilityModule,
   ],
   controllers: [MealTimingController],
-  providers: [MealTimingService, MealTimingCron],
+  providers: [MealTimingService /* , MealTimingCron */],
 })
 export class MealTimingModule {}
