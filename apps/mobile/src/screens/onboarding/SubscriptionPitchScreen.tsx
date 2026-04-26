@@ -1,7 +1,9 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Purchases from 'react-native-purchases';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useColors } from '../../theme';
@@ -40,6 +42,24 @@ const FEATURE_KEYS = [
 export function SubscriptionPitchScreen({ navigation }: Props) {
   const c = useColors();
   const { t } = useLocale();
+  const [priceLabel, setPriceLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let mounted = true;
+    Purchases.getOfferings()
+      .then((offerings) => {
+        const monthly = offerings.current?.monthly ?? offerings.current?.availablePackages?.[0];
+        const price = monthly?.product?.priceString;
+        if (mounted && price) setPriceLabel(price);
+      })
+      .catch(() => {
+        // ignore — fall through to vague copy
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleStartTrial = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -94,16 +114,14 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
               {t('onboarding.subPitchThen')}
             </Text>
             <View className="flex-row items-end gap-1">
-              <Text className="text-[11px] font-sans-bold text-text mb-1">{'\u20AE'}</Text>
-              <Text className="text-[32px] font-sans-bold text-text">9,900</Text>
-              <Text className="text-[13px] text-text-tertiary mb-1.5">
-                {t('onboarding.subPitchPerMonth')}
+              <Text className="text-[20px] font-sans-semibold text-text">
+                {priceLabel ?? t('onboarding.subPitchPriceVague')}
               </Text>
-            </View>
-            <View className="bg-success rounded-full px-2.5 py-0.5 mt-1.5">
-              <Text className="text-white text-[11px] font-sans-bold">
-                {t('onboarding.subPitchFreeTrial')}
-              </Text>
+              {priceLabel ? (
+                <Text className="text-[13px] text-text-tertiary mb-1.5">
+                  {t('onboarding.subPitchPerMonth')}
+                </Text>
+              ) : null}
             </View>
           </View>
         </View>
@@ -133,32 +151,6 @@ export function SubscriptionPitchScreen({ navigation }: Props) {
                 <Ionicons name="checkmark-circle" size={20} color={c.success} />
               </View>
             ))}
-          </View>
-
-          {/* Social proof */}
-          <View
-            className="rounded-2xl p-4 mt-5 border"
-            style={{
-              backgroundColor: `${c.success}0d`,
-              borderColor: `${c.success}26`,
-            }}
-          >
-            <View className="flex-row items-center gap-2 mb-1.5">
-              <Text className="text-base">{'\u2B50\u2B50\u2B50\u2B50\u2B50'}</Text>
-              <Text className="text-xs font-sans-bold" style={{ color: c.success }}>
-                {t('onboarding.subPitchReviewStars')} {'\u00b7'}{' '}
-                {t('onboarding.subPitchReviewCount')}
-              </Text>
-            </View>
-            <Text className="text-[13px] leading-[19px] italic" style={{ color: c.textSecondary }}>
-              {t('onboarding.subPitchReviewText')}
-            </Text>
-            <Text
-              className="text-[11px] font-sans-semibold mt-1.5"
-              style={{ color: c.textTertiary }}
-            >
-              {t('onboarding.subPitchReviewAuthor')}
-            </Text>
           </View>
         </View>
       </ScrollView>

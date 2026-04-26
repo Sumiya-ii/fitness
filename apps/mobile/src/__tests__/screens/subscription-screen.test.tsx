@@ -6,7 +6,7 @@
  * - Free user sees the paywall content
  * - Loading state while verifying entitlement
  */
-import { renderScreen, screen, waitFor, act } from '../helpers/render';
+import { renderScreen, screen, waitFor } from '../helpers/render';
 import { useSubscriptionStore } from '../../stores/subscription.store';
 
 // Mock PaywallContent — we just need to know if it renders

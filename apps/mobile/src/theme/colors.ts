@@ -1,15 +1,15 @@
 /**
- * Light & dark color palettes.
+ * Light & dark color palettes — Cal AI–inspired minimal aesthetic.
+ *
+ * Light theme: pure white surfaces, near-black text, near-black primary CTA.
+ * Dark theme:  near-black surfaces, off-white text, off-white primary CTA.
+ *
+ * The accent slot is reserved for the brand green (#16A34A) used sparingly
+ * for streaks, success states, and progress highlights. Status colors
+ * (success/warning/danger) follow iOS Human Interface Guidelines.
+ *
  * Every screen/component should use `useColors()` for inline styles
  * instead of hardcoding hex values.
- *
- * ~20 semantic tokens — kept intentionally small.
- *
- * Brand palette:
- *   Burgundy  #8B2E2E  — primary CTA (light) / accent (dark)
- *   Gold      #C8A45B  — accent (light) / primary CTA (dark)
- *   Cream     #F4E9D8  — light app background / dark text
- *   Dark      #1A0F0A  — dark app background / light text
  */
 
 export interface ColorPalette {
@@ -29,7 +29,7 @@ export interface ColorPalette {
   primary: string; // main CTA color
   primaryMuted: string; // primary-400 equivalent (subdued)
   onPrimary: string; // text/icons on primary bg
-  accent: string; // teal accent
+  accent: string; // green accent (success / highlight)
   onAccent: string; // text/icons on accent bg
 
   // Status
@@ -48,59 +48,59 @@ export interface ColorPalette {
 }
 
 export const lightPalette: ColorPalette = {
-  bg: '#F4E9D8',
-  card: '#FEFAF5',
-  cardAlt: '#F0E4CC',
-  border: '#CDB99E',
-  muted: '#B8A896',
+  bg: '#FFFFFF',
+  card: '#F5F5F7',
+  cardAlt: '#EBEBF0',
+  border: '#E5E5EA',
+  muted: '#C7C7CC',
 
-  text: '#2D1A10',
-  textSecondary: '#6B5544',
-  textTertiary: '#8A7A68',
+  text: '#0A0A0A',
+  textSecondary: '#3C3C43',
+  textTertiary: '#8E8E93',
 
-  primary: '#8B2E2E',
-  primaryMuted: '#A53535',
-  onPrimary: '#F4E9D8',
-  accent: '#C8A45B',
-  onAccent: '#1A0F0A',
+  primary: '#0A0A0A',
+  primaryMuted: '#3C3C43',
+  onPrimary: '#FFFFFF',
+  accent: '#16A34A',
+  onAccent: '#FFFFFF',
 
-  danger: '#C0392B',
-  warning: '#D4A017',
-  success: '#2D7A3A',
+  danger: '#FF3B30',
+  warning: '#FF9500',
+  success: '#34C759',
 
-  trackBg: '#E8D5BB',
+  trackBg: '#EBEBF0',
 
-  shadow: '#2D1A10',
-  tabBarBg: '#FEFAF5',
-  tabBarBorder: 'rgba(45, 26, 16, 0.08)',
-  tabInactive: '#B8A896',
+  shadow: '#0A0A0A',
+  tabBarBg: '#FFFFFF',
+  tabBarBorder: 'rgba(10, 10, 10, 0.06)',
+  tabInactive: '#8E8E93',
 };
 
 export const darkPalette: ColorPalette = {
-  bg: '#1A0F0A',
-  card: '#2A1C15',
-  cardAlt: '#2F2018',
-  border: '#3D2E23',
-  muted: '#5A4A3C',
+  bg: '#000000',
+  card: '#1C1C1E',
+  cardAlt: '#2C2C2E',
+  border: '#2C2C2E',
+  muted: '#48484A',
 
-  text: '#F4E9D8',
-  textSecondary: '#B8A896',
-  textTertiary: '#8A7A68',
+  text: '#FFFFFF',
+  textSecondary: '#EBEBF5',
+  textTertiary: '#8E8E93',
 
-  primary: '#C8A45B',
-  primaryMuted: '#A8843B',
-  onPrimary: '#1A0F0A',
-  accent: '#8B2E2E',
-  onAccent: '#F4E9D8',
+  primary: '#FFFFFF',
+  primaryMuted: '#EBEBF5',
+  onPrimary: '#0A0A0A',
+  accent: '#22C55E',
+  onAccent: '#0A0A0A',
 
-  danger: '#F87171',
-  warning: '#FBBF24',
-  success: '#4ADE80',
+  danger: '#FF453A',
+  warning: '#FF9F0A',
+  success: '#30D158',
 
-  trackBg: '#2A1C15',
+  trackBg: '#2C2C2E',
 
   shadow: '#000000',
-  tabBarBg: '#130A06',
-  tabBarBorder: 'rgba(244, 233, 216, 0.08)',
-  tabInactive: '#5A4A3C',
+  tabBarBg: '#0A0A0A',
+  tabBarBorder: 'rgba(255, 255, 255, 0.06)',
+  tabInactive: '#8E8E93',
 };

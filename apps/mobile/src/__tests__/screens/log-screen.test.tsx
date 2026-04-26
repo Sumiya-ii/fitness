@@ -143,18 +143,18 @@ describe('LogScreen', () => {
   });
 
   describe('Action buttons', () => {
-    it('renders all four action buttons', async () => {
+    it('renders MVP action buttons (voice hidden in v1)', async () => {
       mockGetRecents.mockResolvedValue({ data: [] });
       renderScreen(<LogScreen />);
 
-      // t('logging.photo') = 'Зураг', t('logging.voice') = 'Дуу',
-      // t('logging.scan') = 'Скан', t('logging.quick') = 'Шууд'
+      // MVP_V1=true: voice happens via Telegram, so the in-app mic is hidden.
+      // t('logging.photo') = 'Зураг', t('logging.scan') = 'Скан', t('logging.quick') = 'Шууд'
       await waitFor(() => {
         expect(screen.getByText('Зураг')).toBeTruthy();
-        expect(screen.getByText('Дуу')).toBeTruthy();
         expect(screen.getByText('Скан')).toBeTruthy();
         expect(screen.getByText('Шууд')).toBeTruthy();
       });
+      expect(screen.queryByText('Дуу')).toBeNull();
     });
 
     it('renders search bar', async () => {

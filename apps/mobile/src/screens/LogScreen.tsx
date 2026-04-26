@@ -13,6 +13,7 @@ import type { MainStackParamList } from '../navigation/types';
 import { useLocale } from '../i18n';
 import { useProGate } from '../hooks/useProGate';
 import { useColors } from '../theme';
+import { features } from '../config/features';
 
 type NavProp = NativeStackNavigationProp<LogStackParamList, 'LogHome'>;
 
@@ -86,12 +87,16 @@ export function LogScreen() {
       labelKey: 'logging.photo' as const,
       color: c.text,
     },
-    {
-      key: 'voice',
-      icon: 'mic' as const,
-      labelKey: 'logging.voice' as const,
-      color: c.warning,
-    },
+    ...(features.voiceLoggingInApp
+      ? [
+          {
+            key: 'voice',
+            icon: 'mic' as const,
+            labelKey: 'logging.voice' as const,
+            color: c.warning,
+          },
+        ]
+      : []),
     {
       key: 'barcode',
       icon: 'barcode-outline' as const,
@@ -164,32 +169,34 @@ export function LogScreen() {
           </Animated.View>
 
           {/* Workout logging */}
-          <Animated.View entering={FadeInDown.delay(90).duration(300)} className="mx-5 mb-5">
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation
-                  .getParent<NativeStackNavigationProp<MainStackParamList>>()
-                  ?.navigate('WorkoutHome');
-              }}
-              className="bg-surface-card rounded-2xl flex-row items-center px-4 py-3.5"
-              accessibilityRole="button"
-              accessibilityLabel={t('workout.logWorkout')}
-            >
-              <View className="h-10 w-10 rounded-xl bg-surface-secondary items-center justify-center mr-3">
-                <Ionicons name="barbell-outline" size={22} color={c.text} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-text font-sans-semibold text-sm">
-                  {t('workout.logWorkout')}
-                </Text>
-                <Text className="text-text-tertiary font-sans text-xs mt-0.5">
-                  {t('workout.logWorkoutDesc')}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={c.textTertiary} />
-            </Pressable>
-          </Animated.View>
+          {features.workouts && (
+            <Animated.View entering={FadeInDown.delay(90).duration(300)} className="mx-5 mb-5">
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation
+                    .getParent<NativeStackNavigationProp<MainStackParamList>>()
+                    ?.navigate('WorkoutHome');
+                }}
+                className="bg-surface-card rounded-2xl flex-row items-center px-4 py-3.5"
+                accessibilityRole="button"
+                accessibilityLabel={t('workout.logWorkout')}
+              >
+                <View className="h-10 w-10 rounded-xl bg-surface-secondary items-center justify-center mr-3">
+                  <Ionicons name="barbell-outline" size={22} color={c.text} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-text font-sans-semibold text-sm">
+                    {t('workout.logWorkout')}
+                  </Text>
+                  <Text className="text-text-tertiary font-sans text-xs mt-0.5">
+                    {t('workout.logWorkoutDesc')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={c.textTertiary} />
+              </Pressable>
+            </Animated.View>
+          )}
 
           {/* Quick access row */}
           <Animated.View

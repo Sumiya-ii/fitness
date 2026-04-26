@@ -442,21 +442,18 @@ export function SettingsScreen() {
                 <PrivacyRequestBadge request={latestExportRequest} type="export" />
               ) : null}
               <Divider />
-              {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
               <Row
                 icon="shield-checkmark-outline"
                 label={t('settings.privacyPolicy')}
                 onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/privacy')}
               />
               <Divider />
-              {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
               <Row
                 icon="document-text-outline"
                 label={t('settings.termsOfService')}
                 onPress={() => Linking.openURL('https://www.nexuskairos.com/coach/terms')}
               />
               <Divider />
-              {/* TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs. */}
               <Row
                 icon="help-circle-outline"
                 label={t('settings.support')}

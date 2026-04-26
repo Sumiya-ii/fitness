@@ -274,11 +274,11 @@ describe('Color Palettes', () => {
 
   test('every palette value is a non-empty string', () => {
     const { lightPalette, darkPalette } = require('../theme/colors');
-    for (const [key, value] of Object.entries(lightPalette)) {
+    for (const [_key, value] of Object.entries(lightPalette)) {
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     }
-    for (const [key, value] of Object.entries(darkPalette)) {
+    for (const [_key, value] of Object.entries(darkPalette)) {
       expect(typeof value).toBe('string');
       expect((value as string).length).toBeGreaterThan(0);
     }
@@ -298,17 +298,16 @@ describe('Color Palettes', () => {
     const { lightPalette } = require('../theme/colors');
     // bg should be a light color (high hex values)
     expect(lightPalette.bg).toMatch(/^#[a-fA-F0-9]{6}$/);
-    // text should be dark
-    expect(lightPalette.text).toBe('#2D1A10');
-    // primary CTA text should be cream (warm white) on burgundy in light mode
-    expect(lightPalette.onPrimary).toBe('#F4E9D8');
+    // text should be near-black, primary CTA is dark with white text on it
+    expect(lightPalette.text).toBe('#0A0A0A');
+    expect(lightPalette.onPrimary).toBe('#FFFFFF');
   });
 
   test('dark palette has dark backgrounds and light text', () => {
     const { darkPalette } = require('../theme/colors');
-    expect(darkPalette.bg).toBe('#1A0F0A');
-    expect(darkPalette.text).toBe('#F4E9D8');
-    expect(darkPalette.onPrimary).toBe('#1A0F0A');
+    expect(darkPalette.bg).toBe('#000000');
+    expect(darkPalette.text).toBe('#FFFFFF');
+    expect(darkPalette.onPrimary).toBe('#0A0A0A');
   });
 
   test('both palettes have status colors', () => {
@@ -494,7 +493,7 @@ describe('Full appearance toggle cycle', () => {
   test('toggling light → dark → system → light produces correct schemes each time', () => {
     _systemScheme = 'dark';
     const { useThemeStore } = require('../stores/theme.store');
-    const { lightPalette, darkPalette } = require('../theme/colors');
+    const { lightPalette: _lightPalette, darkPalette: _darkPalette } = require('../theme/colors');
 
     // Start at default dark
     expect(useThemeStore.getState().scheme).toBe('dark');

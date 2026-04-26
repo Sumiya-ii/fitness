@@ -83,7 +83,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.coach.mobile",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "17",
+      "buildNumber": "18",
       "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning and meal photo logging.",

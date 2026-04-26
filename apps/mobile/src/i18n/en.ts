@@ -338,7 +338,7 @@ export const en = {
     subPitchSubtitle: 'The AI tools that turn good intentions\ninto actual results.',
     subPitchThen: 'Then just',
     subPitchPerMonth: '/month',
-    subPitchFreeTrial: '7-DAY FREE TRIAL',
+    subPitchPriceVague: 'Affordable monthly plan',
     subPitchFeaturesTitle: 'Everything in Premium',
     subPitchPhotoTitle: 'AI Photo Logging',
     subPitchPhotoDesc: 'Point, shoot, done. AI handles the calories.',
@@ -350,13 +350,8 @@ export const en = {
     subPitchChatDesc: 'Your personal nutritionist, available 24/7',
     subPitchUnlimitedTitle: 'Unlimited History',
     subPitchUnlimitedDesc: 'Every meal you ever logged, searchable forever',
-    subPitchReviewStars: '4.9',
-    subPitchReviewCount: '2,400+ reviews',
-    subPitchReviewText:
-      '"Lost 8kg in 3 months. The AI photo logging changed everything \u2014 I actually log every meal now."',
-    subPitchReviewAuthor: '\u2014 B. Munkhjargal, Ulaanbaatar',
-    subPitchStartTrial: 'Start 7-Day Free Trial',
-    subPitchTrialCancel: 'Cancel anytime before trial ends',
+    subPitchStartTrial: 'Get Coach Pro',
+    subPitchTrialCancel: 'Cancel anytime',
     subPitchContinueFree: 'Continue with free plan',
     // Notification permission
     notifTitle: 'Stay connected\nwith your Coach',
@@ -464,7 +459,7 @@ export const en = {
   paywall: {
     headline: 'Unlock Coach Pro',
     subheadline: 'AI nutrition coaching, photo & voice logging',
-    reviewCount: '12,000+ reviews',
+    proBadge: 'COACH PRO',
     mostPopular: 'MOST POPULAR',
     getProCta: 'Get Pro',
     cancelAnytime: 'Cancel anytime \u00B7 No commitment',
@@ -476,9 +471,6 @@ export const en = {
     feature3Desc: 'Personal nutrition coach available 24/7',
     feature4Title: 'Deep Analytics',
     feature4Desc: 'Detailed insights into your nutrition trends and progress patterns',
-    review1Text:
-      'Finally an app that makes calorie counting effortless. The photo logging is mind-blowing.',
-    review1Author: 'Tsolmon E., lost 8 kg in 3 months',
   },
   workout: {
     title: 'Workouts',

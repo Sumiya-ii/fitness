@@ -85,14 +85,14 @@ jest.mock('../api/client', () => ({
 // ---------------------------------------------------------------------------
 import React from 'react';
 import { act } from '@testing-library/react-native';
-import { renderScreen, screen } from './helpers/render';
+import { renderScreen } from './helpers/render';
 import { useAuthStore } from '../stores/auth.store';
 import { useOnboardingStore } from '../stores/onboarding.store';
 import { useProfileStore } from '../stores/profile.store';
 import { RootNavigator } from '../navigation/RootNavigator';
 import { api } from '../api/client';
 
-const mockApi = api as jest.Mocked<typeof api>;
+const _mockApi = api as jest.Mocked<typeof api>;
 
 // ---------------------------------------------------------------------------
 // Helpers

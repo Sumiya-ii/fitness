@@ -46,15 +46,17 @@ const HISTORY_PERIODS: HistoryPeriod[] = [7, 30, 90];
 
 // ─── Chart colors ─────────────────────────────────────────────────────────────
 
+// Chart palette — theme-neutral hues that read clearly on both white and black bgs.
+// Macros use the conventional fitness-app triplet: blue/amber/purple.
 const C = {
-  calories: '#F4E9D8',
-  caloriesLight: '#5A4A3C',
-  goal: '#C8A45B',
-  protein: '#3b82f6',
-  carbs: '#D4B16E',
-  fat: '#B05E5E',
-  water: '#06b6d4',
-  waterLight: '#0c4a6e',
+  calories: '#0A0A0A',
+  caloriesLight: '#8E8E93',
+  goal: '#16A34A',
+  protein: '#3B82F6',
+  carbs: '#F59E0B',
+  fat: '#8B5CF6',
+  water: '#06B6D4',
+  waterLight: '#0E7490',
 };
 
 // ─── Ghost bar helpers ────────────────────────────────────────────────────────
@@ -188,9 +190,9 @@ function WeekHistoryChart({
               <View style={{ width: '55%', height: barH, borderRadius: 4, overflow: 'hidden' }}>
                 {hasData ? (
                   <>
-                    <View style={{ flex: pcal || 0.001, backgroundColor: '#8B2E2E' }} />
-                    <View style={{ flex: ccal || 0.001, backgroundColor: '#C8A45B' }} />
-                    <View style={{ flex: fcal || 0.001, backgroundColor: '#3b82f6' }} />
+                    <View style={{ flex: pcal || 0.001, backgroundColor: C.protein }} />
+                    <View style={{ flex: ccal || 0.001, backgroundColor: C.carbs }} />
+                    <View style={{ flex: fcal || 0.001, backgroundColor: C.fat }} />
                   </>
                 ) : (
                   <View style={{ flex: 1, backgroundColor: c.cardAlt }} />

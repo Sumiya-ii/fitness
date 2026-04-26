@@ -36,7 +36,6 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
   useRoute: () => mockRoute,
   useFocusEffect: (cb: () => void) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     React.useEffect(() => {
       const cleanup = cb();
       return typeof cleanup === 'function' ? cleanup : undefined;

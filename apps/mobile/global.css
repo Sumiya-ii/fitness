@@ -4,66 +4,66 @@
 
 @layer base {
   :root {
-    /* Surface — light */
-    --color-surface-app: 244 233 216;
-    --color-surface-default: 255 253 248;
-    --color-surface-card: 255 253 248;
-    --color-surface-secondary: 240 227 207;
-    --color-surface-tertiary: 237 226 208;
-    --color-surface-border: 226 212 191;
-    --color-surface-muted: 201 185 158;
+    /* Surface — light (Cal AI: pure white app, very light gray cards) */
+    --color-surface-app: 255 255 255;
+    --color-surface-default: 255 255 255;
+    --color-surface-card: 245 245 247;
+    --color-surface-secondary: 235 235 240;
+    --color-surface-tertiary: 229 229 234;
+    --color-surface-border: 229 229 234;
+    --color-surface-muted: 199 199 204;
 
-    /* Text — light */
-    --color-text-primary: 45 26 16;
-    --color-text-secondary: 107 85 68;
-    --color-text-tertiary: 154 134 114;
-    --color-text-inverse: 255 253 248;
-    --color-text-app: 45 26 16;
+    /* Text — light (near-black hierarchy, iOS HIG–style secondary/tertiary) */
+    --color-text-primary: 10 10 10;
+    --color-text-secondary: 60 60 67;
+    --color-text-tertiary: 142 142 147;
+    --color-text-inverse: 255 255 255;
+    --color-text-app: 10 10 10;
 
-    /* Primary — light (burgundy) */
-    --color-primary-50: 251 245 245;
-    --color-primary-400: 176 94 94;
-    --color-primary-500: 139 46 46;
-    --color-primary-600: 116 38 38;
+    /* Primary — light (near-black CTA on white, Cal AI signature) */
+    --color-primary-50: 245 245 247;
+    --color-primary-400: 60 60 67;
+    --color-primary-500: 10 10 10;
+    --color-primary-600: 0 0 0;
 
-    /* On-primary (text/icons on primary-500 bg) — light */
+    /* On-primary (text/icons on primary bg) — light */
     --color-on-primary: 255 255 255;
 
-    /* Accent — light (gold) */
-    --color-accent-500: 200 164 91;
-    --color-accent-600: 176 141 62;
+    /* Accent — light (refined green for streaks/success/highlights) */
+    --color-accent-500: 22 163 74;
+    --color-accent-600: 21 128 61;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      /* Surface — dark */
-      --color-surface-app: 26 15 10;
-      --color-surface-default: 42 28 21;
-      --color-surface-card: 42 28 21;
-      --color-surface-secondary: 56 42 32;
-      --color-surface-tertiary: 74 58 46;
-      --color-surface-border: 61 46 35;
-      --color-surface-muted: 90 74 60;
+      /* Surface — dark (true near-black app, iOS-native card grays) */
+      --color-surface-app: 0 0 0;
+      --color-surface-default: 0 0 0;
+      --color-surface-card: 28 28 30;
+      --color-surface-secondary: 44 44 46;
+      --color-surface-tertiary: 58 58 60;
+      --color-surface-border: 44 44 46;
+      --color-surface-muted: 72 72 74;
 
       /* Text — dark */
-      --color-text-primary: 244 233 216;
-      --color-text-secondary: 184 168 150;
-      --color-text-tertiary: 138 122 104;
-      --color-text-inverse: 26 15 10;
-      --color-text-app: 244 233 216;
+      --color-text-primary: 255 255 255;
+      --color-text-secondary: 235 235 245;
+      --color-text-tertiary: 142 142 147;
+      --color-text-inverse: 10 10 10;
+      --color-text-app: 255 255 255;
 
-      /* Primary — dark (gold for dark mode) */
-      --color-primary-50: 251 248 240;
-      --color-primary-400: 168 138 74;
-      --color-primary-500: 200 164 91;
-      --color-primary-600: 176 141 62;
+      /* Primary — dark (white CTA on black, mirrored from light) */
+      --color-primary-50: 28 28 30;
+      --color-primary-400: 235 235 245;
+      --color-primary-500: 255 255 255;
+      --color-primary-600: 235 235 245;
 
-      /* On-primary (text/icons on primary-500 bg) — dark */
-      --color-on-primary: 26 15 10;
+      /* On-primary — dark */
+      --color-on-primary: 10 10 10;
 
-      /* Accent — dark (burgundy) */
-      --color-accent-500: 139 46 46;
-      --color-accent-600: 116 38 38;
+      /* Accent — dark (slightly brighter green for contrast on black) */
+      --color-accent-500: 34 197 94;
+      --color-accent-600: 22 163 74;
     }
   }
 }

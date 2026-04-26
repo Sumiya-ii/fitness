@@ -49,13 +49,14 @@ type QuickAction = {
 
 // Bottom-to-top: index 0 = closest to + button
 // Voice is excluded in MVP v1 (voice logging happens via Telegram bot instead)
+// Quick-action accent colors — iOS-system inspired, distinct but not loud.
 const MENU_ITEMS: QuickAction[] = [
-  { key: 'quick', icon: 'flash', labelKey: 'logging.quick', color: '#C8A45B', screen: 'QuickAdd' },
+  { key: 'quick', icon: 'flash', labelKey: 'logging.quick', color: '#FF9500', screen: 'QuickAdd' },
   {
     key: 'scan',
     icon: 'barcode-outline',
     labelKey: 'logging.scan',
-    color: '#2F855A',
+    color: '#16A34A',
     screen: 'BarcodeScan',
   },
   ...(features.voiceLoggingInApp
@@ -64,7 +65,7 @@ const MENU_ITEMS: QuickAction[] = [
           key: 'voice',
           icon: 'mic' as const,
           labelKey: 'logging.voice',
-          color: '#B05E5E',
+          color: '#FF3B30',
           screen: 'VoiceLog' as const,
         },
       ]
@@ -73,7 +74,7 @@ const MENU_ITEMS: QuickAction[] = [
     key: 'photo',
     icon: 'camera',
     labelKey: 'logging.photo',
-    color: '#F4E9D8',
+    color: '#0A84FF',
     screen: 'PhotoLog',
   },
 ] satisfies QuickAction[];

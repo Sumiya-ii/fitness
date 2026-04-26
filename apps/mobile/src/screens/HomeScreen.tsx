@@ -853,7 +853,7 @@ export function HomeScreen() {
           <View className="flex-row items-center gap-2">
             <Text style={{ fontSize: 28 }}>🍏</Text>
             <Text className="text-2xl font-sans-bold text-text">
-              {displayName ? displayName : 'Cal AI'}
+              {displayName ? displayName : 'Coach'}
             </Text>
           </View>
           <Pressable

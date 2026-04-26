@@ -1,62 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Linking,
-  Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Pressable, ScrollView, Alert, ActivityIndicator, Linking } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import Purchases, { PurchasesPackage, PURCHASES_ERROR_CODE } from 'react-native-purchases';
 import { useSubscriptionStore } from '../stores/subscription.store';
 import { subscriptionsApi } from '../api/subscriptions';
 import { useLocale } from '../i18n';
+import { useColors } from '../theme';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
 interface Feature {
   icon: IoniconName;
-  iconColor: string;
-  iconBg: string;
   titleKey: string;
   descKey: string;
 }
 
 const FEATURES: Feature[] = [
-  {
-    icon: 'camera',
-    iconColor: '#B05E5E',
-    iconBg: 'rgba(139,46,46,0.15)',
-    titleKey: 'paywall.feature1Title',
-    descKey: 'paywall.feature1Desc',
-  },
-  {
-    icon: 'mic',
-    iconColor: '#C8A45B',
-    iconBg: 'rgba(200,164,91,0.15)',
-    titleKey: 'paywall.feature2Title',
-    descKey: 'paywall.feature2Desc',
-  },
+  { icon: 'camera', titleKey: 'paywall.feature1Title', descKey: 'paywall.feature1Desc' },
+  { icon: 'mic', titleKey: 'paywall.feature2Title', descKey: 'paywall.feature2Desc' },
   {
     icon: 'chatbubble-ellipses',
-    iconColor: '#68D391',
-    iconBg: 'rgba(104,211,145,0.15)',
     titleKey: 'paywall.feature3Title',
     descKey: 'paywall.feature3Desc',
   },
-  {
-    icon: 'bar-chart',
-    iconColor: '#D4B16E',
-    iconBg: 'rgba(212,177,110,0.15)',
-    titleKey: 'paywall.feature4Title',
-    descKey: 'paywall.feature4Desc',
-  },
+  { icon: 'bar-chart', titleKey: 'paywall.feature4Title', descKey: 'paywall.feature4Desc' },
 ];
 
 export interface PaywallContentProps {
@@ -65,6 +35,8 @@ export interface PaywallContentProps {
 
 export function PaywallContent({ onClose }: PaywallContentProps) {
   const { t } = useLocale();
+  const c = useColors();
+  const insets = useSafeAreaInsets();
   const { fetchStatus } = useSubscriptionStore();
 
   const [offerings, setOfferings] = useState<{
@@ -107,11 +79,17 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
 
   const activePkg = selectedPkg === 'annual' ? offerings.annual : offerings.monthly;
 
+  const handleSelect = (pkg: 'annual' | 'monthly') => {
+    void Haptics.selectionAsync();
+    setSelectedPkg(pkg);
+  };
+
   const handlePurchase = async () => {
     if (!activePkg) {
       Alert.alert(t('subscription.unavailableTitle'), t('subscription.unavailableDesc'));
       return;
     }
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPurchasing(true);
     try {
       if (__DEV__) console.log('[Paywall] Starting purchase for:', activePkg.identifier);
@@ -130,6 +108,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
         // Non-fatal — fetchStatus will retry via RC fallback
       }
       await fetchStatus();
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPurchaseSuccess(true);
     } catch (err: unknown) {
       const code = (err as { code?: PURCHASES_ERROR_CODE }).code;
@@ -143,6 +122,7 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
   };
 
   const handleRestore = async () => {
+    void Haptics.selectionAsync();
     setRestoring(true);
     try {
       const customerInfo = await Purchases.restorePurchases();
@@ -162,12 +142,10 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
   };
 
   const handleLegalLink = async (kind: 'terms' | 'privacy') => {
-    // TODO(BLOCKING for App Store): Privacy policy + Terms pages must be deployed to nexuskairos.com/coach/{privacy,terms,support} before submission. App Store will reject without accessible URLs.
     const url =
       kind === 'terms'
-        ? process.env.EXPO_PUBLIC_TERMS_URL?.trim()
-        : process.env.EXPO_PUBLIC_PRIVACY_URL?.trim();
-    if (!url) return;
+        ? 'https://www.nexuskairos.com/coach/terms'
+        : 'https://www.nexuskairos.com/coach/privacy';
     try {
       await Linking.openURL(url);
     } catch {
@@ -175,65 +153,46 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
     }
   };
 
+  const handleClose = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onClose();
+  };
+
   // ── Purchase success ──────────────────────────────────────────────────────
   if (purchaseSuccess) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: '#1A0F0A',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 32,
-        }}
-      >
-        <SafeAreaView style={{ alignItems: 'center' }}>
-          <Animated.View entering={FadeIn.duration(400)} style={{ alignItems: 'center' }}>
+      <View className="flex-1 bg-surface-app">
+        <SafeAreaView className="flex-1 items-center justify-center px-8">
+          <Animated.View entering={FadeIn.duration(400)} className="items-center">
             <View
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 48,
-                backgroundColor: 'rgba(200,164,91,0.2)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 24,
-              }}
+              className="h-24 w-24 rounded-full items-center justify-center mb-6"
+              style={{ backgroundColor: `${c.accent}1F` }}
             >
-              <Ionicons name="checkmark-circle" size={64} color="#C8A45B" />
+              <Ionicons name="checkmark" size={56} color={c.accent} />
             </View>
             <Text
-              style={{
-                fontSize: 28,
-                fontWeight: '800',
-                color: '#F4E9D8',
-                textAlign: 'center',
-                marginBottom: 10,
-              }}
+              className="text-3xl font-sans-bold text-center mb-3"
+              style={{ color: c.text, letterSpacing: -0.5 }}
             >
               {t('subscription.successTitle')}
             </Text>
             <Text
-              style={{
-                fontSize: 16,
-                color: '#B8A896',
-                textAlign: 'center',
-                lineHeight: 24,
-                marginBottom: 36,
-              }}
+              className="text-base font-sans text-center leading-6 mb-10"
+              style={{ color: c.textSecondary, maxWidth: 300 }}
             >
               {t('subscription.successDesc')}
             </Text>
             <Pressable
-              onPress={onClose}
-              style={{
-                backgroundColor: '#C8A45B',
-                borderRadius: 16,
-                paddingVertical: 16,
-                paddingHorizontal: 48,
-              }}
+              onPress={handleClose}
+              accessibilityRole="button"
+              accessibilityLabel={t('subscription.successCta')}
+              className="rounded-full px-12 py-4 active:opacity-90"
+              style={{ backgroundColor: c.primary }}
             >
-              <Text style={{ color: '#1A0F0A', fontSize: 17, fontWeight: '700' }}>
+              <Text
+                className="text-base font-sans-semibold"
+                style={{ color: c.onPrimary, letterSpacing: 0.2 }}
+              >
                 {t('subscription.successCta')}
               </Text>
             </Pressable>
@@ -248,141 +207,95 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
 
   // ── Main paywall ──────────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: '#1A0F0A' }}>
-      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-        {/* Close button */}
-        <Pressable
-          onPress={onClose}
-          hitSlop={12}
-          style={{
-            position: 'absolute',
-            top: Platform.OS === 'ios' ? 54 : 16,
-            right: 16,
-            zIndex: 10,
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: 'rgba(244,233,216,0.1)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Ionicons name="close" size={18} color="#B8A896" />
-        </Pressable>
+    <View className="flex-1 bg-surface-app">
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        {/* Close button — top-right, 44x44 hit area */}
+        <View className="px-5 pt-2 flex-row justify-end">
+          <Pressable
+            onPress={handleClose}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.cancel')}
+            className="h-10 w-10 rounded-full items-center justify-center active:opacity-70"
+            style={{ backgroundColor: c.cardAlt }}
+          >
+            <Ionicons name="close" size={20} color={c.textSecondary} />
+          </Pressable>
+        </View>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 160 }}
+          contentContainerStyle={{ paddingBottom: 240 }}
         >
           {/* ── Hero ── */}
           <Animated.View
             entering={FadeInDown.duration(500)}
-            style={{
-              alignItems: 'center',
-              paddingTop: 72,
-              paddingHorizontal: 24,
-              paddingBottom: 36,
-            }}
+            className="px-6 pt-8 pb-8 items-center"
           >
-            <LinearGradient
-              colors={['#C8A45B', '#B08D3E']}
-              style={{
-                width: 88,
-                height: 88,
-                borderRadius: 24,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 24,
-                shadowColor: '#C8A45B',
-                shadowOpacity: 0.4,
-                shadowRadius: 20,
-                shadowOffset: { width: 0, height: 8 },
-              }}
+            {/* Pro badge — subtle, monochrome with green dot */}
+            <View
+              className="flex-row items-center px-3 py-1.5 rounded-full mb-6"
+              style={{ backgroundColor: c.card, borderWidth: 1, borderColor: c.border }}
             >
-              <Ionicons name="fitness" size={48} color="#1A0F0A" />
-            </LinearGradient>
+              <View
+                className="h-1.5 w-1.5 rounded-full mr-2"
+                style={{ backgroundColor: c.accent }}
+              />
+              <Text
+                className="text-xs font-sans-semibold"
+                style={{ color: c.textSecondary, letterSpacing: 0.8 }}
+              >
+                {t('paywall.proBadge')}
+              </Text>
+            </View>
 
             <Text
-              style={{
-                fontSize: 34,
-                fontWeight: '800',
-                color: '#F4E9D8',
-                textAlign: 'center',
-                letterSpacing: -0.5,
-                marginBottom: 10,
-              }}
+              className="text-4xl font-sans-bold text-center mb-3"
+              style={{ color: c.text, letterSpacing: -1, lineHeight: 44 }}
             >
               {t('paywall.headline')}
             </Text>
             <Text
-              style={{
-                fontSize: 16,
-                color: '#B8A896',
-                textAlign: 'center',
-                lineHeight: 24,
-                maxWidth: 280,
-              }}
+              className="text-base font-sans text-center leading-6"
+              style={{ color: c.textSecondary, maxWidth: 320 }}
             >
               {t('paywall.subheadline')}
             </Text>
-
-            {/* Star rating */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 3 }}>
-              {([1, 2, 3, 4, 5] as const).map((i) => (
-                <Ionicons key={i} name="star" size={15} color="#C8A45B" />
-              ))}
-              <Text style={{ color: '#C8A45B', fontWeight: '700', fontSize: 14, marginLeft: 6 }}>
-                4.8
-              </Text>
-              <Text style={{ color: '#8A7A68', fontSize: 14, marginLeft: 4 }}>
-                · {t('paywall.reviewCount')}
-              </Text>
-            </View>
           </Animated.View>
 
           {/* ── Features ── */}
-          <Animated.View
-            entering={FadeInDown.delay(80).duration(500)}
-            style={{ paddingHorizontal: 20, marginBottom: 28 }}
-          >
-            <View style={{ backgroundColor: '#2A1C15', borderRadius: 20, overflow: 'hidden' }}>
+          <Animated.View entering={FadeInDown.delay(80).duration(500)} className="px-5 mb-6">
+            <View className="rounded-3xl overflow-hidden" style={{ backgroundColor: c.card }}>
               {FEATURES.map((feature, i) => (
                 <View key={feature.titleKey}>
-                  <View
-                    style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 }}
-                  >
+                  <View className="flex-row items-center px-4 py-4" style={{ gap: 14 }}>
                     <View
-                      style={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 13,
-                        backgroundColor: feature.iconBg,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
+                      className="h-11 w-11 rounded-2xl items-center justify-center"
+                      style={{ backgroundColor: c.cardAlt }}
                     >
-                      <Ionicons name={feature.icon} size={22} color={feature.iconColor} />
+                      <Ionicons name={feature.icon} size={20} color={c.text} />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View className="flex-1">
                       <Text
-                        style={{
-                          color: '#F4E9D8',
-                          fontWeight: '600',
-                          fontSize: 15,
-                          marginBottom: 3,
-                        }}
+                        className="text-[15px] font-sans-semibold mb-0.5"
+                        style={{ color: c.text }}
                       >
                         {t(feature.titleKey)}
                       </Text>
-                      <Text style={{ color: '#8A7A68', fontSize: 13, lineHeight: 18 }}>
+                      <Text
+                        className="text-[13px] font-sans leading-[18px]"
+                        style={{ color: c.textSecondary }}
+                      >
                         {t(feature.descKey)}
                       </Text>
                     </View>
-                    <Ionicons name="checkmark-circle" size={22} color="#C8A45B" />
+                    <Ionicons name="checkmark" size={20} color={c.accent} />
                   </View>
                   {i < FEATURES.length - 1 && (
-                    <View style={{ height: 1, backgroundColor: '#3D2E23', marginHorizontal: 16 }} />
+                    <View
+                      className="ml-[74px] mr-4"
+                      style={{ height: 1, backgroundColor: c.border }}
+                    />
                   )}
                 </View>
               ))}
@@ -390,99 +303,96 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
           </Animated.View>
 
           {/* ── Plan selector ── */}
-          <Animated.View
-            entering={FadeInDown.delay(160).duration(500)}
-            style={{ paddingHorizontal: 20 }}
-          >
-            <Text style={{ color: '#F4E9D8', fontWeight: '700', fontSize: 18, marginBottom: 14 }}>
+          <Animated.View entering={FadeInDown.delay(160).duration(500)} className="px-5">
+            <Text
+              className="text-lg font-sans-bold mb-3"
+              style={{ color: c.text, letterSpacing: -0.3 }}
+            >
               {t('subscription.choosePlan')}
             </Text>
 
             {loadingOfferings ? (
-              <View style={{ alignItems: 'center', paddingVertical: 48 }}>
-                <ActivityIndicator size="large" color="#C8A45B" />
+              <View className="items-center py-12">
+                <ActivityIndicator size="large" color={c.primary} />
               </View>
             ) : (
               <View style={{ gap: 10 }}>
                 {/* Annual */}
                 {offerings.annual && (
                   <Pressable
-                    onPress={() => setSelectedPkg('annual')}
+                    onPress={() => handleSelect('annual')}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: selectedPkg === 'annual' }}
+                    accessibilityLabel={`${t('subscription.annual')} ${offerings.annual.product.priceString}`}
+                    className="rounded-3xl p-4 active:opacity-90"
                     style={{
-                      borderRadius: 18,
-                      borderWidth: 1.5,
-                      borderColor: selectedPkg === 'annual' ? '#C8A45B' : '#3D2E23',
-                      backgroundColor:
-                        selectedPkg === 'annual' ? 'rgba(200,164,91,0.08)' : '#2A1C15',
-                      padding: 18,
-                      overflow: 'visible',
+                      backgroundColor: c.card,
+                      borderWidth: 2,
+                      borderColor: selectedPkg === 'annual' ? c.primary : c.border,
                     }}
                   >
-                    {selectedPkg === 'annual' && (
-                      <View
-                        style={{
-                          position: 'absolute',
-                          top: -13,
-                          left: 16,
-                          backgroundColor: '#C8A45B',
-                          paddingHorizontal: 10,
-                          paddingVertical: 4,
-                          borderRadius: 8,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: '#1A0F0A',
-                            fontWeight: '700',
-                            fontSize: 11,
-                            letterSpacing: 0.5,
-                          }}
-                        >
-                          {t('paywall.mostPopular')}
-                        </Text>
-                      </View>
-                    )}
+                    {/* Most-popular badge */}
                     <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
+                      className="absolute -top-3 left-4 px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: c.accent }}
                     >
-                      <View style={{ flex: 1 }}>
+                      <Text
+                        className="text-[10px] font-sans-bold"
+                        style={{ color: c.onAccent, letterSpacing: 0.8 }}
+                      >
+                        {t('paywall.mostPopular')}
+                      </Text>
+                    </View>
+
+                    <View className="flex-row items-center justify-between mt-1">
+                      {/* Selection indicator + plan info */}
+                      <View className="flex-row items-center flex-1" style={{ gap: 12 }}>
                         <View
+                          className="h-5 w-5 rounded-full items-center justify-center"
                           style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 8,
-                            marginBottom: 5,
+                            borderWidth: 2,
+                            borderColor: selectedPkg === 'annual' ? c.primary : c.muted,
+                            backgroundColor: selectedPkg === 'annual' ? c.primary : 'transparent',
                           }}
                         >
-                          <Text style={{ color: '#F4E9D8', fontWeight: '700', fontSize: 16 }}>
-                            {t('subscription.annual')}
-                          </Text>
-                          <View
-                            style={{
-                              backgroundColor: '#8B2E2E',
-                              paddingHorizontal: 7,
-                              paddingVertical: 3,
-                              borderRadius: 6,
-                            }}
-                          >
-                            <Text style={{ color: '#F4E9D8', fontWeight: '800', fontSize: 11 }}>
-                              {t('subscription.annualSavings')}
-                            </Text>
-                          </View>
+                          {selectedPkg === 'annual' && (
+                            <Ionicons name="checkmark" size={12} color={c.onPrimary} />
+                          )}
                         </View>
-                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
-                          {`${Math.round(offerings.annual.product.price / 12).toLocaleString()}₮ / ${t('subscription.monthly').toLowerCase()}`}
-                        </Text>
+                        <View className="flex-1">
+                          <View className="flex-row items-center mb-0.5" style={{ gap: 8 }}>
+                            <Text className="text-base font-sans-bold" style={{ color: c.text }}>
+                              {t('subscription.annual')}
+                            </Text>
+                            <View
+                              className="px-2 py-0.5 rounded-md"
+                              style={{ backgroundColor: `${c.accent}1F` }}
+                            >
+                              <Text
+                                className="text-[11px] font-sans-bold"
+                                style={{ color: c.accent, letterSpacing: 0.3 }}
+                              >
+                                {t('subscription.annualSavings')}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text
+                            className="text-[13px] font-sans"
+                            style={{ color: c.textSecondary }}
+                          >
+                            {`${Math.round(offerings.annual.product.price / 12).toLocaleString()}₮ / ${t('subscription.monthly').toLowerCase()}`}
+                          </Text>
+                        </View>
                       </View>
-                      <View style={{ alignItems: 'flex-end', marginLeft: 12 }}>
-                        <Text style={{ color: '#F4E9D8', fontWeight: '800', fontSize: 22 }}>
+
+                      <View className="items-end ml-3">
+                        <Text
+                          className="text-xl font-sans-bold"
+                          style={{ color: c.text, letterSpacing: -0.3 }}
+                        >
                           {offerings.annual.product.priceString}
                         </Text>
-                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
+                        <Text className="text-[12px] font-sans" style={{ color: c.textTertiary }}>
                           {t('subscription.perYear')}
                         </Text>
                       </View>
@@ -493,43 +403,55 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                 {/* Monthly */}
                 {offerings.monthly && (
                   <Pressable
-                    onPress={() => setSelectedPkg('monthly')}
+                    onPress={() => handleSelect('monthly')}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: selectedPkg === 'monthly' }}
+                    accessibilityLabel={`${t('subscription.monthly')} ${offerings.monthly.product.priceString}`}
+                    className="rounded-3xl p-4 active:opacity-90"
                     style={{
-                      borderRadius: 18,
-                      borderWidth: 1.5,
-                      borderColor: selectedPkg === 'monthly' ? '#C8A45B' : '#3D2E23',
-                      backgroundColor:
-                        selectedPkg === 'monthly' ? 'rgba(200,164,91,0.08)' : '#2A1C15',
-                      padding: 18,
+                      backgroundColor: c.card,
+                      borderWidth: 2,
+                      borderColor: selectedPkg === 'monthly' ? c.primary : c.border,
                     }}
                   >
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <View>
-                        <Text
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center flex-1" style={{ gap: 12 }}>
+                        <View
+                          className="h-5 w-5 rounded-full items-center justify-center"
                           style={{
-                            color: '#F4E9D8',
-                            fontWeight: '700',
-                            fontSize: 16,
-                            marginBottom: 5,
+                            borderWidth: 2,
+                            borderColor: selectedPkg === 'monthly' ? c.primary : c.muted,
+                            backgroundColor: selectedPkg === 'monthly' ? c.primary : 'transparent',
                           }}
                         >
-                          {t('subscription.monthly')}
-                        </Text>
-                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
-                          {t('subscription.billedMonthly')}
-                        </Text>
+                          {selectedPkg === 'monthly' && (
+                            <Ionicons name="checkmark" size={12} color={c.onPrimary} />
+                          )}
+                        </View>
+                        <View className="flex-1">
+                          <Text
+                            className="text-base font-sans-bold mb-0.5"
+                            style={{ color: c.text }}
+                          >
+                            {t('subscription.monthly')}
+                          </Text>
+                          <Text
+                            className="text-[13px] font-sans"
+                            style={{ color: c.textSecondary }}
+                          >
+                            {t('subscription.billedMonthly')}
+                          </Text>
+                        </View>
                       </View>
-                      <View style={{ alignItems: 'flex-end', marginLeft: 12 }}>
-                        <Text style={{ color: '#F4E9D8', fontWeight: '800', fontSize: 22 }}>
+
+                      <View className="items-end ml-3">
+                        <Text
+                          className="text-xl font-sans-bold"
+                          style={{ color: c.text, letterSpacing: -0.3 }}
+                        >
                           {offerings.monthly.product.priceString}
                         </Text>
-                        <Text style={{ color: '#8A7A68', fontSize: 13 }}>
+                        <Text className="text-[12px] font-sans" style={{ color: c.textTertiary }}>
                           {t('subscription.perMonth')}
                         </Text>
                       </View>
@@ -540,34 +462,23 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
                 {/* Fallback when offerings could not be loaded */}
                 {!hasOfferings && (
                   <View
-                    style={{
-                      backgroundColor: '#2A1C15',
-                      borderRadius: 18,
-                      padding: 28,
-                      alignItems: 'center',
-                    }}
+                    className="rounded-3xl p-7 items-center"
+                    style={{ backgroundColor: c.card }}
                   >
                     <Text
-                      style={{
-                        color: '#8A7A68',
-                        fontSize: 14,
-                        textAlign: 'center',
-                        marginBottom: 16,
-                      }}
+                      className="text-sm font-sans text-center mb-4 leading-5"
+                      style={{ color: c.textSecondary }}
                     >
                       {t('subscription.offersUnavailable')}
                     </Text>
                     <Pressable
                       onPress={() => void loadOfferings()}
-                      style={{
-                        paddingHorizontal: 24,
-                        paddingVertical: 10,
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: '#5A4A3C',
-                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('common.retry')}
+                      className="px-6 py-2.5 rounded-full active:opacity-80"
+                      style={{ borderWidth: 1, borderColor: c.border }}
                     >
-                      <Text style={{ color: '#F4E9D8', fontWeight: '600', fontSize: 14 }}>
+                      <Text className="text-sm font-sans-semibold" style={{ color: c.text }}>
                         {t('common.retry')}
                       </Text>
                     </Pressable>
@@ -576,62 +487,49 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
               </View>
             )}
           </Animated.View>
-
-          {/* ── Testimonial ── */}
-          <Animated.View
-            entering={FadeInDown.delay(240).duration(500)}
-            style={{ paddingHorizontal: 20, marginTop: 24 }}
-          >
-            <View style={{ backgroundColor: '#2A1C15', borderRadius: 16, padding: 18 }}>
-              <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-                {([1, 2, 3, 4, 5] as const).map((i) => (
-                  <Ionicons key={i} name="star" size={13} color="#C8A45B" />
-                ))}
-              </View>
-              <Text style={{ color: '#F4E9D8', fontSize: 14, lineHeight: 22, fontStyle: 'italic' }}>
-                "{t('paywall.review1Text')}"
-              </Text>
-              <Text style={{ color: '#8A7A68', fontSize: 13, marginTop: 10, fontWeight: '600' }}>
-                — {t('paywall.review1Author')}
-              </Text>
-            </View>
-          </Animated.View>
         </ScrollView>
 
         {/* ── Sticky bottom CTA ── */}
         <View
+          className="absolute left-0 right-0 bottom-0 px-5 pt-4"
           style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: '#1A0F0A',
-            paddingHorizontal: 20,
-            paddingTop: 16,
-            paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+            paddingBottom: Math.max(insets.bottom, 16),
+            backgroundColor: c.bg,
             borderTopWidth: 1,
-            borderTopColor: '#3D2E23',
+            borderTopColor: c.border,
           }}
         >
+          {/* Trust signal above CTA */}
+          <Text
+            className="text-[12px] font-sans-medium text-center mb-3"
+            style={{ color: c.textSecondary }}
+          >
+            {t('paywall.cancelAnytime')}
+          </Text>
+
           <Pressable
             onPress={() => void handlePurchase()}
             disabled={ctaDisabled}
+            accessibilityRole="button"
+            accessibilityLabel={
+              activePkg
+                ? `${t('paywall.getProCta')} ${activePkg.product.priceString}`
+                : t('subscription.subscribe')
+            }
+            accessibilityState={{ disabled: ctaDisabled }}
+            className="rounded-full py-4 items-center active:opacity-90"
             style={{
-              backgroundColor: ctaDisabled ? '#382A20' : '#C8A45B',
-              borderRadius: 16,
-              paddingVertical: 17,
-              alignItems: 'center',
-              marginBottom: 14,
-              shadowColor: ctaDisabled ? 'transparent' : '#C8A45B',
-              shadowOpacity: 0.35,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 4 },
+              backgroundColor: ctaDisabled ? c.cardAlt : c.primary,
+              opacity: ctaDisabled ? 0.6 : 1,
             }}
           >
             {purchasing ? (
-              <ActivityIndicator color="#1A0F0A" />
+              <ActivityIndicator color={c.onPrimary} />
             ) : (
-              <Text style={{ color: '#1A0F0A', fontSize: 17, fontWeight: '700' }}>
+              <Text
+                className="text-base font-sans-bold"
+                style={{ color: c.onPrimary, letterSpacing: 0.2 }}
+              >
                 {activePkg
                   ? `${t('paywall.getProCta')} · ${activePkg.product.priceString}`
                   : t('subscription.subscribe')}
@@ -639,32 +537,50 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             )}
           </Pressable>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'center',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 2,
-              marginBottom: 8,
-            }}
-          >
-            <Pressable onPress={() => void handleRestore()} disabled={restoring} hitSlop={8}>
-              <Text style={{ color: '#8A7A68', fontSize: 13 }}>
+          <View className="flex-row justify-center items-center flex-wrap mt-3" style={{ gap: 2 }}>
+            <Pressable
+              onPress={() => void handleRestore()}
+              disabled={restoring}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('subscription.restore')}
+            >
+              <Text className="text-[12px] font-sans" style={{ color: c.textTertiary }}>
                 {restoring ? t('common.loading') : t('subscription.restore')}
               </Text>
             </Pressable>
-            <Text style={{ color: '#5A4A3C', fontSize: 13, marginHorizontal: 6 }}>·</Text>
-            <Pressable onPress={() => void handleLegalLink('terms')} hitSlop={8}>
-              <Text style={{ color: '#8A7A68', fontSize: 13 }}>{t('auth.termsOfService')}</Text>
+            <Text className="text-[12px] mx-1.5" style={{ color: c.textTertiary }}>
+              ·
+            </Text>
+            <Pressable
+              onPress={() => void handleLegalLink('terms')}
+              hitSlop={8}
+              accessibilityRole="link"
+              accessibilityLabel={t('auth.termsOfService')}
+            >
+              <Text className="text-[12px] font-sans" style={{ color: c.textTertiary }}>
+                {t('auth.termsOfService')}
+              </Text>
             </Pressable>
-            <Text style={{ color: '#5A4A3C', fontSize: 13, marginHorizontal: 6 }}>·</Text>
-            <Pressable onPress={() => void handleLegalLink('privacy')} hitSlop={8}>
-              <Text style={{ color: '#8A7A68', fontSize: 13 }}>{t('auth.privacyPolicy')}</Text>
+            <Text className="text-[12px] mx-1.5" style={{ color: c.textTertiary }}>
+              ·
+            </Text>
+            <Pressable
+              onPress={() => void handleLegalLink('privacy')}
+              hitSlop={8}
+              accessibilityRole="link"
+              accessibilityLabel={t('auth.privacyPolicy')}
+            >
+              <Text className="text-[12px] font-sans" style={{ color: c.textTertiary }}>
+                {t('auth.privacyPolicy')}
+              </Text>
             </Pressable>
           </View>
 
-          <Text style={{ color: '#6B5544', fontSize: 12, textAlign: 'center' }}>
+          <Text
+            className="text-[11px] font-sans text-center mt-2 leading-[15px]"
+            style={{ color: c.textTertiary }}
+          >
             {t('subscription.iapDisclaimer')}
           </Text>
         </View>

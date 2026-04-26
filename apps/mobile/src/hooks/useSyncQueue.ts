@@ -23,7 +23,7 @@ export function useSyncQueue() {
     });
 
     return () => unsubscribe();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   async function flushQueue() {
     const items = offlineQueue.getAll();
