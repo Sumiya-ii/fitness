@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -10,13 +11,36 @@ import * as Sentry from '@sentry/node';
 import { QUEUE_NAMES } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import { S3Service } from '../storage';
+import { VoiceRateLimitService } from './voice-rate-limit.service';
 
 interface ParsedFoodItem {
   name: string;
+  quantity?: number;
+  unit?: string;
+  grams?: number;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  saturatedFat?: number;
+  confidence?: number;
+  ambiguity?: string | null;
+  missing?: string[];
+}
+
+interface ClarificationOption {
+  label: string;
+  patch: Record<string, unknown> | null;
+}
+
+interface Clarification {
+  question: string;
+  options: ClarificationOption[];
+  itemIndex: number | null;
+  reason: string;
 }
 
 export interface VoiceDraftStatus {
@@ -29,7 +53,33 @@ export interface VoiceDraftStatus {
   totalProtein?: number;
   totalCarbs?: number;
   totalFat?: number;
+  totalSugar?: number | null;
+  totalSodium?: number | null;
+  totalSaturatedFat?: number | null;
+  clarification?: Clarification;
   errorMessage?: string;
+}
+
+/**
+ * The worker writes parsed_items as either a bare array (legacy) or as the
+ * envelope { items, clarification? }. This unwraps both shapes.
+ */
+function unwrapParsedItems(raw: unknown): {
+  items: ParsedFoodItem[] | undefined;
+  clarification: Clarification | undefined;
+} {
+  if (raw == null) return { items: undefined, clarification: undefined };
+  if (Array.isArray(raw)) return { items: raw as ParsedFoodItem[], clarification: undefined };
+  if (typeof raw === 'object') {
+    const env = raw as { items?: unknown; clarification?: unknown };
+    const items = Array.isArray(env.items) ? (env.items as ParsedFoodItem[]) : undefined;
+    const clarification =
+      env.clarification && typeof env.clarification === 'object'
+        ? (env.clarification as Clarification)
+        : undefined;
+    return { items, clarification };
+  }
+  return { items: undefined, clarification: undefined };
 }
 
 const DRAFT_TTL_DAYS = 7;
@@ -42,6 +92,7 @@ export class VoiceService {
     @InjectQueue(QUEUE_NAMES.STT_PROCESSING) private readonly sttQueue: Queue,
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
+    private readonly rateLimit: VoiceRateLimitService,
   ) {}
 
   async uploadAudio(
@@ -49,6 +100,11 @@ export class VoiceService {
     audioBuffer: Buffer,
     locale?: string,
   ): Promise<{ draftId: string }> {
+    const { allowed } = await this.rateLimit.incrementAndCheck(userId);
+    if (!allowed) {
+      throw new BadRequestException('voice_daily_cap_reached');
+    }
+
     const expiresAt = new Date(Date.now() + DRAFT_TTL_DAYS * 24 * 60 * 60 * 1000);
 
     // Create VoiceDraft row to persist state beyond BullMQ job lifetime
@@ -85,14 +141,23 @@ export class VoiceService {
       });
     }
 
-    const job = await this.sttQueue.add('transcribe', {
-      draftId: draft.id,
-      userId,
-      locale: locale ?? 'mn',
-      s3Key,
-      // Only include base64 as fallback when S3 is not available (local dev)
-      ...(s3Key ? {} : { audioBuffer: audioBuffer.toString('base64') }),
-    });
+    const job = await this.sttQueue.add(
+      'transcribe',
+      {
+        draftId: draft.id,
+        userId,
+        locale: locale ?? 'mn',
+        s3Key,
+        // Only include base64 as fallback when S3 is not available (local dev)
+        ...(s3Key ? {} : { audioBuffer: audioBuffer.toString('base64') }),
+      },
+      {
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: { age: 86400 },
+        removeOnFail: { age: 604800 },
+      },
+    );
 
     await this.prisma.voiceDraft.update({
       where: { id: draft.id },
@@ -113,16 +178,24 @@ export class VoiceService {
 
     // Terminal states: return from DB directly (no BullMQ needed)
     if (draft.status === 'completed') {
+      const { items, clarification } = unwrapParsedItems(draft.parsedItems);
       return {
         id: draft.id,
         status: 'completed',
         transcription: draft.transcription ?? undefined,
         mealType: draft.mealType ?? null,
-        items: (draft.parsedItems as ParsedFoodItem[] | null) ?? undefined,
+        items,
         totalCalories: draft.totalCalories != null ? Number(draft.totalCalories) : undefined,
         totalProtein: draft.totalProtein != null ? Number(draft.totalProtein) : undefined,
         totalCarbs: draft.totalCarbs != null ? Number(draft.totalCarbs) : undefined,
         totalFat: draft.totalFat != null ? Number(draft.totalFat) : undefined,
+        totalSugar: draft.totalSugar != null ? Number(draft.totalSugar) : undefined,
+        totalSodium: draft.totalSodium != null ? Number(draft.totalSodium) : undefined,
+        totalSaturatedFat:
+          draft.totalSaturatedFat != null ? Number(draft.totalSaturatedFat) : undefined,
+        clarification,
+        // errorMessage on a completed draft is a non-fatal warning (e.g. parse failed)
+        errorMessage: draft.errorMessage ?? undefined,
       };
     }
 

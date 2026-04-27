@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from './config';
 import { PrismaModule } from './prisma';
 import { QueueModule } from './queue';
-import { AuthModule } from './auth';
+import { AuthModule, UserThrottlerGuard } from './auth';
 import { ProfileModule } from './profile';
 import { TargetsModule } from './targets';
 import { FoodsModule } from './foods';
@@ -16,7 +16,6 @@ import { DashboardModule } from './dashboard';
 import { WeightLogsModule } from './weight-logs';
 import { WaterLogsModule } from './water-logs';
 import { WeeklySummaryModule } from './weekly-summary';
-import { SearchModule } from './search';
 import { SubscriptionsModule } from './subscriptions';
 import { PrivacyModule } from './privacy';
 import { AdminModule } from './admin';
@@ -75,7 +74,6 @@ import { HealthController } from './health/health.controller';
     WeightLogsModule,
     WaterLogsModule,
     WeeklySummaryModule,
-    SearchModule,
     SubscriptionsModule,
     PrivacyModule,
     AdminModule,
@@ -104,7 +102,7 @@ import { HealthController } from './health/health.controller';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: UserThrottlerGuard,
     },
   ],
 })

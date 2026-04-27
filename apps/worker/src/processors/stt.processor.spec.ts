@@ -2,6 +2,11 @@
  * Unit tests for the STT (Speech-to-Text + Nutrition parsing) processor.
  */
 
+jest.mock('@sentry/node', () => ({
+  captureException: jest.fn(),
+  init: jest.fn(),
+}));
+
 jest.mock('../s3', () => ({
   downloadFromS3: jest.fn(),
   deleteFromS3: jest.fn(),
@@ -11,6 +16,7 @@ jest.mock('../db', () => ({
   setVoiceDraftActive: jest.fn(),
   setVoiceDraftCompleted: jest.fn(),
   setVoiceDraftFailed: jest.fn(),
+  getCalibrationRatios: jest.fn().mockResolvedValue(new Map()),
 }));
 
 jest.mock('openai', () => {
@@ -25,6 +31,7 @@ import { downloadFromS3, deleteFromS3 } from '../s3';
 import { setVoiceDraftActive, setVoiceDraftCompleted, setVoiceDraftFailed } from '../db';
 import OpenAI from 'openai';
 import type { Job } from 'bullmq';
+import * as Sentry from '@sentry/node';
 
 const mockDownloadFromS3 = downloadFromS3 as jest.MockedFunction<typeof downloadFromS3>;
 const mockDeleteFromS3 = deleteFromS3 as jest.MockedFunction<typeof deleteFromS3>;
@@ -154,7 +161,7 @@ describe('processSttJob', () => {
       'No audio source',
     );
 
-    expect(mockSetFailed).toHaveBeenCalledWith('d1', expect.stringContaining('Audio retrieval'));
+    expect(mockSetFailed).toHaveBeenCalledWith('d1', 'audio_download_failed');
   });
 
   it('handles empty transcription result', async () => {
@@ -186,12 +193,9 @@ describe('processSttJob', () => {
 
     await expect(
       processSttJob(makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key' })),
-    ).rejects.toThrow('Whisper HTTP 429');
+    ).rejects.toThrow('transcription_failed');
 
-    expect(mockSetFailed).toHaveBeenCalledWith(
-      'd1',
-      expect.stringContaining('Transcription failed'),
-    );
+    expect(mockSetFailed).toHaveBeenCalledWith('d1', 'transcription_failed');
 
     fetchSpy.mockRestore();
   });
@@ -309,6 +313,292 @@ describe('processSttJob', () => {
     fetchSpy.mockRestore();
   });
 
+  it('passes language=mn hint to Whisper for Mongolian locale', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'тест' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: '{"items":[]}' } }] });
+
+    await processSttJob(makeJob({ userId: 'u1', s3Key: 'key', locale: 'mn' }));
+
+    const body = fetchSpy.mock.calls[0][1]?.body as FormData;
+    expect(body.get('language')).toBe('mn');
+    fetchSpy.mockRestore();
+  });
+
+  it('persists optional micronutrients (sugar/sodium/saturatedFat) to draft', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'хуушуур идлээ' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              items: [
+                {
+                  name: 'Хуушуур',
+                  quantity: 2,
+                  unit: 'piece',
+                  grams: 100,
+                  calories: 240,
+                  protein: 12,
+                  carbs: 18,
+                  fat: 12,
+                  sugar: 1,
+                  sodium: 380,
+                  saturatedFat: 3.5,
+                  confidence: 0.9,
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await processSttJob(
+      makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key', locale: 'mn' }),
+    );
+
+    expect(result.totalSugar).toBe(1);
+    expect(result.totalSodium).toBe(380);
+    expect(result.totalSaturatedFat).toBe(3.5);
+    expect(mockSetCompleted).toHaveBeenCalledWith(
+      'd1',
+      expect.objectContaining({ totalSugar: 1, totalSodium: 380, totalSaturatedFat: 3.5 }),
+    );
+    fetchSpy.mockRestore();
+  });
+
+  it('returns totalSugar=null when no item has sugar', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'food' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              items: [
+                {
+                  name: 'X',
+                  quantity: 1,
+                  unit: 'piece',
+                  grams: 100,
+                  calories: 200,
+                  protein: 10,
+                  carbs: 10,
+                  fat: 10,
+                  confidence: 0.9,
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await processSttJob(makeJob({ userId: 'u1', s3Key: 'key' }));
+    expect(result.totalSugar).toBeNull();
+    expect(result.totalSodium).toBeNull();
+    expect(result.totalSaturatedFat).toBeNull();
+    fetchSpy.mockRestore();
+  });
+
+  it('generates and persists a clarification when shouldAskFollowUp triggers', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'хуушуур идлээ' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    // First call: nutrition parse with ambiguity flag
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              items: [
+                {
+                  name: 'Хуушуур',
+                  quantity: 2,
+                  unit: 'piece',
+                  grams: 100,
+                  calories: 240,
+                  protein: 12,
+                  carbs: 18,
+                  fat: 12,
+                  confidence: 0.8,
+                  ambiguity: 'meat_type',
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+    // Second call: clarification generation
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              question: 'Хуушуур юутай байсан бэ?',
+              options: [
+                { label: 'Үхрийн мах', patch: { name: 'Хуушуур (үхэр)', calories: 240 } },
+                { label: 'Хонины мах', patch: { name: 'Хуушуур (хонь)', calories: 280 } },
+                { label: 'Алгасах', patch: null },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await processSttJob(
+      makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key', locale: 'mn' }),
+    );
+
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    expect(result.clarification).toBeDefined();
+    expect(result.clarification?.reason).toBe('meat_type_ambiguous');
+    expect(result.clarification?.options).toHaveLength(3);
+    expect(mockSetCompleted).toHaveBeenCalledWith(
+      'd1',
+      expect.objectContaining({
+        clarification: expect.objectContaining({ reason: 'meat_type_ambiguous' }),
+      }),
+    );
+    fetchSpy.mockRestore();
+  });
+
+  it('does not generate clarification when items are clean and high-confidence', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'би 4 бууз идлээ' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              items: [
+                {
+                  name: 'Бууз',
+                  quantity: 4,
+                  unit: 'piece',
+                  grams: 200,
+                  calories: 360,
+                  protein: 28,
+                  carbs: 24,
+                  fat: 16,
+                  confidence: 0.92,
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await processSttJob(
+      makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key', locale: 'mn' }),
+    );
+
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(result.clarification).toBeUndefined();
+  });
+
+  it('still completes the job when clarification generation fails (best-effort UX)', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'мах идлээ' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    // Nutrition parse OK with low conf trigger
+    mockCreate.mockResolvedValueOnce({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              items: [
+                {
+                  name: 'мах',
+                  quantity: 1,
+                  unit: 'serving',
+                  grams: 150,
+                  calories: 400,
+                  protein: 30,
+                  carbs: 0,
+                  fat: 30,
+                  confidence: 0.55,
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+    // Clarification call throws
+    mockCreate.mockRejectedValueOnce(new Error('rate limited'));
+
+    const result = await processSttJob(
+      makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key', locale: 'mn' }),
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result.clarification).toBeUndefined();
+    expect(mockSetCompleted).toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('surfaces nutrition-parse failure as parseWarning + errorMessage on completed draft', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'би хоол идлээ' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockRejectedValue(new Error('OpenAI 503'));
+
+    const result = await processSttJob(
+      makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key', locale: 'mn' }),
+    );
+
+    expect(result.text).toBe('би хоол идлээ');
+    expect(result.items).toEqual([]);
+    expect(result.parseWarning).toBe('nutrition_parse_failed');
+    expect(mockSetCompleted).toHaveBeenCalledWith(
+      'd1',
+      expect.objectContaining({
+        transcription: 'би хоол идлээ',
+        parsedItems: [],
+        errorMessage: 'nutrition_parse_failed',
+      }),
+    );
+    fetchSpy.mockRestore();
+  });
+
   it('defaults missing item fields to safe values', async () => {
     mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
     const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
@@ -335,6 +625,237 @@ describe('processSttJob', () => {
     expect(result.items[0].unit).toBe('serving');
     expect(result.items[0].grams).toBe(0);
     expect(result.items[0].confidence).toBe(0.7);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('scales item nutrition by the user calibration ratio for known foods', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const db = require('../db') as { getCalibrationRatios: jest.Mock };
+    db.getCalibrationRatios.mockResolvedValueOnce(new Map([['mn_buuz', 0.78]]));
+
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'Би бууз идлээ' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              mealType: 'lunch',
+              items: [
+                {
+                  name: 'Бууз',
+                  quantity: 4,
+                  unit: 'piece',
+                  grams: 200,
+                  calories: 400,
+                  protein: 20,
+                  carbs: 30,
+                  fat: 15,
+                  confidence: 0.9,
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await processSttJob(
+      makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'audio/test.m4a' }),
+    );
+
+    expect(db.getCalibrationRatios).toHaveBeenCalledWith('u1', ['mn_buuz']);
+    // 400 * 0.78 = 312
+    expect(result.items[0].calories).toBeCloseTo(312, 0);
+    expect(result.totalCalories).toBe(312);
+    // protein 20 * 0.78 = 15.6
+    expect(result.items[0].protein).toBeCloseTo(15.6, 1);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('locale en: passes language=en to Whisper and returns items', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'I had rice' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              items: [
+                {
+                  name: 'Rice',
+                  quantity: 1,
+                  unit: 'cup',
+                  grams: 200,
+                  calories: 250,
+                  protein: 5,
+                  carbs: 50,
+                  fat: 1,
+                  confidence: 0.9,
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await processSttJob(makeJob({ userId: 'u1', s3Key: 'key', locale: 'en' }));
+
+    const body = fetchSpy.mock.calls[0][1]?.body as FormData;
+    expect(body.get('language')).toBe('en');
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].name).toBe('Rice');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('unknown locale: omits language field (no auto-detection hint)', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'bonjour' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: '{"items":[]}' } }] });
+
+    await processSttJob(makeJob({ userId: 'u1', s3Key: 'key', locale: 'fr' }));
+
+    const body = fetchSpy.mock.calls[0][1]?.body as FormData;
+    expect(body.get('language')).toBeNull();
+
+    fetchSpy.mockRestore();
+  });
+
+  it('calls Sentry with stage=whisper_transcription on non-OK Whisper response', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => 'Internal Server Error',
+    } as Response);
+    const mockCaptureException = Sentry.captureException as jest.Mock;
+    mockCaptureException.mockClear();
+
+    await expect(
+      processSttJob(makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key' })),
+    ).rejects.toThrow('transcription_failed');
+
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ tags: { processor: 'stt', stage: 'whisper_transcription' } }),
+    );
+  });
+
+  it('calls Sentry with stage=nutrition_parse on nutrition parse failure', async () => {
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'some food' }),
+    } as Response);
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockRejectedValue(new Error('OpenAI 503'));
+    const mockCaptureException = Sentry.captureException as jest.Mock;
+    mockCaptureException.mockClear();
+
+    await processSttJob(makeJob({ userId: 'u1', s3Key: 'key' }));
+
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ tags: { processor: 'stt', stage: 'nutrition_parse' } }),
+    );
+  });
+
+  it('rejects with transcription_timeout after 25s and marks draft failed', async () => {
+    jest.useFakeTimers();
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    jest.spyOn(global, 'fetch').mockReturnValueOnce(new Promise(() => {}) as Promise<Response>);
+
+    // Attach rejection handler before advancing timers to avoid unhandled rejection warning
+    const jobPromise = processSttJob(makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key' }));
+    const caught = jobPromise.catch((e: Error) => e);
+
+    await jest.runAllTimersAsync();
+
+    const err = await caught;
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe('transcription_timeout');
+    expect(mockSetFailed).toHaveBeenCalledWith('d1', 'transcription_timeout');
+
+    jest.useRealTimers();
+  });
+
+  it('does not call Sentry for expected NoSuchKey audio miss', async () => {
+    const noSuchKeyErr = Object.assign(new Error('NoSuchKey'), { name: 'NoSuchKey' });
+    mockDownloadFromS3.mockRejectedValue(noSuchKeyErr);
+    const mockCaptureException = Sentry.captureException as jest.Mock;
+    mockCaptureException.mockClear();
+
+    await expect(
+      processSttJob(makeJob({ userId: 'u1', draftId: 'd1', s3Key: 'key' })),
+    ).rejects.toThrow('NoSuchKey');
+
+    const audioRetrievalCall = mockCaptureException.mock.calls.find(
+      (call) =>
+        call[1] &&
+        typeof call[1] === 'object' &&
+        'tags' in call[1] &&
+        (call[1] as { tags: { stage: string } }).tags?.stage === 'audio_retrieval',
+    );
+    expect(audioRetrievalCall).toBeUndefined();
+  });
+
+  it('passes through items unchanged when no calibration exists', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const db = require('../db') as { getCalibrationRatios: jest.Mock };
+    db.getCalibrationRatios.mockResolvedValueOnce(new Map());
+
+    mockDownloadFromS3.mockResolvedValue(Buffer.from('audio'));
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ text: 'Би бууз идлээ' }),
+    } as Response);
+
+    const mockCreate = getOpenAIMock();
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              items: [
+                {
+                  name: 'Бууз',
+                  quantity: 4,
+                  unit: 'piece',
+                  grams: 200,
+                  calories: 400,
+                  protein: 20,
+                  carbs: 30,
+                  fat: 15,
+                  confidence: 0.9,
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await processSttJob(makeJob({ userId: 'u1', s3Key: 'k' }));
+    expect(result.items[0].calories).toBe(400);
 
     fetchSpy.mockRestore();
   });

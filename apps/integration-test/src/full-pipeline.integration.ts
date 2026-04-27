@@ -1,9 +1,8 @@
 /**
  * Layer C: Full pipeline tests.
- * Audio file -> STT -> GPT-4o-mini nutrition parsing.
- * Tests both OpenAI and Google Cloud STT providers.
+ * Audio file -> OpenAI gpt-4o-transcribe -> GPT-4o-mini nutrition parsing.
  */
-import { fullPipeline, fixture, SttProvider } from './helpers';
+import { fullPipeline, fixture } from './helpers';
 import { AUDIO_FILES } from './expected-values';
 
 function assertFullPipeline(
@@ -48,31 +47,14 @@ function assertFullPipeline(
   }
 }
 
-// --- OpenAI full pipeline ---
 const describeOpenAI = process.env.OPENAI_API_KEY ? describe : describe.skip;
 
 describeOpenAI('Full pipeline: OpenAI STT -> GPT nutrition', () => {
   for (const [filename, expected] of Object.entries(AUDIO_FILES)) {
     it(`processes "${expected.label}" end-to-end (${filename})`, async () => {
-      const result = await fullPipeline(fixture(filename), 'mn', 'openai');
+      const result = await fullPipeline(fixture(filename), 'mn');
       console.log(`[FULL:OpenAI] ${filename}: transcript="${result.text}"`);
       console.log(`[FULL:OpenAI] ${filename}: result=`, JSON.stringify(result, null, 2));
-      assertFullPipeline(result, expected);
-    });
-  }
-});
-
-// --- Google Cloud STT full pipeline ---
-const hasGoogleCreds = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_STT_API_KEY;
-const canRunGoogle = hasGoogleCreds && process.env.OPENAI_API_KEY;
-const describeGoogle = canRunGoogle ? describe : describe.skip;
-
-describeGoogle('Full pipeline: Google STT -> GPT nutrition', () => {
-  for (const [filename, expected] of Object.entries(AUDIO_FILES)) {
-    it(`processes "${expected.label}" end-to-end (${filename})`, async () => {
-      const result = await fullPipeline(fixture(filename), 'mn', 'google');
-      console.log(`[FULL:Google] ${filename}: transcript="${result.text}"`);
-      console.log(`[FULL:Google] ${filename}: result=`, JSON.stringify(result, null, 2));
       assertFullPipeline(result, expected);
     });
   }

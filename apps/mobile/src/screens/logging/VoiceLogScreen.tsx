@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Linking,
+  AppState,
+  type AppStateStatus,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -24,11 +27,11 @@ import {
 } from 'expo-audio';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BackButton, Button, Card, Badge } from '../../components/ui';
-import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
 import { trackEvent, EVENTS } from '../../utils/analytics';
 import { useLocale } from '../../i18n';
 import { useColors } from '../../theme';
+import { useVoiceDraft } from '../../hooks/useVoiceDraft';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'VoiceLog'>;
@@ -42,19 +45,23 @@ interface ParsedFoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  saturatedFat?: number;
   confidence: number;
 }
 
-interface VoiceDraft {
-  id: string;
-  status: 'waiting' | 'active' | 'completed' | 'failed';
-  transcription?: string;
-  mealType?: string | null;
-  items?: ParsedFoodItem[];
-  totalCalories?: number;
-  totalProtein?: number;
-  totalCarbs?: number;
-  totalFat?: number;
+interface ClarificationOption {
+  label: string;
+  patch: Partial<ParsedFoodItem> | null;
+}
+
+interface Clarification {
+  question: string;
+  options: ClarificationOption[];
+  itemIndex: number | null;
+  reason: string;
 }
 
 type ScreenState =
@@ -74,12 +81,9 @@ const MEAL_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   dinner: 'moon-outline',
   snack: 'cafe-outline',
 };
-const POLL_INTERVAL_FAST_MS = 2000;
-const POLL_INTERVAL_SLOW_MS = 4000;
-const POLL_FAST_THRESHOLD = 15;
-const MAX_POLL_ATTEMPTS = 60;
 const MAX_RECORDING_SECONDS = 60;
 const WARN_RECORDING_SECONDS = 45;
+const HAPTIC_WARN_SECONDS = 50;
 
 function autoDetectMealType(): MealType {
   const hour = new Date().getHours();
@@ -204,6 +208,35 @@ function EditItemModal({ item, onSave, onClose, t, c }: EditItemModalProps) {
   );
 }
 
+// -- Error code → localized string --
+
+function errorCodeToMessage(code: string | null, t: (key: string) => string): string {
+  switch (code) {
+    case 'voice_daily_cap_reached':
+      return t('voiceLog.dailyCap');
+    case 'transcription_timeout':
+      return t('voiceLog.processingTimeout');
+    case 'transcription_failed':
+      return t('voiceLog.processingFailed');
+    case 'audio_download_failed':
+      return t('voiceLog.processingFailed');
+    case 'nutrition_parse_failed':
+      return t('voiceLog.parseWarning');
+    case 'expired':
+      return t('voiceLog.expired');
+    case 'network_error':
+      return t('voiceLog.networkError');
+    default:
+      return t('voiceLog.processingFailed');
+  }
+}
+
+// Codes that allow retry (not terminal)
+function isRetryableCode(code: string | null): boolean {
+  if (!code) return false;
+  return code !== 'voice_daily_cap_reached' && code !== 'expired';
+}
+
 // -- Main Screen --
 
 export function VoiceLogScreen() {
@@ -213,6 +246,8 @@ export function VoiceLogScreen() {
   const insets = useSafeAreaInsets();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
+  const voiceDraft = useVoiceDraft();
+
   const [screenState, setScreenState] = useState<ScreenState>('idle');
   const [elapsed, setElapsed] = useState(0);
   const [draftItems, setDraftItems] = useState<ParsedFoodItem[]>([]);
@@ -221,18 +256,83 @@ export function VoiceLogScreen() {
   const [draftWorkerStatus, setDraftWorkerStatus] = useState<'waiting' | 'active' | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [parseWarning, setParseWarning] = useState<string | null>(null);
+  const [clarification, setClarification] = useState<Clarification | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hapticWarnedRef = useRef(false);
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
   const pulseLoop = useRef<RNAnimated.CompositeAnimation | null>(null);
   const successScale = useRef(new RNAnimated.Value(0)).current;
   const successOpacity = useRef(new RNAnimated.Value(0)).current;
 
+  // Sync hook status → screenState
+  useEffect(() => {
+    if (voiceDraft.status === 'uploading') {
+      setScreenState('uploading');
+    } else if (voiceDraft.status === 'processing') {
+      setScreenState('processing');
+    } else if (voiceDraft.status === 'completed' && voiceDraft.draft) {
+      const d = voiceDraft.draft;
+      const items = (d.items ?? []) as ParsedFoodItem[];
+      setTranscription(d.transcription ?? '');
+      setDraftItems(items);
+      // nutrition_parse_failed is non-fatal — surfaces as parseWarning
+      if (d.errorMessage === 'nutrition_parse_failed') {
+        setParseWarning(t('voiceLog.parseWarning'));
+      } else {
+        setParseWarning(d.errorMessage ?? null);
+      }
+      setClarification((d.clarification as Clarification | null) ?? null);
+      if (d.mealType && MEAL_TYPES.includes(d.mealType as MealType)) {
+        setMealType(d.mealType as MealType);
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      trackEvent(EVENTS.VOICE_LOG_PROCESSED, {
+        itemCount: items.length,
+        totalCalories: d.totalCalories ?? 0,
+        hasLowConfidenceItems: items.some((it) => it.confidence < 0.7),
+        hasClarification: Boolean(d.clarification),
+        locale,
+      });
+      setScreenState('results');
+    } else if (voiceDraft.status === 'failed') {
+      const code = voiceDraft.errorCode;
+      if (code === 'transcription_timeout') {
+        trackEvent(EVENTS.VOICE_LOG_TIMEOUT);
+      }
+      if (code === 'voice_daily_cap_reached') {
+        trackEvent(EVENTS.VOICE_LOG_DAILY_CAP);
+      }
+      if (
+        voiceDraft.uploadAttempt > 0 &&
+        code !== 'voice_daily_cap_reached' &&
+        code !== 'expired'
+      ) {
+        trackEvent(EVENTS.VOICE_LOG_UPLOAD_FAILED, { attempt: voiceDraft.uploadAttempt });
+      }
+      setError(errorCodeToMessage(code, t));
+      setScreenState('idle');
+    }
+  }, [
+    voiceDraft.status,
+    voiceDraft.draft,
+    voiceDraft.errorCode,
+    voiceDraft.uploadAttempt,
+    locale,
+    t,
+  ]);
+
+  // Sync draft worker status for processing message
+  useEffect(() => {
+    if (voiceDraft.draft?.status === 'active') setDraftWorkerStatus('active');
+    else if (voiceDraft.draft?.status === 'waiting') setDraftWorkerStatus('waiting');
+  }, [voiceDraft.draft?.status]);
+
+  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     };
   }, []);
 
@@ -252,6 +352,33 @@ export function VoiceLogScreen() {
     }
   }, [screenState, pulseAnim]);
 
+  // AppState: cancel recording if app goes to background while recording
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background' && screenState === 'recording') {
+        void handleBackgroundCancel();
+      }
+    });
+    return () => subscription.remove();
+  }, [screenState]);
+
+  const handleBackgroundCancel = useCallback(async () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    try {
+      await recorder.stop();
+      await setAudioModeAsync({ allowsRecording: false });
+    } catch {
+      // best-effort
+    }
+    setScreenState('idle');
+    setElapsed(0);
+    setError(t('voiceLog.recordingCancelled'));
+    trackEvent(EVENTS.VOICE_LOG_CANCELLED);
+  }, [recorder, t]);
+
   const formatElapsed = (seconds: number) => {
     const m = Math.floor(seconds / 60)
       .toString()
@@ -262,22 +389,35 @@ export function VoiceLogScreen() {
 
   const startRecording = async () => {
     setError(null);
-    const { granted } = await requestRecordingPermissionsAsync();
+    const { granted, canAskAgain } = await requestRecordingPermissionsAsync();
     if (!granted) {
-      Alert.alert(t('common.permissionNeeded'), t('voiceLog.micRequired'));
+      if (!canAskAgain) {
+        Alert.alert(t('common.permissionNeeded'), t('voiceLog.permissionBlocked'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('voiceLog.openSettings'), onPress: () => void Linking.openSettings() },
+        ]);
+      } else {
+        Alert.alert(t('common.permissionNeeded'), t('voiceLog.micRequired'));
+      }
       return;
     }
     await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     await recorder.prepareToRecordAsync();
     recorder.record();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticWarnedRef.current = false;
     setScreenState('recording');
     setElapsed(0);
+    trackEvent(EVENTS.VOICE_LOG_STARTED);
     timerRef.current = setInterval(() => {
       setElapsed((e) => {
         const next = e + 1;
+        if (next === HAPTIC_WARN_SECONDS && !hapticWarnedRef.current) {
+          hapticWarnedRef.current = true;
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
         if (next >= MAX_RECORDING_SECONDS) {
-          stopRecording();
+          void stopRecording();
         }
         return next;
       });
@@ -291,78 +431,21 @@ export function VoiceLogScreen() {
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await recorder.stop();
+    await setAudioModeAsync({ allowsRecording: false });
     const uri = recorder.uri;
     if (!uri) {
       setError(t('voiceLog.recordingFailed'));
       setScreenState('idle');
       return;
     }
-    await uploadAudio(uri);
-  };
-
-  const uploadAudio = async (uri: string) => {
-    setScreenState('uploading');
-    setDraftWorkerStatus(null);
-    try {
-      const formData = new FormData();
-      formData.append('audio', {
-        uri,
-        type: 'audio/m4a',
-        name: 'recording.m4a',
-      } as unknown as Blob);
-      formData.append('locale', locale);
-      const res = await api.upload<{ data: { draftId: string } }>('/voice/upload', formData);
-      setScreenState('processing');
-      pollDraft(res.data.draftId);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed');
-      setScreenState('idle');
-    }
-  };
-
-  const pollDraft = async (draftId: string, attempt = 0) => {
-    if (attempt >= MAX_POLL_ATTEMPTS) {
-      setError(t('voiceLog.processingTimeout'));
+    // Guard: must have recorded at least 1 second
+    if (elapsed < 1) {
+      setError(t('voiceLog.tooShort'));
       setScreenState('idle');
       return;
     }
-    try {
-      const res = await api.get<{ data: VoiceDraft }>(`/voice/drafts/${draftId}`);
-      const d = res.data;
-
-      if (d.status === 'active') setDraftWorkerStatus('active');
-      else if (d.status === 'waiting') setDraftWorkerStatus('waiting');
-
-      if (d.status === 'completed') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        const items = d.items ?? [];
-        setTranscription(d.transcription ?? '');
-        setDraftItems(items);
-        if (d.mealType && MEAL_TYPES.includes(d.mealType as MealType)) {
-          setMealType(d.mealType as MealType);
-        }
-        setScreenState('results');
-        trackEvent(EVENTS.VOICE_LOG_PROCESSED, {
-          itemCount: items.length,
-          totalCalories: d.totalCalories ?? 0,
-          hasLowConfidenceItems: items.some((it) => it.confidence < 0.7),
-          locale,
-        });
-        return;
-      }
-
-      if (d.status === 'failed') {
-        setError(t('voiceLog.processingFailed'));
-        setScreenState('idle');
-        return;
-      }
-
-      const delay = attempt < POLL_FAST_THRESHOLD ? POLL_INTERVAL_FAST_MS : POLL_INTERVAL_SLOW_MS;
-      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), delay);
-    } catch {
-      setError(t('voiceLog.statusCheckFailed'));
-      setScreenState('idle');
-    }
+    trackEvent(EVENTS.VOICE_LOG_RECORDED);
+    await voiceDraft.upload(uri, locale);
   };
 
   const handleDeleteItem = (index: number) => {
@@ -375,25 +458,45 @@ export function VoiceLogScreen() {
     setEditingIndex(null);
   };
 
+  const handleClarificationChoice = (option: ClarificationOption) => {
+    Haptics.selectionAsync();
+    if (option.patch && clarification) {
+      const idx = clarification.itemIndex;
+      if (idx != null && idx >= 0) {
+        setDraftItems((prev) =>
+          prev.map((item, i) => (i === idx ? { ...item, ...option.patch, confidence: 1.0 } : item)),
+        );
+      }
+    }
+    setClarification(null);
+  };
+
   const handleSave = async () => {
-    if (draftItems.length === 0) return;
+    const draftId = voiceDraft.draft?.id;
+    if (draftItems.length === 0 || !draftId) return;
     setScreenState('saving');
     setError(null);
     try {
       const totalCalories = draftItems.reduce((s, i) => s + i.calories, 0);
-      const totalProtein = draftItems.reduce((s, i) => s + i.protein, 0);
-      const totalCarbs = draftItems.reduce((s, i) => s + i.carbs, 0);
-      const totalFat = draftItems.reduce((s, i) => s + i.fat, 0);
-      const note = `Voice: ${draftItems.map((i) => i.name).join(', ')}`;
 
-      await mealsApi.quickAdd({
+      await mealsApi.fromVoice({
+        draftId,
         mealType,
-        calories: Math.round(totalCalories),
-        proteinGrams: Math.round(totalProtein * 10) / 10,
-        carbsGrams: Math.round(totalCarbs * 10) / 10,
-        fatGrams: Math.round(totalFat * 10) / 10,
-        note,
-        source: 'voice',
+        note: transcription ? transcription.slice(0, 500) : undefined,
+        items: draftItems.map((it) => ({
+          name: it.name,
+          quantity: it.quantity > 0 ? it.quantity : 1,
+          unit: it.unit || 'serving',
+          grams: it.grams >= 0 ? it.grams : 0,
+          calories: Math.max(0, it.calories),
+          protein: Math.max(0, it.protein),
+          carbs: Math.max(0, it.carbs),
+          fat: Math.max(0, it.fat),
+          ...(typeof it.fiber === 'number' ? { fiber: it.fiber } : {}),
+          ...(typeof it.sugar === 'number' ? { sugar: it.sugar } : {}),
+          ...(typeof it.sodium === 'number' ? { sodium: it.sodium } : {}),
+          ...(typeof it.saturatedFat === 'number' ? { saturatedFat: it.saturatedFat } : {}),
+        })),
       });
 
       trackEvent(EVENTS.MEAL_LOG_SAVED, {
@@ -415,22 +518,27 @@ export function VoiceLogScreen() {
           tension: 120,
           friction: 8,
         }),
-        RNAnimated.delay(700),
+        RNAnimated.delay(900),
         RNAnimated.timing(successOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-      ]).start(() => navigation.goBack());
+      ]).start(() => {
+        navigation.navigate('Home');
+      });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Save failed');
+      setError(e instanceof Error ? e.message : t('voiceLog.processingFailed'));
       setScreenState('results');
     }
   };
 
   const handleReset = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    voiceDraft.reset();
     setScreenState('idle');
     setDraftItems([]);
     setTranscription('');
     setMealType(autoDetectMealType());
     setError(null);
+    setParseWarning(null);
+    setClarification(null);
     setElapsed(0);
     setDraftWorkerStatus(null);
   };
@@ -448,6 +556,13 @@ export function VoiceLogScreen() {
 
   const processingStepIndex =
     screenState === 'uploading' ? 0 : draftWorkerStatus === 'active' ? 2 : 1;
+
+  // Determine if we should show inline retry CTA
+  const showRetryCta =
+    voiceDraft.uploadAttempt > 0 &&
+    voiceDraft.status === 'failed' &&
+    isRetryableCode(voiceDraft.errorCode) &&
+    voiceDraft.uploadAttempt <= 2;
 
   return (
     <View className="flex-1 bg-surface-app">
@@ -491,6 +606,17 @@ export function VoiceLogScreen() {
                   <Text className="text-center text-danger text-sm font-sans-medium">{error}</Text>
                 </View>
               ) : null}
+              {showRetryCta ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => void voiceDraft.retry()}
+                  className="mt-4"
+                  accessibilityLabel={t('voiceLog.retry')}
+                >
+                  {t('voiceLog.retry')}
+                </Button>
+              ) : null}
             </Animated.View>
           )}
 
@@ -508,7 +634,7 @@ export function VoiceLogScreen() {
               </Text>
               <RNAnimated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <Pressable
-                  onPress={stopRecording}
+                  onPress={() => void stopRecording()}
                   accessibilityRole="button"
                   accessibilityLabel={t('voiceLog.tapToStop')}
                   className="h-28 w-28 rounded-full bg-danger items-center justify-center"
@@ -553,7 +679,7 @@ export function VoiceLogScreen() {
                     }`}
                   >
                     {t(`voiceLog.${key}`)}
-                    {idx < processingStepIndex ? ' \u2713' : ''}
+                    {idx < processingStepIndex ? ' ✓' : ''}
                   </Text>
                 ))}
               </View>
@@ -563,6 +689,23 @@ export function VoiceLogScreen() {
           {/* -- RESULTS / SAVING -- */}
           {(screenState === 'results' || screenState === 'saving') && (
             <View className="px-5 py-4">
+              {/* Non-fatal parse warning banner */}
+              {parseWarning ? (
+                <Animated.View entering={FadeInDown.duration(300)}>
+                  <View className="mb-4 rounded-2xl bg-warning/10 px-4 py-3 flex-row items-start gap-2">
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={18}
+                      color={c.warning}
+                      style={{ marginTop: 1 }}
+                    />
+                    <Text className="flex-1 text-sm text-text font-sans-medium">
+                      {t('voiceLog.parseWarning')}
+                    </Text>
+                  </View>
+                </Animated.View>
+              ) : null}
+
               {/* Transcription */}
               {transcription.length > 0 && (
                 <Animated.View entering={FadeInDown.duration(300).delay(50)}>
@@ -697,7 +840,7 @@ export function VoiceLogScreen() {
                 </>
               )}
 
-              {/* Zero items fallback */}
+              {/* Zero items fallback — two-button layout */}
               {draftItems.length === 0 && (
                 <Animated.View
                   entering={FadeInDown.duration(300).delay(150)}
@@ -713,10 +856,18 @@ export function VoiceLogScreen() {
                     {t('voiceLog.addManually')}
                   </Text>
                   <Button
+                    size="sm"
+                    onPress={handleReset}
+                    className="mt-5"
+                    accessibilityLabel={t('voiceLog.recordAgain')}
+                  >
+                    {t('voiceLog.recordAgain')}
+                  </Button>
+                  <Button
                     variant="outline"
                     size="sm"
                     onPress={() => navigation.navigate('QuickAdd')}
-                    className="mt-5"
+                    className="mt-3"
                     accessibilityLabel={t('voiceLog.addEntryManually')}
                   >
                     {t('voiceLog.addEntryManually')}
@@ -733,7 +884,7 @@ export function VoiceLogScreen() {
               <View className="gap-3">
                 {draftItems.length > 0 && (
                   <Button
-                    onPress={handleSave}
+                    onPress={() => void handleSave()}
                     loading={screenState === 'saving'}
                     disabled={screenState === 'saving'}
                     accessibilityLabel={t('voiceLog.logMeal')}
@@ -763,6 +914,58 @@ export function VoiceLogScreen() {
           t={t}
           c={c}
         />
+      )}
+
+      {/* Clarification bottom sheet */}
+      {clarification && screenState === 'results' && (
+        <Modal
+          visible
+          transparent
+          animationType="slide"
+          onRequestClose={() => setClarification(null)}
+        >
+          <Pressable
+            className="flex-1 bg-black/40"
+            onPress={() => setClarification(null)}
+            accessibilityRole="button"
+            accessibilityLabel={t('voiceLog.skipQuestion')}
+          />
+          <View className="bg-surface-card rounded-t-3xl px-5 pt-5 pb-8">
+            <View className="flex-row items-center gap-2 mb-2">
+              <Ionicons name="help-circle-outline" size={20} color={c.primary} />
+              <Text className="text-xs font-sans-semibold text-text-tertiary uppercase tracking-wider">
+                {t('voiceLog.quickQuestion')}
+              </Text>
+            </View>
+            <Text className="text-text font-sans-semibold text-lg mb-5">
+              {clarification.question}
+            </Text>
+            <View className="gap-2">
+              {clarification.options.map((opt, idx) => {
+                const isSkip = opt.patch === null;
+                return (
+                  <Pressable
+                    key={`${opt.label}-${idx}`}
+                    onPress={() => handleClarificationChoice(opt)}
+                    accessibilityRole="button"
+                    accessibilityLabel={opt.label}
+                    className={`rounded-2xl px-4 py-3.5 ${
+                      isSkip ? 'bg-surface-secondary' : 'bg-primary-500'
+                    }`}
+                  >
+                    <Text
+                      className={`text-center font-sans-medium ${
+                        isSkip ? 'text-text-secondary' : 'text-on-primary'
+                      }`}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </Modal>
       )}
 
       {/* Success overlay */}

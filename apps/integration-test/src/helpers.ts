@@ -24,8 +24,6 @@ export interface NutritionResult {
   totalFat: number;
 }
 
-export type SttProvider = 'openai' | 'google';
-
 // ---------------------------------------------------------------------------
 // STT: OpenAI (gpt-4o-transcribe)
 // ---------------------------------------------------------------------------
@@ -61,67 +59,9 @@ export async function transcribeWithOpenAI(filePath: string, language = 'mn'): P
   return data.text?.trim() ?? '';
 }
 
-// ---------------------------------------------------------------------------
-// STT: Google Cloud Speech-to-Text
-// ---------------------------------------------------------------------------
-
-/**
- * Transcribe audio using Google Cloud Speech-to-Text v1.
- * Requires GOOGLE_STT_API_KEY or GOOGLE_APPLICATION_CREDENTIALS in env.
- */
-export async function transcribeWithGoogle(filePath: string, language = 'mn'): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const speech = require('@google-cloud/speech');
-  const client = new speech.SpeechClient();
-
-  const buffer = fs.readFileSync(filePath);
-  const audio = { content: buffer.toString('base64') };
-
-  // Map locale to BCP-47 language code
-  const languageCode = language === 'en' ? 'en-US' : 'mn-MN';
-
-  const config = {
-    encoding: 'LINEAR16' as const,
-    languageCode,
-    // 'default' model has the broadest language support including mn-MN.
-    // 'latest_long' does not support Mongolian.
-    model: 'default',
-    enableAutomaticPunctuation: true,
-  };
-
-  const [response] = await client.recognize({ audio, config });
-
-  const transcript = (response.results ?? [])
-    .map(
-      (result: { alternatives?: { transcript?: string }[] }) =>
-        result.alternatives?.[0]?.transcript ?? '',
-    )
-    .join(' ')
-    .trim();
-
-  return transcript;
-}
-
-// ---------------------------------------------------------------------------
-// Unified transcribe function
-// ---------------------------------------------------------------------------
-
-/**
- * Transcribe audio using the specified provider.
- * Defaults to OpenAI if no provider specified.
- */
-export async function transcribeAudio(
-  filePath: string,
-  language = 'mn',
-  provider: SttProvider = 'openai',
-): Promise<string> {
-  switch (provider) {
-    case 'google':
-      return transcribeWithGoogle(filePath, language);
-    case 'openai':
-    default:
-      return transcribeWithOpenAI(filePath, language);
-  }
+/** Transcribe audio. Currently OpenAI only. */
+export async function transcribeAudio(filePath: string, language = 'mn'): Promise<string> {
+  return transcribeWithOpenAI(filePath, language);
 }
 
 // ---------------------------------------------------------------------------
@@ -177,9 +117,8 @@ export async function parseNutrition(transcript: string): Promise<NutritionResul
 export async function fullPipeline(
   filePath: string,
   language = 'mn',
-  provider: SttProvider = 'openai',
 ): Promise<NutritionResult & { text: string }> {
-  const text = await transcribeAudio(filePath, language, provider);
+  const text = await transcribeAudio(filePath, language);
   const nutrition = await parseNutrition(text);
   return { text, ...nutrition };
 }

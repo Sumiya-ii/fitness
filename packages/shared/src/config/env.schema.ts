@@ -43,19 +43,6 @@ export const envSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   S3_ENDPOINT: z.string().url().optional(),
 
-  // Typesense
-  TYPESENSE_HOST: z.string().optional(),
-  TYPESENSE_PORT: z.coerce.number().int().positive().optional(),
-  TYPESENSE_API_KEY: z.string().optional(),
-
-  // STT providers
-  STT_PROVIDER: z.string().optional(),
-  STT_API_KEY: z.string().optional(),
-  GOOGLE_STT_CREDENTIALS: z.string().optional(),
-  GOOGLE_STT_API_KEY: z.string().optional(),
-  GOOGLE_CLOUD_PROJECT: z.string().optional(),
-  CHIMEGE_API_KEY: z.string().optional(),
-
   // Vision provider for food photo analysis
   // 'gemini' uses Gemini 2.0 Flash (primary, cheaper); 'openai' forces GPT-4o only
   // When set to 'gemini', GPT-4o is used as automatic fallback if Gemini fails

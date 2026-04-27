@@ -24,7 +24,7 @@ packages/
 | ------------- | ----------------------------------------------------------------------- |
 | Mobile        | React Native 0.83, Expo ~55, NativeWind 4, Zustand, React Navigation 7  |
 | API           | NestJS 10, Prisma 5 + PostgreSQL 16, Redis 7, Firebase Admin            |
-| AI            | OpenAI GPT-4 Vision (food photos), Google Speech-to-Text / Chimege STT  |
+| AI            | OpenAI GPT-4 Vision (food photos), OpenAI gpt-4o-transcribe (voice STT)  |
 | Queue         | BullMQ (via Redis)                                                      |
 | Auth          | Firebase Authentication (global guard, all routes protected by default) |
 | Payments      | QPay (Mongolia)                                                         |
@@ -60,7 +60,7 @@ npm run test:e2e --workspace=apps/api       # API integration tests
 npm run start:dev --workspace=apps/worker   # worker dev with watch
 
 # ── Docker (local infra) ─────────────────────────────────
-docker compose up -d                        # postgres, redis, typesense
+docker compose up -d                        # postgres, redis
 docker compose down                         # stop all services
 
 # ── Quality gates (run before push) ──────────────────────
@@ -91,7 +91,7 @@ npm run test:e2e:mobile                     # runs maestro/flows/*.yaml
 10. **Dates returned from API** must be ISO strings. Use `.toISOString().split('T')[0]` for date-only fields.
 11. **NativeWind only** for mobile styling — use `className`, never `StyleSheet.create()` or inline styles.
 12. **Zustand** for mobile state — no Redux, no Context for state management.
-13. **Never call real external services in tests** — Firebase, OpenAI, QPay, Typesense must be mocked at the boundary.
+13. **Never call real external services in tests** — Firebase, OpenAI, QPay must be mocked at the boundary.
 14. **Conditional Prisma updates** use spread: `...(dto.field !== undefined && { field: value })`.
 
 ## API patterns (follow exactly)
@@ -266,7 +266,7 @@ cp .env.example .env   # fill in secrets
 npm ci
 
 # 2. Start infrastructure
-docker compose up -d    # postgres, redis, typesense
+docker compose up -d    # postgres, redis
 
 # 3. Set up database
 npm run db:generate --workspace=apps/api
