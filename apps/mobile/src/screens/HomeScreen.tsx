@@ -851,7 +851,6 @@ export function HomeScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
           <View className="flex-row items-center gap-2">
-            <Text style={{ fontSize: 28 }}>🍏</Text>
             <Text className="text-2xl font-sans-bold text-text">
               {displayName ? displayName : 'Coach'}
             </Text>

@@ -5,8 +5,6 @@ import {
   LogScreen,
   TextSearchScreen,
   QuickAddScreen,
-  BarcodeScanScreen,
-  BarcodeSubmitScreen,
   VoiceLogScreen,
   PhotoLogScreen,
   FavoritesRecentsScreen,
@@ -30,8 +28,6 @@ export function LogStack() {
       <Stack.Screen name="LogHome" component={LogScreen} />
       <Stack.Screen name="TextSearch" component={TextSearchScreen} />
       <Stack.Screen name="QuickAdd" component={QuickAddScreen} />
-      <Stack.Screen name="BarcodeScan" component={BarcodeScanScreen} />
-      <Stack.Screen name="BarcodeSubmit" component={BarcodeSubmitScreen} />
       {/* VoiceLog gated behind features.voiceLoggingInApp — off in MVP v1 (use Telegram bot) */}
       {features.voiceLoggingInApp && <Stack.Screen name="VoiceLog" component={VoiceLogScreen} />}
       <Stack.Screen name="PhotoLog" component={PhotoLogScreen} />

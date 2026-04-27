@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../api';
+import { setTokenRefreshCallback } from '../api/client';
 import {
   configureGoogleSignIn,
   resetPassword as firebaseResetPassword,
@@ -12,8 +13,24 @@ import {
   subscribeToTokenRefresh,
   type FirebaseSessionUser,
 } from '../services/firebase-auth.service';
+import { getFirebaseAuth } from '../lib/firebase';
 
 configureGoogleSignIn();
+
+// Register the 401 token-refresh callback on the API client so that any request
+// that returns 401 (stale kid / expired token) will force-refresh and retry once.
+setTokenRefreshCallback(async () => {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) return null;
+  try {
+    const freshToken = await user.getIdToken(true);
+    await api.setToken(freshToken);
+    return freshToken;
+  } catch {
+    return null;
+  }
+});
 
 // Keeps the stored token in sync when Firebase auto-refreshes it (every ~1 hr).
 let _tokenRefreshUnsub: (() => void) | null = null;
@@ -137,17 +154,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
-      const fallbackToken = await api.getToken();
-      if (fallbackToken) {
-        set({
-          token: fallbackToken,
-          isAuthenticated: true,
-          user: { id: 'legacy-token-user', email: null },
-          isLoading: false,
-        });
-      } else {
-        set({ token: null, user: null, isAuthenticated: false, isLoading: false });
-      }
+      // No Firebase session — clear any leftover legacy token and treat as signed out.
+      await api.clearToken();
+      set({ token: null, user: null, isAuthenticated: false, isLoading: false });
     } catch {
       set({ token: null, user: null, isAuthenticated: false, isLoading: false });
     }

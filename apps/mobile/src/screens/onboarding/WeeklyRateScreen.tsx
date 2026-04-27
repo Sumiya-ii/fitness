@@ -9,27 +9,27 @@ import { displayWeeklyRate } from '../../utils/units';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
-
-const TOTAL_STEPS = 11;
+import { OptionRow } from './components/OptionRow';
 
 type RateOption = {
   value: number;
   descKey: string;
-  icon: keyof typeof Ionicons.glyphMap;
 };
 
 const LOSE_RATES: RateOption[] = [
-  { value: 0.25, descKey: 'onboarding.weeklyRateSlowSteady', icon: 'walk-outline' },
-  { value: 0.5, descKey: 'onboarding.weeklyRateRecommended', icon: 'bicycle-outline' },
-  { value: 0.75, descKey: 'onboarding.weeklyRateModerate', icon: 'fitness-outline' },
-  { value: 1.0, descKey: 'onboarding.weeklyRateAggressive', icon: 'flash-outline' },
+  { value: 0.25, descKey: 'onboarding.weeklyRateSlowSteady' },
+  { value: 0.5, descKey: 'onboarding.weeklyRateRecommended' },
+  { value: 0.75, descKey: 'onboarding.weeklyRateModerate' },
+  { value: 1.0, descKey: 'onboarding.weeklyRateAggressive' },
 ];
 
 const GAIN_RATES: RateOption[] = [
-  { value: 0.25, descKey: 'onboarding.weeklyRateLeanBulk', icon: 'walk-outline' },
-  { value: 0.5, descKey: 'onboarding.weeklyRateRecommended', icon: 'bicycle-outline' },
-  { value: 0.75, descKey: 'onboarding.weeklyRateFastBulk', icon: 'fitness-outline' },
+  { value: 0.25, descKey: 'onboarding.weeklyRateLeanBulk' },
+  { value: 0.5, descKey: 'onboarding.weeklyRateRecommended' },
+  { value: 0.75, descKey: 'onboarding.weeklyRateFastBulk' },
 ];
+
+const DEFAULT_RATE = 0.5;
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'WeeklyRate'>;
 
@@ -39,10 +39,12 @@ export function WeeklyRateScreen({ navigation }: Props) {
   const setWeeklyRateKg = useProfileStore((s) => s.setWeeklyRateKg);
   const c = useColors();
   const { t } = useLocale();
-  const [selected, setSelected] = useState<number | null>(stored);
 
   const rates = goalType === 'gain' ? GAIN_RATES : LOSE_RATES;
   const isMaintain = goalType === 'maintain';
+
+  // Default to 0.5 kg/week when unset.
+  const [selected, setSelected] = useState<number>(stored ?? DEFAULT_RATE);
 
   const handleSelect = (value: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -50,20 +52,14 @@ export function WeeklyRateScreen({ navigation }: Props) {
   };
 
   const handleContinue = () => {
-    if (isMaintain) {
-      setWeeklyRateKg(0);
-      navigation.navigate('ActivityLevelSelect');
-    } else if (selected !== null) {
-      setWeeklyRateKg(selected);
-      navigation.navigate('ActivityLevelSelect');
-    }
+    setWeeklyRateKg(isMaintain ? 0 : selected);
+    navigation.navigate('ActivityLevelSelect');
   };
 
   if (isMaintain) {
     return (
       <OnboardingLayout
-        step={8}
-        totalSteps={TOTAL_STEPS}
+        route="WeeklyRate"
         title={t('onboarding.weeklyRateMaintainTitle')}
         subtitle={t('onboarding.weeklyRateMaintainSubtitle')}
         onBack={() => navigation.goBack()}
@@ -86,8 +82,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={4}
-      totalSteps={TOTAL_STEPS}
+      route="WeeklyRate"
       title={t('onboarding.weeklyRateTitle')}
       subtitle={
         goalType === 'lose_fat'
@@ -96,50 +91,61 @@ export function WeeklyRateScreen({ navigation }: Props) {
       }
       onBack={() => navigation.goBack()}
       onContinue={handleContinue}
-      continueDisabled={selected === null}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
         <View className="gap-3">
-          {rates.map((rate) => {
+          {rates.map((rate, i) => {
             const isSelected = selected === rate.value;
             const isRecommended = rate.value === 0.5;
             const label = `${displayWeeklyRate(rate.value)} kg/week`;
 
             return (
-              <Pressable
-                key={rate.value}
-                onPress={() => handleSelect(rate.value)}
-                className="flex-row items-center p-4 rounded-2xl border-2 bg-surface-card active:opacity-85"
-                style={{ borderColor: isSelected ? c.primary : c.border }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: isSelected }}
-                accessibilityLabel={`${label} ${t(rate.descKey)}`}
-              >
-                <View className="w-10 h-10 rounded-full items-center justify-center mr-3 bg-surface-secondary">
-                  <Ionicons
-                    name={rate.icon}
-                    size={20}
-                    color={isSelected ? c.primary : c.textSecondary}
-                  />
-                </View>
-                <View className="flex-1">
-                  <View className="flex-row items-center">
-                    <Text className="text-base font-sans-semibold text-text">{label}</Text>
-                    {isRecommended && (
-                      <View
-                        className="ml-2 px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: `${c.primary}26` }}
+              <OptionRow key={rate.value} index={i}>
+                <Pressable
+                  onPress={() => handleSelect(rate.value)}
+                  className={`rounded-2xl py-4 px-4 flex-row items-center gap-3 active:opacity-85 ${
+                    isSelected ? 'bg-primary-500' : 'bg-surface-card'
+                  }`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`${label} ${t(rate.descKey)}`}
+                >
+                  <View className="flex-1">
+                    <View className="flex-row items-center">
+                      <Text
+                        className={`text-base font-sans-semibold ${
+                          isSelected ? 'text-on-primary' : 'text-text'
+                        }`}
                       >
-                        <Text className="text-xs font-sans-medium" style={{ color: c.primary }}>
-                          {t('onboarding.weeklyRateRecommended')}
-                        </Text>
-                      </View>
-                    )}
+                        {label}
+                      </Text>
+                      {isRecommended && (
+                        <View
+                          className="ml-2 px-2 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: isSelected ? `${c.onPrimary}26` : `${c.primary}26`,
+                          }}
+                        >
+                          <Text
+                            className="text-xs font-sans-medium"
+                            style={{ color: isSelected ? c.onPrimary : c.primary }}
+                          >
+                            {t('onboarding.weeklyRateRecommended')}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text
+                      className="text-sm"
+                      style={{
+                        color: isSelected ? `${c.onPrimary}b3` : c.textTertiary,
+                      }}
+                    >
+                      {t(rate.descKey)}
+                    </Text>
                   </View>
-                  <Text className="text-sm text-text-secondary">{t(rate.descKey)}</Text>
-                </View>
-                {isSelected && <Ionicons name="checkmark-circle" size={22} color={c.primary} />}
-              </Pressable>
+                </Pressable>
+              </OptionRow>
             );
           })}
         </View>

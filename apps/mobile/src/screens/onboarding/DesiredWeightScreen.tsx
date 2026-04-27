@@ -1,15 +1,11 @@
 import { useState, useMemo } from 'react';
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
-import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 import { ScrollPicker } from '../../components/ui';
-
-const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'DesiredWeight'>;
 
@@ -21,7 +17,6 @@ export function DesiredWeightScreen({ navigation }: Props) {
   const setGoalWeightKg = useProfileStore((s) => s.setGoalWeightKg);
   const goalType = useProfileStore((s) => s.goalType);
   const currentWeight = useProfileStore((s) => s.weightKg);
-  const c = useColors();
   const { t } = useLocale();
 
   // Filter weight items based on goal type and current weight.
@@ -76,42 +71,47 @@ export function DesiredWeightScreen({ navigation }: Props) {
 
   const title = t('onboarding.desiredWeightTitle').replace('{{label}}', t(goalLabelKey));
 
+  // Delta from current weight.
+  const delta = currentWeight != null ? selectedWeight - Math.round(currentWeight) : null;
+
   return (
     <OnboardingLayout
-      step={7}
-      totalSteps={TOTAL_STEPS}
+      route="DesiredWeight"
       title={title}
       subtitle={t('onboarding.desiredWeightSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={handleContinue}
     >
       <View className="flex-1 justify-center items-center">
-        {/* Icon */}
+        {/* Large value preview */}
+        <Text className="text-[40px] font-sans-bold text-text leading-[44px] text-center mb-2">
+          {selectedWeight} kg
+        </Text>
+
+        {/* Delta line — only when value differs from current */}
+        {delta !== null && delta !== 0 ? (
+          <Text className="text-[14px] text-text-tertiary text-center mb-8">
+            {delta > 0 ? '+' : ''}
+            {delta} kg from current
+          </Text>
+        ) : (
+          <View className="mb-8" />
+        )}
+
+        {/* Picker */}
         <View
-          className="w-20 h-20 rounded-full items-center justify-center mb-10"
-          style={{ backgroundColor: `${c.primary}1a` }}
+          className="overflow-hidden rounded-2xl border border-surface-border bg-surface-card"
+          style={{ width: 120 }}
         >
-          <Ionicons name="flag-outline" size={40} color={c.primary} />
-        </View>
-
-        {/* Picker + unit label */}
-        <View className="flex-row items-center gap-4">
-          <View
-            className="overflow-hidden rounded-2xl border border-surface-border bg-surface-card"
-            style={{ width: 120 }}
-          >
-            <ScrollPicker
-              items={weightItems}
-              selectedValue={selectedWeight}
-              onValueChange={(v) => setSelectedWeight(v as number)}
-              itemHeight={48}
-              visibleItems={5}
-              width={120}
-              accessibilityLabel={title}
-            />
-          </View>
-
-          <Text className="text-2xl font-sans-semibold text-text-secondary">kg</Text>
+          <ScrollPicker
+            items={weightItems}
+            selectedValue={selectedWeight}
+            onValueChange={(v) => setSelectedWeight(v as number)}
+            itemHeight={48}
+            visibleItems={5}
+            width={120}
+            accessibilityLabel={title}
+          />
         </View>
       </View>
     </OnboardingLayout>

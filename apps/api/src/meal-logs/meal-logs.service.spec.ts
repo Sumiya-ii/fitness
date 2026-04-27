@@ -1,10 +1,12 @@
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { MealLogsService } from './meal-logs.service';
+import { CalibrationService } from './calibration.service';
 import { PrismaService } from '../prisma';
 
 describe('MealLogsService', () => {
   let service: MealLogsService;
   let prisma: Record<string, Record<string, jest.Mock>>;
+  let calibration: { recordCorrections: jest.Mock; recordCorrection: jest.Mock };
 
   const mockFood = {
     id: 'food-uuid',
@@ -75,8 +77,20 @@ describe('MealLogsService', () => {
         count: jest.fn().mockResolvedValue(1),
         delete: jest.fn(),
       },
+      voiceDraft: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({ id: 'draft-uuid', status: 'completed', parsedItems: null }),
+      },
     };
-    service = new MealLogsService(prisma as unknown as PrismaService);
+    calibration = {
+      recordCorrection: jest.fn().mockResolvedValue(undefined),
+      recordCorrections: jest.fn().mockResolvedValue(undefined),
+    };
+    service = new MealLogsService(
+      prisma as unknown as PrismaService,
+      calibration as unknown as CalibrationService,
+    );
   });
 
   describe('createFromFood', () => {
@@ -196,6 +210,344 @@ describe('MealLogsService', () => {
       await expect(service.update('user-uuid', 'missing', { mealType: 'dinner' })).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('createFromVoice', () => {
+    const draftId = '11111111-1111-1111-1111-111111111111';
+    const baseItem = {
+      name: 'Бууз',
+      quantity: 4,
+      unit: 'piece',
+      grams: 200,
+      calories: 360,
+      protein: 28,
+      carbs: 24,
+      fat: 16,
+    };
+
+    function mockVoiceLogReturn(
+      items: Array<Record<string, unknown>>,
+      totals: Record<string, unknown>,
+    ) {
+      prisma.mealLog.create.mockResolvedValue({
+        ...mockMealLog,
+        source: 'voice',
+        ...totals,
+        items: items.map((it, i) => ({
+          id: `item-${i}`,
+          foodId: null,
+          quantity: 4,
+          servingLabel: 'piece',
+          gramsPerUnit: 50,
+          createdAt: new Date(),
+          snapshotFiber: null,
+          snapshotSugar: null,
+          snapshotSodium: null,
+          snapshotSaturatedFat: null,
+          ...it,
+        })),
+      });
+    }
+
+    it('persists one MealLogItem per parsed item with snapshot nutrition', async () => {
+      mockVoiceLogReturn(
+        [
+          {
+            snapshotFoodName: 'Бууз',
+            snapshotCalories: 360,
+            snapshotProtein: 28,
+            snapshotCarbs: 24,
+            snapshotFat: 16,
+          },
+          {
+            snapshotFoodName: 'Цай',
+            snapshotCalories: 35,
+            snapshotProtein: 2,
+            snapshotCarbs: 2,
+            snapshotFat: 2,
+          },
+        ],
+        { totalCalories: 395, totalProtein: 30, totalCarbs: 26, totalFat: 18 },
+      );
+
+      const result = await service.createFromVoice('user-uuid', {
+        draftId,
+        mealType: 'lunch',
+        items: [
+          baseItem,
+          {
+            name: 'Цай',
+            quantity: 1,
+            unit: 'cup',
+            grams: 200,
+            calories: 35,
+            protein: 2,
+            carbs: 2,
+            fat: 2,
+          },
+        ],
+      });
+
+      expect(prisma.voiceDraft.findFirst).toHaveBeenCalledWith({
+        where: { id: draftId, userId: 'user-uuid' },
+        select: { id: true, status: true, parsedItems: true },
+      });
+      const createCall = prisma.mealLog.create.mock.calls[0][0];
+      expect(createCall.data.source).toBe('voice');
+      expect(createCall.data.mealType).toBe('lunch');
+      expect(createCall.data.items.create).toHaveLength(2);
+      expect(createCall.data.items.create[0]).toMatchObject({
+        userId: 'user-uuid',
+        snapshotFoodName: 'Бууз',
+        snapshotCalories: 360,
+        servingLabel: 'piece',
+        quantity: 4,
+        gramsPerUnit: 50,
+      });
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('aggregates optional micronutrients only when provided', async () => {
+      mockVoiceLogReturn(
+        [
+          {
+            snapshotFoodName: 'Sandwich',
+            snapshotCalories: 400,
+            snapshotProtein: 20,
+            snapshotCarbs: 40,
+            snapshotFat: 15,
+            snapshotSugar: 8,
+            snapshotSodium: 600,
+          },
+        ],
+        {
+          totalCalories: 400,
+          totalProtein: 20,
+          totalCarbs: 40,
+          totalFat: 15,
+          totalSugar: 8,
+          totalSodium: 600,
+          totalFiber: null,
+          totalSaturatedFat: null,
+        },
+      );
+
+      await service.createFromVoice('user-uuid', {
+        draftId,
+        items: [
+          {
+            name: 'Sandwich',
+            quantity: 1,
+            unit: 'piece',
+            grams: 250,
+            calories: 400,
+            protein: 20,
+            carbs: 40,
+            fat: 15,
+            sugar: 8,
+            sodium: 600,
+          },
+        ],
+      });
+
+      const createCall = prisma.mealLog.create.mock.calls[0][0];
+      expect(createCall.data.totalSugar).toBe(8);
+      expect(createCall.data.totalSodium).toBe(600);
+      expect(createCall.data.totalFiber).toBeNull();
+      expect(createCall.data.totalSaturatedFat).toBeNull();
+      expect(createCall.data.items.create[0].snapshotSugar).toBe(8);
+      expect(createCall.data.items.create[0].snapshotFiber).toBeNull();
+    });
+
+    it('throws NotFoundException when draft does not belong to user', async () => {
+      prisma.voiceDraft.findFirst.mockResolvedValue(null);
+      await expect(
+        service.createFromVoice('user-uuid', { draftId, items: [baseItem] }),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.mealLog.create).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when draft is not completed', async () => {
+      prisma.voiceDraft.findFirst.mockResolvedValue({ id: draftId, status: 'active' });
+      await expect(
+        service.createFromVoice('user-uuid', { draftId, items: [baseItem] }),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.mealLog.create).not.toHaveBeenCalled();
+    });
+
+    it('sets canonicalFoodId via canonicalize() on each item', async () => {
+      mockVoiceLogReturn(
+        [
+          {
+            snapshotFoodName: 'Бууз',
+            canonicalFoodId: 'mn_buuz',
+            snapshotCalories: 360,
+            snapshotProtein: 28,
+            snapshotCarbs: 24,
+            snapshotFat: 16,
+          },
+          {
+            snapshotFoodName: 'unknown food xyzzy',
+            canonicalFoodId: null,
+            snapshotCalories: 100,
+            snapshotProtein: 5,
+            snapshotCarbs: 10,
+            snapshotFat: 5,
+          },
+        ],
+        { totalCalories: 460, totalProtein: 33, totalCarbs: 34, totalFat: 21 },
+      );
+
+      await service.createFromVoice('user-uuid', {
+        draftId,
+        items: [
+          baseItem,
+          {
+            name: 'unknown food xyzzy',
+            quantity: 1,
+            unit: 'serving',
+            grams: 100,
+            calories: 100,
+            protein: 5,
+            carbs: 10,
+            fat: 5,
+          },
+        ],
+      });
+
+      const createCall = prisma.mealLog.create.mock.calls[0][0];
+      const items = createCall.data.items.create;
+      expect(items[0].canonicalFoodId).toBe('mn_buuz');
+      expect(items[1].canonicalFoodId).toBeNull();
+    });
+
+    it('feeds calibration with original-vs-saved kcal per canonical item', async () => {
+      const draftId = '11111111-1111-1111-1111-111111111111';
+      // Draft envelope shape produced by the worker.
+      prisma.voiceDraft.findFirst.mockResolvedValue({
+        id: draftId,
+        status: 'completed',
+        parsedItems: {
+          items: [
+            { name: 'Бууз', calories: 360 },
+            { name: 'unknown food xyzzy', calories: 100 },
+          ],
+        },
+      });
+      mockVoiceLogReturn(
+        [
+          {
+            snapshotFoodName: 'Бууз',
+            snapshotCalories: 280,
+            snapshotProtein: 22,
+            snapshotCarbs: 24,
+            snapshotFat: 11,
+          },
+          {
+            snapshotFoodName: 'unknown food xyzzy',
+            snapshotCalories: 100,
+            snapshotProtein: 5,
+            snapshotCarbs: 10,
+            snapshotFat: 5,
+          },
+        ],
+        { totalCalories: 380, totalProtein: 27, totalCarbs: 34, totalFat: 16 },
+      );
+
+      await service.createFromVoice('user-uuid', {
+        draftId,
+        items: [
+          {
+            name: 'Бууз',
+            quantity: 4,
+            unit: 'piece',
+            grams: 200,
+            calories: 280,
+            protein: 22,
+            carbs: 24,
+            fat: 11,
+          },
+          {
+            name: 'unknown food xyzzy',
+            quantity: 1,
+            unit: 'serving',
+            grams: 100,
+            calories: 100,
+            protein: 5,
+            carbs: 10,
+            fat: 5,
+          },
+        ],
+      });
+
+      // `void` fire-and-forget; await microtasks so the spy sees the call.
+      await new Promise((r) => setImmediate(r));
+
+      expect(calibration.recordCorrections).toHaveBeenCalledTimes(1);
+      const args = calibration.recordCorrections.mock.calls[0];
+      expect(args[0]).toBe('user-uuid');
+      expect(args[1]).toEqual([
+        { canonicalFoodId: 'mn_buuz', originalKcal: 360, correctedKcal: 280 },
+        { canonicalFoodId: null, originalKcal: 100, correctedKcal: 100 },
+      ]);
+    });
+
+    it('skips calibration when draft.parsedItems length differs from saved items', async () => {
+      const draftId = '22222222-2222-2222-2222-222222222222';
+      prisma.voiceDraft.findFirst.mockResolvedValue({
+        id: draftId,
+        status: 'completed',
+        parsedItems: { items: [{ name: 'Бууз', calories: 360 }] },
+      });
+      mockVoiceLogReturn(
+        [
+          {
+            snapshotFoodName: 'Бууз',
+            snapshotCalories: 280,
+            snapshotProtein: 22,
+            snapshotCarbs: 24,
+            snapshotFat: 11,
+          },
+          {
+            snapshotFoodName: 'Хуушуур',
+            snapshotCalories: 240,
+            snapshotProtein: 12,
+            snapshotCarbs: 30,
+            snapshotFat: 9,
+          },
+        ],
+        { totalCalories: 520, totalProtein: 34, totalCarbs: 54, totalFat: 20 },
+      );
+
+      await service.createFromVoice('user-uuid', {
+        draftId,
+        items: [
+          {
+            name: 'Бууз',
+            quantity: 4,
+            unit: 'piece',
+            grams: 200,
+            calories: 280,
+            protein: 22,
+            carbs: 24,
+            fat: 11,
+          },
+          {
+            name: 'Хуушуур',
+            quantity: 1,
+            unit: 'piece',
+            grams: 120,
+            calories: 240,
+            protein: 12,
+            carbs: 30,
+            fat: 9,
+          },
+        ],
+      });
+
+      await new Promise((r) => setImmediate(r));
+      expect(calibration.recordCorrections).not.toHaveBeenCalled();
     });
   });
 

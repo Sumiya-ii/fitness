@@ -64,6 +64,9 @@ describe('processJob routing', () => {
       totalProtein: 0,
       totalCarbs: 0,
       totalFat: 0,
+      totalSugar: null,
+      totalSodium: null,
+      totalSaturatedFat: null,
     });
     await processJob(QUEUE_NAMES.STT_PROCESSING, fakeJob);
     expect(mockStt).toHaveBeenCalledWith(fakeJob);

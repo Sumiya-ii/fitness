@@ -46,8 +46,6 @@ export function LogScreen() {
       case 'voice':
         if (!(await requirePro())) return;
         return navigation.navigate('VoiceLog');
-      case 'barcode':
-        return navigation.navigate('BarcodeScan');
       case 'quick':
         return navigation.navigate('QuickAdd');
     }
@@ -97,12 +95,6 @@ export function LogScreen() {
           },
         ]
       : []),
-    {
-      key: 'barcode',
-      icon: 'barcode-outline' as const,
-      labelKey: 'logging.scan' as const,
-      color: c.success,
-    },
     {
       key: 'quick',
       icon: 'flash' as const,

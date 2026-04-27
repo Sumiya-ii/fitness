@@ -16,6 +16,7 @@ import { MealLogsService } from './meal-logs.service';
 import {
   createMealLogSchema,
   quickAddSchema,
+  fromVoiceSchema,
   updateMealLogSchema,
   mealLogQuerySchema,
 } from './meal-logs.dto';
@@ -40,6 +41,15 @@ export class MealLogsController {
       throw new BadRequestException(parsed.error.issues);
     }
     return { data: await this.mealLogsService.quickAdd(user.id, parsed.data) };
+  }
+
+  @Post('from-voice')
+  async fromVoice(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
+    const parsed = fromVoiceSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues);
+    }
+    return { data: await this.mealLogsService.createFromVoice(user.id, parsed.data) };
   }
 
   @Get()

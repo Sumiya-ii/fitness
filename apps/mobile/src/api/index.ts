@@ -1,4 +1,4 @@
-export { api } from './client';
+export { api, setTokenRefreshCallback } from './client';
 export { dashboardApi } from './dashboard';
 export type * from './dashboard';
 export { mealsApi } from './meals';

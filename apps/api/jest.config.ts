@@ -18,6 +18,7 @@ const config: Config = {
     },
   },
   testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/test-setup.ts'],
   moduleNameMapper: {
     '^@coach/shared$': '<rootDir>/../../../packages/shared/src',
   },

@@ -10,6 +10,9 @@ export type { BottomSheetProps } from './BottomSheet';
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 
+export { PrimaryPillButton } from './PrimaryPillButton';
+export type { PrimaryPillButtonProps } from './PrimaryPillButton';
+
 export { IconButton } from './IconButton';
 export type { IconButtonProps } from './IconButton';
 

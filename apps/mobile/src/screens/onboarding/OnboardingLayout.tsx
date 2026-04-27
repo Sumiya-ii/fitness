@@ -1,14 +1,28 @@
+import { useEffect } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  Easing,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
+import { PrimaryPillButton } from '../../components/ui/PrimaryPillButton';
+import type { OnboardingStackParamList } from '../../navigation/types';
+import { getProgress } from './steps';
+
+type RouteName = keyof OnboardingStackParamList;
 
 interface OnboardingLayoutProps {
-  step: number;
-  totalSteps: number;
+  /** When provided, progress is looked up from `steps.ts`. */
+  route?: RouteName;
+  /** Override progress (0–1). Takes precedence over `route`. */
+  progress?: number;
   title: string;
   subtitle?: string;
   onBack?: () => void;
@@ -20,26 +34,41 @@ interface OnboardingLayoutProps {
 }
 
 export function OnboardingLayout({
-  step,
-  totalSteps,
+  route,
+  progress: progressOverride,
   title,
   subtitle,
   onBack,
   onContinue,
   continueLabel,
   continueDisabled = false,
+  continueLoading = false,
   children,
 }: OnboardingLayoutProps) {
   const c = useColors();
   const { t } = useLocale();
-  const progress = step / totalSteps;
   const label = continueLabel ?? t('onboarding.next');
 
-  const handleContinue = () => {
-    if (continueDisabled) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onContinue();
-  };
+  const computedProgress =
+    progressOverride !== undefined
+      ? progressOverride
+      : route
+        ? (getProgress(route)?.percent ?? null)
+        : null;
+  const showBar = computedProgress !== null;
+
+  const progressValue = useSharedValue(computedProgress ?? 0);
+
+  useEffect(() => {
+    progressValue.value = withTiming(computedProgress ?? 0, {
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [computedProgress, progressValue]);
+
+  const progressBarStyle = useAnimatedStyle(() => ({
+    width: `${progressValue.value * 100}%`,
+  }));
 
   const handleBack = () => {
     if (!onBack) return;
@@ -69,13 +98,16 @@ export function OnboardingLayout({
             <View className="w-11 h-11" />
           )}
 
-          {/* Progress bar */}
-          <View className="flex-1 h-1 bg-surface-border rounded-full overflow-hidden">
-            <Animated.View
-              className="h-full rounded-full bg-primary-500"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </View>
+          {showBar ? (
+            <View className="flex-1 h-1 bg-surface-border rounded-full overflow-hidden">
+              <Animated.View
+                className="h-full rounded-full bg-primary-500"
+                style={progressBarStyle}
+              />
+            </View>
+          ) : (
+            <View className="flex-1" />
+          )}
         </View>
 
         {/* Title + subtitle */}
@@ -96,24 +128,12 @@ export function OnboardingLayout({
 
         {/* Continue button */}
         <View className="px-6 pb-10 pt-4">
-          <Pressable
-            onPress={handleContinue}
+          <PrimaryPillButton
+            label={label}
+            onPress={onContinue}
             disabled={continueDisabled}
-            className={`rounded-full items-center justify-center py-[18px] ${
-              continueDisabled ? 'bg-surface-muted' : 'bg-primary-500 active:opacity-90'
-            }`}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityState={{ disabled: continueDisabled }}
-          >
-            <Text
-              className={`text-[17px] font-sans-bold tracking-wide ${
-                continueDisabled ? 'text-text-tertiary' : 'text-on-primary'
-              }`}
-            >
-              {label}
-            </Text>
-          </Pressable>
+            loading={continueLoading}
+          />
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>

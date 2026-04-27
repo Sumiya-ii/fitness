@@ -1,14 +1,15 @@
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { useEffect } from 'react';
+import { View, Text, ScrollView, Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
-import { ProgressRing } from '../../components/ui/ProgressRing';
-import { MacroBar } from '../../components/ui/MacroBar';
-import { Button } from '../../components/ui/Button';
+import { PrimaryPillButton } from '../../components/ui/PrimaryPillButton';
 import { useProfileStore, calculateTargets } from '../../stores/profile.store';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
+import { Button } from '../../components/ui/Button';
 import { useShallow } from 'zustand/react/shallow';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'TargetReview'>;
@@ -31,6 +32,10 @@ export function TargetReviewScreen({ navigation }: Props) {
   const targets = calculateTargets(data);
   const c = useColors();
 
+  useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
+
   const handleConfirm = () => {
     if (
       !data.goalType ||
@@ -48,10 +53,6 @@ export function TargetReviewScreen({ navigation }: Props) {
     }
 
     navigation.navigate('SignUp');
-  };
-
-  const handleAdjust = () => {
-    navigation.goBack();
   };
 
   if (!targets) {
@@ -78,142 +79,84 @@ export function TargetReviewScreen({ navigation }: Props) {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
-        <View
-          className="pt-8 pb-12 px-6 bg-surface-card"
-          style={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
-        >
-          <Text className="text-2xl font-sans-bold text-text mb-1" accessibilityRole="header">
-            {t('onboarding.targetTitle')}
+        <View className="px-6 pt-10 pb-6">
+          {/* Hero calorie block */}
+          <Text className="text-[14px] uppercase tracking-wider text-text-tertiary text-center mb-2">
+            {t('onboarding.targetCaloriesLabel')}
           </Text>
-          <Text className="text-base text-text-secondary">{t('onboarding.targetSubtitle')}</Text>
+          <Text className="text-[64px] font-sans-bold text-text leading-[68px] text-center">
+            {targets.calories}
+          </Text>
+          <Text className="text-[14px] text-text-tertiary text-center mt-1">
+            {t('onboarding.targetKcalDay')}
+          </Text>
         </View>
 
-        <View className="px-6 -mt-6">
-          <View className="bg-surface-card rounded-2xl p-6 mb-6">
-            <View className="items-center mb-6">
-              <ProgressRing
-                progress={1}
-                size={160}
-                color={c.primary}
-                gradientEnd={c.primaryMuted}
-                backgroundColor={c.border}
-                centerLabel={`${targets.calories}`}
-                centerSubLabel={t('onboarding.targetKcalDay')}
-              />
-            </View>
+        {/* Macro grid */}
+        <View className="flex-row px-5 mb-6">
+          <MacroCell label={t('onboarding.targetProtein')} value={targets.protein} />
+          <MacroCell label={t('onboarding.targetCarbs')} value={targets.carbs} />
+          <MacroCell label={t('onboarding.targetFat')} value={targets.fat} />
+        </View>
 
-            <View className="gap-4">
-              <MacroBar
-                label={t('onboarding.targetProtein')}
-                current={targets.protein}
-                target={targets.protein}
-                color={c.primary}
-                size="large"
-              />
-              <MacroBar
-                label={t('onboarding.targetCarbs')}
-                current={targets.carbs}
-                target={targets.carbs}
-                color={c.textSecondary}
-              />
-              <MacroBar
-                label={t('onboarding.targetFat')}
-                current={targets.fat}
-                target={targets.fat}
-                color={c.textTertiary}
-              />
-            </View>
-          </View>
-
-          <View className="bg-surface-card rounded-2xl p-4 mb-6">
-            <Text className="text-sm font-sans-semibold text-text mb-3">
-              {t('onboarding.targetProfileSummary')}
-            </Text>
-            <View className="gap-2">
-              <SummaryRow
-                label={t('onboarding.targetGoalLabel')}
-                value={formatGoalType(data.goalType, t)}
-                colors={c}
-              />
-              <SummaryRow
-                label={t('onboarding.targetCurrentToTarget')}
-                value={`${data.weightKg} kg \u2192 ${data.goalWeightKg} kg`}
-                colors={c}
-              />
-              <SummaryRow
-                label={t('onboarding.targetWeeklyRate')}
-                value={
-                  data.weeklyRateKg === 0
-                    ? t('onboarding.targetMaintain')
-                    : t('onboarding.targetKgWeek').replace('{{rate}}', String(data.weeklyRateKg))
-                }
-                colors={c}
-              />
-              <SummaryRow
-                label={t('onboarding.targetDietStyle')}
-                value={formatDietPref(data.dietPreference, t)}
-                colors={c}
-              />
-            </View>
-          </View>
-
-          <View
-            className="flex-row items-start rounded-2xl p-4 mb-6 border"
-            style={{
-              backgroundColor: `${c.primary}1a`,
-              borderColor: `${c.primary}33`,
-            }}
-          >
-            <Ionicons
-              name="information-circle"
-              size={20}
-              color={c.primary}
-              style={{ marginTop: 1 }}
-            />
-            <Text className="text-xs text-text-secondary ml-2 flex-1 leading-5">
-              {t('onboarding.targetInfoNote')}
-            </Text>
-          </View>
+        {/* Profile summary card */}
+        <View className="rounded-2xl bg-surface-card p-5 mx-5 mt-2 gap-3">
+          <SummaryRow
+            label={t('onboarding.targetGoalLabel')}
+            value={formatGoalType(data.goalType, t)}
+          />
+          <SummaryRow
+            label={t('onboarding.targetCurrentToTarget')}
+            value={`${data.weightKg} kg → ${data.goalWeightKg} kg`}
+          />
+          <SummaryRow
+            label={t('onboarding.targetWeeklyRate')}
+            value={
+              data.weeklyRateKg === 0
+                ? t('onboarding.targetMaintain')
+                : t('onboarding.targetKgWeek').replace('{{rate}}', String(data.weeklyRateKg))
+            }
+          />
+          <SummaryRow
+            label={t('onboarding.targetDietStyle')}
+            value={formatDietPref(data.dietPreference, t)}
+          />
         </View>
       </ScrollView>
 
-      <View className="px-6 pb-8 pt-4 gap-3">
-        <Button
+      {/* CTAs */}
+      <View className="px-5 pb-8 pt-4 gap-1">
+        <PrimaryPillButton
+          label={t('onboarding.targetConfirm')}
           onPress={handleConfirm}
-          size="lg"
-          className="w-full"
           accessibilityLabel={t('onboarding.targetConfirm')}
-        >
-          {t('onboarding.targetConfirm')}
-        </Button>
-        <Button
-          onPress={handleAdjust}
-          variant="outline"
-          size="md"
-          className="w-full"
-          accessibilityLabel={t('onboarding.targetAdjust')}
-        >
-          {t('onboarding.targetAdjust')}
-        </Button>
+        />
+        <Pressable className="py-3 mt-1" onPress={() => navigation.goBack()}>
+          <Text className="text-text-tertiary text-center text-[14px]">
+            {t('onboarding.targetAdjust')}
+          </Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-  colors: ReturnType<typeof useColors>;
-}) {
+function MacroCell({ label, value }: { label: string; value: number }) {
   return (
-    <View className="flex-row justify-between py-1">
-      <Text className="text-xs text-text-secondary">{label}</Text>
-      <Text className="text-xs font-sans-medium text-text">{value ?? '\u2014'}</Text>
+    <View className="flex-1 items-center py-4 rounded-2xl bg-surface-card mx-1">
+      <Text className="text-[24px] font-sans-bold text-text">{value}g</Text>
+      <Text className="text-[12px] text-text-tertiary mt-1">{label}</Text>
+    </View>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <View className="flex-row justify-between">
+      <Text className="text-text-tertiary">{label}</Text>
+      <Text className="text-text font-sans-medium">{value ?? '—'}</Text>
     </View>
   );
 }
@@ -227,7 +170,7 @@ function formatGoalType(goal: string | null, t: (key: string) => string): string
     case 'gain':
       return t('onboarding.goalGain');
     default:
-      return '\u2014';
+      return '—';
   }
 }
 
@@ -242,6 +185,6 @@ function formatDietPref(pref: string | null, t: (key: string) => string): string
     case 'low_fat':
       return t('onboarding.dietLowFat');
     default:
-      return '\u2014';
+      return '—';
   }
 }

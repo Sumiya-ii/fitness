@@ -40,11 +40,14 @@ export function getFirebaseAuth(): Auth {
   const app = getApps().length > 0 ? getApp() : initializeApp(getFirebaseConfig());
 
   if (typeof getReactNativePersistence === 'function') {
-    cachedAuth = initializeAuth(app, {
-      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-    });
+    try {
+      cachedAuth = initializeAuth(app, {
+        persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+      });
+    } catch {
+      cachedAuth = getAuth(app);
+    }
   } else {
-    // Fallback: getAuth uses default persistence (may not persist across restarts)
     cachedAuth = getAuth(app);
   }
 

@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
-import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 import { ScrollPicker } from '../../components/ui';
-
-const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'HeightSelect'>;
 
@@ -26,7 +22,6 @@ const HEIGHT_ITEMS = Array.from({ length: MAX_HEIGHT - MIN_HEIGHT + 1 }, (_, i) 
 export function HeightSelectScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.heightCm);
   const setHeightCm = useProfileStore((s) => s.setHeightCm);
-  const c = useColors();
   const { t } = useLocale();
 
   const [selectedHeight, setSelectedHeight] = useState<number>(
@@ -40,40 +35,32 @@ export function HeightSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={5}
-      totalSteps={TOTAL_STEPS}
+      route="HeightSelect"
       title={t('onboarding.heightTitle')}
       subtitle={t('onboarding.heightSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={handleContinue}
     >
       <View className="flex-1 justify-center items-center">
-        {/* Icon */}
+        {/* Large value preview */}
+        <Text className="text-[40px] font-sans-bold text-text leading-[44px] text-center mb-8">
+          {selectedHeight} cm
+        </Text>
+
+        {/* Picker */}
         <View
-          className="w-20 h-20 rounded-full items-center justify-center mb-10"
-          style={{ backgroundColor: `${c.primary}1a` }}
+          className="overflow-hidden rounded-2xl border border-surface-border bg-surface-card"
+          style={{ width: 120 }}
         >
-          <Ionicons name="resize-outline" size={40} color={c.primary} />
-        </View>
-
-        {/* Picker + unit label */}
-        <View className="flex-row items-center gap-4">
-          <View
-            className="overflow-hidden rounded-2xl border border-surface-border bg-surface-card"
-            style={{ width: 120 }}
-          >
-            <ScrollPicker
-              items={HEIGHT_ITEMS}
-              selectedValue={selectedHeight}
-              onValueChange={(v) => setSelectedHeight(v as number)}
-              itemHeight={48}
-              visibleItems={5}
-              width={120}
-              accessibilityLabel={t('onboarding.heightTitle')}
-            />
-          </View>
-
-          <Text className="text-2xl font-sans-semibold text-text-secondary">cm</Text>
+          <ScrollPicker
+            items={HEIGHT_ITEMS}
+            selectedValue={selectedHeight}
+            onValueChange={(v) => setSelectedHeight(v as number)}
+            itemHeight={48}
+            visibleItems={5}
+            width={120}
+            accessibilityLabel={t('onboarding.heightTitle')}
+          />
         </View>
       </View>
     </OnboardingLayout>

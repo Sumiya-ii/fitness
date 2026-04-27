@@ -95,5 +95,67 @@ describe('FavoritesService', () => {
       const result = await service.getRecents('user-uuid');
       expect(result).toHaveLength(0);
     });
+
+    it('groups voice/photo items by canonicalFoodId so duplicates collapse', async () => {
+      // Three logs of "Бууз" via voice, in different spellings → one canonical id.
+      prisma.mealLogItem.findMany.mockResolvedValue([
+        {
+          foodId: null,
+          canonicalFoodId: 'mn_buuz',
+          snapshotFoodName: 'Бууз',
+          snapshotCalories: 360,
+          snapshotProtein: 28,
+          createdAt: new Date('2026-04-25'),
+        },
+        {
+          foodId: null,
+          canonicalFoodId: 'mn_buuz',
+          snapshotFoodName: 'buuz',
+          snapshotCalories: 360,
+          snapshotProtein: 28,
+          createdAt: new Date('2026-04-24'),
+        },
+        {
+          foodId: null,
+          canonicalFoodId: 'mn_khuushuur',
+          snapshotFoodName: 'Хуушуур',
+          snapshotCalories: 240,
+          snapshotProtein: 12,
+          createdAt: new Date('2026-04-23'),
+        },
+      ]);
+
+      const result = await service.getRecents('user-uuid');
+      expect(result).toHaveLength(2);
+      expect(result[0].canonicalFoodId).toBe('mn_buuz');
+      expect(result[0].foodId).toBeNull();
+      expect(result[1].canonicalFoodId).toBe('mn_khuushuur');
+    });
+
+    it('does not collapse a catalog food and a canonical-only item even if both refer to similar food', async () => {
+      // Catalog food "rice (food-1)" should be a separate row from a canonical-only "mn_white_rice_cooked"
+      // — different identity spaces. We dedupe within a space, not across.
+      prisma.mealLogItem.findMany.mockResolvedValue([
+        {
+          foodId: 'food-1',
+          canonicalFoodId: null,
+          snapshotFoodName: 'Catalog rice',
+          snapshotCalories: 200,
+          snapshotProtein: 4,
+          createdAt: new Date('2026-04-25'),
+        },
+        {
+          foodId: null,
+          canonicalFoodId: 'mn_white_rice_cooked',
+          snapshotFoodName: 'Цагаан будаа',
+          snapshotCalories: 200,
+          snapshotProtein: 4,
+          createdAt: new Date('2026-04-24'),
+        },
+      ]);
+
+      const result = await service.getRecents('user-uuid');
+      expect(result).toHaveLength(2);
+    });
   });
 });

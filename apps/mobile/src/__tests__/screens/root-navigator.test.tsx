@@ -35,6 +35,10 @@ jest.mock('../../services/firebase-auth.service', () => ({
   signOutFirebase: jest.fn(),
 }));
 
+jest.mock('../../lib/firebase', () => ({
+  getFirebaseAuth: jest.fn(() => ({ currentUser: null })),
+}));
+
 jest.mock('../../hooks/usePushNotifications', () => ({
   usePushNotifications: jest.fn(),
 }));

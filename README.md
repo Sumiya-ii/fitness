@@ -68,6 +68,5 @@ For `apps/mobile`, configure these Expo public env vars instead of editing sourc
 - **Mobile**: React Native (TypeScript)
 - **Database**: PostgreSQL
 - **Cache/Queue**: Redis + BullMQ
-- **Search**: Typesense
 - **Auth**: Firebase Auth
 - **Observability**: OpenTelemetry + Sentry

@@ -8,8 +8,7 @@ import { useProfileStore } from '../../stores/profile.store';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
-
-const TOTAL_STEPS = 11;
+import { OptionRow } from './components/OptionRow';
 
 type ActivityOption = {
   id: ActivityLevel;
@@ -66,8 +65,7 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={9}
-      totalSteps={TOTAL_STEPS}
+      route="ActivityLevelSelect"
       title={t('onboarding.activityTitle')}
       subtitle={t('onboarding.activitySubtitle')}
       onBack={() => navigation.goBack()}
@@ -76,45 +74,46 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
         <View className="gap-2.5">
-          {OPTIONS.map((opt) => {
+          {OPTIONS.map((opt, i) => {
             const selected = activityLevel === opt.id;
             return (
-              <Pressable
-                key={opt.id}
-                onPress={() => handleSelect(opt.id)}
-                className={`rounded-2xl py-4 px-4 flex-row items-center gap-3 active:opacity-85 ${
-                  selected ? 'bg-primary-500' : 'bg-surface-card'
-                }`}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                accessibilityLabel={`${t(opt.titleKey)} ${t(opt.descKey)}`}
-              >
-                <View
-                  className="w-10 h-10 rounded-full items-center justify-center"
-                  style={{
-                    backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
-                  }}
+              <OptionRow key={opt.id} index={i}>
+                <Pressable
+                  onPress={() => handleSelect(opt.id)}
+                  className={`rounded-2xl py-4 px-4 flex-row items-center gap-3 active:opacity-85 ${
+                    selected ? 'bg-primary-500' : 'bg-surface-card'
+                  }`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${t(opt.titleKey)} ${t(opt.descKey)}`}
                 >
-                  <Ionicons name={opt.icon} size={20} color={selected ? c.onPrimary : c.text} />
-                </View>
-                <View className="flex-1">
-                  <Text
-                    className={`text-[15px] font-sans-bold mb-0.5 ${
-                      selected ? 'text-on-primary' : 'text-text'
-                    }`}
-                  >
-                    {t(opt.titleKey)}
-                  </Text>
-                  <Text
-                    className="text-xs"
+                  <View
+                    className="w-10 h-10 rounded-full items-center justify-center"
                     style={{
-                      color: selected ? `${c.onPrimary}99` : c.textTertiary,
+                      backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
                     }}
                   >
-                    {t(opt.descKey)}
-                  </Text>
-                </View>
-              </Pressable>
+                    <Ionicons name={opt.icon} size={20} color={selected ? c.onPrimary : c.text} />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-[15px] font-sans-bold mb-0.5 ${
+                        selected ? 'text-on-primary' : 'text-text'
+                      }`}
+                    >
+                      {t(opt.titleKey)}
+                    </Text>
+                    <Text
+                      className="text-xs"
+                      style={{
+                        color: selected ? `${c.onPrimary}99` : c.textTertiary,
+                      }}
+                    >
+                      {t(opt.descKey)}
+                    </Text>
+                  </View>
+                </Pressable>
+              </OptionRow>
             );
           })}
         </View>

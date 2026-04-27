@@ -61,20 +61,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  typesense:
-    image: typesense/typesense:0.25.2
-    ports:
-      - "8108:8108"
-    volumes:
-      - typesensedata:/data
-    command: --data-dir=/data --api-key=coach-typesense-key
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8108/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 volumes:
   pgdata:
   redisdata:
-  typesensedata:

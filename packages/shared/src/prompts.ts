@@ -85,10 +85,23 @@ export const FOOD_ITEM_FIELD_RULES = `Field rules:
 - unit: one of "piece", "bowl", "cup", "plate", "slice", "glass", "can", "serving", "gram"
 - grams: estimated total weight in grams for the full quantity described
 - calories/protein/carbs/fat: totals for the full quantity (not per 100g)
-- confidence: 0.0-1.0
-  0.9-1.0 = specific quantity + well-known food ("3 buurz")
-  0.7-0.8 = standard portion assumed for a clearly named food
-  0.4-0.6 = vague description, unknown food, or unusual combination`;
+- fiber, sugar, sodium (mg), saturatedFat: include when the food has notable
+  amounts; omit (do not return null) when negligible or unknown
+- confidence: 0.0-1.0 — be honest, this gates clarification follow-ups
+  0.85-1.0 = specific quantity + well-known food + no ambiguity ("3 buuz")
+  0.65-0.84 = standard portion assumed for a clearly named food
+  below 0.65 = vague description, missing quantity, or unknown food
+- missing: array of fields the user did NOT specify and you had to assume
+  (subset of: "quantity", "unit", "preparation", "meatType", "milkType");
+  return [] when nothing is missing
+- ambiguity: one of "meat_type" | "milk_type" | "portion" | "preparation" | null
+  Use ONLY when the food has multiple common variants with materially different
+  nutrition and the user did not specify. Examples:
+    хуушуур without meat type → "meat_type"
+    цай without sugar/milk specified → "milk_type"
+    хоол cooked vs fried → "preparation"
+    бууз without count → "portion"
+  Return null when the user's description leaves no meaningful ambiguity.`;
 
 /** Mongolian number words (romanized and Cyrillic) */
 export const MONGOLIAN_NUMBER_WORDS = `Mongolian number words: neg=1, khoyor=2, gurav=3, dorov=4, tav=5, zurgaa=6, doloo=7, naim=8, yes=9, arav=10`;
@@ -120,7 +133,13 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
       "protein": 15.0,
       "carbs": 30.0,
       "fat": 8.0,
-      "confidence": 0.9
+      "fiber": 3.0,
+      "sugar": 5.0,
+      "sodium": 480,
+      "saturatedFat": 2.5,
+      "confidence": 0.9,
+      "missing": [],
+      "ambiguity": null
     }
   ]
 }
@@ -134,6 +153,40 @@ ${MONGOLIAN_FOOD_REFERENCE}
 ${MONGOLIAN_NUMBER_WORDS}
 
 ${MONGOLIAN_PARSING_RULES}`;
+
+/**
+ * Cheap LLM call: generate a single clarifying question + 2-4 chip options for
+ * a triggered ambiguity. Called only when shouldAskFollowUp returns a trigger.
+ *
+ * The model returns:
+ *   { question, options: [{ label, patch }] }
+ * where `patch` is a structured override applied to the targeted item when
+ * the user taps that chip. Always include a "Skip" option with patch=null.
+ */
+export const VOICE_CLARIFICATION_PROMPT = `You generate ONE concise clarifying question with 2–4 multiple-choice chip answers, in the user's locale, to disambiguate a single voice-logged food item.
+
+Return ONLY valid JSON in this exact format (no markdown, no explanation):
+{
+  "question": "Concise question in the user's locale (max ~12 words)",
+  "options": [
+    { "label": "Chip label (1–3 words)", "patch": { "name": "...", "calories": 280, "protein": 18, "carbs": 25, "fat": 12 } },
+    { "label": "Skip / Алгасах", "patch": null }
+  ]
+}
+
+Rules:
+- The question MUST be in the user's locale (Mongolian Cyrillic for "mn", English for "en"). Always use the polite "та" form in Mongolian.
+- 2–4 chips total. The LAST chip is always a skip option labeled "Алгасах" (mn) or "Skip" (en) with patch: null.
+- Each non-skip chip's patch overrides specific fields on the item with realistic per-quantity totals (NOT per-100g). Only include the fields you intend to change.
+- For meat_type ambiguity: chips are concrete meat variants (Хонины мах / Үхрийн мах / Тахианы мах / Ногоотой). Patch updates name + macros to match.
+- For milk_type ambiguity (e.g. tea): chips like Сүүтэй цай / Хар цай / Сүүтэй чихэртэй цай. Patch updates name + calories + carbs/sugar.
+- For preparation: chips like Чанасан / Шарсан / Жигнэсэн. Patch updates calories + fat.
+- For portion: chips are concrete counts (e.g. 3, 5, 7) with patch updating quantity AND scaled calories/protein/carbs/fat. Compute scaled macros = base_per_unit × new_quantity.
+- For low confidence on a generic item: chips are the most likely concrete options based on the transcription.
+- Keep numbers realistic and consistent with the food's typical nutrition.
+- Never include comments, markdown, or explanation outside the JSON.
+
+${MONGOLIAN_FOOD_REFERENCE}`;
 
 /**
  * Complete system prompt for Telegram text-based food parsing.

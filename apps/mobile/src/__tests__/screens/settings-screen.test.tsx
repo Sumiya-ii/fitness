@@ -22,6 +22,10 @@ jest.mock('../../services/firebase-auth.service', () => ({
   signOutFirebase: jest.fn(),
 }));
 
+jest.mock('../../lib/firebase', () => ({
+  getFirebaseAuth: jest.fn(() => ({ currentUser: null })),
+}));
+
 // Mock the API module
 jest.mock('../../api', () => ({
   api: {
@@ -36,6 +40,7 @@ jest.mock('../../api', () => ({
     put: jest.fn().mockResolvedValue({}),
     post: jest.fn().mockResolvedValue({}),
   },
+  setTokenRefreshCallback: jest.fn(),
 }));
 
 import { SettingsScreen } from '../../screens/SettingsScreen';

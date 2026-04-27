@@ -38,6 +38,7 @@ model User {
   outboundMessages     OutboundMessage[]
   bodyMeasurementLogs  BodyMeasurementLog[]
   mealTemplates        MealTemplate[]
+  foodCalibrations     UserFoodCalibration[]
 
   @@map("users")
 }
@@ -245,6 +246,12 @@ model MealLogItem {
   snapshotSaturatedFat Decimal? @map("snapshot_saturated_fat") @db.Decimal(8, 2)
   snapshotFoodName     String   @map("snapshot_food_name") @db.VarChar(500)
 
+  // Stable identifier from the canonicalize() normalizer, populated for items
+  // that don't reference the food catalog (voice/photo/quick-add). Lets us
+  // group "бууз" / "buuz" / "Бууз" into one bucket for recents and the
+  // calibration loop. Nullable — pre-canonical rows and foreign foods stay null.
+  canonicalFoodId String? @map("canonical_food_id") @db.VarChar(50)
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -255,6 +262,7 @@ model MealLogItem {
   @@index([mealLogId, createdAt])
   @@index([userId, createdAt(sort: Desc)])
   @@index([foodId])
+  @@index([userId, canonicalFoodId])
   @@map("meal_log_items")
 }
 
@@ -668,6 +676,32 @@ model OutboundMessage {
   @@index([sentAt(sort: Desc), id(sort: Desc)])
   @@index([channel])
   @@map("outbound_messages")
+}
+
+// ─── Per-user food calibration ───────────────────────────────────
+//
+// Learns the systematic bias between AI-estimated calories for a given
+// canonical food and what the user actually saved. After ≥3 samples we apply
+// the median ratio to scale future estimates of that food for that user.
+// Bounds: ratio ∈ [0.4, 2.5]. We keep the most recent 10 samples and store
+// the running median in `medianRatio` so the worker doesn't recompute on read.
+
+model UserFoodCalibration {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  canonicalFoodId String   @map("canonical_food_id") @db.VarChar(50)
+  medianRatio     Decimal  @map("median_ratio") @db.Decimal(4, 3)
+  /// Running buffer of the last N ratios (newest last). Capped at 10 in app code.
+  recentSamples   Json     @map("recent_samples")
+  sampleCount     Int      @default(0) @map("sample_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, canonicalFoodId])
+  @@index([userId])
+  @@map("user_food_calibrations")
 }
 
 // ─── Coach Memory ────────────────────────────────────────────────

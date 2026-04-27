@@ -63,31 +63,47 @@ export class FavoritesService {
   }
 
   async getRecents(userId: string, limit = 20) {
+    // Include items that have either a catalog foodId OR a canonical id from
+    // the normalizer (voice/photo logs). Without canonical_food_id, voice
+    // entries previously never appeared in recents at all.
     const recentItems = await this.prisma.mealLogItem.findMany({
       where: {
         userId,
-        foodId: { not: null },
+        OR: [{ foodId: { not: null } }, { canonicalFoodId: { not: null } }],
       },
       orderBy: { createdAt: 'desc' },
       select: {
         foodId: true,
+        canonicalFoodId: true,
         snapshotFoodName: true,
         snapshotCalories: true,
         snapshotProtein: true,
         createdAt: true,
       },
-      take: limit * 3, // fetch extra to deduplicate
+      take: limit * 4, // fetch extra to deduplicate across both id spaces
     });
 
+    // Dedupe by foodId first (catalog-backed identity wins), falling back to
+    // canonicalFoodId. The composite key prevents "Бууз" from collapsing with
+    // a separate catalog "Buuz with veggies" food row that happens to share a
+    // canonical id.
     const seen = new Set<string>();
-    const deduped = recentItems.filter((item) => {
-      if (!item.foodId || seen.has(item.foodId)) return false;
-      seen.add(item.foodId);
-      return true;
-    });
+    const deduped: typeof recentItems = [];
+    for (const item of recentItems) {
+      const key = item.foodId
+        ? `food:${item.foodId}`
+        : item.canonicalFoodId
+          ? `canon:${item.canonicalFoodId}`
+          : null;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(item);
+      if (deduped.length >= limit) break;
+    }
 
-    return deduped.slice(0, limit).map((item) => ({
+    return deduped.map((item) => ({
       foodId: item.foodId,
+      canonicalFoodId: item.canonicalFoodId,
       name: item.snapshotFoodName,
       lastCalories: item.snapshotCalories,
       lastProtein: Number(item.snapshotProtein),

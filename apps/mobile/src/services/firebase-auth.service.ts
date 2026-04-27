@@ -91,10 +91,13 @@ export async function signUpWithEmailPassword(
 }
 
 export function configureGoogleSignIn(): void {
-  GoogleSignin.configure({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  });
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  if (!webClientId || !iosClientId) {
+    console.warn('[GoogleSignIn] missing client IDs — Google sign-in disabled');
+    return;
+  }
+  GoogleSignin.configure({ webClientId, iosClientId });
 }
 
 export async function signInWithGoogle(): Promise<FirebaseSession> {
@@ -170,15 +173,28 @@ export async function signInWithApple(): Promise<FirebaseSession> {
 export async function restoreFirebaseSession(): Promise<FirebaseSession | null> {
   const auth = getFirebaseAuth();
 
-  // Wait for Firebase to finish restoring persisted auth state before reading currentUser.
-  await new Promise<void>((resolve) => {
-    const unsubscribe = auth.onAuthStateChanged(() => {
-      unsubscribe();
-      resolve();
-    });
-  });
+  // Wait for Firebase to finish restoring persisted auth state before reading
+  // currentUser — but don't wait forever. If onAuthStateChanged never fires
+  // (e.g. Firebase init wedged), proceed as signed out so the UI unblocks.
+  await Promise.race([
+    new Promise<void>((resolve) => {
+      const unsubscribe = auth.onAuthStateChanged(() => {
+        unsubscribe();
+        resolve();
+      });
+    }),
+    new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+  ]);
 
-  return sessionFromCurrentUser(true);
+  try {
+    return await sessionFromCurrentUser(true);
+  } catch {
+    // Token refresh failed — most commonly because the user was deleted on the
+    // server but local persistence still has them cached. Clear it so we don't
+    // get stuck on the next launch, then treat as signed out.
+    await firebaseSignOut(auth).catch(() => {});
+    return null;
+  }
 }
 
 export async function signOutFirebase(): Promise<void> {

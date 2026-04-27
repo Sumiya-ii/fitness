@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
-import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 import { ScrollPicker } from '../../components/ui';
-
-const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'WeightSelect'>;
 
@@ -26,7 +22,6 @@ const WEIGHT_ITEMS = Array.from({ length: MAX_WEIGHT - MIN_WEIGHT + 1 }, (_, i) 
 export function WeightSelectScreen({ navigation }: Props) {
   const stored = useProfileStore((s) => s.weightKg);
   const setWeightKg = useProfileStore((s) => s.setWeightKg);
-  const c = useColors();
   const { t } = useLocale();
 
   const [selectedWeight, setSelectedWeight] = useState<number>(() => {
@@ -43,40 +38,32 @@ export function WeightSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={6}
-      totalSteps={TOTAL_STEPS}
+      route="WeightSelect"
       title={t('onboarding.weightTitle')}
       subtitle={t('onboarding.weightSubtitle')}
       onBack={() => navigation.goBack()}
       onContinue={handleContinue}
     >
       <View className="flex-1 justify-center items-center">
-        {/* Icon */}
+        {/* Large value preview */}
+        <Text className="text-[40px] font-sans-bold text-text leading-[44px] text-center mb-8">
+          {selectedWeight} kg
+        </Text>
+
+        {/* Picker */}
         <View
-          className="w-20 h-20 rounded-full items-center justify-center mb-10"
-          style={{ backgroundColor: `${c.primary}1a` }}
+          className="overflow-hidden rounded-2xl border border-surface-border bg-surface-card"
+          style={{ width: 120 }}
         >
-          <Ionicons name="barbell-outline" size={40} color={c.primary} />
-        </View>
-
-        {/* Picker + unit label */}
-        <View className="flex-row items-center gap-4">
-          <View
-            className="overflow-hidden rounded-2xl border border-surface-border bg-surface-card"
-            style={{ width: 120 }}
-          >
-            <ScrollPicker
-              items={WEIGHT_ITEMS}
-              selectedValue={selectedWeight}
-              onValueChange={(v) => setSelectedWeight(v as number)}
-              itemHeight={48}
-              visibleItems={5}
-              width={120}
-              accessibilityLabel={t('onboarding.weightTitle')}
-            />
-          </View>
-
-          <Text className="text-2xl font-sans-semibold text-text-secondary">kg</Text>
+          <ScrollPicker
+            items={WEIGHT_ITEMS}
+            selectedValue={selectedWeight}
+            onValueChange={(v) => setSelectedWeight(v as number)}
+            itemHeight={48}
+            visibleItems={5}
+            width={120}
+            accessibilityLabel={t('onboarding.weightTitle')}
+          />
         </View>
       </View>
     </OnboardingLayout>

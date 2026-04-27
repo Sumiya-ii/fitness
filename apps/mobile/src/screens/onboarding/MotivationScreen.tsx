@@ -8,8 +8,6 @@ import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 
-const TOTAL_STEPS = 11;
-
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Motivation'>;
 
 export function MotivationScreen({ navigation }: Props) {
@@ -38,12 +36,11 @@ export function MotivationScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={11}
-      totalSteps={TOTAL_STEPS}
+      route="Motivation"
       title={t('onboarding.motivationTitle')}
       subtitle={t('onboarding.motivationSubtitle')}
       onBack={() => navigation.goBack()}
-      onContinue={() => navigation.navigate('TargetReview')}
+      onContinue={() => navigation.navigate('GeneratingPlan')}
       continueLabel={t('onboarding.motivationSeePlan')}
     >
       <View className="flex-1 justify-center">

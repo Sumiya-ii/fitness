@@ -7,7 +7,6 @@ export type AuthStackParamList = {
 
 export type OnboardingStackParamList = {
   Welcome: undefined;
-  ThemeSelect: undefined;
   GoalSetup: undefined;
   DesiredWeight: undefined;
   WeeklyRate: undefined;
@@ -18,6 +17,7 @@ export type OnboardingStackParamList = {
   ActivityLevelSelect: undefined;
   DietPreferenceSelect: undefined;
   Motivation: undefined;
+  GeneratingPlan: undefined;
   TargetReview: undefined;
   SignUp: undefined;
   SignIn: undefined;
@@ -31,8 +31,6 @@ export type LogStackParamList = {
   LogHome: undefined;
   TextSearch: { initialQuery?: string } | undefined;
   QuickAdd: undefined;
-  BarcodeScan: undefined;
-  BarcodeSubmit: { barcode: string };
   VoiceLog: undefined;
   PhotoLog: { mode?: 'food' | 'label' } | undefined;
   FavoritesRecents: undefined;

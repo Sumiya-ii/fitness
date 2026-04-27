@@ -29,6 +29,8 @@ export interface FoodsResponse {
 export interface MealLogItem {
   id: string;
   foodId: string | null;
+  /** Stable cross-source food identity from the canonicalize() normalizer. */
+  canonicalFoodId: string | null;
   quantity: number;
   servingLabel: string;
   gramsPerUnit: number;
@@ -92,6 +94,29 @@ export interface QuickAddPayload {
   source?: string;
 }
 
+export interface VoiceLogItemPayload {
+  name: string;
+  quantity: number;
+  unit: string;
+  grams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  saturatedFat?: number;
+}
+
+export interface FromVoicePayload {
+  draftId: string;
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  loggedAt?: string;
+  note?: string;
+  items: VoiceLogItemPayload[];
+}
+
 export interface UpdateMealLogPayload {
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   note?: string | null;
@@ -140,7 +165,10 @@ export interface FavoriteItem {
 }
 
 export interface RecentItem {
-  foodId: string;
+  /** Catalog food id (legacy text-search/barcode logs); null for voice/photo. */
+  foodId: string | null;
+  /** Canonical id from the normalizer; populated for voice/photo logs. */
+  canonicalFoodId: string | null;
   name: string;
   lastCalories: number;
   lastProtein: number;
@@ -224,6 +252,19 @@ export const mealsApi = {
     } catch (e) {
       if (isNetworkError(e)) {
         offlineQueue.enqueue({ path: '/meal-logs/quick-add', body: payload });
+        useSyncStore.getState().refreshCount();
+        return { data: null };
+      }
+      throw e;
+    }
+  },
+
+  fromVoice: async (payload: FromVoicePayload): Promise<{ data: MealLog | null }> => {
+    try {
+      return await api.post<{ data: MealLog }>('/meal-logs/from-voice', payload);
+    } catch (e) {
+      if (isNetworkError(e)) {
+        offlineQueue.enqueue({ path: '/meal-logs/from-voice', body: payload });
         useSyncStore.getState().refreshCount();
         return { data: null };
       }

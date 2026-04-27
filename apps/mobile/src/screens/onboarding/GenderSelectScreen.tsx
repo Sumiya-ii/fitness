@@ -6,8 +6,7 @@ import type { Gender } from '../../stores/profile.store';
 import { useProfileStore } from '../../stores/profile.store';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
-
-const TOTAL_STEPS = 11;
+import { OptionRow } from './components/OptionRow';
 
 type GenderOption = {
   id: Gender;
@@ -34,8 +33,7 @@ export function GenderSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={3}
-      totalSteps={TOTAL_STEPS}
+      route="GenderSelect"
       title={t('onboarding.genderTitle')}
       subtitle={t('onboarding.genderSubtitle')}
       onBack={() => navigation.goBack()}
@@ -44,27 +42,28 @@ export function GenderSelectScreen({ navigation }: Props) {
     >
       <View className="flex-1 justify-center">
         <View className="gap-3">
-          {OPTIONS.map((opt) => {
+          {OPTIONS.map((opt, i) => {
             const selected = gender === opt.id;
             return (
-              <Pressable
-                key={opt.id}
-                onPress={() => handleSelect(opt.id)}
-                className={`rounded-2xl items-center justify-center py-[26px] active:opacity-85 ${
-                  selected ? 'bg-primary-500' : 'bg-surface-card'
-                }`}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                accessibilityLabel={t(opt.labelKey)}
-              >
-                <Text
-                  className={`text-[17px] tracking-wide ${
-                    selected ? 'font-sans-bold text-on-primary' : 'font-sans-medium text-text'
+              <OptionRow key={opt.id} index={i}>
+                <Pressable
+                  onPress={() => handleSelect(opt.id)}
+                  className={`rounded-2xl items-center justify-center py-[26px] active:opacity-85 ${
+                    selected ? 'bg-primary-500' : 'bg-surface-card'
                   }`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={t(opt.labelKey)}
                 >
-                  {t(opt.labelKey)}
-                </Text>
-              </Pressable>
+                  <Text
+                    className={`text-[17px] tracking-wide ${
+                      selected ? 'font-sans-bold text-on-primary' : 'font-sans-medium text-text'
+                    }`}
+                  >
+                    {t(opt.labelKey)}
+                  </Text>
+                </Pressable>
+              </OptionRow>
             );
           })}
         </View>

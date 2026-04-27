@@ -5,7 +5,6 @@ import { SignUpScreen } from '../screens/SignUpScreen';
 import { SignInScreen } from '../screens/SignInScreen';
 import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
 import {
-  ThemeSelectScreen,
   GoalSetupScreen,
   DesiredWeightScreen,
   WeeklyRateScreen,
@@ -16,6 +15,7 @@ import {
   ActivityLevelSelectScreen,
   DietPreferenceSelectScreen,
   MotivationScreen,
+  GeneratingPlanScreen,
   TargetReviewScreen,
   SubscriptionPitchScreen,
   ConnectTelegramScreen,
@@ -40,7 +40,6 @@ export function OnboardingStack() {
         component={WelcomeScreen}
         options={{ animation: 'fade_from_bottom' }}
       />
-      <Stack.Screen name="ThemeSelect" component={ThemeSelectScreen} />
       <Stack.Screen name="GoalSetup" component={GoalSetupScreen} />
       <Stack.Screen name="GenderSelect" component={GenderSelectScreen} />
       <Stack.Screen name="BirthDateSelect" component={BirthDateSelectScreen} />
@@ -51,6 +50,11 @@ export function OnboardingStack() {
       <Stack.Screen name="ActivityLevelSelect" component={ActivityLevelSelectScreen} />
       <Stack.Screen name="DietPreferenceSelect" component={DietPreferenceSelectScreen} />
       <Stack.Screen name="Motivation" component={MotivationScreen} />
+      <Stack.Screen
+        name="GeneratingPlan"
+        component={GeneratingPlanScreen}
+        options={{ gestureEnabled: false, animation: 'fade' }}
+      />
       <Stack.Screen name="TargetReview" component={TargetReviewScreen} />
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="SignIn" component={SignInScreen} />

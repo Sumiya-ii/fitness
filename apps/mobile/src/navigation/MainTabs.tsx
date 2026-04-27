@@ -52,13 +52,6 @@ type QuickAction = {
 // Quick-action accent colors — iOS-system inspired, distinct but not loud.
 const MENU_ITEMS: QuickAction[] = [
   { key: 'quick', icon: 'flash', labelKey: 'logging.quick', color: '#FF9500', screen: 'QuickAdd' },
-  {
-    key: 'scan',
-    icon: 'barcode-outline',
-    labelKey: 'logging.scan',
-    color: '#16A34A',
-    screen: 'BarcodeScan',
-  },
   ...(features.voiceLoggingInApp
     ? [
         {

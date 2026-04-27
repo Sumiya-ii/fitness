@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
 import { api } from '../api/client';
 import { useSubscriptionStore } from '../stores/subscription.store';
+import { getFirebaseAuth } from '../lib/firebase';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -19,6 +20,21 @@ Notifications.setNotificationHandler({
 });
 
 /**
+ * Force-refresh the Firebase ID token and persist it so the push token
+ * registration request uses a fresh token, not a cached (potentially stale) one.
+ */
+async function ensureFreshToken(): Promise<void> {
+  const user = getFirebaseAuth().currentUser;
+  if (!user) return;
+  try {
+    const freshToken = await user.getIdToken(true);
+    await api.setToken(freshToken);
+  } catch {
+    // Non-fatal: if refresh fails, fall back to stored token
+  }
+}
+
+/**
  * Silently refresh the push token if the user has already granted permission.
  * Does NOT request permission — that is the primer screen's job.
  */
@@ -29,6 +45,7 @@ async function refreshTokenIfGranted(): Promise<void> {
   if (status !== 'granted') return;
 
   try {
+    await ensureFreshToken();
     const tokenData = await Notifications.getExpoPushTokenAsync();
     await api.post('/notifications/device-token', {
       token: tokenData.data,
@@ -57,6 +74,7 @@ export async function requestAndRegisterPushToken(): Promise<boolean> {
   if (finalStatus !== 'granted') return false;
 
   try {
+    await ensureFreshToken();
     const tokenData = await Notifications.getExpoPushTokenAsync();
     await api.post('/notifications/device-token', {
       token: tokenData.data,

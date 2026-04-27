@@ -10,6 +10,13 @@ export function setPaywallCallback(cb: () => void, suppressCheck?: () => boolean
   _shouldSuppressPaywall = suppressCheck ?? null;
 }
 
+// Token refresh callback — registered from auth.store.ts.
+// Called on 401 to force a fresh Firebase ID token before retrying.
+let _onRefreshToken: (() => Promise<string | null>) | null = null;
+export function setTokenRefreshCallback(cb: () => Promise<string | null>): void {
+  _onRefreshToken = cb;
+}
+
 function normalizeBaseUrl(url: string): string {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
@@ -112,7 +119,16 @@ async function request<T>(
   }
 
   const doFetch = () => fetch(url, init);
-  const res = await doFetch();
+  let res = await doFetch();
+
+  // On 401, force-refresh the Firebase token and retry once.
+  if (res.status === 401 && _onRefreshToken) {
+    const freshToken = await _onRefreshToken();
+    if (freshToken) {
+      headers['Authorization'] = `Bearer ${freshToken}`;
+      res = await fetch(url, { ...init, headers });
+    }
+  }
 
   if (!res.ok) {
     const text = await res.text();

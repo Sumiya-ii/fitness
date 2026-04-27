@@ -78,6 +78,11 @@ jest.mock('../api/client', () => ({
     clearToken: jest.fn(),
     getToken: jest.fn(),
   },
+  setTokenRefreshCallback: jest.fn(),
+}));
+
+jest.mock('../lib/firebase', () => ({
+  getFirebaseAuth: jest.fn(() => ({ currentUser: null })),
 }));
 
 // ---------------------------------------------------------------------------

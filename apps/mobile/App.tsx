@@ -1,9 +1,8 @@
 import './global.css';
 import { useEffect } from 'react';
-import * as Updates from 'expo-updates';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL, type CustomerInfo } from 'react-native-purchases';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -84,7 +83,15 @@ export default Sentry.wrap(function App() {
       });
       fetchSubscriptionStatus();
     } else {
-      Purchases.logOut().catch(() => {});
+      // Only logOut if RC has actually been identified — calling logOut on an
+      // anonymous user throws and produces noisy console errors.
+      Purchases.getCustomerInfo()
+        .then((info) => {
+          if (!info.originalAppUserId.startsWith('$RCAnonymousID:')) {
+            return Purchases.logOut().then(() => undefined);
+          }
+        })
+        .catch(() => {});
       resetSubscription();
     }
   }, [isAuthenticated, authUser, fetchSubscriptionStatus, resetSubscription]);
@@ -104,6 +111,7 @@ export default Sentry.wrap(function App() {
     if (__DEV__) return;
     const checkForUpdates = async () => {
       try {
+        const Updates = await import('expo-updates');
         const update = await Updates.checkForUpdateAsync();
         if (update.isAvailable) {
           await Updates.fetchUpdateAsync();
@@ -121,7 +129,7 @@ export default Sentry.wrap(function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <SafeAreaProvider>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <NavigationContainer theme={navTheme}>
           <RootNavigator />
           <SyncBanner />

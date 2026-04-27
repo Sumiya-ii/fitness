@@ -8,8 +8,7 @@ import { useProfileStore } from '../../stores/profile.store';
 import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
-
-const TOTAL_STEPS = 11;
+import { OptionRow } from './components/OptionRow';
 
 type GoalOption = {
   id: GoalType;
@@ -54,8 +53,7 @@ export function GoalSetupScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={2}
-      totalSteps={TOTAL_STEPS}
+      route="GoalSetup"
       title={t('onboarding.goalTitle')}
       subtitle={t('onboarding.goalSubtitle')}
       onBack={() => navigation.goBack()}
@@ -64,45 +62,50 @@ export function GoalSetupScreen({ navigation }: Props) {
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
         <View className="gap-3">
-          {GOAL_OPTIONS.map((option) => {
+          {GOAL_OPTIONS.map((option, i) => {
             const selected = goalType === option.id;
             return (
-              <Pressable
-                key={option.id}
-                onPress={() => handleSelect(option.id)}
-                className={`rounded-2xl py-5 px-5 flex-row items-center gap-3.5 active:opacity-85 ${
-                  selected ? 'bg-primary-500' : 'bg-surface-card'
-                }`}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                accessibilityLabel={t(option.titleKey)}
-              >
-                <View
-                  className="w-11 h-11 rounded-xl items-center justify-center"
-                  style={{
-                    backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
-                  }}
+              <OptionRow key={option.id} index={i}>
+                <Pressable
+                  onPress={() => handleSelect(option.id)}
+                  className={`rounded-2xl py-5 px-5 flex-row items-center gap-3.5 active:opacity-85 ${
+                    selected ? 'bg-primary-500' : 'bg-surface-card'
+                  }`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={t(option.titleKey)}
                 >
-                  <Ionicons name={option.icon} size={22} color={selected ? c.onPrimary : c.text} />
-                </View>
-                <View className="flex-1">
-                  <Text
-                    className={`text-base font-sans-bold mb-0.5 ${
-                      selected ? 'text-on-primary' : 'text-text'
-                    }`}
-                  >
-                    {t(option.titleKey)}
-                  </Text>
-                  <Text
-                    className="text-[13px] leading-[18px]"
+                  <View
+                    className="w-11 h-11 rounded-xl items-center justify-center"
                     style={{
-                      color: selected ? `${c.onPrimary}a6` : c.textTertiary,
+                      backgroundColor: selected ? `${c.onPrimary}26` : `${c.text}14`,
                     }}
                   >
-                    {t(option.descKey)}
-                  </Text>
-                </View>
-              </Pressable>
+                    <Ionicons
+                      name={option.icon}
+                      size={22}
+                      color={selected ? c.onPrimary : c.text}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-base font-sans-bold mb-0.5 ${
+                        selected ? 'text-on-primary' : 'text-text'
+                      }`}
+                    >
+                      {t(option.titleKey)}
+                    </Text>
+                    <Text
+                      className="text-[13px] leading-[18px]"
+                      style={{
+                        color: selected ? `${c.onPrimary}a6` : c.textTertiary,
+                      }}
+                    >
+                      {t(option.descKey)}
+                    </Text>
+                  </View>
+                </Pressable>
+              </OptionRow>
             );
           })}
         </View>

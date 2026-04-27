@@ -133,36 +133,43 @@ export function FavoritesRecentsScreen() {
     </Animated.View>
   );
 
-  const renderRecent = ({ item, index }: { item: RecentItem; index: number }) => (
-    <Animated.View entering={FadeInDown.duration(300).delay(Math.min(index * 40, 200))}>
-      <Card
-        pressable
-        onPress={() => handleQuickLog(item)}
-        className="mb-3 flex-row items-center justify-between"
-      >
-        <View className="flex-1 mr-3">
-          <Text className="font-sans-semibold text-text" numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text className="text-sm text-text-secondary mt-0.5">{item.lastCalories} cal</Text>
-        </View>
-        <Pressable
-          onPress={() => toggleFavorite(item.foodId)}
-          className="h-11 w-11 items-center justify-center rounded-full"
-          accessibilityRole="button"
-          accessibilityLabel={
-            favoritedIds.has(item.foodId) ? 'Remove from favorites' : 'Add to favorites'
-          }
+  const renderRecent = ({ item, index }: { item: RecentItem; index: number }) => {
+    // Only catalog-backed recents can be favorited; voice/photo recents
+    // (canonicalFoodId only) lack a Food row to attach a Favorite to.
+    const favoritableFoodId = item.foodId;
+    return (
+      <Animated.View entering={FadeInDown.duration(300).delay(Math.min(index * 40, 200))}>
+        <Card
+          pressable
+          onPress={() => handleQuickLog(item)}
+          className="mb-3 flex-row items-center justify-between"
         >
-          <Ionicons
-            name={favoritedIds.has(item.foodId) ? 'heart' : 'heart-outline'}
-            size={24}
-            color={favoritedIds.has(item.foodId) ? c.danger : c.textTertiary}
-          />
-        </Pressable>
-      </Card>
-    </Animated.View>
-  );
+          <View className="flex-1 mr-3">
+            <Text className="font-sans-semibold text-text" numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text className="text-sm text-text-secondary mt-0.5">{item.lastCalories} cal</Text>
+          </View>
+          {favoritableFoodId ? (
+            <Pressable
+              onPress={() => toggleFavorite(favoritableFoodId)}
+              className="h-11 w-11 items-center justify-center rounded-full"
+              accessibilityRole="button"
+              accessibilityLabel={
+                favoritedIds.has(favoritableFoodId) ? 'Remove from favorites' : 'Add to favorites'
+              }
+            >
+              <Ionicons
+                name={favoritedIds.has(favoritableFoodId) ? 'heart' : 'heart-outline'}
+                size={24}
+                color={favoritedIds.has(favoritableFoodId) ? c.danger : c.textTertiary}
+              />
+            </Pressable>
+          ) : null}
+        </Card>
+      </Animated.View>
+    );
+  };
 
   const listData = tab === 'favorites' ? favorites : recents;
   const isEmpty = listData.length === 0;
@@ -217,7 +224,9 @@ export function FavoritesRecentsScreen() {
       ) : (
         <FlatList<FavoriteItem | RecentItem>
           data={listData}
-          keyExtractor={(item) => item.foodId}
+          keyExtractor={(item) =>
+            item.foodId ?? `canon:${'canonicalFoodId' in item ? item.canonicalFoodId : 'unknown'}`
+          }
           renderItem={({ item, index }) =>
             tab === 'favorites'
               ? renderFavorite({ item: item as FavoriteItem, index })

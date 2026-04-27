@@ -1,4 +1,3 @@
-export { ThemeSelectScreen } from './ThemeSelectScreen';
 export { GoalSetupScreen } from './GoalSetupScreen';
 export { DesiredWeightScreen } from './DesiredWeightScreen';
 export { WeeklyRateScreen } from './WeeklyRateScreen';
@@ -9,6 +8,7 @@ export { WeightSelectScreen } from './WeightSelectScreen';
 export { ActivityLevelSelectScreen } from './ActivityLevelSelectScreen';
 export { DietPreferenceSelectScreen } from './DietPreferenceSelectScreen';
 export { MotivationScreen } from './MotivationScreen';
+export { GeneratingPlanScreen } from './GeneratingPlanScreen';
 export { TargetReviewScreen } from './TargetReviewScreen';
 export { SubscriptionPitchScreen } from './SubscriptionPitchScreen';
 export { ConnectTelegramScreen } from './ConnectTelegramScreen';

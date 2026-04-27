@@ -9,6 +9,7 @@ import { useSubscriptionStore } from '../stores/subscription.store';
 import { subscriptionsApi } from '../api/subscriptions';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
+import { PrimaryPillButton } from './ui';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -31,9 +32,13 @@ const FEATURES: Feature[] = [
 
 export interface PaywallContentProps {
   onClose: () => void;
+  /** Called after a successful purchase has been verified. Defaults to `onClose`. */
+  onPurchaseSuccess?: () => void;
+  /** Called when the user dismisses without purchasing. Defaults to `onClose`. */
+  onSkip?: () => void;
 }
 
-export function PaywallContent({ onClose }: PaywallContentProps) {
+export function PaywallContent({ onClose, onPurchaseSuccess, onSkip }: PaywallContentProps) {
   const { t } = useLocale();
   const c = useColors();
   const insets = useSafeAreaInsets();
@@ -155,7 +160,11 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
 
   const handleClose = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onClose();
+    (onSkip ?? onClose)();
+  };
+
+  const handleSuccessContinue = () => {
+    (onPurchaseSuccess ?? onClose)();
   };
 
   // ── Purchase success ──────────────────────────────────────────────────────
@@ -182,20 +191,13 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             >
               {t('subscription.successDesc')}
             </Text>
-            <Pressable
-              onPress={handleClose}
-              accessibilityRole="button"
-              accessibilityLabel={t('subscription.successCta')}
-              className="rounded-full px-12 py-4 active:opacity-90"
-              style={{ backgroundColor: c.primary }}
-            >
-              <Text
-                className="text-base font-sans-semibold"
-                style={{ color: c.onPrimary, letterSpacing: 0.2 }}
-              >
-                {t('subscription.successCta')}
-              </Text>
-            </Pressable>
+            <View className="w-full max-w-[280px]">
+              <PrimaryPillButton
+                label={t('subscription.successCta')}
+                onPress={handleSuccessContinue}
+                accessibilityLabel={t('subscription.successCta')}
+              />
+            </View>
           </Animated.View>
         </SafeAreaView>
       </View>
@@ -507,35 +509,21 @@ export function PaywallContent({ onClose }: PaywallContentProps) {
             {t('paywall.cancelAnytime')}
           </Text>
 
-          <Pressable
+          <PrimaryPillButton
+            label={
+              activePkg
+                ? `${t('paywall.getProCta')} · ${activePkg.product.priceString}`
+                : t('subscription.subscribe')
+            }
             onPress={() => void handlePurchase()}
             disabled={ctaDisabled}
-            accessibilityRole="button"
+            loading={purchasing}
             accessibilityLabel={
               activePkg
                 ? `${t('paywall.getProCta')} ${activePkg.product.priceString}`
                 : t('subscription.subscribe')
             }
-            accessibilityState={{ disabled: ctaDisabled }}
-            className="rounded-full py-4 items-center active:opacity-90"
-            style={{
-              backgroundColor: ctaDisabled ? c.cardAlt : c.primary,
-              opacity: ctaDisabled ? 0.6 : 1,
-            }}
-          >
-            {purchasing ? (
-              <ActivityIndicator color={c.onPrimary} />
-            ) : (
-              <Text
-                className="text-base font-sans-bold"
-                style={{ color: c.onPrimary, letterSpacing: 0.2 }}
-              >
-                {activePkg
-                  ? `${t('paywall.getProCta')} · ${activePkg.product.priceString}`
-                  : t('subscription.subscribe')}
-              </Text>
-            )}
-          </Pressable>
+          />
 
           <View className="flex-row justify-center items-center flex-wrap mt-3" style={{ gap: 2 }}>
             <Pressable

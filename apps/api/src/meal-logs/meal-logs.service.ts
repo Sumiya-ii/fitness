@@ -4,13 +4,24 @@ import {
   computeItemSnapshot,
   aggregateNutritionTotals,
   FoodData,
+  canonicalize,
 } from '@coach/shared';
 import { PrismaService } from '../prisma';
-import { CreateMealLogDto, QuickAddDto, MealLogQueryDto, UpdateMealLogDto } from './meal-logs.dto';
+import { CalibrationService } from './calibration.service';
+import {
+  CreateMealLogDto,
+  QuickAddDto,
+  MealLogQueryDto,
+  UpdateMealLogDto,
+  FromVoiceDto,
+} from './meal-logs.dto';
 
 @Injectable()
 export class MealLogsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calibration: CalibrationService,
+  ) {}
 
   async createFromFood(userId: string, dto: CreateMealLogDto) {
     const foodIds = dto.items.map((i) => i.foodId);
@@ -61,7 +72,11 @@ export class MealLogsService {
         totalSodium,
         totalSaturatedFat,
         items: {
-          create: itemSnapshots.map((snapshot) => ({ ...snapshot, userId })),
+          create: itemSnapshots.map((snapshot) => ({
+            ...snapshot,
+            userId,
+            canonicalFoodId: canonicalize(snapshot.snapshotFoodName).id,
+          })),
         },
       },
       include: { items: true },
@@ -93,6 +108,9 @@ export class MealLogsService {
             servingLabel: 'Quick Add',
             gramsPerUnit: 0,
             snapshotFoodName: dto.note || 'Quick Add',
+            // Best-effort: canonicalize the note. Falls back to null when
+            // the note is empty, generic, or doesn't match any canonical food.
+            canonicalFoodId: dto.note ? canonicalize(dto.note).id : null,
             snapshotCalories: dto.calories,
             snapshotProtein: dto.proteinGrams,
             snapshotCarbs: dto.carbsGrams,
@@ -108,6 +126,117 @@ export class MealLogsService {
     });
 
     return this.formatMealLog(mealLog);
+  }
+
+  /**
+   * Persist a voice-log draft as a structured meal log: one MealLogItem per
+   * parsed item, with foodId: null (voice items don't reference the food
+   * catalog). Caller must own the draft.
+   */
+  async createFromVoice(userId: string, dto: FromVoiceDto) {
+    const draft = await this.prisma.voiceDraft.findFirst({
+      where: { id: dto.draftId, userId },
+      select: { id: true, status: true, parsedItems: true },
+    });
+
+    if (!draft) throw new NotFoundException('Voice draft not found');
+    if (draft.status !== 'completed') {
+      throw new BadRequestException(
+        `Voice draft is not ready (status=${draft.status}); cannot save as meal log`,
+      );
+    }
+
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+
+    const itemRows = dto.items.map((item) => {
+      const grams = item.grams > 0 ? item.grams : 0;
+      const quantity = item.quantity > 0 ? item.quantity : 1;
+      const gramsPerUnit = grams > 0 ? round1(grams / quantity) : 0;
+      const canonical = canonicalize(item.name).id;
+      return {
+        userId,
+        quantity,
+        servingLabel: item.unit,
+        gramsPerUnit,
+        snapshotFoodName: item.name,
+        canonicalFoodId: canonical,
+        snapshotCalories: Math.round(item.calories),
+        snapshotProtein: round1(item.protein),
+        snapshotCarbs: round1(item.carbs),
+        snapshotFat: round1(item.fat),
+        snapshotFiber: item.fiber !== undefined ? round1(item.fiber) : null,
+        snapshotSugar: item.sugar !== undefined ? round1(item.sugar) : null,
+        snapshotSodium: item.sodium !== undefined ? round1(item.sodium) : null,
+        snapshotSaturatedFat: item.saturatedFat !== undefined ? round1(item.saturatedFat) : null,
+      };
+    });
+
+    const totalCalories = itemRows.reduce((s, i) => s + i.snapshotCalories, 0);
+    const totalProtein = round1(itemRows.reduce((s, i) => s + Number(i.snapshotProtein), 0));
+    const totalCarbs = round1(itemRows.reduce((s, i) => s + Number(i.snapshotCarbs), 0));
+    const totalFat = round1(itemRows.reduce((s, i) => s + Number(i.snapshotFat), 0));
+    const sumOptional = (
+      key: 'snapshotFiber' | 'snapshotSugar' | 'snapshotSodium' | 'snapshotSaturatedFat',
+    ) => {
+      const present = itemRows.filter((r) => r[key] !== null);
+      if (present.length === 0) return null;
+      return round1(present.reduce((s, r) => s + Number(r[key]), 0));
+    };
+
+    const mealLog = await this.prisma.mealLog.create({
+      data: {
+        userId,
+        mealType: dto.mealType,
+        source: 'voice',
+        loggedAt: dto.loggedAt ? new Date(dto.loggedAt) : new Date(),
+        note: dto.note,
+        totalCalories,
+        totalProtein,
+        totalCarbs,
+        totalFat,
+        totalFiber: sumOptional('snapshotFiber'),
+        totalSugar: sumOptional('snapshotSugar'),
+        totalSodium: sumOptional('snapshotSodium'),
+        totalSaturatedFat: sumOptional('snapshotSaturatedFat'),
+        items: { create: itemRows },
+      },
+      include: { items: true },
+    });
+
+    // Best-effort calibration capture: diff each saved item against its
+    // original AI estimate (matched positionally — the mobile bottom sheet
+    // preserves order). Fire-and-forget; failures must not break the save.
+    void this.captureVoiceCalibration(userId, draft.parsedItems, itemRows);
+
+    return this.formatMealLog(mealLog);
+  }
+
+  /**
+   * Diff voice draft estimates against the user's saved values and feed any
+   * meaningful corrections to CalibrationService. Public-by-package only so
+   * the spec can call it directly; not exposed via the controller.
+   */
+  private async captureVoiceCalibration(
+    userId: string,
+    rawDraftParsed: unknown,
+    savedRows: Array<{ canonicalFoodId: string | null; snapshotCalories: number }>,
+  ): Promise<void> {
+    // Draft envelope can be { items, clarification? } or a bare array (legacy).
+    const draftItems: Array<{ name?: string; calories?: number }> = Array.isArray(rawDraftParsed)
+      ? (rawDraftParsed as Array<{ name?: string; calories?: number }>)
+      : Array.isArray((rawDraftParsed as { items?: unknown })?.items)
+        ? (rawDraftParsed as { items: Array<{ name?: string; calories?: number }> }).items
+        : [];
+
+    if (draftItems.length === 0 || draftItems.length !== savedRows.length) return;
+
+    const entries = savedRows.map((row, i) => ({
+      canonicalFoodId: row.canonicalFoodId,
+      originalKcal: typeof draftItems[i]?.calories === 'number' ? draftItems[i].calories! : 0,
+      correctedKcal: row.snapshotCalories,
+    }));
+
+    await this.calibration.recordCorrections(userId, entries);
   }
 
   async update(userId: string, id: string, dto: UpdateMealLogDto) {
@@ -195,6 +324,7 @@ export class MealLogsService {
     items: Array<{
       id: string;
       foodId: string | null;
+      canonicalFoodId?: string | null;
       quantity: unknown;
       servingLabel: string;
       gramsPerUnit: unknown;
@@ -234,6 +364,7 @@ export class MealLogsService {
       items: log.items.map((item) => ({
         id: item.id,
         foodId: item.foodId,
+        canonicalFoodId: item.canonicalFoodId ?? null,
         quantity: Number(item.quantity),
         servingLabel: item.servingLabel,
         gramsPerUnit: Number(item.gramsPerUnit),

@@ -19,6 +19,10 @@ jest.mock('../services/firebase-auth.service', () => ({
   signOutFirebase: jest.fn(),
 }));
 
+jest.mock('../lib/firebase', () => ({
+  getFirebaseAuth: jest.fn(() => ({ currentUser: null })),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn() }),
   useRoute: () => ({ params: {} }),

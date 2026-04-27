@@ -176,7 +176,7 @@ _Without these, users hit walls in daily logging and churn._
 
 5. **`DELETE /api/v1/foods/custom/:id`** — delete user-created food (owner only; soft-delete if already logged).
 
-6. **Search integration** — include user's own foods in food search results (scope `userId` filter in Typesense query).
+6. **Search integration** — include user's own foods in food search results (scope `userId` filter in the search query).
 
 7. **Convert `quick-add` to use custom food flow** — when user quick-adds, create a named custom food in DB (so it appears in recents + favorites and can be re-logged). Deprecate anonymous quick-add.
 
@@ -554,7 +554,7 @@ _Grows food coverage to match Cal AI's reach._
    - NLP food description matching
 
 2. **`FoodSearchService`** — federated search:
-   - First query local Typesense index (Coach + custom + restaurant foods)
+   - First query local Postgres food index (Coach + custom + restaurant foods)
    - If <5 local results: fan out to FatSecret/USDA API
    - Map external results to Coach food schema format (per 100g normalization)
    - Cache external results in local DB with `sourceType = 'import'`, `sourceRef = 'fatsecret:<id>'` or `'usda:<fdcId>'`
@@ -628,7 +628,7 @@ _Closes the accuracy gap with Cal AI's vision pipeline._
 
 **What to build**:
 
-1. **During photo/voice parsing** — after initial AI identification, retrieve top-5 matching foods from local DB/Typesense by name similarity.
+1. **During photo/voice parsing** — after initial AI identification, retrieve top-5 matching foods from local Postgres by name similarity.
 
 2. **Inject retrieved food records** into the second-pass AI prompt:
 
@@ -639,7 +639,7 @@ _Closes the accuracy gap with Cal AI's vision pipeline._
    Use these as reference anchors. Confirm or refine your estimate."
    ```
 
-3. **`RagFoodMatchingService`** — takes AI initial identification → Typesense search → returns top candidates → formats for prompt injection.
+3. **`RagFoodMatchingService`** — takes AI initial identification → Postgres search → returns top candidates → formats for prompt injection.
 
 4. **Measure accuracy improvement** — log `preRagCalories` and `postRagCalories` in `AiParseResult.metadata` to track improvement.
 

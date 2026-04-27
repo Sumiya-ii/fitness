@@ -3,6 +3,9 @@ import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Text, View } from 'r
 import * as Haptics from 'expo-haptics';
 import { useColors } from '../../theme';
 
+// Minimum ms between haptic ticks during fling.
+const HAPTIC_THROTTLE_MS = 60;
+
 export interface ScrollPickerItem {
   label: string;
   value: number | string;
@@ -34,6 +37,9 @@ export function ScrollPicker({
 }: ScrollPickerProps) {
   const c = useColors();
   const listRef = useRef<FlatList>(null);
+  // Track the last index that triggered a haptic to throttle during fling.
+  const lastHapticIndexRef = useRef<number>(-1);
+  const lastHapticTimeRef = useRef<number>(0);
 
   // How many empty padding slots we need above/below so the first and last
   // real item can sit in the centre slot.
@@ -63,6 +69,24 @@ export function ScrollPicker({
     }, 50);
     return () => clearTimeout(id);
   }, [selectedIndex]);
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetY = event.nativeEvent.contentOffset.y;
+      const currentIndex = Math.round(offsetY / itemHeight);
+      const clampedIndex = Math.max(0, Math.min(currentIndex, items.length - 1));
+
+      if (clampedIndex !== lastHapticIndexRef.current) {
+        const now = Date.now();
+        if (now - lastHapticTimeRef.current >= HAPTIC_THROTTLE_MS) {
+          lastHapticIndexRef.current = clampedIndex;
+          lastHapticTimeRef.current = now;
+          Haptics.selectionAsync();
+        }
+      }
+    },
+    [itemHeight, items.length],
+  );
 
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -149,6 +173,7 @@ export function ScrollPicker({
         showsVerticalScrollIndicator={false}
         snapToInterval={itemHeight}
         decelerationRate="fast"
+        onScroll={handleScroll}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         scrollEventThrottle={16}
         // Prevent the FlatList from intercepting parent scroll events.

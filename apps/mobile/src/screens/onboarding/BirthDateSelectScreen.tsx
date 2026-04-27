@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/types';
 import { useProfileStore } from '../../stores/profile.store';
@@ -8,8 +7,6 @@ import { useColors } from '../../theme';
 import { useLocale } from '../../i18n';
 import { OnboardingLayout } from './OnboardingLayout';
 import { ScrollPicker } from '../../components/ui';
-
-const TOTAL_STEPS = 11;
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'BirthDateSelect'>;
 
@@ -80,8 +77,7 @@ export function BirthDateSelectScreen({ navigation }: Props) {
 
   return (
     <OnboardingLayout
-      step={4}
-      totalSteps={TOTAL_STEPS}
+      route="BirthDateSelect"
       title={t('onboarding.birthDateTitle')}
       subtitle={t('onboarding.birthDateSubtitle')}
       onBack={() => navigation.goBack()}
@@ -89,14 +85,6 @@ export function BirthDateSelectScreen({ navigation }: Props) {
       continueDisabled={!isValid}
     >
       <View className="flex-1 justify-center items-center">
-        {/* Icon */}
-        <View
-          className="w-20 h-20 rounded-full items-center justify-center mb-8"
-          style={{ backgroundColor: `${c.primary}1a` }}
-        >
-          <Ionicons name="calendar-outline" size={40} color={c.primary} />
-        </View>
-
         {/* Column labels */}
         <View className="flex-row mb-1" style={{ width: 300 }}>
           <View style={{ width: 120 }} className="items-center">
