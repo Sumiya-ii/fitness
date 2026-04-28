@@ -39,7 +39,6 @@ export const createFoodSchema = z.object({
   nutrients: nutrientSchema,
   localizations: z.array(localizationSchema).optional(),
   aliases: z.array(aliasSchema).optional(),
-  barcodes: z.array(z.string().min(1).max(50)).optional(),
 });
 
 export const updateFoodSchema = createFoodSchema.partial().omit({

@@ -36,11 +36,6 @@ export class FoodsService {
         },
         localizations: dto.localizations ? { create: dto.localizations } : undefined,
         aliases: dto.aliases ? { create: dto.aliases } : undefined,
-        barcodes: dto.barcodes
-          ? {
-              create: dto.barcodes.map((code) => ({ code })),
-            }
-          : undefined,
       },
       include: this.fullInclude(),
     });
@@ -170,7 +165,6 @@ export class FoodsService {
       nutrients: true,
       aliases: true,
       localizations: true,
-      barcodes: true,
     } as const;
   }
 
@@ -202,7 +196,6 @@ export class FoodsService {
     }>;
     aliases: Array<{ id: string; alias: string; locale: string }>;
     localizations: Array<{ id: string; locale: string; name: string }>;
-    barcodes: Array<{ id: string; code: string }>;
   }) {
     const nutrient = food.nutrients[0];
     return {
@@ -242,7 +235,6 @@ export class FoodsService {
         locale: l.locale,
         name: l.name,
       })),
-      barcodes: food.barcodes.map((b) => b.code),
       createdAt: food.createdAt.toISOString(),
       updatedAt: food.updatedAt.toISOString(),
     };

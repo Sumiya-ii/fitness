@@ -10,57 +10,57 @@ datasource db {
 // ─── Identity & Profile ─────────────────────────────────────────
 
 model User {
-  id          String @id @default(uuid()) @db.Uuid
-  email       String? @unique
-  phone       String? @unique
-  firebaseUid String  @unique @map("firebase_uid")
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String?  @unique
+  phone       String?  @unique
+  firebaseUid String   @unique @map("firebase_uid")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  profile              Profile?
-  targets              Target[]
-  mealLogs             MealLog[]
-  mealLogItems         MealLogItem[]
-  weightLogs           WeightLog[]
-  workoutLogs          WorkoutLog[]
-  telegramLink         TelegramLink?
-  notificationPrefs    NotificationPreference?
-  deviceTokens         DeviceToken[]
-  subscription         Subscription?
-  consents             Consent[]
-  privacyRequests      PrivacyRequest[]
-  favorites            Favorite[]
+  profile           Profile?
+  targets           Target[]
+  mealLogs          MealLog[]
+  mealLogItems      MealLogItem[]
+  weightLogs        WeightLog[]
+  workoutLogs       WorkoutLog[]
+  telegramLink      TelegramLink?
+  notificationPrefs NotificationPreference?
+  deviceTokens      DeviceToken[]
+  subscription      Subscription?
+  consents          Consent[]
+  privacyRequests   PrivacyRequest[]
+  favorites         Favorite[]
 
-  qpayInvoices         QPayInvoice[]
-  voiceDrafts          VoiceDraft[]
-  waterLogs            WaterLog[]
-  coachMemories        CoachMemory[]
-  outboundMessages     OutboundMessage[]
-  bodyMeasurementLogs  BodyMeasurementLog[]
-  mealTemplates        MealTemplate[]
-  foodCalibrations     UserFoodCalibration[]
+  qpayInvoices        QPayInvoice[]
+  voiceDrafts         VoiceDraft[]
+  waterLogs           WaterLog[]
+  coachMemories       CoachMemory[]
+  outboundMessages    OutboundMessage[]
+  bodyMeasurementLogs BodyMeasurementLog[]
+  mealTemplates       MealTemplate[]
+  foodCalibrations    UserFoodCalibration[]
 
   @@map("users")
 }
 
 model Profile {
-  id             String    @id @default(uuid()) @db.Uuid
-  userId         String    @unique @map("user_id") @db.Uuid
-  displayName    String?   @map("display_name")
-  locale         String    @default("mn") @db.VarChar(5)
-  timezone       String    @default("Asia/Ulaanbaatar") @db.VarChar(50)
-  unitSystem     String    @default("metric") @map("unit_system") @db.VarChar(10)
-  gender         String?   @db.VarChar(20)
-  birthDate      DateTime? @map("birth_date") @db.Date
-  heightCm       Decimal?  @map("height_cm") @db.Decimal(5, 1)
-  weightKg       Decimal?  @map("weight_kg") @db.Decimal(5, 1)
-  goalWeightKg   Decimal?  @map("goal_weight_kg") @db.Decimal(5, 1)
-  activityLevel  String?   @map("activity_level") @db.VarChar(30)
-  dietPreference String?   @map("diet_preference") @db.VarChar(30)
-  waterTargetMl  Int       @default(2000) @map("water_target_ml")
+  id                    String    @id @default(uuid()) @db.Uuid
+  userId                String    @unique @map("user_id") @db.Uuid
+  displayName           String?   @map("display_name")
+  locale                String    @default("mn") @db.VarChar(5)
+  timezone              String    @default("Asia/Ulaanbaatar") @db.VarChar(50)
+  unitSystem            String    @default("metric") @map("unit_system") @db.VarChar(10)
+  gender                String?   @db.VarChar(20)
+  birthDate             DateTime? @map("birth_date") @db.Date
+  heightCm              Decimal?  @map("height_cm") @db.Decimal(5, 1)
+  weightKg              Decimal?  @map("weight_kg") @db.Decimal(5, 1)
+  goalWeightKg          Decimal?  @map("goal_weight_kg") @db.Decimal(5, 1)
+  activityLevel         String?   @map("activity_level") @db.VarChar(30)
+  dietPreference        String?   @map("diet_preference") @db.VarChar(30)
+  waterTargetMl         Int       @default(2000) @map("water_target_ml")
   onboardingCompletedAt DateTime? @map("onboarding_completed_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -105,7 +105,6 @@ model Food {
   nutrients     FoodNutrient[]
   aliases       FoodAlias[]
   localizations FoodLocalization[]
-  barcodes      Barcode[]
 
   mealLogItems      MealLogItem[]
   mealTemplateItems MealTemplateItem[]
@@ -116,12 +115,12 @@ model Food {
 }
 
 model FoodServing {
-  id           String  @id @default(uuid()) @db.Uuid
-  foodId       String  @map("food_id") @db.Uuid
-  label        String  @db.VarChar(100) // e.g., "1 cup", "100g", "1 tablespoon"
-  labelMn      String? @map("label_mn") @db.VarChar(100)
-  gramsPerUnit Decimal @map("grams_per_unit") @db.Decimal(8, 2)
-  isDefault    Boolean @default(false) @map("is_default")
+  id           String   @id @default(uuid()) @db.Uuid
+  foodId       String   @map("food_id") @db.Uuid
+  label        String   @db.VarChar(100) // e.g., "1 cup", "100g", "1 tablespoon"
+  labelMn      String?  @map("label_mn") @db.VarChar(100)
+  gramsPerUnit Decimal  @map("grams_per_unit") @db.Decimal(8, 2)
+  isDefault    Boolean  @default(false) @map("is_default")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -133,19 +132,19 @@ model FoodServing {
 }
 
 model FoodNutrient {
-  id              String   @id @default(uuid()) @db.Uuid
-  foodId          String   @map("food_id") @db.Uuid
+  id                  String   @id @default(uuid()) @db.Uuid
+  foodId              String   @map("food_id") @db.Uuid
   // All values per 100g
-  caloriesPer100g Decimal  @map("calories_per_100g") @db.Decimal(8, 2)
-  proteinPer100g  Decimal  @map("protein_per_100g") @db.Decimal(8, 2)
-  carbsPer100g    Decimal  @map("carbs_per_100g") @db.Decimal(8, 2)
-  fatPer100g      Decimal  @map("fat_per_100g") @db.Decimal(8, 2)
-  fiberPer100g    Decimal? @map("fiber_per_100g") @db.Decimal(8, 2)
-  sugarPer100g    Decimal? @map("sugar_per_100g") @db.Decimal(8, 2)
-  sodiumPer100g   Decimal? @map("sodium_per_100g") @db.Decimal(8, 2) // mg per 100g
+  caloriesPer100g     Decimal  @map("calories_per_100g") @db.Decimal(8, 2)
+  proteinPer100g      Decimal  @map("protein_per_100g") @db.Decimal(8, 2)
+  carbsPer100g        Decimal  @map("carbs_per_100g") @db.Decimal(8, 2)
+  fatPer100g          Decimal  @map("fat_per_100g") @db.Decimal(8, 2)
+  fiberPer100g        Decimal? @map("fiber_per_100g") @db.Decimal(8, 2)
+  sugarPer100g        Decimal? @map("sugar_per_100g") @db.Decimal(8, 2)
+  sodiumPer100g       Decimal? @map("sodium_per_100g") @db.Decimal(8, 2) // mg per 100g
   saturatedFatPer100g Decimal? @map("saturated_fat_per_100g") @db.Decimal(8, 2)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 
@@ -183,26 +182,13 @@ model FoodLocalization {
   @@map("food_localizations")
 }
 
-model Barcode {
-  id        String   @id @default(uuid()) @db.Uuid
-  code      String   @unique @db.VarChar(50)
-  foodId    String   @map("food_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
-
-  @@index([foodId])
-  @@map("barcodes")
-}
-
 // ─── Meal Logging ───────────────────────────────────────────────
 
 model MealLog {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
   mealType  String?  @map("meal_type") @db.VarChar(20) // breakfast | lunch | dinner | snack
-  source    String   @db.VarChar(20) // text | quick_add | barcode | voice | photo | telegram
+  source    String   @db.VarChar(20) // text | quick_add | quick_relog | voice | photo | telegram
   loggedAt  DateTime @map("logged_at")
   note      String?
   createdAt DateTime @default(now()) @map("created_at")
@@ -457,7 +443,7 @@ model QPayInvoice {
 
 model ModerationQueue {
   id          String    @id @default(uuid()) @db.Uuid
-  entityType  String    @map("entity_type") @db.VarChar(30) // food | barcode_submission
+  entityType  String    @map("entity_type") @db.VarChar(30) // food
   entityId    String    @map("entity_id") @db.Uuid
   submittedBy String    @map("submitted_by") @db.Uuid
   status      String    @default("pending") @db.VarChar(20) // pending | approved | rejected | merged
@@ -511,7 +497,7 @@ model PrivacyRequest {
 
 model IdempotencyKey {
   id              String   @id @default(uuid()) @db.Uuid
-  externalSystem  String   @map("external_system") @db.VarChar(30) // telegram | apple_iap | google_play | qpay
+  externalSystem  String   @map("external_system") @db.VarChar(30) // telegram | apple_iap | google_play | qpay | mobile_offline_write
   externalEventId String   @map("external_event_id") @db.VarChar(255)
   responseStatus  Int?     @map("response_status")
   responseBody    Json?    @map("response_body")

@@ -34,13 +34,13 @@ export function useSyncQueue() {
 
     for (const item of items) {
       try {
-        await api.post(item.path, item.body);
+        await api.post(item.path, item.body, { 'Idempotency-Key': item.id });
         offlineQueue.dequeue(item.id);
         refreshCount();
       } catch (e) {
         if (isClientError(e)) {
-          // 4xx — this request can never succeed; drop it silently.
-          offlineQueue.dequeue(item.id);
+          // 4xx — this request can never succeed; keep a visible failed record.
+          offlineQueue.markFailed(item, e);
           refreshCount();
           continue;
         }

@@ -1,12 +1,18 @@
 import { queueStorage } from '../storage/mmkv';
 
 const QUEUE_KEY = 'write_queue_v1';
+const FAILED_QUEUE_KEY = 'failed_write_queue_v1';
 
 export interface QueueItem {
   id: string;
   path: string;
   body: unknown;
   createdAt: string;
+}
+
+export interface FailedQueueItem extends QueueItem {
+  failedAt: string;
+  error: string;
 }
 
 // ─── Pure storage helpers ──────────────────────────────────────────────────
@@ -23,6 +29,20 @@ function readQueue(): QueueItem[] {
 
 function writeQueue(items: QueueItem[]): void {
   queueStorage.set(QUEUE_KEY, JSON.stringify(items));
+}
+
+function readFailedQueue(): FailedQueueItem[] {
+  const raw = queueStorage.getString(FAILED_QUEUE_KEY);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw) as FailedQueueItem[];
+  } catch {
+    return [];
+  }
+}
+
+function writeFailedQueue(items: FailedQueueItem[]): void {
+  queueStorage.set(FAILED_QUEUE_KEY, JSON.stringify(items));
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────
@@ -51,8 +71,29 @@ export const offlineQueue = {
     return readQueue().length;
   },
 
+  markFailed(item: QueueItem, error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error);
+    const failed = readFailedQueue();
+    failed.push({
+      ...item,
+      failedAt: new Date().toISOString(),
+      error: message,
+    });
+    writeFailedQueue(failed);
+    this.dequeue(item.id);
+  },
+
+  getFailed(): FailedQueueItem[] {
+    return readFailedQueue();
+  },
+
+  failedCount(): number {
+    return readFailedQueue().length;
+  },
+
   clear(): void {
     queueStorage.delete(QUEUE_KEY);
+    queueStorage.delete(FAILED_QUEUE_KEY);
   },
 };
 

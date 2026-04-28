@@ -14,7 +14,6 @@ type ActivityOption = {
   id: ActivityLevel;
   icon: keyof typeof Ionicons.glyphMap;
   titleKey: string;
-  descKey: string;
 };
 
 const OPTIONS: ActivityOption[] = [
@@ -22,31 +21,26 @@ const OPTIONS: ActivityOption[] = [
     id: 'sedentary',
     icon: 'desktop-outline',
     titleKey: 'onboarding.activitySedentary',
-    descKey: 'onboarding.activitySedentaryDesc',
   },
   {
     id: 'lightly_active',
     icon: 'walk-outline',
     titleKey: 'onboarding.activityLightly',
-    descKey: 'onboarding.activityLightlyDesc',
   },
   {
     id: 'moderately_active',
     icon: 'bicycle-outline',
     titleKey: 'onboarding.activityModerately',
-    descKey: 'onboarding.activityModeratelyDesc',
   },
   {
     id: 'very_active',
-    icon: 'fitness-outline',
+    icon: 'barbell-outline',
     titleKey: 'onboarding.activityVery',
-    descKey: 'onboarding.activityVeryDesc',
   },
   {
     id: 'extra_active',
     icon: 'flame-outline',
     titleKey: 'onboarding.activityExtra',
-    descKey: 'onboarding.activityExtraDesc',
   },
 ];
 
@@ -85,7 +79,7 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                   }`}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={`${t(opt.titleKey)} ${t(opt.descKey)}`}
+                  accessibilityLabel={t(opt.titleKey)}
                 >
                   <View
                     className="w-10 h-10 rounded-full items-center justify-center"
@@ -97,19 +91,11 @@ export function ActivityLevelSelectScreen({ navigation }: Props) {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-[15px] font-sans-bold mb-0.5 ${
+                      className={`text-[15px] font-sans-bold ${
                         selected ? 'text-on-primary' : 'text-text'
                       }`}
                     >
                       {t(opt.titleKey)}
-                    </Text>
-                    <Text
-                      className="text-xs"
-                      style={{
-                        color: selected ? `${c.onPrimary}99` : c.textTertiary,
-                      }}
-                    >
-                      {t(opt.descKey)}
                     </Text>
                   </View>
                 </Pressable>

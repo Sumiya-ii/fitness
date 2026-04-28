@@ -125,17 +125,6 @@ CREATE TABLE "food_localizations" (
 );
 
 -- CreateTable
-CREATE TABLE "barcodes" (
-    "id" UUID NOT NULL,
-    "code" VARCHAR(50) NOT NULL,
-    "food_id" UUID NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "barcodes_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "meal_logs" (
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
@@ -558,11 +547,6 @@ CREATE INDEX "food_aliases_locale_alias_idx" ON "food_aliases"("locale", "alias"
 CREATE UNIQUE INDEX "food_localizations_food_id_locale_key" ON "food_localizations"("food_id", "locale");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "barcodes_code_key" ON "barcodes"("code");
-
--- CreateIndex
-CREATE INDEX "barcodes_food_id_idx" ON "barcodes"("food_id");
-
 -- CreateIndex
 CREATE INDEX "meal_logs_user_id_logged_at_idx" ON "meal_logs"("user_id", "logged_at" DESC);
 
@@ -714,9 +698,6 @@ ALTER TABLE "food_aliases" ADD CONSTRAINT "food_aliases_food_id_fkey" FOREIGN KE
 ALTER TABLE "food_localizations" ADD CONSTRAINT "food_localizations_food_id_fkey" FOREIGN KEY ("food_id") REFERENCES "foods"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "barcodes" ADD CONSTRAINT "barcodes_food_id_fkey" FOREIGN KEY ("food_id") REFERENCES "foods"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "meal_logs" ADD CONSTRAINT "meal_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -793,4 +774,3 @@ ALTER TABLE "outbound_messages" ADD CONSTRAINT "outbound_messages_user_id_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "coach_memories" ADD CONSTRAINT "coach_memories_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-

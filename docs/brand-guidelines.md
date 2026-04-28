@@ -33,7 +33,7 @@ Coach speaks like a **knowledgeable friend** — supportive but direct, data-inf
 
 ### Elevator Pitch
 
-> Coach is an AI nutrition app built for Mongolia. Log meals by text, voice, photo, or barcode in Mongolian — and get personalized insights powered by GPT-4 Vision. Track macros, weight trends, and weekly progress with a coach that actually understands Mongolian food.
+> Coach is an AI nutrition app built for Mongolia. Log meals by text, voice, or photo in Mongolian — and get personalized insights powered by GPT-4 Vision. Track macros, weight trends, and weekly progress with a coach that actually understands Mongolian food.
 
 ---
 

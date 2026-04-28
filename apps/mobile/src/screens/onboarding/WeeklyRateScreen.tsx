@@ -13,21 +13,11 @@ import { OptionRow } from './components/OptionRow';
 
 type RateOption = {
   value: number;
-  descKey: string;
 };
 
-const LOSE_RATES: RateOption[] = [
-  { value: 0.25, descKey: 'onboarding.weeklyRateSlowSteady' },
-  { value: 0.5, descKey: 'onboarding.weeklyRateRecommended' },
-  { value: 0.75, descKey: 'onboarding.weeklyRateModerate' },
-  { value: 1.0, descKey: 'onboarding.weeklyRateAggressive' },
-];
+const LOSE_RATES: RateOption[] = [{ value: 0.25 }, { value: 0.5 }, { value: 0.75 }, { value: 1.0 }];
 
-const GAIN_RATES: RateOption[] = [
-  { value: 0.25, descKey: 'onboarding.weeklyRateLeanBulk' },
-  { value: 0.5, descKey: 'onboarding.weeklyRateRecommended' },
-  { value: 0.75, descKey: 'onboarding.weeklyRateFastBulk' },
-];
+const GAIN_RATES: RateOption[] = [{ value: 0.25 }, { value: 0.5 }, { value: 0.75 }];
 
 const DEFAULT_RATE = 0.5;
 
@@ -108,7 +98,7 @@ export function WeeklyRateScreen({ navigation }: Props) {
                   }`}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: isSelected }}
-                  accessibilityLabel={`${label} ${t(rate.descKey)}`}
+                  accessibilityLabel={label}
                 >
                   <View className="flex-1">
                     <View className="flex-row items-center">
@@ -135,14 +125,6 @@ export function WeeklyRateScreen({ navigation }: Props) {
                         </View>
                       )}
                     </View>
-                    <Text
-                      className="text-sm"
-                      style={{
-                        color: isSelected ? `${c.onPrimary}b3` : c.textTertiary,
-                      }}
-                    >
-                      {t(rate.descKey)}
-                    </Text>
                   </View>
                 </Pressable>
               </OptionRow>

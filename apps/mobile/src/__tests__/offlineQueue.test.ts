@@ -47,9 +47,11 @@ describe('offlineQueue', () => {
 
   it('clear() empties the queue', () => {
     offlineQueue.enqueue({ path: '/meal-logs', body: {} });
+    offlineQueue.markFailed(offlineQueue.getAll()[0]!, new Error('API error 400: Bad Request'));
     offlineQueue.clear();
 
     expect(offlineQueue.count()).toBe(0);
+    expect(offlineQueue.failedCount()).toBe(0);
   });
 
   it('each item gets a unique id and a createdAt timestamp', () => {
@@ -61,6 +63,18 @@ describe('offlineQueue', () => {
     expect(b!.id).toBeTruthy();
     expect(a!.id).not.toBe(b!.id);
     expect(new Date(a!.createdAt).getTime()).not.toBeNaN();
+  });
+
+  it('moves permanent replay failures to the failed queue', () => {
+    offlineQueue.enqueue({ path: '/meal-logs', body: { calories: 100 } });
+    const item = offlineQueue.getAll()[0]!;
+
+    offlineQueue.markFailed(item, new Error('API error 400: Bad Request'));
+
+    expect(offlineQueue.count()).toBe(0);
+    expect(offlineQueue.failedCount()).toBe(1);
+    expect(offlineQueue.getFailed()[0]!.id).toBe(item.id);
+    expect(offlineQueue.getFailed()[0]!.error).toContain('API error 400');
   });
 });
 

@@ -14,8 +14,6 @@ type DietOption = {
   id: DietPreference;
   icon: keyof typeof Ionicons.glyphMap;
   titleKey: string;
-  descKey: string;
-  macroSplit: string;
 };
 
 const OPTIONS: DietOption[] = [
@@ -23,29 +21,21 @@ const OPTIONS: DietOption[] = [
     id: 'standard',
     icon: 'restaurant-outline',
     titleKey: 'onboarding.dietStandard',
-    descKey: 'onboarding.dietStandardDesc',
-    macroSplit: '25% P \u00b7 55% C \u00b7 20% F',
   },
   {
     id: 'high_protein',
     icon: 'barbell-outline',
     titleKey: 'onboarding.dietHighProtein',
-    descKey: 'onboarding.dietHighProteinDesc',
-    macroSplit: '35% P \u00b7 40% C \u00b7 25% F',
   },
   {
     id: 'low_carb',
     icon: 'leaf-outline',
     titleKey: 'onboarding.dietLowCarb',
-    descKey: 'onboarding.dietLowCarbDesc',
-    macroSplit: '30% P \u00b7 30% C \u00b7 40% F',
   },
   {
     id: 'low_fat',
     icon: 'heart-outline',
     titleKey: 'onboarding.dietLowFat',
-    descKey: 'onboarding.dietLowFatDesc',
-    macroSplit: '30% P \u00b7 55% C \u00b7 15% F',
   },
 ];
 
@@ -84,7 +74,7 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
                   }`}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={`${t(opt.titleKey)} ${t(opt.descKey)}`}
+                  accessibilityLabel={t(opt.titleKey)}
                 >
                   <View
                     className="w-11 h-11 rounded-xl items-center justify-center"
@@ -96,27 +86,11 @@ export function DietPreferenceSelectScreen({ navigation }: Props) {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-[15px] font-sans-bold mb-0.5 ${
+                      className={`text-[15px] font-sans-bold ${
                         selected ? 'text-on-primary' : 'text-text'
                       }`}
                     >
                       {t(opt.titleKey)}
-                    </Text>
-                    <Text
-                      className="text-xs mb-0.5"
-                      style={{
-                        color: selected ? `${c.onPrimary}99` : c.textTertiary,
-                      }}
-                    >
-                      {t(opt.descKey)}
-                    </Text>
-                    <Text
-                      className="text-[11px] font-sans-semibold"
-                      style={{
-                        color: selected ? `${c.onPrimary}b3` : c.textSecondary,
-                      }}
-                    >
-                      {opt.macroSplit}
                     </Text>
                   </View>
                 </Pressable>

@@ -4,6 +4,8 @@
 
 **Coach** is an AI-enabled nutrition and training mobile app for Mongolian users.
 
+> **Required reading for any "ship", "finish", "production-ready", or "what's next" task: [`docs/PRODUCT.md`](docs/PRODUCT.md).** It defines target user, MVP cutline, definition of "production-ready", and non-goals. Do not invent your own definition of done — read this doc and align to it. If a request contradicts the doc, surface the conflict before building.
+
 ```
 apps/
   mobile/    — React Native + Expo (@coach/mobile)
@@ -282,8 +284,10 @@ cd apps/mobile && npx expo start --tunnel
 
 ### Hooks (already configured in `.claude/settings.json`)
 
-- **Stop hook**: runs `typecheck` + `test` on all workspaces before completing a task
-- **PostToolUse hook** (local): auto-formats with Prettier and auto-lints with ESLint after every Edit/Write
+- **PreToolUse hook**: blocks writes to `*.env*`, `*credentials*`, and `*serviceAccount*` files
+- **PostToolUse hook** (local): auto-formats with Prettier and auto-lints with ESLint after every Edit/Write (uses local `node_modules/.bin/` — fast, no npx cold-start)
+- **Notification hook**: macOS notification + sound on stop / permission prompt
+- No Stop hook — quality gates are run manually with `npm run lint && npm run typecheck && npm run test --workspaces` before push
 
 ### Recommended Claude Code practices
 

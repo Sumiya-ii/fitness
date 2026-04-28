@@ -7,11 +7,11 @@ const BANNER_HEIGHT = 40;
 const ANIM_DURATION = 280;
 
 export function SyncBanner() {
-  const { isSyncing, isOnline, pendingCount } = useSyncStore();
+  const { isSyncing, isOnline, pendingCount, failedCount } = useSyncStore();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(-(insets.top + BANNER_HEIGHT))).current;
 
-  const shouldShow = isSyncing || (!isOnline && pendingCount > 0);
+  const shouldShow = isSyncing || (!isOnline && pendingCount > 0) || failedCount > 0;
 
   useEffect(() => {
     Animated.timing(translateY, {
@@ -21,11 +21,14 @@ export function SyncBanner() {
     }).start();
   }, [shouldShow, insets.top, translateY]);
 
-  const bgColor = isSyncing ? '#8B2E2E' : '#C8A45B'; // brand-burgundy : brand-gold
+  const bgColor = failedCount > 0 ? '#8B2E2E' : isSyncing ? '#8B2E2E' : '#C8A45B';
 
-  const label = isSyncing
-    ? 'Syncing offline data…'
-    : `${pendingCount} item${pendingCount !== 1 ? 's' : ''} saved offline`;
+  const label =
+    failedCount > 0
+      ? `${failedCount} offline item${failedCount !== 1 ? 's' : ''} could not sync`
+      : isSyncing
+        ? 'Syncing offline data...'
+        : `${pendingCount} item${pendingCount !== 1 ? 's' : ''} saved offline`;
 
   return (
     <Animated.View

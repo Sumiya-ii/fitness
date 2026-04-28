@@ -14,9 +14,9 @@ interface StepsStore {
   error: string | null;
   /** Seed permission status on mount — fetches steps if already granted */
   checkPermission: () => Promise<void>;
-  /** Called when user taps "Connect Apple Health" */
+  /** Called when user enables step tracking */
   requestPermission: () => Promise<void>;
-  /** Fetch today's step count via HealthKit / CoreMotion */
+  /** Fetch today's step count via the device pedometer */
   fetchTodaySteps: () => Promise<void>;
 }
 

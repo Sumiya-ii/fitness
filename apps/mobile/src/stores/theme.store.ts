@@ -15,7 +15,7 @@ function getStoredMode(): ThemeMode {
 
 export function resolveScheme(mode: ThemeMode): 'light' | 'dark' {
   if (mode === 'system') {
-    return Appearance.getColorScheme() === 'light' ? 'light' : 'dark';
+    return Appearance.getColorScheme() === 'dark' ? 'dark' : 'light';
   }
   return mode;
 }

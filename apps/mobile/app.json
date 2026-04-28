@@ -17,13 +17,6 @@
         }
       ],
       [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning and meal photo logging.",
-          "barcodeScannerEnabled": true
-        }
-      ],
-      [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
@@ -86,43 +79,32 @@
       "buildNumber": "19",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera for barcode scanning and meal photo logging.",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera for meal photo logging.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use your microphone for voice meal logging.",
         "NSMotionUsageDescription": "Allow $(PRODUCT_NAME) to access your motion data for step counting.",
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos so you can attach meal images.",
-        "NSHealthShareUsageDescription": "Allow $(PRODUCT_NAME) to read your step count from Apple Health to track your daily activity.",
-        "NSHealthUpdateUsageDescription": "Allow $(PRODUCT_NAME) to update your health data in Apple Health.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
-        "aps-environment": "production",
-        "com.apple.developer.healthkit": true
+        "aps-environment": "production"
       },
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
-            "NSPrivacyAccessedAPITypeReasons": [
-              "C617.1"
-            ]
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": [
-              "CA92.1"
-            ]
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
-            "NSPrivacyAccessedAPITypeReasons": [
-              "35F9.1"
-            ]
+            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
-            "NSPrivacyAccessedAPITypeReasons": [
-              "E174.1"
-            ]
+            "NSPrivacyAccessedAPITypeReasons": ["E174.1"]
           }
         ],
         "NSPrivacyCollectedDataTypes": [

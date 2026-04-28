@@ -3,14 +3,13 @@ import { View, Text } from 'react-native';
 import { Button } from './Button';
 import { useColors } from '../../theme';
 
-type EmptyStateIcon = 'nutrition' | 'search' | 'camera' | 'mic' | 'barcode' | 'heart' | 'list';
+type EmptyStateIcon = 'nutrition' | 'search' | 'camera' | 'mic' | 'heart' | 'list';
 
 const iconMap: Record<EmptyStateIcon, keyof typeof Ionicons.glyphMap> = {
   nutrition: 'nutrition-outline',
   search: 'search-outline',
   camera: 'camera-outline',
   mic: 'mic-outline',
-  barcode: 'barcode-outline',
   heart: 'heart-outline',
   list: 'list-outline',
 };

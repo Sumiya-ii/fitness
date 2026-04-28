@@ -14,27 +14,23 @@ type GoalOption = {
   id: GoalType;
   icon: keyof typeof Ionicons.glyphMap;
   titleKey: string;
-  descKey: string;
 };
 
 const GOAL_OPTIONS: GoalOption[] = [
   {
     id: 'lose_fat',
-    icon: 'trending-down-outline',
+    icon: 'flame-outline',
     titleKey: 'onboarding.goalLoseFat',
-    descKey: 'onboarding.goalLoseFatDesc',
   },
   {
     id: 'maintain',
     icon: 'scale-outline',
     titleKey: 'onboarding.goalMaintain',
-    descKey: 'onboarding.goalMaintainDesc',
   },
   {
     id: 'gain',
-    icon: 'trending-up-outline',
+    icon: 'barbell-outline',
     titleKey: 'onboarding.goalGain',
-    descKey: 'onboarding.goalGainDesc',
   },
 ];
 
@@ -89,19 +85,11 @@ export function GoalSetupScreen({ navigation }: Props) {
                   </View>
                   <View className="flex-1">
                     <Text
-                      className={`text-base font-sans-bold mb-0.5 ${
+                      className={`text-base font-sans-bold ${
                         selected ? 'text-on-primary' : 'text-text'
                       }`}
                     >
                       {t(option.titleKey)}
-                    </Text>
-                    <Text
-                      className="text-[13px] leading-[18px]"
-                      style={{
-                        color: selected ? `${c.onPrimary}a6` : c.textTertiary,
-                      }}
-                    >
-                      {t(option.descKey)}
                     </Text>
                   </View>
                 </Pressable>

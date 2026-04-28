@@ -201,10 +201,6 @@ PODS:
     - ExpoModulesCore
   - ExpoAudio (55.0.9):
     - ExpoModulesCore
-  - ExpoCamera (55.0.11):
-    - ExpoModulesCore
-    - ZXingObjC/OneD
-    - ZXingObjC/PDF417
   - ExpoCrypto (55.0.10):
     - ExpoModulesCore
   - ExpoDomWebView (55.0.3):
@@ -2540,12 +2536,6 @@ PODS:
     - Yoga
   - Sentry/HybridSDK (8.58.0)
   - Yoga (0.0.0)
-  - ZXingObjC/Core (3.6.9)
-  - ZXingObjC/OneD (3.6.9):
-    - ZXingObjC/Core
-  - ZXingObjC/PDF417 (3.6.9):
-    - ZXingObjC/Core
-
 DEPENDENCIES:
   - EASClient (from `../../../node_modules/expo-eas-client/ios`)
   - EXApplication (from `../../../node_modules/expo-application/ios`)
@@ -2561,7 +2551,6 @@ DEPENDENCIES:
   - ExpoAppleAuthentication (from `../../../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../../../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../../../node_modules/expo-audio/ios`)
-  - ExpoCamera (from `../../../node_modules/expo-camera/ios`)
   - ExpoCrypto (from `../../../node_modules/expo-crypto/ios`)
   - "ExpoDomWebView (from `../../../node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../../../node_modules/expo-file-system/ios`)
@@ -2679,8 +2668,6 @@ SPEC REPOS:
     - ReachabilitySwift
     - RevenueCat
     - Sentry
-    - ZXingObjC
-
 EXTERNAL SOURCES:
   EASClient:
     :path: "../../../node_modules/expo-eas-client/ios"
@@ -2710,8 +2697,6 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-asset/ios"
   ExpoAudio:
     :path: "../../../node_modules/expo-audio/ios"
-  ExpoCamera:
-    :path: "../../../node_modules/expo-camera/ios"
   ExpoCrypto:
     :path: "../../../node_modules/expo-crypto/ios"
   ExpoDomWebView:
@@ -2935,7 +2920,6 @@ SPEC CHECKSUMS:
   ExpoAppleAuthentication: 435cdf8a592ce69d769a74c67f241f113d812350
   ExpoAsset: 4efd0227e808dfa84d286aa3663ded641ef73479
   ExpoAudio: 9c6c4b4c9669be8e8892b423cc967c09d801bad4
-  ExpoCamera: fee0aadc5cc2968f39a51d0b2f1ddbdf4dfe5d72
   ExpoCrypto: 33a6c4fb9ccac7a4d784954d0db6c3ba292123e9
   ExpoDomWebView: f101fb3db4b6eec4163fca51f7507189b7e48661
   ExpoFileSystem: 4ed8ccc90671813c861f212fba3668fe133b7e68
@@ -3047,8 +3031,6 @@ SPEC CHECKSUMS:
   RNWorklets: 7a182b959563d4307562463f0618464bba735947
   Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be
   Yoga: acd565934addf7423687593ec490bd4491b2a802
-  ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
-
 PODFILE CHECKSUM: 283a6b0c05a6a0ed14eaf01f0dd986bd6d9417a6
 
 COCOAPODS: 1.16.2

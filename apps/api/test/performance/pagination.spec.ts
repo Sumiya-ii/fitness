@@ -74,7 +74,6 @@ describe('Performance: Pagination (NFR-001..003)', () => {
         ],
         aliases: [],
         localizations: [],
-        barcodes: [],
       }));
 
       const mockPrisma = {

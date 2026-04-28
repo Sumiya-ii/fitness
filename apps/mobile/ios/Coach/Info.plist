@@ -69,10 +69,6 @@
     <string>Allow $(PRODUCT_NAME) to use your camera for meal photo logging.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
-    <key>NSHealthShareUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to read your step count from Apple Health to track your daily activity.</string>
-    <key>NSHealthUpdateUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to update your health data in Apple Health.</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
     <key>NSMicrophoneUsageDescription</key>

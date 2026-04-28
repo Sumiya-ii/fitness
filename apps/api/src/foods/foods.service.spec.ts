@@ -38,7 +38,6 @@ describe('FoodsService', () => {
     ],
     aliases: [{ id: 'alias-uuid', alias: 'rice', locale: 'en' }],
     localizations: [{ id: 'loc-uuid', locale: 'en', name: 'White Rice' }],
-    barcodes: [{ id: 'barcode-uuid', code: '4901001000012' }],
   };
 
   beforeEach(() => {
@@ -81,7 +80,7 @@ describe('FoodsService', () => {
       expect(prisma.food.create).toHaveBeenCalled();
     });
 
-    it('should create with barcodes, aliases, and localizations', async () => {
+    it('should create with aliases and localizations', async () => {
       await service.create({
         normalizedName: 'Test Food',
         locale: 'mn',
@@ -93,13 +92,11 @@ describe('FoodsService', () => {
           carbsPer100g: 20,
           fatPer100g: 1,
         },
-        barcodes: ['12345'],
         aliases: [{ alias: 'test', locale: 'en' }],
         localizations: [{ locale: 'en', name: 'Test Food EN' }],
       });
 
       const createCall = prisma.food.create.mock.calls[0][0];
-      expect(createCall.data.barcodes).toBeDefined();
       expect(createCall.data.aliases).toBeDefined();
       expect(createCall.data.localizations).toBeDefined();
     });
@@ -109,7 +106,6 @@ describe('FoodsService', () => {
     it('should return formatted food', async () => {
       const result = await service.findById('food-uuid');
       expect(result.id).toBe('food-uuid');
-      expect(result.barcodes).toEqual(['4901001000012']);
       expect(result.localizations[0].name).toBe('White Rice');
     });
 
