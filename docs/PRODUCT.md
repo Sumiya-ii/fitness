@@ -54,7 +54,7 @@ A user can pay for Coach when **all** of the following are true:
 - [x] Macro/calorie dashboard — done
 - [x] Water + weight logging — done
 - [x] AI Coach chat with memory — done
-- [x] Subscription via QPay — done
+- [x] Subscription via Apple IAP / RevenueCat — done
 - [ ] **MN food database: 200+ verified traditional foods** (P0-4) — _currently partial; this is the moat_
 - [ ] **Streaks + daily check-in** (P0-3) — _retention floor_
 - [ ] **Crash-free rate ≥ 99.5%** (P0-6) — _trust floor_
@@ -98,7 +98,7 @@ When Claude is asked to "make Coach production-ready," it means **all** of these
 - **Crash-free rate ≥ 99.5%** (Sentry, last 7 days, iOS)
 - **No P0/P1 Sentry issues open** older than 7 days
 - **API p95 latency < 500ms** for dashboard, meal logs, food search
-- **Worker job success rate ≥ 99%** for photo, voice, weekly summary processors
+- **Worker job success rate ≥ 99%** for photo and voice processors
 - **`npm run lint && npm run typecheck && npm run test --workspaces`** all green
 - **Maestro E2E flows pass** for: onboarding → log meal (photo) → log meal (voice) → see dashboard → log weight
 - **i18n: zero untranslated keys** in MN locale; all user-facing copy reviewed by Sumiya
@@ -107,7 +107,7 @@ When Claude is asked to "make Coach production-ready," it means **all** of these
 
 - All "Must-have" boxes in §3 checked.
 - App Store listing approved (screenshots, description, privacy labels, review).
-- QPay subscription tested end-to-end with real MNT payment.
+- Apple IAP subscription tested end-to-end in sandbox/TestFlight.
 - Privacy: data export + account deletion working (not stub).
 - Terms of Service + Privacy Policy live at nexuskairos.com/coach/legal.
 

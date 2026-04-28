@@ -1,4 +1,3 @@
-// TODO: After App Store launch, add QPay for Android users (NOT iOS — Apple requires IAP).
 import { useEffect, useState } from 'react';
 import { View, Text, Linking, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';

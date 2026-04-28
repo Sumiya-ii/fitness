@@ -5,6 +5,13 @@ import { API_PREFIX } from '@coach/shared';
 import { HealthController } from '../src/health/health.controller';
 import { QueueHealthService } from '../src/queue';
 import { PrismaService } from '../src/prisma';
+import { ConfigService } from '../src/config';
+
+jest.mock('ioredis', () =>
+  jest.fn().mockImplementation(() => ({
+    ping: jest.fn().mockResolvedValue('PONG'),
+  })),
+);
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -22,6 +29,10 @@ describe('AppController (e2e)', () => {
         {
           provide: PrismaService,
           useValue: { $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]) },
+        },
+        {
+          provide: ConfigService,
+          useValue: { redisUrl: 'redis://localhost:6379' },
         },
       ],
     }).compile();

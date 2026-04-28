@@ -22,7 +22,6 @@ model User {
   mealLogs          MealLog[]
   mealLogItems      MealLogItem[]
   weightLogs        WeightLog[]
-  workoutLogs       WorkoutLog[]
   telegramLink      TelegramLink?
   notificationPrefs NotificationPreference?
   deviceTokens      DeviceToken[]
@@ -31,14 +30,12 @@ model User {
   privacyRequests   PrivacyRequest[]
   favorites         Favorite[]
 
-  qpayInvoices        QPayInvoice[]
-  voiceDrafts         VoiceDraft[]
-  waterLogs           WaterLog[]
-  coachMemories       CoachMemory[]
-  outboundMessages    OutboundMessage[]
-  bodyMeasurementLogs BodyMeasurementLog[]
-  mealTemplates       MealTemplate[]
-  foodCalibrations    UserFoodCalibration[]
+  voiceDrafts      VoiceDraft[]
+  waterLogs        WaterLog[]
+  coachMemories    CoachMemory[]
+  outboundMessages OutboundMessage[]
+  mealTemplates    MealTemplate[]
+  foodCalibrations UserFoodCalibration[]
 
   @@map("users")
 }
@@ -268,7 +265,7 @@ model WaterLog {
   @@map("water_logs")
 }
 
-// ─── Weight & Workout Logging ───────────────────────────────────
+// ─── Weight Logging ─────────────────────────────────────────────
 
 model WeightLog {
   id        String   @id @default(uuid()) @db.Uuid
@@ -282,46 +279,6 @@ model WeightLog {
 
   @@unique([userId, loggedAt])
   @@map("weight_logs")
-}
-
-model BodyMeasurementLog {
-  id             String   @id @default(uuid()) @db.Uuid
-  userId         String   @map("user_id") @db.Uuid
-  waistCm        Decimal  @map("waist_cm") @db.Decimal(5, 1)
-  neckCm         Decimal  @map("neck_cm") @db.Decimal(5, 1)
-  hipCm          Decimal? @map("hip_cm") @db.Decimal(5, 1) // required for female
-  weightKg       Decimal  @map("weight_kg") @db.Decimal(5, 1)
-  bodyFatPercent Decimal  @map("body_fat_percent") @db.Decimal(4, 1)
-  fatMassKg      Decimal  @map("fat_mass_kg") @db.Decimal(5, 1)
-  leanMassKg     Decimal  @map("lean_mass_kg") @db.Decimal(5, 1)
-  bmi            Decimal  @map("bmi") @db.Decimal(4, 1)
-  bmiCategory    String   @map("bmi_category") @db.VarChar(20)
-  loggedAt       DateTime @map("logged_at") @db.Date
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, loggedAt])
-  @@index([userId, loggedAt(sort: Desc)])
-  @@map("body_measurement_logs")
-}
-
-model WorkoutLog {
-  id            String   @id @default(uuid()) @db.Uuid
-  userId        String   @map("user_id") @db.Uuid
-  workoutType   String   @map("workout_type") @db.VarChar(50)
-  durationMin   Int?     @map("duration_min")
-  calorieBurned Int?     @map("calorie_burned")
-  note          String?
-  loggedAt      DateTime @map("logged_at")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, loggedAt(sort: Desc)])
-  @@map("workout_logs")
 }
 
 // ─── Telegram ───────────────────────────────────────────────────
@@ -385,7 +342,7 @@ model Subscription {
   userId             String    @unique @map("user_id") @db.Uuid
   tier               String    @default("free") @db.VarChar(20) // free | pro
   status             String    @default("active") @db.VarChar(20) // active | canceled | expired | past_due
-  provider           String?   @db.VarChar(20) // apple | google | qpay
+  provider           String?   @db.VarChar(20) // apple | google
   providerSubId      String?   @map("provider_sub_id")
   currentPeriodStart DateTime? @map("current_period_start")
   currentPeriodEnd   DateTime? @map("current_period_end")
@@ -412,31 +369,6 @@ model SubscriptionLedger {
 
   @@index([subscriptionId, createdAt(sort: Desc)])
   @@map("subscription_ledger")
-}
-
-// ─── QPay ───────────────────────────────────────────────────────
-
-model QPayInvoice {
-  id              String    @id @default(uuid()) @db.Uuid
-  userId          String    @map("user_id") @db.Uuid
-  plan            String    @db.VarChar(20) // monthly | yearly
-  amountMnt       Int       @map("amount_mnt")
-  qpayInvoiceId   String?   @map("qpay_invoice_id") @db.VarChar(255)
-  senderInvoiceNo String    @unique @map("sender_invoice_no") @db.VarChar(50)
-  qrText          String?   @map("qr_text") @db.Text
-  qrImage         String?   @map("qr_image") @db.Text
-  urls            Json? // bank deeplink URLs
-  status          String    @default("pending") @db.VarChar(20) // pending | paid | expired | canceled
-  paidAt          DateTime? @map("paid_at")
-  qpayPaymentId   String?   @map("qpay_payment_id") @db.VarChar(255)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt(sort: Desc)])
-  @@index([qpayInvoiceId])
-  @@map("qpay_invoices")
 }
 
 // ─── Moderation ─────────────────────────────────────────────────
@@ -497,7 +429,7 @@ model PrivacyRequest {
 
 model IdempotencyKey {
   id              String   @id @default(uuid()) @db.Uuid
-  externalSystem  String   @map("external_system") @db.VarChar(30) // telegram | apple_iap | google_play | qpay | mobile_offline_write
+  externalSystem  String   @map("external_system") @db.VarChar(30) // telegram | apple_iap | google_play | mobile_offline_write
   externalEventId String   @map("external_event_id") @db.VarChar(255)
   responseStatus  Int?     @map("response_status")
   responseBody    Json?    @map("response_body")

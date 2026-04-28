@@ -11,7 +11,7 @@
 Coach has a solid NestJS/Prisma backend with the right architectural patterns. The main gaps versus Cal AI fall into five categories:
 
 1. **Nutrition data model** — Coach tracks 5 nutrients; Cal AI tracks 7+ (missing sodium, sugar, saturated fat)
-2. **Exercise & net calories** — WorkoutLog schema exists but has zero API surface; Cal AI treats exercise as first-class
+2. **Exercise & net calories** — workout logging is not in the active Coach schema/API; Cal AI treats exercise as first-class
 3. **Health platform integration** — Cal AI reads/writes Apple Health & Google Fit; Coach has nothing
 4. **Missing food logging modes** — custom user foods, saved meal templates, recipes, nutrition label OCR
 5. **Body composition & advanced analytics** — Cal AI has BMI, body fat %, rollover calories, step-adjusted budgets
@@ -87,18 +87,18 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
 
 ---
 
-### P1.3 — Expose WorkoutLog API (Exercise Logging + Calorie Burn)
+### P1.3 — Add Workout Logging API (Exercise Logging + Calorie Burn)
 
 **Cal AI**: Exercise logging is a first-class feature. Users log workouts; calories burned are deducted from the daily budget, computing a net calorie figure. Step count from Apple Health also auto-adjusts the budget.
 
-**Coach today**: `WorkoutLog` Prisma model exists (workoutType, durationMin, note, loggedAt) but has **no controller, no service, no endpoints**. The model is orphaned.
+**Coach today**: Workout logging is not part of the active product. There is no Prisma model, controller, service, or endpoint for workouts.
 
 **What to build**:
 
 1. **`WorkoutCalorieCalculator`** (new utility) — MET-based burn estimation:
    - MET table for common activities (running: 9.8, walking: 3.5, cycling: 7.5, swimming: 6.0, weight training: 3.5, yoga: 2.5, HIIT: 8.0, etc.)
    - Formula: `calories_burned = MET × weight_kg × duration_hours`
-   - Add `caloriesBurned` field to `WorkoutLog` schema (INT, nullable — null if not calculated)
+   - Add a workout log model with a nullable `caloriesBurned` field
 
 2. **`WorkoutLogsController`** and **`WorkoutLogsService`**:
    - `POST /api/v1/workout-logs` — log workout (workoutType, durationMin, loggedAt, note)
@@ -109,11 +109,11 @@ This is a pure logic change in one function. TDEE multipliers remain the same (s
    - `GET /api/v1/workout-logs/history` — paginated history (days param)
 
 3. **Update `DashboardService`** — add exercise data to daily dashboard response:
-   - `caloriesBurned` (sum of WorkoutLog.caloriesBurned for the day)
+   - `caloriesBurned` (sum of workout calories for the day)
    - `netCalories` (totalCaloriesConsumed − caloriesBurned)
    - `exerciseLogs` (array of workouts for the day)
 
-4. **Prisma migration** — add `caloriesBurned INT` to `WorkoutLog`.
+4. **Prisma migration** — create the workout log table.
 
 5. **`WorkoutsModule`** — register the module, add to `AppModule`.
 
@@ -491,7 +491,7 @@ _Major retention and accuracy boost, but requires mobile-side work too._
 
 1. **Implement `data-export.processor.ts`**:
    - Input: `userId`, `requestId`
-   - Query: all `MealLog` + `MealLogItem` + `WeightLog` + `WorkoutLog` + `WaterLog` for user
+   - Query: all `MealLog` + `MealLogItem` + `WeightLog` + `WaterLog` for user
    - Generate CSV with columns: date, meal_type, food_name, quantity, serving, calories, protein, carbs, fat, fiber, sodium, sugar, source
    - Upload CSV to S3 with signed URL (7-day expiry)
    - Update `PrivacyRequest.resultUrl` and `status = 'completed'`
@@ -717,7 +717,7 @@ _Growth and retention layer. Implement last._
 | ---- | ------------------------------------------ | ------ | ------ | ------------- |
 | P1.1 | Expand nutrients (sodium, sugar, sat. fat) | M      | High   | Missing       |
 | P1.2 | Mifflin-St Jeor BMR formula                | XS     | Medium | Wrong formula |
-| P1.3 | WorkoutLog API + calorie burn              | M      | High   | Schema only   |
+| P1.3 | Workout logging API + calorie burn         | M      | High   | Missing       |
 | P1.4 | Net calorie dashboard                      | S      | High   | Missing       |
 | P2.1 | Custom user foods                          | M      | High   | Schema only   |
 | P2.2 | Saved meal templates                       | M      | High   | Missing       |

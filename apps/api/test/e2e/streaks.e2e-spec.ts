@@ -42,7 +42,7 @@ describe('Streaks (e2e)', () => {
           expect(res.body.data).toHaveProperty('currentStreak');
           expect(res.body.data).toHaveProperty('longestStreak');
           expect(res.body.data).toHaveProperty('totalDaysLogged');
-          expect(mockService.getStreaks).toHaveBeenCalledWith(TEST_USER.id);
+          expect(mockService.getStreaks).toHaveBeenCalledWith(TEST_USER.id, undefined);
         }));
   });
 });

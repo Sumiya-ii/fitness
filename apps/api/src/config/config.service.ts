@@ -49,30 +49,6 @@ export class ConfigService {
     return this.config.BULL_BOARD_PASSWORD;
   }
 
-  get qpayApiUrl(): string {
-    return this.config.QPAY_API_URL ?? 'https://merchant-sandbox.qpay.mn/v2';
-  }
-
-  get qpayClientId(): string | undefined {
-    return this.config.QPAY_CLIENT_ID;
-  }
-
-  get qpayClientSecret(): string | undefined {
-    return this.config.QPAY_CLIENT_SECRET;
-  }
-
-  get qpayInvoiceCode(): string | undefined {
-    return this.config.QPAY_INVOICE_CODE;
-  }
-
-  get qpayCallbackToken(): string | undefined {
-    return this.config.QPAY_CALLBACK_TOKEN;
-  }
-
-  get qpayInvoiceTtlMinutes(): number {
-    return this.config.QPAY_INVOICE_TTL_MINUTES ?? 30;
-  }
-
   get revenueCatWebhookSecret(): string | undefined {
     return this.config.REVENUECAT_WEBHOOK_SECRET;
   }

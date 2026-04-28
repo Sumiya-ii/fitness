@@ -22,8 +22,6 @@ async function collectUserData(pool: Pool, userId: string): Promise<Record<strin
     mealLogItems,
     weightLogs,
     waterLogs,
-    workoutLogs,
-    bodyMeasurements,
     favorites,
     mealTemplates,
     mealTemplateItems,
@@ -65,17 +63,6 @@ async function collectUserData(pool: Pool, userId: string): Promise<Record<strin
     ),
     pool.query(
       `SELECT id, amount_ml, logged_at, created_at FROM water_logs WHERE user_id = $1 ORDER BY logged_at DESC`,
-      [userId],
-    ),
-    pool.query(
-      `SELECT id, workout_type, duration_min, calorie_burned, note, logged_at, created_at
-       FROM workout_logs WHERE user_id = $1 ORDER BY logged_at DESC`,
-      [userId],
-    ),
-    pool.query(
-      `SELECT id, waist_cm, neck_cm, hip_cm, weight_kg, body_fat_percent,
-              fat_mass_kg, lean_mass_kg, bmi, bmi_category, logged_at, created_at
-       FROM body_measurement_logs WHERE user_id = $1 ORDER BY logged_at DESC`,
       [userId],
     ),
     pool.query(
@@ -157,8 +144,6 @@ async function collectUserData(pool: Pool, userId: string): Promise<Record<strin
     mealLogItems: mealLogItems.rows,
     weightLogs: weightLogs.rows,
     waterLogs: waterLogs.rows,
-    workoutLogs: workoutLogs.rows,
-    bodyMeasurements: bodyMeasurements.rows,
     favorites: favorites.rows,
     mealTemplates: mealTemplates.rows,
     mealTemplateItems: mealTemplateItems.rows,
@@ -268,15 +253,12 @@ async function processDeletion(pool: Pool, requestId: string, userId: string): P
     await pool.query(`DELETE FROM favorites WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM water_logs WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM weight_logs WHERE user_id = $1`, [userId]);
-    await pool.query(`DELETE FROM workout_logs WHERE user_id = $1`, [userId]);
-    await pool.query(`DELETE FROM body_measurement_logs WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM analytics_events WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM consents WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM outbound_messages WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM device_tokens WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM coach_memories WHERE user_id = $1`, [userId]);
     await pool.query(`DELETE FROM voice_drafts WHERE user_id = $1`, [userId]);
-    await pool.query(`DELETE FROM qpay_invoices WHERE user_id = $1`, [userId]);
     await pool.query(
       `DELETE FROM subscription_ledger
        WHERE subscription_id IN (SELECT id FROM subscriptions WHERE user_id = $1)`,

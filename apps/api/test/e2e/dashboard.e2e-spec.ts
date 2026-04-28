@@ -17,9 +17,6 @@ describe('Dashboard (e2e)', () => {
     meals: [],
     waterConsumed: 1500,
     waterTarget: 2500,
-    caloriesBurned: 300,
-    netCalories: 900,
-    workouts: [],
   };
 
   const mockService = {

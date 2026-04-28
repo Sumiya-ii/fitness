@@ -70,7 +70,7 @@ export class SubscriptionsService {
   }
 
   // ---------------------------------------------------------------------------
-  // Generic (internal/QPay) webhook
+  // Generic internal webhook
   // ---------------------------------------------------------------------------
   async handleWebhook(payload: WebhookPayloadDto): Promise<{ success: boolean }> {
     const { event, provider, providerEventId } = payload;

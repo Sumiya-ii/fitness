@@ -6,4 +6,4 @@ Barcode lookup and barcode submission are not part of the product. The backend d
 
 Photo logging is Pro-gated at every visible entry point. Offline meal writes are queued with idempotency keys and replayed when connectivity returns; permanent replay failures are retained in a failed queue and surfaced in the sync banner.
 
-The dashboard shows calorie, macro, water, step, streak, and meal history data only. It does not include workout-adjusted net calories in v1. Step tracking is currently based on phone motion data, not Apple Health.
+The dashboard shows calorie, macro, water, step, streak, and meal history data only. It does not include workout-adjusted net calories in v1, and the backend does not expose workout, body composition, or weekly-summary endpoints. Step tracking is currently based on phone motion data, not Apple Health.

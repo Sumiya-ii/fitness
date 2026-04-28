@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
-// Generic (internal) webhook — kept for QPay and manual adjustments
+// Generic internal webhook for manual subscription adjustments.
 // ---------------------------------------------------------------------------
 export const webhookPayloadSchema = z.object({
   event: z.enum(['started', 'renewed', 'canceled', 'expired', 'refunded']),
-  provider: z.enum(['apple', 'google', 'qpay']),
+  provider: z.enum(['apple', 'google']),
   providerEventId: z.string().optional(),
   userId: z.string().uuid().optional(),
   providerSubId: z.string().optional(),

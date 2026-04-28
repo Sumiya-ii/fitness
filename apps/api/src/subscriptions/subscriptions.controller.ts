@@ -40,7 +40,7 @@ export class SubscriptionsController {
   }
 
   /**
-   * Generic (internal / QPay) webhook — kept for backwards compatibility.
+   * Generic internal webhook for manual subscription adjustments.
    */
   @Public()
   @Post('webhook')

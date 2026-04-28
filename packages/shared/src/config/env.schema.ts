@@ -60,14 +60,6 @@ export const envSchema = z.object({
   POSTHOG_API_KEY: z.string().optional(),
   POSTHOG_HOST: z.string().url().optional(),
 
-  // QPay
-  QPAY_API_URL: z.string().url().optional(),
-  QPAY_CLIENT_ID: z.string().optional(),
-  QPAY_CLIENT_SECRET: z.string().optional(),
-  QPAY_INVOICE_CODE: z.string().optional(),
-  QPAY_CALLBACK_TOKEN: z.string().optional(),
-  QPAY_INVOICE_TTL_MINUTES: z.coerce.number().int().positive().optional(),
-
   // RevenueCat
   REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
   REVENUECAT_API_KEY: z.string().optional(),

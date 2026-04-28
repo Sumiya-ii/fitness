@@ -28,9 +28,6 @@ import { ChatModule } from './chat';
 import { CoachMemoryModule } from './coach-memory/coach-memory.module';
 import { OnboardingModule } from './onboarding';
 import { StreaksModule } from './streaks/streaks.module';
-// QPayModule disabled for v1 iOS App Store ship — Apple requires IAP for digital subscriptions.
-// Re-enable when shipping Android (QPay is allowed there) or when an Android-only routing guard is in place.
-// import { QPayModule } from './qpay';
 import { HealthController } from './health/health.controller';
 import { IdempotencyInterceptor } from './observability/idempotency.interceptor';
 
@@ -72,7 +69,6 @@ import { IdempotencyInterceptor } from './observability/idempotency.interceptor'
     PhotosModule,
     TelegramModule,
     RemindersModule,
-    // QPayModule, // disabled for v1 iOS — see import comment above
     ChatModule,
     CoachMemoryModule,
     StreaksModule,

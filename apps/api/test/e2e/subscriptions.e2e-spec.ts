@@ -69,7 +69,7 @@ describe('Subscriptions (e2e)', () => {
         .post(url('subscriptions/webhook'))
         .send({
           event: 'started',
-          provider: 'qpay',
+          provider: 'apple',
           userId: TEST_USER.id,
         })
         .expect(201));
@@ -77,7 +77,7 @@ describe('Subscriptions (e2e)', () => {
     it('rejects invalid event type', () =>
       request(app.getHttpServer())
         .post(url('subscriptions/webhook'))
-        .send({ event: 'unknown_event', provider: 'qpay' })
+        .send({ event: 'unknown_event', provider: 'apple' })
         .expect(400));
 
     it('rejects invalid provider', () =>

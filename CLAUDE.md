@@ -26,10 +26,10 @@ packages/
 | ------------- | ----------------------------------------------------------------------- |
 | Mobile        | React Native 0.83, Expo ~55, NativeWind 4, Zustand, React Navigation 7  |
 | API           | NestJS 10, Prisma 5 + PostgreSQL 16, Redis 7, Firebase Admin            |
-| AI            | OpenAI GPT-4 Vision (food photos), OpenAI gpt-4o-transcribe (voice STT)  |
+| AI            | OpenAI GPT-4 Vision (food photos), OpenAI gpt-4o-transcribe (voice STT) |
 | Queue         | BullMQ (via Redis)                                                      |
 | Auth          | Firebase Authentication (global guard, all routes protected by default) |
-| Payments      | QPay (Mongolia)                                                         |
+| Payments      | RevenueCat + Apple IAP                                                  |
 | Observability | Sentry, Pino structured logging, OpenTelemetry                          |
 
 ## Commands
@@ -93,7 +93,7 @@ npm run test:e2e:mobile                     # runs maestro/flows/*.yaml
 10. **Dates returned from API** must be ISO strings. Use `.toISOString().split('T')[0]` for date-only fields.
 11. **NativeWind only** for mobile styling — use `className`, never `StyleSheet.create()` or inline styles.
 12. **Zustand** for mobile state — no Redux, no Context for state management.
-13. **Never call real external services in tests** — Firebase, OpenAI, QPay must be mocked at the boundary.
+13. **Never call real external services in tests** — Firebase and OpenAI must be mocked at the boundary.
 14. **Conditional Prisma updates** use spread: `...(dto.field !== undefined && { field: value })`.
 
 ## API patterns (follow exactly)
@@ -204,18 +204,30 @@ jest.mock('ioredis', () => jest.fn().mockImplementation(() => mockRedis));
 
 // PostgreSQL — mock Pool for coach-memory and similar
 const mockPoolQuery = jest.fn();
-jest.mock('pg', () => ({ Pool: jest.fn().mockImplementation(() => ({ query: mockPoolQuery, end: jest.fn() })) }));
+jest.mock('pg', () => ({
+  Pool: jest.fn().mockImplementation(() => ({ query: mockPoolQuery, end: jest.fn() })),
+}));
 
 // Shared worker services — always mock at module level
 jest.mock('../expo-push', () => ({ sendExpoPush: jest.fn() }));
 jest.mock('../message-log.service', () => ({ logMessage: jest.fn() }));
 jest.mock('../s3', () => ({ downloadFromS3: jest.fn(), deleteFromS3: jest.fn() }));
-jest.mock('../db', () => ({ setVoiceDraftActive: jest.fn(), setVoiceDraftCompleted: jest.fn(), setVoiceDraftFailed: jest.fn() }));
+jest.mock('../db', () => ({
+  setVoiceDraftActive: jest.fn(),
+  setVoiceDraftCompleted: jest.fn(),
+  setVoiceDraftFailed: jest.fn(),
+}));
 
 // Environment — save/restore in beforeEach/afterEach
 let originalEnv: NodeJS.ProcessEnv;
-beforeEach(() => { originalEnv = { ...process.env }; process.env.OPENAI_API_KEY = 'test-key'; });
-afterEach(() => { process.env = originalEnv; jest.restoreAllMocks(); });
+beforeEach(() => {
+  originalEnv = { ...process.env };
+  process.env.OPENAI_API_KEY = 'test-key';
+});
+afterEach(() => {
+  process.env = originalEnv;
+  jest.restoreAllMocks();
+});
 ```
 
 **When adding a new worker processor**: create the spec file immediately with all 9 test categories above. Do not merge a processor without tests.
@@ -228,13 +240,13 @@ Copy `.env.example` to `.env` in repo root. Mobile env vars prefixed `EXPO_PUBLI
 
 ### Hosting
 
-| Service   | Platform    | Config file          | Notes                                      |
-| --------- | ----------- | -------------------- | ------------------------------------------ |
-| API       | Railway     | `railway.toml`       | Auto-deploys on push to `main`             |
-| Worker    | Railway     | `apps/worker/railway.toml` | Separate Railway service              |
-| Database  | Railway     | —                    | PostgreSQL 16, internal networking          |
-| Redis     | Railway     | —                    | Redis 7 for BullMQ + caching               |
-| Mobile    | Expo / EAS  | `apps/mobile/eas.json` | TestFlight (iOS), EAS Build + Submit      |
+| Service  | Platform   | Config file                | Notes                                |
+| -------- | ---------- | -------------------------- | ------------------------------------ |
+| API      | Railway    | `railway.toml`             | Auto-deploys on push to `main`       |
+| Worker   | Railway    | `apps/worker/railway.toml` | Separate Railway service             |
+| Database | Railway    | —                          | PostgreSQL 16, internal networking   |
+| Redis    | Railway    | —                          | Redis 7 for BullMQ + caching         |
+| Mobile   | Expo / EAS | `apps/mobile/eas.json`     | TestFlight (iOS), EAS Build + Submit |
 
 ### CI/CD (GitHub Actions)
 
@@ -306,19 +318,14 @@ cd apps/mobile && npx expo start --tunnel
 
 - Firebase auth (email/password, Google, Apple Sign-In)
 - Full onboarding flow (16 screens: gender, birthdate, height, weight, goals, activity, diet, targets)
-- AI meal logging: photo (GPT-4 Vision), voice (STT), text search, barcode scan, quick-add, favorites/recents, templates
+- AI meal logging: photo (GPT-4 Vision), voice (STT), text search, quick-add, favorites/recents, templates
 - Water logging with daily targets
 - Macro/calorie tracking dashboard with ring visualization
 - Weight logging and progress charts
-- Body composition logging
-- Workout logging (custom exercises, timer, history)
 - AI Coach chat (personalized, memory-enabled via coach-memory processor)
-- Adaptive calorie targets (auto-adjust based on progress)
-- Weekly summary reports (AI-generated, delivered via Telegram + push)
 - Meal nudge reminders (smart timing)
 - Telegram bot integration for notifications
 - Push notifications (Expo)
-- QPay payment integration (Mongolia)
 - Subscription management
 - GDPR privacy: data export + account deletion via BullMQ
 - OTA updates via expo-updates
@@ -330,25 +337,31 @@ cd apps/mobile && npx expo start --tunnel
 ## Engineering Workflow
 
 ### Verification
+
 Run before completing tasks: `npm run lint && npm run typecheck && npm run test --workspaces`
 For targeted checks: `npm run test --workspace=apps/api`
 
 ### MCP Usage
+
 Use connected MCP tools to reduce guesswork:
+
 - Sentry error reports and crash traces
 - Railway deployment logs
 - Database state via Prisma
 - BullMQ job failures
 - Telegram bot delivery status
-Prefer MCP evidence over speculation when debugging.
+  Prefer MCP evidence over speculation when debugging.
 
 ### Debugging Layers
-Mobile UI -> Zustand state -> API client -> NestJS controller -> Service -> Prisma/DB -> BullMQ worker -> OpenAI -> QPay -> Firebase Auth -> Telegram -> build/config
+
+Mobile UI -> Zustand state -> API client -> NestJS controller -> Service -> Prisma/DB -> BullMQ worker -> OpenAI -> Firebase Auth -> Telegram -> build/config
 
 ### Key Instrumentation Points
-User actions (meal log, workout, weight entry), API request/response, BullMQ job lifecycle, OpenAI GPT-4 Vision calls (food photo analysis), QPay payment flow, Firebase auth, Telegram notification delivery, weekly summary generation, app startup.
+
+User actions (meal log, weight entry), API request/response, BullMQ job lifecycle, OpenAI GPT-4 Vision calls (food photo analysis), Firebase auth, Telegram notification delivery, app startup.
 
 ### Project-Specific Rules
+
 - Preserve NestJS module architecture, Zustand stores, and existing patterns.
 - No secrets/tokens in logs. Include userId and requestId for correlation.
 - Use Pino structured logging in API/worker, Sentry for client-side errors.

@@ -11,16 +11,17 @@
 
 ### 1. MyFitnessPal (Francisco Partners, formerly Under Armour)
 
-| Metric | Value |
-|---|---|
-| Est. Annual Revenue | ~$310M (2025) |
-| Downloads | 200M+ lifetime, ~20M in 2025 |
-| Monthly Active Users | 30M+ |
-| Registered Users | 220M |
-| App Store Rating | 4.6 (iOS), 4.3 (Android) |
-| Review Count | 1.5M+ combined |
+| Metric               | Value                        |
+| -------------------- | ---------------------------- |
+| Est. Annual Revenue  | ~$310M (2025)                |
+| Downloads            | 200M+ lifetime, ~20M in 2025 |
+| Monthly Active Users | 30M+                         |
+| Registered Users     | 220M                         |
+| App Store Rating     | 4.6 (iOS), 4.3 (Android)     |
+| Review Count         | 1.5M+ combined               |
 
 **Core Features**:
+
 - Barcode scanner (14M+ foods)
 - Calorie & macro tracking
 - Exercise logging
@@ -32,6 +33,7 @@
 - AI food logging (photo-based)
 
 **Pricing**:
+
 - Free tier (basic logging, limited insights)
 - Premium: $19.99/month or $79.99/year
 - Premium features: ad-free, food analysis, macros by meal, priority support
@@ -42,16 +44,17 @@
 
 ### 2. Strava (Strava Inc.)
 
-| Metric | Value |
-|---|---|
-| Est. Annual Revenue | ~$500M ARR (approaching) |
-| Monthly App Revenue | $9M+ (App Store + Google Play) |
-| Registered Users | 150-195M |
-| Monthly Active Users | 50M |
-| Market Share | 16% of fitness apps |
-| App Store Rating | 4.8 (iOS) |
+| Metric               | Value                          |
+| -------------------- | ------------------------------ |
+| Est. Annual Revenue  | ~$500M ARR (approaching)       |
+| Monthly App Revenue  | $9M+ (App Store + Google Play) |
+| Registered Users     | 150-195M                       |
+| Monthly Active Users | 50M                            |
+| Market Share         | 16% of fitness apps            |
+| App Store Rating     | 4.8 (iOS)                      |
 
 **Core Features**:
+
 - GPS activity tracking (run, ride, swim, hike)
 - Segment leaderboards & KOM/QOM
 - Route planning with heatmaps
@@ -63,6 +66,7 @@
 - Family plan
 
 **Pricing**:
+
 - Free: basic tracking, social features
 - Subscription: $11.99/month or $79.99/year
 - Family Plan: $139.99/year (up to 4 members)
@@ -73,13 +77,14 @@
 
 ### 3. Fitbit (Google)
 
-| Metric | Value |
-|---|---|
+| Metric              | Value                                                     |
+| ------------------- | --------------------------------------------------------- |
 | Est. Annual Revenue | Bundled with Google hardware (Fitbit Premium est. $200M+) |
-| Active Users | 30M+ |
-| App Store Rating | 4.0 (iOS), 3.5 (Android) |
+| Active Users        | 30M+                                                      |
+| App Store Rating    | 4.0 (iOS), 3.5 (Android)                                  |
 
 **Core Features**:
+
 - Activity/step tracking (paired with hardware)
 - Heart rate, sleep, stress monitoring
 - Daily Readiness Score
@@ -92,6 +97,7 @@
 - Food & water logging
 
 **Pricing**:
+
 - Free: basic tracking with Fitbit device
 - Fitbit Premium: $9.99/month or $79.99/year
 - 90-day free trial; 6 months free with new device
@@ -102,14 +108,15 @@
 
 ### 4. Nike Training Club (Nike Inc.)
 
-| Metric | Value |
-|---|---|
+| Metric                    | Value                             |
+| ------------------------- | --------------------------------- |
 | Est. Revenue Contribution | ~$170M incremental (Nike digital) |
-| Downloads | 10M+ |
-| Monthly Downloads | ~100K |
-| App Store Rating | 4.8 (iOS) |
+| Downloads                 | 10M+                              |
+| Monthly Downloads         | ~100K                             |
+| App Store Rating          | 4.8 (iOS)                         |
 
 **Core Features**:
+
 - 180+ free workouts (strength, endurance, yoga, mobility)
 - Guided programs (multi-week plans)
 - Video-led workouts with Nike Master Trainers
@@ -120,6 +127,7 @@
 - Progress tracking
 
 **Pricing**:
+
 - Mostly FREE (went free permanently in March 2020)
 - Select premium programs available
 
@@ -129,14 +137,15 @@
 
 ### 5. Lose It! (Lose It! Inc.)
 
-| Metric | Value |
-|---|---|
-| Est. Monthly Revenue | ~$2M |
-| Lifetime Users | 50M+ |
-| Monthly Downloads | ~200K |
-| App Store Rating | 4.7 (iOS) |
+| Metric               | Value     |
+| -------------------- | --------- |
+| Est. Monthly Revenue | ~$2M      |
+| Lifetime Users       | 50M+      |
+| Monthly Downloads    | ~200K     |
+| App Store Rating     | 4.7 (iOS) |
 
 **Core Features**:
+
 - Calorie counting & food logging
 - Barcode scanner (moved to Premium in 2026)
 - Photo food logging with voice logging
@@ -149,6 +158,7 @@
 - Weight loss challenges
 
 **Pricing**:
+
 - Free: basic calorie tracking
 - Premium: $39.99/year ($3.33/month)
 - Lifetime: $299.99 (or $249.99 for existing subscribers)
@@ -159,15 +169,16 @@
 
 ### 6. Hevy (Hevy Inc.)
 
-| Metric | Value |
-|---|---|
-| Est. Monthly Revenue | ~$600K ($7.2M annualized) |
-| Downloads | 9M+ (12M+ claimed athletes) |
-| Monthly Downloads | ~400K |
-| App Store Rating | 4.9 (iOS & Android) |
-| Review Count | 430,000+ combined |
+| Metric               | Value                       |
+| -------------------- | --------------------------- |
+| Est. Monthly Revenue | ~$600K ($7.2M annualized)   |
+| Downloads            | 9M+ (12M+ claimed athletes) |
+| Monthly Downloads    | ~400K                       |
+| App Store Rating     | 4.9 (iOS & Android)         |
+| Review Count         | 430,000+ combined           |
 
 **Core Features**:
+
 - Workout logging (sets, reps, weight, RPE)
 - Exercise library (800+ exercises with instructions)
 - Routine templates & sharing
@@ -181,6 +192,7 @@
 - Superset & circuit support
 
 **Pricing**:
+
 - Free: core workout logging (generous free tier)
 - Hevy Pro: $39.99-$69.99/year (varies by region/promotion)
 
@@ -190,13 +202,14 @@
 
 ### 7. Strong (Strong Fitness Ltd.)
 
-| Metric | Value |
-|---|---|
+| Metric               | Value                   |
+| -------------------- | ----------------------- |
 | Est. Monthly Revenue | ~$500K ($6M annualized) |
-| Monthly Downloads | ~100K |
-| App Store Rating | 4.8 (iOS) |
+| Monthly Downloads    | ~100K                   |
+| App Store Rating     | 4.8 (iOS)               |
 
 **Core Features**:
+
 - Minimalist workout logging
 - Exercise library with instructions
 - Rest timer with warm-up calculator
@@ -208,6 +221,7 @@
 - Superset support
 
 **Pricing**:
+
 - Free: limited to 3 workout routines
 - Strong Pro: $4.99/month or $29.99/6 months
 - Lifetime: $99.99 (one-time)
@@ -218,14 +232,15 @@
 
 ### 8. JEFIT (Jefit Inc.)
 
-| Metric | Value |
-|---|---|
+| Metric              | Value                |
+| ------------------- | -------------------- |
 | Est. Annual Revenue | ~$10-15M (estimated) |
-| Downloads | 20M+ |
-| Active Users | 12M+ |
-| App Store Rating | 4.6 (iOS) |
+| Downloads           | 20M+                 |
+| Active Users        | 12M+                 |
+| App Store Rating    | 4.6 (iOS)            |
 
 **Core Features**:
+
 - 1,400+ exercises with animations
 - Workout planner with progressive overload tracking
 - Body stats & measurements
@@ -237,6 +252,7 @@
 - Exercise database contributions
 
 **Pricing**:
+
 - Free: basic workout tracking
 - Elite: $12.99/month or $69.99/year
 
@@ -246,13 +262,14 @@
 
 ### 9. MacroFactor (Stronger By Science)
 
-| Metric | Value |
-|---|---|
+| Metric               | Value                  |
+| -------------------- | ---------------------- |
 | Est. Monthly Revenue | ~$2M ($24M annualized) |
-| Monthly Downloads | ~100K |
-| App Store Rating | 4.8 (iOS) |
+| Monthly Downloads    | ~100K                  |
+| App Store Rating     | 4.8 (iOS)              |
 
 **Core Features**:
+
 - Adaptive macro coaching algorithm (adjusts weekly based on metabolism)
 - Expenditure estimation (TDEE algorithm)
 - Food logging with barcode scanner
@@ -264,6 +281,7 @@
 - Expenditure modifiers
 
 **Pricing**:
+
 - Subscription only: $11.99/month or $79/year
 - Bundle (Nutrition + Workouts): $89.99/year
 - 7-day free trial
@@ -274,13 +292,14 @@
 
 ### 10. YAZIO (YAZIO GmbH -- Germany)
 
-| Metric | Value |
-|---|---|
+| Metric              | Value                |
+| ------------------- | -------------------- |
 | Est. Annual Revenue | ~$50-80M (estimated) |
-| Downloads | 50M+ |
-| App Store Rating | 4.7 (iOS) |
+| Downloads           | 50M+                 |
+| App Store Rating    | 4.7 (iOS)            |
 
 **Core Features**:
+
 - Calorie & macro tracking
 - Barcode scanner
 - AI photo food logging (added late 2025)
@@ -293,6 +312,7 @@
 - Nutrition insights
 
 **Pricing**:
+
 - Free: basic calorie tracking
 - YAZIO PRO: $47.90/year (regular), $23.90/year (promotional/onboarding)
 
@@ -314,78 +334,80 @@
 
 ### Comprehensive Feature Matrix
 
-| Feature | Coach | MFP | Strava | Fitbit | NTC | Lose It | Hevy | Strong | JEFIT | MacroFactor | YAZIO |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| **NUTRITION** | | | | | | | | | | | |
-| Calorie tracking | Yes | Yes | No | Basic | No | Yes | No | No | No | Yes | Yes |
-| Macro tracking | Yes | Yes | No | No | No | Yes | No | No | No | Yes | Yes |
-| Barcode scanner | Yes | Yes | No | No | No | Yes* | No | No | No | Yes | Yes |
-| AI photo food logging | Yes | Yes | No | No | No | Yes | No | No | No | No | Yes |
-| Voice food logging | Yes | No | No | No | No | Yes | No | No | No | No | No |
-| Food database size | Small | 14M+ | N/A | Small | N/A | Large | N/A | N/A | N/A | Large | Large |
-| Recipe builder | No | Yes | No | No | No | No | No | No | No | Yes | Yes |
-| Meal planning | No | Yes | No | No | No | Yes | No | No | No | No | Yes |
-| Adaptive calorie targets | Yes | No | No | No | No | No | No | No | No | Yes | No |
-| Mongolian food database | Partial | No | N/A | No | N/A | No | N/A | N/A | N/A | No | No |
-| **WORKOUTS** | | | | | | | | | | | |
-| Workout logging | Yes | Basic | Yes* | Yes* | No | Basic | Yes | Yes | Yes | Yes** | No |
-| Exercise library | Small | No | N/A | 200+ | 180+ | No | 800+ | Large | 1400+ | New | N/A |
-| Workout plans/programs | No | No | No | Yes | Yes | No | Yes | No | Yes | Yes** | No |
-| Rest timer | No | No | No | No | No | No | Yes | Yes | Yes | No | No |
-| Progressive overload tracking | No | No | No | No | No | No | Yes | Yes | Yes | No | No |
-| 1RM estimation | No | No | No | No | No | No | Yes | Yes | Yes | No | No |
-| Video exercise demos | No | No | No | Yes | Yes | No | Some | No | Anim. | No | No |
-| Superset/circuit support | No | No | No | No | No | No | Yes | Yes | Yes | No | No |
-| **CARDIO/GPS** | | | | | | | | | | | |
-| GPS tracking | No | No | Yes | Yes | No | No | No | No | No | No | No |
-| Route planning | No | No | Yes | No | No | No | No | No | No | No | No |
-| Segment leaderboards | No | No | Yes | No | No | No | No | No | No | No | No |
-| **BODY & HEALTH** | | | | | | | | | | | |
-| Weight tracking | Yes | Yes | No | Yes | No | Yes | No | Yes | Yes | Yes | Yes |
-| Body composition | Yes | No | No | Yes | No | No | No | Yes | Yes | No | No |
-| Water tracking | Yes | Yes | No | Yes | No | Yes | No | No | No | No | Yes |
-| Sleep tracking | No | No | No | Yes | No | No | No | No | No | No | No |
-| Stress/readiness score | No | No | No | Yes | No | No | No | No | No | No | No |
-| Progress photos | No | No | No | No | No | No | No | No | No | No | No |
-| **AI & COACHING** | | | | | | | | | | | |
-| AI coach chat | Yes | No | No | No | No | No | No | No | No | No | No |
-| AI meal analysis | Yes | Basic | No | No | No | Basic | No | No | No | No | Basic |
-| Adaptive recommendations | Yes | No | No | Yes | Yes | No | No | No | No | Yes | No |
-| Weekly AI summaries | Yes | No | No | Yes | No | No | No | No | No | No | No |
-| **SOCIAL** | | | | | | | | | | | |
-| Social feed / following | No | Yes | Yes | No | No | Yes | Yes | No | Yes | No | No |
-| Challenges/competitions | No | No | Yes | Yes | No | Yes | No | No | Yes | No | No |
-| Community forums | No | Yes | Yes | No | No | No | No | No | Yes | No | No |
-| Workout sharing | No | No | Yes | No | No | No | Yes | No | Yes | No | No |
-| **PLATFORM** | | | | | | | | | | | |
-| Apple Watch | No | No | Yes | Yes | Yes | Yes | Yes | Yes | Yes | No | No |
-| Wearable integration | No | Yes | Yes | Yes | Yes | Yes | No | No | No | No | Yes |
-| Apple Health / Google Fit | No | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| Web dashboard | No | Yes | Yes | Yes | No | Yes | Yes | No | Yes | No | Yes |
-| Widgets | No | No | Yes | Yes | No | No | No | No | No | No | Yes |
-| **ENGAGEMENT** | | | | | | | | | | | |
-| Streaks | No | Yes | Yes | Yes | No | Yes | No | No | No | No | Yes |
-| Gamification/badges | No | No | Yes | Yes | No | Yes | No | No | Yes | No | No |
-| Push notifications (smart) | Yes | Yes | No | Yes | No | Yes | No | No | No | No | Yes |
-| Telegram integration | Yes | No | No | No | No | No | No | No | No | No | No |
-| **LOCALIZATION** | | | | | | | | | | | |
-| Mongolian language | Yes | No | No | No | No | No | No | No | No | No | No |
-| Mongolian food database | Partial | No | No | No | No | No | No | No | No | No | No |
-| Local payment (QPay) | Yes | No | No | No | No | No | No | No | No | No | No |
+| Feature                       | Coach    | MFP   | Strava | Fitbit | NTC  | Lose It | Hevy | Strong | JEFIT | MacroFactor | YAZIO |
+| ----------------------------- | -------- | ----- | ------ | ------ | ---- | ------- | ---- | ------ | ----- | ----------- | ----- |
+| **NUTRITION**                 |          |       |        |        |      |         |      |        |       |             |       |
+| Calorie tracking              | Yes      | Yes   | No     | Basic  | No   | Yes     | No   | No     | No    | Yes         | Yes   |
+| Macro tracking                | Yes      | Yes   | No     | No     | No   | Yes     | No   | No     | No    | Yes         | Yes   |
+| Barcode scanner               | Yes      | Yes   | No     | No     | No   | Yes\*   | No   | No     | No    | Yes         | Yes   |
+| AI photo food logging         | Yes      | Yes   | No     | No     | No   | Yes     | No   | No     | No    | No          | Yes   |
+| Voice food logging            | Yes      | No    | No     | No     | No   | Yes     | No   | No     | No    | No          | No    |
+| Food database size            | Small    | 14M+  | N/A    | Small  | N/A  | Large   | N/A  | N/A    | N/A   | Large       | Large |
+| Recipe builder                | No       | Yes   | No     | No     | No   | No      | No   | No     | No    | Yes         | Yes   |
+| Meal planning                 | No       | Yes   | No     | No     | No   | Yes     | No   | No     | No    | No          | Yes   |
+| Adaptive calorie targets      | Yes      | No    | No     | No     | No   | No      | No   | No     | No    | Yes         | No    |
+| Mongolian food database       | Partial  | No    | N/A    | No     | N/A  | No      | N/A  | N/A    | N/A   | No          | No    |
+| **WORKOUTS**                  |          |       |        |        |      |         |      |        |       |             |       |
+| Workout logging               | Yes      | Basic | Yes\*  | Yes\*  | No   | Basic   | Yes  | Yes    | Yes   | Yes\*\*     | No    |
+| Exercise library              | Small    | No    | N/A    | 200+   | 180+ | No      | 800+ | Large  | 1400+ | New         | N/A   |
+| Workout plans/programs        | No       | No    | No     | Yes    | Yes  | No      | Yes  | No     | Yes   | Yes\*\*     | No    |
+| Rest timer                    | No       | No    | No     | No     | No   | No      | Yes  | Yes    | Yes   | No          | No    |
+| Progressive overload tracking | No       | No    | No     | No     | No   | No      | Yes  | Yes    | Yes   | No          | No    |
+| 1RM estimation                | No       | No    | No     | No     | No   | No      | Yes  | Yes    | Yes   | No          | No    |
+| Video exercise demos          | No       | No    | No     | Yes    | Yes  | No      | Some | No     | Anim. | No          | No    |
+| Superset/circuit support      | No       | No    | No     | No     | No   | No      | Yes  | Yes    | Yes   | No          | No    |
+| **CARDIO/GPS**                |          |       |        |        |      |         |      |        |       |             |       |
+| GPS tracking                  | No       | No    | Yes    | Yes    | No   | No      | No   | No     | No    | No          | No    |
+| Route planning                | No       | No    | Yes    | No     | No   | No      | No   | No     | No    | No          | No    |
+| Segment leaderboards          | No       | No    | Yes    | No     | No   | No      | No   | No     | No    | No          | No    |
+| **BODY & HEALTH**             |          |       |        |        |      |         |      |        |       |             |       |
+| Weight tracking               | Yes      | Yes   | No     | Yes    | No   | Yes     | No   | Yes    | Yes   | Yes         | Yes   |
+| Body composition              | Yes      | No    | No     | Yes    | No   | No      | No   | Yes    | Yes   | No          | No    |
+| Water tracking                | Yes      | Yes   | No     | Yes    | No   | Yes     | No   | No     | No    | No          | Yes   |
+| Sleep tracking                | No       | No    | No     | Yes    | No   | No      | No   | No     | No    | No          | No    |
+| Stress/readiness score        | No       | No    | No     | Yes    | No   | No      | No   | No     | No    | No          | No    |
+| Progress photos               | No       | No    | No     | No     | No   | No      | No   | No     | No    | No          | No    |
+| **AI & COACHING**             |          |       |        |        |      |         |      |        |       |             |       |
+| AI coach chat                 | Yes      | No    | No     | No     | No   | No      | No   | No     | No    | No          | No    |
+| AI meal analysis              | Yes      | Basic | No     | No     | No   | Basic   | No   | No     | No    | No          | Basic |
+| Adaptive recommendations      | Yes      | No    | No     | Yes    | Yes  | No      | No   | No     | No    | Yes         | No    |
+| Weekly AI summaries           | Yes      | No    | No     | Yes    | No   | No      | No   | No     | No    | No          | No    |
+| **SOCIAL**                    |          |       |        |        |      |         |      |        |       |             |       |
+| Social feed / following       | No       | Yes   | Yes    | No     | No   | Yes     | Yes  | No     | Yes   | No          | No    |
+| Challenges/competitions       | No       | No    | Yes    | Yes    | No   | Yes     | No   | No     | Yes   | No          | No    |
+| Community forums              | No       | Yes   | Yes    | No     | No   | No      | No   | No     | Yes   | No          | No    |
+| Workout sharing               | No       | No    | Yes    | No     | No   | No      | Yes  | No     | Yes   | No          | No    |
+| **PLATFORM**                  |          |       |        |        |      |         |      |        |       |             |       |
+| Apple Watch                   | No       | No    | Yes    | Yes    | Yes  | Yes     | Yes  | Yes    | Yes   | No          | No    |
+| Wearable integration          | No       | Yes   | Yes    | Yes    | Yes  | Yes     | No   | No     | No    | No          | Yes   |
+| Apple Health / Google Fit     | No       | Yes   | Yes    | Yes    | Yes  | Yes     | Yes  | Yes    | Yes   | Yes         | Yes   |
+| Web dashboard                 | No       | Yes   | Yes    | Yes    | No   | Yes     | Yes  | No     | Yes   | No          | Yes   |
+| Widgets                       | No       | No    | Yes    | Yes    | No   | No      | No   | No     | No    | No          | Yes   |
+| **ENGAGEMENT**                |          |       |        |        |      |         |      |        |       |             |       |
+| Streaks                       | No       | Yes   | Yes    | Yes    | No   | Yes     | No   | No     | No    | No          | Yes   |
+| Gamification/badges           | No       | No    | Yes    | Yes    | No   | Yes     | No   | No     | Yes   | No          | No    |
+| Push notifications (smart)    | Yes      | Yes   | No     | Yes    | No   | Yes     | No   | No     | No    | No          | Yes   |
+| Telegram integration          | Yes      | No    | No     | No     | No   | No      | No   | No     | No    | No          | No    |
+| **LOCALIZATION**              |          |       |        |        |      |         |      |        |       |             |       |
+| Mongolian language            | Yes      | No    | No     | No     | No   | No      | No   | No     | No    | No          | No    |
+| Mongolian food database       | Partial  | No    | No     | No     | No   | No      | No   | No     | No    | No          | No    |
+| Local payment                 | Deferred | No    | No     | No     | No   | No      | No   | No     | No    | No          | No    |
 
-*Strava/Fitbit = GPS activity tracking, not gym workout logging
-**MacroFactor Workouts launched 2025/2026 as separate product
+\*Strava/Fitbit = GPS activity tracking, not gym workout logging
+\*\*MacroFactor Workouts launched 2025/2026 as separate product
 
 ### Coach's Key Advantages (Unique Differentiators)
+
 1. **Only app with Mongolian language + food database** -- zero competition
 2. **AI Coach chat with memory** -- most apps have no conversational AI
 3. **Voice food logging with Mongolian STT (Chimege)** -- unique
 4. **Adaptive calorie targets** -- only MacroFactor does this among competitors
 5. **Telegram bot integration** -- meets users where they already are in Mongolia
-6. **QPay integration** -- native Mongolian payments
+6. **Local payment option** -- native Mongolian payments remain a future differentiator
 7. **Combined nutrition + workout + AI coaching** -- most competitors specialize in one area
 
 ### Coach's Key Gaps (Critical Missing Features)
+
 1. **Food database size** -- MFP has 14M+ items vs. Coach's limited database
 2. **Exercise library depth** -- JEFIT has 1,400+, Hevy has 800+
 3. **Apple Health / Google Fit integration** -- every major competitor has this
@@ -409,14 +431,14 @@
 
 These are features that beta testers are likely asking for and that competitors consider table stakes.
 
-| # | Feature | Description | Why It Matters | Complexity | Expected Impact |
-|---|---|---|---|---|---|
-| P0-1 | **Apple Health Integration** | Sync calories burned, steps, weight, workouts, water to/from Apple Health | Every competitor has this. Users expect health data to flow between apps. Without it, Coach feels isolated. | M | HIGH -- removes a top objection to adoption |
-| P0-2 | **Rest Timer** | Configurable rest timer between sets with auto-start option, sound/vibration alerts | Every gym tracking app has this. Users currently need a separate timer app, breaking the workout flow. | S | MEDIUM -- quality of life for every gym session |
-| P0-3 | **Streaks & Daily Goals** | Visual streak counter for logging meals/workouts. Daily check-in badge. Streak freeze (1 per week). | Streaks are the #1 retention mechanic in fitness apps. MFP, Strava, Lose It all use them. | S | HIGH -- directly improves D7/D30 retention |
-| P0-4 | **Expand Mongolian Food Database** | Add 500+ traditional Mongolian foods with verified nutrition data: buuz, khuushuur, tsuivan, airag, suutei tsai, boortsog, khorkhog, guriltai shol, aaruul, byaslag, tsagaan idee, bansh, and common UB restaurant meals | This IS the competitive moat. No other app will ever have this. Mongolian users cannot accurately track calories without it. | L | CRITICAL -- core value proposition for target market |
-| P0-5 | **Onboarding Improvement** | Add skip/back on all 16 onboarding screens. Show progress indicator. Allow editing later. | 16 screens is a lot. High drop-off risk. Users who can't finish onboarding never become active users. | S | HIGH -- improves activation rate |
-| P0-6 | **Bug Fixes & Stability** | Address top Sentry errors from build 17. Focus on crash-free rate > 99.5%. | Beta quality must be solid before any growth push. Crashes kill trust and ratings. | M | HIGH -- prerequisite for App Store launch |
+| #    | Feature                            | Description                                                                                                                                                                                                              | Why It Matters                                                                                                               | Complexity | Expected Impact                                      |
+| ---- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------- |
+| P0-1 | **Apple Health Integration**       | Sync calories burned, steps, weight, workouts, water to/from Apple Health                                                                                                                                                | Every competitor has this. Users expect health data to flow between apps. Without it, Coach feels isolated.                  | M          | HIGH -- removes a top objection to adoption          |
+| P0-2 | **Rest Timer**                     | Configurable rest timer between sets with auto-start option, sound/vibration alerts                                                                                                                                      | Every gym tracking app has this. Users currently need a separate timer app, breaking the workout flow.                       | S          | MEDIUM -- quality of life for every gym session      |
+| P0-3 | **Streaks & Daily Goals**          | Visual streak counter for logging meals/workouts. Daily check-in badge. Streak freeze (1 per week).                                                                                                                      | Streaks are the #1 retention mechanic in fitness apps. MFP, Strava, Lose It all use them.                                    | S          | HIGH -- directly improves D7/D30 retention           |
+| P0-4 | **Expand Mongolian Food Database** | Add 500+ traditional Mongolian foods with verified nutrition data: buuz, khuushuur, tsuivan, airag, suutei tsai, boortsog, khorkhog, guriltai shol, aaruul, byaslag, tsagaan idee, bansh, and common UB restaurant meals | This IS the competitive moat. No other app will ever have this. Mongolian users cannot accurately track calories without it. | L          | CRITICAL -- core value proposition for target market |
+| P0-5 | **Onboarding Improvement**         | Add skip/back on all 16 onboarding screens. Show progress indicator. Allow editing later.                                                                                                                                | 16 screens is a lot. High drop-off risk. Users who can't finish onboarding never become active users.                        | S          | HIGH -- improves activation rate                     |
+| P0-6 | **Bug Fixes & Stability**          | Address top Sentry errors from build 17. Focus on crash-free rate > 99.5%.                                                                                                                                               | Beta quality must be solid before any growth push. Crashes kill trust and ratings.                                           | M          | HIGH -- prerequisite for App Store launch            |
 
 ---
 
@@ -424,16 +446,16 @@ These are features that beta testers are likely asking for and that competitors 
 
 Features that keep users coming back daily and reduce churn.
 
-| # | Feature | Description | Why It Matters | Complexity | Expected Impact |
-|---|---|---|---|---|---|
-| P1-1 | **Exercise Library Expansion** | Add 300+ exercises with Mongolian/English names, muscle group tags, difficulty levels, and instruction text. Include common Mongolian gym exercises. | Hevy has 800+, JEFIT has 1,400+. A small library feels incomplete and forces manual entry. | M | HIGH -- reduces friction in workout logging |
-| P1-2 | **Progressive Overload Tracking** | Show volume progression over time per exercise and muscle group. Highlight PRs automatically. Estimated 1RM tracking. | Core feature for anyone doing strength training. Without it, users can't see if they're progressing. | M | HIGH -- key retention metric for gym users |
-| P1-3 | **Superset & Circuit Support** | Allow grouping exercises into supersets, tri-sets, and circuits within a workout | Standard in Hevy, Strong, JEFIT. Many training programs use supersets. | M | MEDIUM -- removes friction for intermediate users |
-| P1-4 | **iOS Home Screen Widget** | Show today's calories remaining, macro rings, streak count, next workout on the home screen | Drives daily passive engagement. Users see Coach data without opening the app. YAZIO and Strava do this well. | M | MEDIUM -- increases daily open rate |
-| P1-5 | **Progress Photos** | Take and store progress photos with date stamps. Side-by-side comparison view. Private/local storage option. | No competitor does this exceptionally well. Users take progress photos anyway -- owning this workflow is valuable. | M | MEDIUM -- emotional engagement, shareable moments |
-| P1-6 | **Workout Templates & Routines** | Save workouts as reusable templates. Pre-built beginner/intermediate programs (PPL, Upper/Lower, Full Body). | Hevy's shared routines drive virality. Templates reduce daily decision fatigue. | M | HIGH -- reduces time-to-log, enables sharing |
-| P1-7 | **Recipe Builder** | Create custom recipes with ingredient-level nutrition. Save and reuse. Share with community. | MFP, MacroFactor, and YAZIO all have this. Mongolian home cooking requires recipe tracking. | M | MEDIUM -- accuracy for home-cooked meals |
-| P1-8 | **Improved Meal Nudges** | Smart reminders based on user patterns. "You usually log lunch around 12:30" style nudges. Gentle, not annoying. | Incomplete logging = inaccurate tracking = users lose trust and churn. | S | MEDIUM -- improves logging consistency |
+| #    | Feature                           | Description                                                                                                                                          | Why It Matters                                                                                                     | Complexity | Expected Impact                                   |
+| ---- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------- |
+| P1-1 | **Exercise Library Expansion**    | Add 300+ exercises with Mongolian/English names, muscle group tags, difficulty levels, and instruction text. Include common Mongolian gym exercises. | Hevy has 800+, JEFIT has 1,400+. A small library feels incomplete and forces manual entry.                         | M          | HIGH -- reduces friction in workout logging       |
+| P1-2 | **Progressive Overload Tracking** | Show volume progression over time per exercise and muscle group. Highlight PRs automatically. Estimated 1RM tracking.                                | Core feature for anyone doing strength training. Without it, users can't see if they're progressing.               | M          | HIGH -- key retention metric for gym users        |
+| P1-3 | **Superset & Circuit Support**    | Allow grouping exercises into supersets, tri-sets, and circuits within a workout                                                                     | Standard in Hevy, Strong, JEFIT. Many training programs use supersets.                                             | M          | MEDIUM -- removes friction for intermediate users |
+| P1-4 | **iOS Home Screen Widget**        | Show today's calories remaining, macro rings, streak count, next workout on the home screen                                                          | Drives daily passive engagement. Users see Coach data without opening the app. YAZIO and Strava do this well.      | M          | MEDIUM -- increases daily open rate               |
+| P1-5 | **Progress Photos**               | Take and store progress photos with date stamps. Side-by-side comparison view. Private/local storage option.                                         | No competitor does this exceptionally well. Users take progress photos anyway -- owning this workflow is valuable. | M          | MEDIUM -- emotional engagement, shareable moments |
+| P1-6 | **Workout Templates & Routines**  | Save workouts as reusable templates. Pre-built beginner/intermediate programs (PPL, Upper/Lower, Full Body).                                         | Hevy's shared routines drive virality. Templates reduce daily decision fatigue.                                    | M          | HIGH -- reduces time-to-log, enables sharing      |
+| P1-7 | **Recipe Builder**                | Create custom recipes with ingredient-level nutrition. Save and reuse. Share with community.                                                         | MFP, MacroFactor, and YAZIO all have this. Mongolian home cooking requires recipe tracking.                        | M          | MEDIUM -- accuracy for home-cooked meals          |
+| P1-8 | **Improved Meal Nudges**          | Smart reminders based on user patterns. "You usually log lunch around 12:30" style nudges. Gentle, not annoying.                                     | Incomplete logging = inaccurate tracking = users lose trust and churn.                                             | S          | MEDIUM -- improves logging consistency            |
 
 ---
 
@@ -441,16 +463,16 @@ Features that keep users coming back daily and reduce churn.
 
 Features that make Coach stand out and create competitive moats.
 
-| # | Feature | Description | Why It Matters | Complexity | Expected Impact |
-|---|---|---|---|---|---|
-| P2-1 | **Social Features v1** | Follow friends, activity feed (workouts logged, PRs hit, streaks), reactions/encouragement. Privacy controls. | Social is the #1 retention driver in Strava and Hevy. In Mongolia's tight-knit communities, social features could go viral. | L | HIGH -- retention + organic growth |
-| P2-2 | **Challenges & Competitions** | Weekly/monthly challenges (most workouts, longest streak, weight loss %). Leaderboards. Gym-level challenges for partnership gyms. | Gamification drives engagement. Strava, Fitbit, and JEFIT all use challenges. In Mongolia, competitive culture (wrestling, archery) maps well to fitness challenges. | L | HIGH -- engagement + virality |
-| P2-3 | **Apple Watch App** | Workout tracking from wrist: exercise selection, set logging, rest timer, heart rate. Complication for daily stats. | Standard feature for serious fitness apps. Apple Watch ownership is growing in UB among target demographic. | XL | MEDIUM -- appeals to premium segment |
-| P2-4 | **AI Workout Generator** | Generate personalized workout plans based on goals, experience, available equipment, schedule. Weekly auto-progression. | Fitbod does this well at $12.99/month. AI workout generation is a premium feature that justifies subscription pricing. | L | HIGH -- premium feature, reduces need for a coach |
-| P2-5 | **UB Restaurant Menu Database** | Partner with popular UB restaurants to get nutrition data for their menus. QR code scanning at restaurants. | Unique to Mongolia. Eating out is common in UB. This solves the "I don't know what's in this" problem. | L | HIGH -- unique differentiator, partnership revenue |
-| P2-6 | **Barcode Scanner Enhancement** | Expand barcode database for Mongolian products (local dairy, meat products, snacks from Gobi, APU, Vitafit brands). | International barcode databases miss most Mongolian products. This is a major gap. | M | HIGH -- accuracy for packaged food logging |
-| P2-7 | **Intermittent Fasting Tracker** | Fasting timer with popular protocols (16:8, 20:4, OMAD). Integration with meal logging. History and streak tracking. | Growing trend globally and in Mongolia. Lose It and YAZIO both have this as premium features. | S | MEDIUM -- attracts fasting-focused users |
-| P2-8 | **Wearable Integration** | Sync with Xiaomi Mi Band, Huawei Band (popular in Mongolia due to price), Samsung Galaxy Watch, Garmin | Xiaomi and Huawei bands are the most common wearables in Mongolia (affordable). Apple Watch is secondary. | L | MEDIUM -- passive data collection |
+| #    | Feature                          | Description                                                                                                                        | Why It Matters                                                                                                                                                       | Complexity | Expected Impact                                    |
+| ---- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------- |
+| P2-1 | **Social Features v1**           | Follow friends, activity feed (workouts logged, PRs hit, streaks), reactions/encouragement. Privacy controls.                      | Social is the #1 retention driver in Strava and Hevy. In Mongolia's tight-knit communities, social features could go viral.                                          | L          | HIGH -- retention + organic growth                 |
+| P2-2 | **Challenges & Competitions**    | Weekly/monthly challenges (most workouts, longest streak, weight loss %). Leaderboards. Gym-level challenges for partnership gyms. | Gamification drives engagement. Strava, Fitbit, and JEFIT all use challenges. In Mongolia, competitive culture (wrestling, archery) maps well to fitness challenges. | L          | HIGH -- engagement + virality                      |
+| P2-3 | **Apple Watch App**              | Workout tracking from wrist: exercise selection, set logging, rest timer, heart rate. Complication for daily stats.                | Standard feature for serious fitness apps. Apple Watch ownership is growing in UB among target demographic.                                                          | XL         | MEDIUM -- appeals to premium segment               |
+| P2-4 | **AI Workout Generator**         | Generate personalized workout plans based on goals, experience, available equipment, schedule. Weekly auto-progression.            | Fitbod does this well at $12.99/month. AI workout generation is a premium feature that justifies subscription pricing.                                               | L          | HIGH -- premium feature, reduces need for a coach  |
+| P2-5 | **UB Restaurant Menu Database**  | Partner with popular UB restaurants to get nutrition data for their menus. QR code scanning at restaurants.                        | Unique to Mongolia. Eating out is common in UB. This solves the "I don't know what's in this" problem.                                                               | L          | HIGH -- unique differentiator, partnership revenue |
+| P2-6 | **Barcode Scanner Enhancement**  | Expand barcode database for Mongolian products (local dairy, meat products, snacks from Gobi, APU, Vitafit brands).                | International barcode databases miss most Mongolian products. This is a major gap.                                                                                   | M          | HIGH -- accuracy for packaged food logging         |
+| P2-7 | **Intermittent Fasting Tracker** | Fasting timer with popular protocols (16:8, 20:4, OMAD). Integration with meal logging. History and streak tracking.               | Growing trend globally and in Mongolia. Lose It and YAZIO both have this as premium features.                                                                        | S          | MEDIUM -- attracts fasting-focused users           |
+| P2-8 | **Wearable Integration**         | Sync with Xiaomi Mi Band, Huawei Band (popular in Mongolia due to price), Samsung Galaxy Watch, Garmin                             | Xiaomi and Huawei bands are the most common wearables in Mongolia (affordable). Apple Watch is secondary.                                                            | L          | MEDIUM -- passive data collection                  |
 
 ---
 
@@ -458,16 +480,16 @@ Features that make Coach stand out and create competitive moats.
 
 Features that round out the experience and prepare for scale.
 
-| # | Feature | Description | Why It Matters | Complexity | Expected Impact |
-|---|---|---|---|---|---|
-| P3-1 | **Web Dashboard** | Read-only web view of nutrition logs, workout history, progress charts. Export capabilities. | Power users want to review data on desktop. MFP, Strava, Hevy all have web versions. | L | LOW-MEDIUM -- nice for power users |
-| P3-2 | **Guided Video Workouts** | Partner with Mongolian fitness influencers for video-led workout content in Mongolian language | NTC has 180+ workouts. Localized video content in Mongolian would be unique. | XL | MEDIUM -- content differentiator |
-| P3-3 | **Sleep & Recovery Tracking** | Manual sleep logging with quality scores. Integration with Apple Health sleep data. Recovery recommendations. | Fitbit's readiness score is popular. Recovery-aware training is a growing trend. | M | LOW -- depends on wearable integration |
-| P3-4 | **Meal Planning with Grocery List** | Weekly meal planner with auto-generated grocery lists. Mongolian-ingredient-aware suggestions. | Full meal planning is complex but valuable. YAZIO has 2,900+ recipes. | XL | MEDIUM -- high effort but strong retention |
-| P3-5 | **Family/Group Plans** | Shared household food logging, family challenges, group subscription pricing | Strava Family Plan ($139.99/yr). Mongolian families are close-knit -- could drive adoption through households. | L | MEDIUM -- expands addressable market |
-| P3-6 | **Coach for Trainers** | Dashboard for personal trainers to manage multiple clients, assign programs, track nutrition compliance | Creates a B2B revenue stream. Trainers become distribution channel. | XL | MEDIUM -- new revenue channel |
-| P3-7 | **Offline Mode Enhancement** | Full offline workout logging and meal logging with smart sync when connection returns | Important for users outside UB or in areas with spotty connectivity. | M | LOW -- niche but important for edge cases |
-| P3-8 | **Gamification v2** | Badges, levels, XP system, achievement unlocks (first 100 workouts, 30-day streak, etc.) | Deep gamification creates long-term engagement loops. Fitbit and Strava do this well. | M | MEDIUM -- retention for engaged users |
+| #    | Feature                             | Description                                                                                                   | Why It Matters                                                                                                 | Complexity | Expected Impact                            |
+| ---- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------ |
+| P3-1 | **Web Dashboard**                   | Read-only web view of nutrition logs, workout history, progress charts. Export capabilities.                  | Power users want to review data on desktop. MFP, Strava, Hevy all have web versions.                           | L          | LOW-MEDIUM -- nice for power users         |
+| P3-2 | **Guided Video Workouts**           | Partner with Mongolian fitness influencers for video-led workout content in Mongolian language                | NTC has 180+ workouts. Localized video content in Mongolian would be unique.                                   | XL         | MEDIUM -- content differentiator           |
+| P3-3 | **Sleep & Recovery Tracking**       | Manual sleep logging with quality scores. Integration with Apple Health sleep data. Recovery recommendations. | Fitbit's readiness score is popular. Recovery-aware training is a growing trend.                               | M          | LOW -- depends on wearable integration     |
+| P3-4 | **Meal Planning with Grocery List** | Weekly meal planner with auto-generated grocery lists. Mongolian-ingredient-aware suggestions.                | Full meal planning is complex but valuable. YAZIO has 2,900+ recipes.                                          | XL         | MEDIUM -- high effort but strong retention |
+| P3-5 | **Family/Group Plans**              | Shared household food logging, family challenges, group subscription pricing                                  | Strava Family Plan ($139.99/yr). Mongolian families are close-knit -- could drive adoption through households. | L          | MEDIUM -- expands addressable market       |
+| P3-6 | **Coach for Trainers**              | Dashboard for personal trainers to manage multiple clients, assign programs, track nutrition compliance       | Creates a B2B revenue stream. Trainers become distribution channel.                                            | XL         | MEDIUM -- new revenue channel              |
+| P3-7 | **Offline Mode Enhancement**        | Full offline workout logging and meal logging with smart sync when connection returns                         | Important for users outside UB or in areas with spotty connectivity.                                           | M          | LOW -- niche but important for edge cases  |
+| P3-8 | **Gamification v2**                 | Badges, levels, XP system, achievement unlocks (first 100 workouts, 30-day streak, etc.)                      | Deep gamification creates long-term engagement loops. Fitbit and Strava do this well.                          | M          | MEDIUM -- retention for engaged users      |
 
 ---
 
@@ -510,6 +532,7 @@ This is Coach's single most important competitive advantage. No international ap
 | Ul boov (shoe-shaped pastry) | Ул боов | ~150-200 kcal/piece | Tsagaan Sar specialty |
 
 **Modern UB Fast Food / Common Meals**
+
 - Korean BBQ portions (popular in UB)
 - Pizza from local chains (Nino's, Veronica)
 - Sushi from UB restaurants
@@ -517,6 +540,7 @@ This is Coach's single most important competitive advantage. No international ap
 - Imported snacks and drinks available in UB supermarkets
 
 **Implementation Strategy**:
+
 1. Hire 2-3 nutrition students from MNUMS (Mongolian National University of Medical Sciences) to research and verify calorie data
 2. Partner with the Mongolian Food Science Institute for validated nutrition data
 3. Use AI photo logging to crowdsource nutrition estimates, then human-verify
@@ -527,16 +551,17 @@ This is Coach's single most important competitive advantage. No international ap
 
 **Target Gym Partners in Ulaanbaatar**:
 
-| Gym | Type | Why Partner |
-|---|---|---|
-| **Flex Gym** | Largest, comprehensive | Biggest gym in Mongolia. Partnership here = instant credibility. |
-| **California Fitness Center** | Premium, 5-star | Affluent members = likely subscription converters |
-| **Gold's Gym Mongolia** | International franchise | Brand recognition, fitness-serious members |
-| **Powergym** | Legacy, bodybuilding-focused | OG Mongolian fitness. Cultural relevance. |
-| **Shangri-La Sports Club** | Ultra-premium hotel gym | High-income users, expat community |
-| **Local/district gyms** | Neighborhood access | Volume play -- dozens of small gyms across UB |
+| Gym                           | Type                         | Why Partner                                                      |
+| ----------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| **Flex Gym**                  | Largest, comprehensive       | Biggest gym in Mongolia. Partnership here = instant credibility. |
+| **California Fitness Center** | Premium, 5-star              | Affluent members = likely subscription converters                |
+| **Gold's Gym Mongolia**       | International franchise      | Brand recognition, fitness-serious members                       |
+| **Powergym**                  | Legacy, bodybuilding-focused | OG Mongolian fitness. Cultural relevance.                        |
+| **Shangri-La Sports Club**    | Ultra-premium hotel gym      | High-income users, expat community                               |
+| **Local/district gyms**       | Neighborhood access          | Volume play -- dozens of small gyms across UB                    |
 
 **Partnership Models**:
+
 - **QR Code at Entry**: Scan to log "checked in at Flex Gym" -- social proof
 - **Gym-Branded Challenges**: "Flex Gym January Challenge" -- gym promotes app to members
 - **Equipment Integration**: Tag exercises with gym-specific equipment available
@@ -547,6 +572,7 @@ This is Coach's single most important competitive advantage. No international ap
 ### 4.3 Mongolian Fitness Culture & Trends
 
 **Cultural Context**:
+
 - **Wrestling (Boh) heritage**: Competition and strength are deeply cultural. Gamification with competitive elements maps naturally.
 - **Rapid urbanization**: UB has 1.5M+ people (half of Mongolia's population). Gym culture is booming among 18-35 year olds.
 - **Social media fitness influencers**: Mongolian fitness influencers on Instagram/TikTok have growing audiences. Partner with them for content and promotion.
@@ -555,6 +581,7 @@ This is Coach's single most important competitive advantage. No international ap
 - **Group training culture**: Mongolians often train with friends. Social features will resonate strongly.
 
 **Emerging Trends in 2025-2026**:
+
 - CrossFit boxes opening in UB
 - Yoga and pilates studios growing (especially among women 25-40)
 - Running clubs forming (UB Marathon growing each year)
@@ -563,22 +590,23 @@ This is Coach's single most important competitive advantage. No international ap
 
 ### 4.4 Local Marketing Channels
 
-| Channel | Reach | Strategy | Cost |
-|---|---|---|---|
-| **Facebook** | Dominant social platform in Mongolia (~2M users) | Targeted ads to 18-35 UB residents interested in fitness. Before/after transformation stories. | $2-5 CPM (very cheap vs. US) |
-| **Instagram** | Strong with 18-30 urban demographic | Influencer partnerships, Reels content, progress photo features | $50-200 per influencer post |
-| **TikTok** | 800K-900K active users, explosive growth, 65+ min/day for under-25 | Workout clips, food logging demos, transformation challenges. 3-4x engagement vs. established markets. | Organic-first, paid later |
-| **Telegram** | Widely used for groups/channels in Mongolia | Coach already has Telegram integration. Create a Coach community channel. | Free (organic) |
-| **Gym Posters/QR codes** | Direct to target audience | Place in partner gyms with "Track this workout" CTA | $200-500/gym/month |
-| **University Partnerships** | Young, health-conscious audience | Free access for students, campus ambassadors at NUM, MUST, MNUMS | $500-1000/semester |
-| **Word of Mouth** | Mongolia is a small, connected society | Referral program: give a month, get a month. Family plan discounts. | Cost of free months |
-| **Local Media** | TV, news sites (gogo.mn, ikon.mn, news.mn) | PR stories about "first Mongolian fitness app." National pride angle. | $500-2000 per placement |
+| Channel                     | Reach                                                              | Strategy                                                                                               | Cost                         |
+| --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| **Facebook**                | Dominant social platform in Mongolia (~2M users)                   | Targeted ads to 18-35 UB residents interested in fitness. Before/after transformation stories.         | $2-5 CPM (very cheap vs. US) |
+| **Instagram**               | Strong with 18-30 urban demographic                                | Influencer partnerships, Reels content, progress photo features                                        | $50-200 per influencer post  |
+| **TikTok**                  | 800K-900K active users, explosive growth, 65+ min/day for under-25 | Workout clips, food logging demos, transformation challenges. 3-4x engagement vs. established markets. | Organic-first, paid later    |
+| **Telegram**                | Widely used for groups/channels in Mongolia                        | Coach already has Telegram integration. Create a Coach community channel.                              | Free (organic)               |
+| **Gym Posters/QR codes**    | Direct to target audience                                          | Place in partner gyms with "Track this workout" CTA                                                    | $200-500/gym/month           |
+| **University Partnerships** | Young, health-conscious audience                                   | Free access for students, campus ambassadors at NUM, MUST, MNUMS                                       | $500-1000/semester           |
+| **Word of Mouth**           | Mongolia is a small, connected society                             | Referral program: give a month, get a month. Family plan discounts.                                    | Cost of free months          |
+| **Local Media**             | TV, news sites (gogo.mn, ikon.mn, news.mn)                         | PR stories about "first Mongolian fitness app." National pride angle.                                  | $500-2000 per placement      |
 
 **Key Insight**: Mongolia's internet penetration is 84%+ and social media users are growing at 3x the regional average. The market is small (3.4M total population, ~1.5M in UB) but highly connected and digitally engaged. Word of mouth travels fast -- a few hundred active users can create buzz citywide.
 
 ### 4.5 Pricing for Mongolian Purchasing Power
 
 **Economic Context (2026)**:
+
 - Average monthly salary: ~2,000,000-3,000,000 MNT (~$555-$830 USD)
 - Minimum wage: 792,000 MNT/month (~$220 USD)
 - Inflation: 7-9%
@@ -588,15 +616,16 @@ This is Coach's single most important competitive advantage. No international ap
 
 **Pricing Recommendation**:
 
-| Tier | Price (MNT) | Price (USD equiv.) | Comparison |
-|---|---|---|---|
-| **Free** | 0 | $0 | Basic meal/workout logging, limited AI |
-| **Coach Pro (Monthly)** | 9,900 MNT | ~$2.75 | < Netflix price, impulse purchase |
-| **Coach Pro (Annual)** | 59,900 MNT | ~$16.60 ($1.38/mo) | ~75% of monthly gym membership for a month |
-| **Coach Pro (Lifetime)** | 199,900 MNT | ~$55 | One-time, appeals to commitment-averse |
-| **Student Discount** | 4,900 MNT/mo | ~$1.36 | 50% off monthly, requires .edu verification |
+| Tier                     | Price (MNT)  | Price (USD equiv.) | Comparison                                  |
+| ------------------------ | ------------ | ------------------ | ------------------------------------------- |
+| **Free**                 | 0            | $0                 | Basic meal/workout logging, limited AI      |
+| **Coach Pro (Monthly)**  | 9,900 MNT    | ~$2.75             | < Netflix price, impulse purchase           |
+| **Coach Pro (Annual)**   | 59,900 MNT   | ~$16.60 ($1.38/mo) | ~75% of monthly gym membership for a month  |
+| **Coach Pro (Lifetime)** | 199,900 MNT  | ~$55               | One-time, appeals to commitment-averse      |
+| **Student Discount**     | 4,900 MNT/mo | ~$1.36             | 50% off monthly, requires .edu verification |
 
 **Rationale**:
+
 - Monthly price is < cost of a single restaurant meal in UB (making it an easy value proposition)
 - Annual price is less than one month of gym membership (natural upsell at gym partner locations)
 - ~70% discount on annual vs. monthly (industry sweet spot is 33%, but Mongolian market needs stronger incentive)
@@ -609,24 +638,25 @@ This is Coach's single most important competitive advantage. No international ap
 
 ### 5.1 Competitor Pricing Comparison
 
-| App | Monthly | Annual | Annual/Mo | Lifetime | Free Tier |
-|---|---|---|---|---|---|
-| MyFitnessPal | $19.99 | $79.99 | $6.67 | No | Yes (limited) |
-| Strava | $11.99 | $79.99 | $6.67 | No | Yes (basic) |
-| Fitbit Premium | $9.99 | $79.99 | $6.67 | No | Yes (with device) |
-| Lose It | -- | $39.99 | $3.33 | $299.99 | Yes |
-| Hevy Pro | -- | $39.99-69.99 | $3.33-5.83 | No | Yes (generous) |
-| Strong Pro | $4.99 | ~$60 | $5.00 | $99.99 | Yes (3 routines) |
-| JEFIT Elite | $12.99 | $69.99 | $5.83 | No | Yes |
-| MacroFactor | $11.99 | $79.00 | $6.58 | No | No (trial only) |
-| YAZIO Pro | -- | $47.90 | $3.99 | No | Yes |
-| **Coach Pro** | **$2.75** | **$16.60** | **$1.38** | **$55** | **Yes** |
+| App            | Monthly   | Annual       | Annual/Mo  | Lifetime | Free Tier         |
+| -------------- | --------- | ------------ | ---------- | -------- | ----------------- |
+| MyFitnessPal   | $19.99    | $79.99       | $6.67      | No       | Yes (limited)     |
+| Strava         | $11.99    | $79.99       | $6.67      | No       | Yes (basic)       |
+| Fitbit Premium | $9.99     | $79.99       | $6.67      | No       | Yes (with device) |
+| Lose It        | --        | $39.99       | $3.33      | $299.99  | Yes               |
+| Hevy Pro       | --        | $39.99-69.99 | $3.33-5.83 | No       | Yes (generous)    |
+| Strong Pro     | $4.99     | ~$60         | $5.00      | $99.99   | Yes (3 routines)  |
+| JEFIT Elite    | $12.99    | $69.99       | $5.83      | No       | Yes               |
+| MacroFactor    | $11.99    | $79.00       | $6.58      | No       | No (trial only)   |
+| YAZIO Pro      | --        | $47.90       | $3.99      | No       | Yes               |
+| **Coach Pro**  | **$2.75** | **$16.60**   | **$1.38**  | **$55**  | **Yes**           |
 
 Coach's pricing is 70-80% lower than Western competitors, which is appropriate for Mongolian purchasing power (average salary is ~$600/month vs. ~$5,000+ in the US).
 
 ### 5.2 Freemium Feature Split
 
 **Free Tier (Generous -- drive adoption)**:
+
 - Meal logging (text search, manual entry)
 - Basic calorie/macro dashboard
 - Workout logging (up to 3 saved routines)
@@ -637,6 +667,7 @@ Coach's pricing is 70-80% lower than Western competitors, which is appropriate f
 - Streak tracking
 
 **Pro Tier (Unlock full power)**:
+
 - AI photo food logging (unlimited)
 - Voice food logging
 - Barcode scanner
@@ -658,6 +689,7 @@ Coach's pricing is 70-80% lower than Western competitors, which is appropriate f
 ### 5.3 Trial Strategy
 
 Based on RevenueCat 2025/2026 benchmarks:
+
 - **Offer a 7-day free trial of Pro** after users complete onboarding
 - 80-90% of trials start on Day 0 (first open), so trigger immediately
 - Health & Fitness apps see 35-68% trial-to-paid conversion (top performers)
@@ -667,6 +699,7 @@ Based on RevenueCat 2025/2026 benchmarks:
 ### 5.4 Revenue Projections (Conservative)
 
 **Assumptions**:
+
 - UB target market: 500,000 people aged 18-40
 - Smartphone penetration: ~90%
 - Addressable market: 450,000
@@ -674,13 +707,14 @@ Based on RevenueCat 2025/2026 benchmarks:
 - Free-to-paid conversion: 3-5%
 - Average revenue per paying user: ~100,000 MNT/year ($28)
 
-| Scenario | Downloads | Conversion | Paying Users | Annual Revenue (MNT) | Annual Revenue (USD) |
-|---|---|---|---|---|---|
-| Conservative | 20,000 | 3% | 600 | 60,000,000 | ~$16,600 |
-| Moderate | 35,000 | 4% | 1,400 | 140,000,000 | ~$38,900 |
-| Optimistic | 50,000 | 5% | 2,500 | 250,000,000 | ~$69,400 |
+| Scenario     | Downloads | Conversion | Paying Users | Annual Revenue (MNT) | Annual Revenue (USD) |
+| ------------ | --------- | ---------- | ------------ | -------------------- | -------------------- |
+| Conservative | 20,000    | 3%         | 600          | 60,000,000           | ~$16,600             |
+| Moderate     | 35,000    | 4%         | 1,400        | 140,000,000          | ~$38,900             |
+| Optimistic   | 50,000    | 5%         | 2,500        | 250,000,000          | ~$69,400             |
 
 **Year 2+ Growth Levers**:
+
 - Social features driving organic virality (Mongolia's network effects are strong in a small population)
 - Gym partnership referrals
 - Expansion to Mongolian diaspora (South Korea: ~35,000; Japan: ~12,000; USA/Europe)
@@ -689,15 +723,15 @@ Based on RevenueCat 2025/2026 benchmarks:
 
 ### 5.5 Partnership Revenue Opportunities
 
-| Partnership Type | Revenue Model | Estimated Value |
-|---|---|---|
-| **Gym Partnerships** | Revenue share on referral conversions (15-20%) | 500,000-2,000,000 MNT/month per gym |
-| **Supplement Brands** | Sponsored food database entries, in-app recommendations | 1,000,000-5,000,000 MNT/month |
-| **Restaurant Partnerships** | Menu nutrition data sponsorship, "Coach Verified" badge | 500,000-1,500,000 MNT/month per restaurant |
-| **Corporate Wellness** | Bulk licenses for company employees (25+ seats) | 5,000-7,000 MNT/user/month |
-| **Health Insurance** | Discounted premiums for active Coach users (data partnership) | Long-term, explore in Year 2 |
-| **Fitness Influencers** | Affiliate commissions (20-30% of referred subscriptions) | Performance-based |
-| **Local Food Brands** | Verified nutrition data placement (Gobi, APU, MCS Group brands) | 2,000,000-10,000,000 MNT/quarter |
+| Partnership Type            | Revenue Model                                                   | Estimated Value                            |
+| --------------------------- | --------------------------------------------------------------- | ------------------------------------------ |
+| **Gym Partnerships**        | Revenue share on referral conversions (15-20%)                  | 500,000-2,000,000 MNT/month per gym        |
+| **Supplement Brands**       | Sponsored food database entries, in-app recommendations         | 1,000,000-5,000,000 MNT/month              |
+| **Restaurant Partnerships** | Menu nutrition data sponsorship, "Coach Verified" badge         | 500,000-1,500,000 MNT/month per restaurant |
+| **Corporate Wellness**      | Bulk licenses for company employees (25+ seats)                 | 5,000-7,000 MNT/user/month                 |
+| **Health Insurance**        | Discounted premiums for active Coach users (data partnership)   | Long-term, explore in Year 2               |
+| **Fitness Influencers**     | Affiliate commissions (20-30% of referred subscriptions)        | Performance-based                          |
+| **Local Food Brands**       | Verified nutrition data placement (Gobi, APU, MCS Group brands) | 2,000,000-10,000,000 MNT/quarter           |
 
 ### 5.6 Key Monetization Insights from Industry Data
 
@@ -718,13 +752,15 @@ Based on RevenueCat 2025/2026 benchmarks:
 ## Summary: Coach's Strategic Position
 
 ### Strengths
+
 - **Monopoly on Mongolian fitness app market** -- literally zero competitors with Mongolian language + food database
 - **AI-first architecture** -- photo logging, voice logging, adaptive coaching, AI chat
 - **Strong technical foundation** -- React Native + NestJS + BullMQ is a scalable stack
-- **QPay + Telegram integration** -- meets Mongolian users where they are
+- **Telegram integration** -- meets Mongolian users where they are
 - **Combined nutrition + workout + AI coaching** -- most competitors only do one
 
 ### Weaknesses
+
 - **Small food database** -- must expand aggressively (P0 priority)
 - **Missing table-stakes features** -- Apple Health, rest timer, streaks
 - **No social features** -- biggest gap vs. Hevy/Strava
@@ -732,6 +768,7 @@ Based on RevenueCat 2025/2026 benchmarks:
 - **No wearable integration** -- limits passive data collection
 
 ### Opportunities
+
 - **First mover in Mongolia** -- no one else is building this
 - **Mongolian diaspora** -- 50,000+ Mongolians in Korea/Japan with same food culture
 - **Gym partnership distribution** -- gyms are the natural acquisition channel
@@ -740,6 +777,7 @@ Based on RevenueCat 2025/2026 benchmarks:
 - **B2B trainer platform** -- personal trainers as distribution channel
 
 ### Threats
+
 - **MyFitnessPal adds Mongolian language** -- unlikely but would be devastating
 - **Local clone** -- someone with more funding copies the concept
 - **Market size ceiling** -- Mongolia may cap at 50,000 users
@@ -758,9 +796,10 @@ Based on RevenueCat 2025/2026 benchmarks:
 
 ---
 
-*Analysis prepared April 2026. Market data sourced from Business of Apps, RevenueCat, Sensor Tower estimates, Statista, and individual app research.*
+_Analysis prepared April 2026. Market data sourced from Business of Apps, RevenueCat, Sensor Tower estimates, Statista, and individual app research._
 
 Sources:
+
 - [MyFitnessPal Statistics - Business of Apps](https://www.businessofapps.com/data/myfitnesspal-statistics/)
 - [Fitness App Market - Business of Apps](https://www.businessofapps.com/data/fitness-app-market/)
 - [Health & Fitness App Subscription Benchmarks 2026 - Adapty](https://adapty.io/blog/health-fitness-app-subscription-benchmarks/)
