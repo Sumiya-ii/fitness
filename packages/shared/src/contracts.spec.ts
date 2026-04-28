@@ -147,17 +147,7 @@ describe('shared constants', () => {
 
 describe('queue constants', () => {
   it('should export all expected queue names', () => {
-    const expected = [
-      'stt-processing',
-      'photo-parsing',
-      'reminders',
-      'coach-messages',
-      'weekly-report',
-      'adaptive-target',
-      'meal-timing-insights',
-      'coach-memory',
-      'meal-nudge',
-    ];
+    const expected = ['photo-parsing', 'reminders', 'coach-memory', 'privacy'];
     for (const name of expected) {
       expect(Object.values(QUEUE_NAMES)).toContain(name);
     }
@@ -565,10 +555,6 @@ describe('Dashboard daily response contract', () => {
     meals: z.array(z.unknown()),
     waterConsumed: z.number().int().nonnegative(),
     waterTarget: z.number().int().positive(),
-    caloriesBurned: z.number().nonnegative(),
-    netCalories: z.number(),
-    workoutCount: z.number().int().nonnegative(),
-    workouts: z.array(z.unknown()),
   });
 
   const validDashboard = {
@@ -590,10 +576,6 @@ describe('Dashboard daily response contract', () => {
     meals: [],
     waterConsumed: 500,
     waterTarget: 2000,
-    caloriesBurned: 0,
-    netCalories: 500,
-    workoutCount: 0,
-    workouts: [],
   };
 
   it('should accept a valid dashboard response', () => {

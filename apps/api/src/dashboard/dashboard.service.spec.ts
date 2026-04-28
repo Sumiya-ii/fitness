@@ -26,9 +26,6 @@ describe('DashboardService', () => {
       profile: {
         findUnique: jest.fn().mockResolvedValue({ waterTargetMl: 2000 }),
       },
-      workoutLog: {
-        findMany: jest.fn().mockResolvedValue([]),
-      },
     };
     service = new DashboardService(prisma as unknown as PrismaService);
   });

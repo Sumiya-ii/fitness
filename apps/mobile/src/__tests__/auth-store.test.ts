@@ -340,16 +340,17 @@ describe('useAuthStore', () => {
       expect(mockApi.setToken).toHaveBeenCalledWith('test-token-abc');
     });
 
-    it('falls back to stored API token when firebase session is null', async () => {
+    it('clears stored API token when firebase session is null', async () => {
       mockRestoreSession.mockResolvedValue(null);
       mockApi.getToken.mockResolvedValue('stored-token');
 
       await useAuthStore.getState().loadToken();
 
       const state = useAuthStore.getState();
-      expect(state.token).toBe('stored-token');
-      expect(state.user).toEqual({ id: 'legacy-token-user', email: null });
-      expect(state.isAuthenticated).toBe(true);
+      expect(mockApi.clearToken).toHaveBeenCalled();
+      expect(state.token).toBeNull();
+      expect(state.user).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
       expect(state.isLoading).toBe(false);
     });
 

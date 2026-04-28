@@ -2,7 +2,7 @@
  * LogScreen tests — verifies pro-gated features and recent meals display.
  *
  * Key scenarios:
- * - Camera and voice actions require pro (show paywall if free)
+ * - Camera action requires pro (show paywall if free)
  * - Recent meals display correctly
  * - Empty state when no recents
  * - All action buttons are rendered
@@ -143,18 +143,16 @@ describe('LogScreen', () => {
   });
 
   describe('Action buttons', () => {
-    it('renders MVP action buttons (voice hidden in v1)', async () => {
+    it('renders default action buttons', async () => {
       mockGetRecents.mockResolvedValue({ data: [] });
       renderScreen(<LogScreen />);
 
-      // MVP_V1=true: voice happens via Telegram, so the in-app mic is hidden.
-      // t('logging.photo') = 'Зураг', t('logging.scan') = 'Скан', t('logging.quick') = 'Шууд'
+      // In-app voice was removed from v1; voice logging happens through Telegram.
       await waitFor(() => {
         expect(screen.getByText('Зураг')).toBeTruthy();
-        expect(screen.getByText('Скан')).toBeTruthy();
         expect(screen.getByText('Шууд')).toBeTruthy();
       });
-      expect(screen.queryByText('Дуу')).toBeNull();
+      expect(screen.queryByText('Скан')).toBeNull();
     });
 
     it('renders search bar', async () => {

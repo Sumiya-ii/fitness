@@ -73,7 +73,7 @@ export interface CreateMealLogItemPayload {
 
 export interface CreateMealLogPayload {
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  source?: 'text' | 'quick_add' | 'barcode' | 'voice' | 'photo' | 'telegram';
+  source?: 'text' | 'quick_add' | 'quick_relog' | 'voice' | 'photo' | 'telegram';
   loggedAt?: string;
   note?: string;
   items: CreateMealLogItemPayload[];
@@ -94,64 +94,10 @@ export interface QuickAddPayload {
   source?: string;
 }
 
-export interface VoiceLogItemPayload {
-  name: string;
-  quantity: number;
-  unit: string;
-  grams: number;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber?: number;
-  sugar?: number;
-  sodium?: number;
-  saturatedFat?: number;
-}
-
-export interface FromVoicePayload {
-  draftId: string;
-  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  loggedAt?: string;
-  note?: string;
-  items: VoiceLogItemPayload[];
-}
-
 export interface UpdateMealLogPayload {
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   note?: string | null;
   loggedAt?: string;
-}
-
-export interface BarcodeLookupResult {
-  code: string;
-  food: {
-    id: string;
-    name: string;
-    servings: Array<{
-      id: string;
-      label: string;
-      gramsPerUnit: number;
-      isDefault: boolean;
-    }>;
-    nutrients: FoodNutrients | null;
-  };
-}
-
-export interface SubmitBarcodePayload {
-  code: string;
-  normalizedName: string;
-  caloriesPer100g: number;
-  proteinPer100g: number;
-  carbsPer100g: number;
-  fatPer100g: number;
-  fiberPer100g?: number;
-  sugarPer100g?: number;
-  sodiumPer100g?: number;
-  saturatedFatPer100g?: number;
-  servingLabel: string;
-  gramsPerUnit: number;
-  labelPhotoUrls?: string[];
 }
 
 export interface FavoriteItem {
@@ -165,7 +111,7 @@ export interface FavoriteItem {
 }
 
 export interface RecentItem {
-  /** Catalog food id (legacy text-search/barcode logs); null for voice/photo. */
+  /** Catalog food id (legacy text-search logs); null for voice/photo. */
   foodId: string | null;
   /** Canonical id from the normalizer; populated for voice/photo logs. */
   canonicalFoodId: string | null;
@@ -259,19 +205,6 @@ export const mealsApi = {
     }
   },
 
-  fromVoice: async (payload: FromVoicePayload): Promise<{ data: MealLog | null }> => {
-    try {
-      return await api.post<{ data: MealLog }>('/meal-logs/from-voice', payload);
-    } catch (e) {
-      if (isNetworkError(e)) {
-        offlineQueue.enqueue({ path: '/meal-logs/from-voice', body: payload });
-        useSyncStore.getState().refreshCount();
-        return { data: null };
-      }
-      throw e;
-    }
-  },
-
   updateMealLog: (id: string, payload: UpdateMealLogPayload) =>
     api.patch<{ data: MealLog }>(`/meal-logs/${id}`, payload),
 
@@ -288,11 +221,6 @@ export const mealsApi = {
       meta: { total: number; page: number; limit: number; totalPages: number };
     }>(`/meal-logs?${params}`);
   },
-
-  barcodeLookup: (code: string) => api.get<{ data: BarcodeLookupResult }>(`/barcodes/${code}`),
-
-  submitBarcode: (payload: SubmitBarcodePayload) =>
-    api.post<{ data: { status: string; foodId?: string } }>('/barcodes/submit', payload),
 
   getFavorites: (limit = 20) => api.get<{ data: FavoriteItem[] }>(`/favorites?limit=${limit}`),
 

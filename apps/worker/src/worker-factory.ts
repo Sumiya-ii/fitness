@@ -68,7 +68,6 @@ export function createWorkerForQueue(queueName: QueueName, redisUrl: string): Wo
 
 function getConcurrency(queueName: QueueName): number {
   switch (queueName) {
-    case QUEUE_NAMES.STT_PROCESSING:
     case QUEUE_NAMES.PHOTO_PARSING:
       return 2;
     case QUEUE_NAMES.PRIVACY:

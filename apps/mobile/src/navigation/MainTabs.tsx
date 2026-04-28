@@ -13,13 +13,13 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import type { MainTabParamList, LogStackParamList } from './types';
-import { features } from '../config/features';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LogStack } from './LogStack';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
+import { useProGate } from '../hooks/useProGate';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -48,21 +48,9 @@ type QuickAction = {
 };
 
 // Bottom-to-top: index 0 = closest to + button
-// Voice is excluded in MVP v1 (voice logging happens via Telegram bot instead)
 // Quick-action accent colors — iOS-system inspired, distinct but not loud.
 const MENU_ITEMS: QuickAction[] = [
   { key: 'quick', icon: 'flash', labelKey: 'logging.quick', color: '#FF9500', screen: 'QuickAdd' },
-  ...(features.voiceLoggingInApp
-    ? [
-        {
-          key: 'voice',
-          icon: 'mic' as const,
-          labelKey: 'logging.voice',
-          color: '#FF3B30',
-          screen: 'VoiceLog' as const,
-        },
-      ]
-    : []),
   {
     key: 'photo',
     icon: 'camera',
@@ -141,6 +129,7 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
+  const { requirePro } = useProGate();
 
   // Refs for PanResponder (avoids stale closures)
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -151,6 +140,8 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
   navigationRef.current = navigation;
   const stateRef = useRef(state);
   stateRef.current = state;
+  const requireProRef = useRef(requirePro);
+  requireProRef.current = requirePro;
 
   const logRouteIndex = state.routes.findIndex((r) => r.name === 'Log');
   const logRoute = state.routes[logRouteIndex];
@@ -241,8 +232,14 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           cleanup();
 
           if (idx >= 0 && idx < MENU_ITEMS.length) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            nav.navigate('Log', { screen: MENU_ITEMS[idx].screen });
+            const action = MENU_ITEMS[idx];
+            void (async () => {
+              if (action.key === 'photo' && !(await requireProRef.current())) {
+                return;
+              }
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              nav.navigate('Log', { screen: action.screen });
+            })();
           }
         },
 

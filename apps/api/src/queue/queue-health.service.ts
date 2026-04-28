@@ -18,11 +18,12 @@ export class QueueHealthService {
   private readonly queues: Queue[];
 
   constructor(
-    @Inject(getQueueToken(QUEUE_NAMES.STT_PROCESSING)) sttQueue: Queue,
     @Inject(getQueueToken(QUEUE_NAMES.PHOTO_PARSING)) photoQueue: Queue,
     @Inject(getQueueToken(QUEUE_NAMES.REMINDERS)) reminderQueue: Queue,
+    @Inject(getQueueToken(QUEUE_NAMES.COACH_MEMORY)) coachMemoryQueue: Queue,
+    @Inject(getQueueToken(QUEUE_NAMES.PRIVACY)) privacyQueue: Queue,
   ) {
-    this.queues = [sttQueue, photoQueue, reminderQueue];
+    this.queues = [photoQueue, reminderQueue, coachMemoryQueue, privacyQueue];
   }
 
   async getHealth(): Promise<QueueHealthStatus[]> {

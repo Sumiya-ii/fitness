@@ -1,13 +1,7 @@
 export const QUEUE_NAMES = {
-  STT_PROCESSING: 'stt-processing',
   PHOTO_PARSING: 'photo-parsing',
   REMINDERS: 'reminders',
-  COACH_MESSAGES: 'coach-messages',
-  WEEKLY_REPORT: 'weekly-report',
-  ADAPTIVE_TARGET: 'adaptive-target',
-  MEAL_TIMING_INSIGHTS: 'meal-timing-insights',
   COACH_MEMORY: 'coach-memory',
-  MEAL_NUDGE: 'meal-nudge',
   PRIVACY: 'privacy',
 } as const;
 

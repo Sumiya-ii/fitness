@@ -23,7 +23,7 @@ export class DashboardService {
     const dateKey = dateStr ?? new Date().toISOString().split('T')[0]!;
     const { dayStart, dayEnd } = dayBoundaries(dateKey, tz);
 
-    const [mealLogs, target, waterLogs, profile, workoutEntries] = await Promise.all([
+    const [mealLogs, target, waterLogs, profile] = await Promise.all([
       this.prisma.mealLog.findMany({
         where: {
           userId,
@@ -42,10 +42,6 @@ export class DashboardService {
       this.prisma.profile.findUnique({
         where: { userId },
         select: { waterTargetMl: true },
-      }),
-      this.prisma.workoutLog.findMany({
-        where: { userId, loggedAt: { gte: dayStart, lt: dayEnd } },
-        orderBy: { loggedAt: 'asc' },
       }),
     ]);
 
@@ -140,18 +136,6 @@ export class DashboardService {
       })),
     }));
 
-    const caloriesBurned = workoutEntries.reduce((sum, w) => sum + (w.calorieBurned ?? 0), 0);
-    const netCalories = consumed.calories - caloriesBurned;
-
-    const workouts = workoutEntries.map((w) => ({
-      id: w.id,
-      workoutType: w.workoutType,
-      durationMin: w.durationMin,
-      calorieBurned: w.calorieBurned,
-      note: w.note,
-      loggedAt: w.loggedAt.toISOString(),
-    }));
-
     return {
       date: dateKey,
       consumed,
@@ -162,10 +146,6 @@ export class DashboardService {
       meals,
       waterConsumed,
       waterTarget,
-      caloriesBurned,
-      netCalories,
-      workoutCount: workoutEntries.length,
-      workouts,
     };
   }
 

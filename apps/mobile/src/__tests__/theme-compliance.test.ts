@@ -96,43 +96,9 @@ const SAFE_LINE_PATTERNS: RegExp[] = [
  * Remove entries as each violation is fixed.
  */
 const KNOWN_VIOLATIONS: Array<[string, string]> = [
-  // ProgressScreen — chart palette defined as a module-level constant for
-  // use across multiple sub-components. Needs semantic token extraction.
-  ['ProgressScreen.tsx', '#F4E9D8'],
-  ['ProgressScreen.tsx', '#5A4A3C'],
-  ['ProgressScreen.tsx', '#C8A45B'],
-  ['ProgressScreen.tsx', '#3b82f6'],
-  ['ProgressScreen.tsx', '#D4B16E'],
-  ['ProgressScreen.tsx', '#B05E5E'],
-  ['ProgressScreen.tsx', '#06b6d4'],
-  ['ProgressScreen.tsx', '#0c4a6e'],
-  ['ProgressScreen.tsx', '#8B2E2E'],
-  // ProgressScreen — body composition / BMI status colors (functional)
-  ['ProgressScreen.tsx', '#ef4444'],
-  ['ProgressScreen.tsx', '#22c55e'],
-  ['ProgressScreen.tsx', '#f59e0b'],
-  ['ProgressScreen.tsx', '#f97316'],
-  ['ProgressScreen.tsx', '#dc2626'],
-  ['ProgressScreen.tsx', '#000000'],
-
   // RemindersScreen — Switch thumbColor uses literal white; this is the RN
   // default thumb appearance. Should use c.onPrimary.
   ['RemindersScreen.tsx', '#ffffff'],
-
-  // WorkoutHomeScreen — Icon color inside a bg-success banner where text
-  // is explicitly white by design. Should use c.onPrimary.
-  ['workout/WorkoutHomeScreen.tsx', '#ffffff'],
-
-  // WorkoutActiveScreen — Same pattern as WorkoutHomeScreen.
-  ['workout/WorkoutActiveScreen.tsx', '#ffffff'],
-
-  // BarcodeScanScreen — ActivityIndicator on a full-screen dark overlay.
-  // Should use c.onPrimary once overlay bg uses palette.
-  ['logging/BarcodeScanScreen.tsx', '#ffffff'],
-
-  // VoiceLogScreen — Icon colors on a dark recording UI.
-  // Should use c.onPrimary.
-  ['logging/VoiceLogScreen.tsx', '#ffffff'],
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

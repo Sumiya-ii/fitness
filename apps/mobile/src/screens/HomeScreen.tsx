@@ -25,7 +25,6 @@ import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store
 import { useWaterStore } from '../stores/water.store';
 import { useStepsStore, STEPS_GOAL, KCAL_PER_STEP } from '../stores/steps.store';
 import { useStreakStore } from '../stores/streak.store';
-import { useWorkoutStore } from '../stores/workout.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
@@ -573,7 +572,6 @@ export function HomeScreen() {
   const [carouselPage, setCarouselPage] = useState(0);
   const [streakModalVisible, setStreakModalVisible] = useState(false);
   const [showEaten, setShowEaten] = useState(false);
-  const [showMicronutrients, setShowMicronutrients] = useState(false);
   const [weekHistory, setWeekHistory] = useState<Map<string, number>>(new Map());
   const [weekCalorieTarget, setWeekCalorieTarget] = useState<number | null>(null);
   const [telegramLinked, setTelegramLinked] = useState<boolean | null>(null);
@@ -593,8 +591,6 @@ export function HomeScreen() {
     requestPermission: requestStepsPermission,
     fetchTodaySteps,
   } = useStepsStore();
-  const { summary: workoutSummary, fetchSummary: fetchWorkoutSummary } = useWorkoutStore();
-
   const insets = useSafeAreaInsets();
   const calendarRef = useRef<ScrollView>(null);
 
@@ -702,13 +698,12 @@ export function HomeScreen() {
       if (selectedDateKey === todayKey) {
         fetchWater();
         fetchStreaks();
-        fetchWorkoutSummary();
       }
 
       return () => {
         cancelled = true;
       };
-    }, [fetchDashboard, fetchWater, fetchStreaks, fetchWorkoutSummary, selectedDateKey, todayKey]),
+    }, [fetchDashboard, fetchWater, fetchStreaks, selectedDateKey, todayKey]),
   );
 
   useEffect(() => {
@@ -756,9 +751,12 @@ export function HomeScreen() {
     saturatedFat: null,
   };
   const hasTargets = targets !== null;
-  const remaining = hasTargets ? Math.max(targets.calories - consumed.calories, 0) : 0;
+  const calorieBudget = hasTargets ? targets.calories : null;
+  const remaining = calorieBudget !== null ? Math.max(calorieBudget - consumed.calories, 0) : 0;
   const calProg =
-    hasTargets && targets.calories > 0 ? Math.min(consumed.calories / targets.calories, 1) : 0;
+    calorieBudget !== null && calorieBudget > 0
+      ? Math.min(consumed.calories / calorieBudget, 1)
+      : 0;
   const proteinLeft = hasTargets ? Math.max(Math.round(targets.protein - consumed.protein), 0) : 0;
   const carbsLeft = hasTargets ? Math.max(Math.round(targets.carbs - consumed.carbs), 0) : 0;
   const fatLeft = hasTargets ? Math.max(Math.round(targets.fat - consumed.fat), 0) : 0;
@@ -833,7 +831,7 @@ export function HomeScreen() {
           : c.danger;
 
   const stepsProg = Math.min(steps / STEPS_GOAL, 1);
-  const caloriesBurned = Math.round(steps * KCAL_PER_STEP);
+  const stepCaloriesBurned = Math.round(steps * KCAL_PER_STEP);
 
   return (
     <View className="flex-1" style={{ backgroundColor: c.bg }}>
@@ -997,7 +995,7 @@ export function HomeScreen() {
                         {hasTargets && (
                           <Text className="text-2xl font-sans-medium text-text-tertiary leading-none">
                             {' '}
-                            /{targets.calories}
+                            /{calorieBudget ?? targets.calories}
                           </Text>
                         )}
                       </View>
@@ -1018,26 +1016,6 @@ export function HomeScreen() {
                           : t('dashboard.caloriesLeft')}{' '}
                       {hasTargets && '◇'}
                     </Text>
-                    <View className="flex-row items-center gap-2 mt-2.5">
-                      <View
-                        className="flex-row items-center gap-1 px-2.5 py-1 rounded-full"
-                        style={{ backgroundColor: c.cardAlt }}
-                      >
-                        <Ionicons name="time-outline" size={13} color={c.textTertiary} />
-                        <Text className="text-xs font-sans-semibold text-text-tertiary">
-                          +{caloriesBurned}
-                        </Text>
-                      </View>
-                      <View
-                        className="flex-row items-center gap-1 px-2.5 py-1 rounded-full"
-                        style={{ backgroundColor: c.cardAlt }}
-                      >
-                        <Ionicons name="restaurant-outline" size={13} color={c.textTertiary} />
-                        <Text className="text-xs font-sans-semibold text-text-tertiary">
-                          +{workoutSummary?.totalCaloriesBurned ?? 0}
-                        </Text>
-                      </View>
-                    </View>
                   </View>
                   <ProgressArc progress={calProg} size={80} strokeWidth={7} color={c.text}>
                     <Text style={{ fontSize: 26 }}>🔥</Text>
@@ -1087,129 +1065,6 @@ export function HomeScreen() {
                   onToggle={() => setShowEaten((v) => !v)}
                 />
               </View>
-
-              {/* ── Expandable Micronutrients ── */}
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowMicronutrients((v) => !v);
-                }}
-                className="mt-3 flex-row items-center justify-center py-2 rounded-2xl"
-                style={{ backgroundColor: c.cardAlt }}
-                accessibilityRole="button"
-                accessibilityLabel={t('dashboard.moreNutrients')}
-              >
-                <Text style={{ fontSize: 12, fontFamily: 'Inter-SemiBold', color: c.textTertiary }}>
-                  {showMicronutrients ? t('dashboard.hideNutrients') : t('dashboard.moreNutrients')}
-                </Text>
-                <Ionicons
-                  name={showMicronutrients ? 'chevron-up' : 'chevron-down'}
-                  size={14}
-                  color={c.textTertiary}
-                  style={{ marginLeft: 4 }}
-                />
-              </Pressable>
-
-              {showMicronutrients ? (
-                <Animated.View entering={FadeInDown.duration(250)} className="mt-3">
-                  <View className="flex-row gap-3 mb-3">
-                    <View
-                      className="flex-1 rounded-2xl px-3 py-2.5"
-                      style={{ backgroundColor: c.card }}
-                    >
-                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
-                        {consumed.fiber != null ? `${Math.round(consumed.fiber)}` : '–'}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                      >
-                        g
-                      </Text>
-                      <View className="flex-row items-center gap-1 mt-1.5">
-                        <Text style={{ fontSize: 14 }}>🥦</Text>
-                        <Text
-                          style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.success }}
-                          numberOfLines={1}
-                        >
-                          {t('dashboard.fiber')}
-                        </Text>
-                      </View>
-                    </View>
-                    <View
-                      className="flex-1 rounded-2xl px-3 py-2.5"
-                      style={{ backgroundColor: c.card }}
-                    >
-                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
-                        {consumed.sugar != null ? `${Math.round(consumed.sugar)}` : '–'}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                      >
-                        g
-                      </Text>
-                      <View className="flex-row items-center gap-1 mt-1.5">
-                        <Text style={{ fontSize: 14 }}>🍬</Text>
-                        <Text
-                          style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.danger }}
-                          numberOfLines={1}
-                        >
-                          {t('dashboard.sugar')}
-                        </Text>
-                      </View>
-                    </View>
-                    <View
-                      className="flex-1 rounded-2xl px-3 py-2.5"
-                      style={{ backgroundColor: c.card }}
-                    >
-                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
-                        {consumed.sodium != null ? `${Math.round(consumed.sodium)}` : '–'}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                      >
-                        mg
-                      </Text>
-                      <View className="flex-row items-center gap-1 mt-1.5">
-                        <Text style={{ fontSize: 14 }}>🧂</Text>
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontFamily: 'Inter-SemiBold',
-                            color: c.primaryMuted,
-                          }}
-                          numberOfLines={1}
-                        >
-                          {t('dashboard.sodium')}
-                        </Text>
-                      </View>
-                    </View>
-                    <View
-                      className="flex-1 rounded-2xl px-3 py-2.5"
-                      style={{ backgroundColor: c.card }}
-                    >
-                      <Text style={{ fontSize: 16, fontFamily: 'Inter-Bold', color: c.text }}>
-                        {consumed.saturatedFat != null
-                          ? `${Math.round(consumed.saturatedFat)}`
-                          : '–'}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                      >
-                        g
-                      </Text>
-                      <View className="flex-row items-center gap-1 mt-1.5">
-                        <Text style={{ fontSize: 14 }}>🧈</Text>
-                        <Text
-                          style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.warning }}
-                          numberOfLines={1}
-                        >
-                          {t('dashboard.saturatedFat')}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </Animated.View>
-              ) : null}
             </View>
 
             {/* ── Page 1: Health Score + Water + Nutrients ── */}
@@ -1481,7 +1336,7 @@ export function HomeScreen() {
                         lineHeight: 24,
                       }}
                     >
-                      {caloriesBurned}
+                      {stepCaloriesBurned}
                     </Text>
                     <Text
                       style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
@@ -1498,7 +1353,7 @@ export function HomeScreen() {
                       <Text
                         style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
                       >
-                        {caloriesBurned} cal
+                        {stepCaloriesBurned} cal
                       </Text>
                     </View>
                   </View>

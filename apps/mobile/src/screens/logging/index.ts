@@ -1,7 +1,6 @@
 export { LogScreen } from '../LogScreen';
 export { TextSearchScreen } from './TextSearchScreen';
 export { QuickAddScreen } from './QuickAddScreen';
-export { VoiceLogScreen } from './VoiceLogScreen';
 export { PhotoLogScreen } from './PhotoLogScreen';
 export { FavoritesRecentsScreen } from './FavoritesRecentsScreen';
 export { MealTemplatesScreen } from './MealTemplatesScreen';

@@ -6,10 +6,12 @@
  */
 
 const mockCount = jest.fn(() => 0);
+const mockFailedCount = jest.fn(() => 0);
 
 jest.mock('../services/offlineQueue', () => ({
   offlineQueue: {
     count: () => mockCount(),
+    failedCount: () => mockFailedCount(),
     enqueue: jest.fn(),
     dequeue: jest.fn(),
     getAll: jest.fn(() => []),
@@ -29,6 +31,7 @@ import { useSyncStore } from '../stores/sync.store';
 function resetStore() {
   useSyncStore.setState({
     pendingCount: 0,
+    failedCount: 0,
     isSyncing: false,
     isOnline: true,
   });
@@ -38,6 +41,7 @@ describe('useSyncStore', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCount.mockReturnValue(0);
+    mockFailedCount.mockReturnValue(0);
     resetStore();
   });
 

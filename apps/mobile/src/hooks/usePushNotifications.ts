@@ -2,11 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MainStackParamList } from '../navigation/types';
 import { api } from '../api/client';
-import { useSubscriptionStore } from '../stores/subscription.store';
 import { getFirebaseAuth } from '../lib/firebase';
 
 Notifications.setNotificationHandler({
@@ -92,7 +88,6 @@ export async function requestAndRegisterPushToken(): Promise<boolean> {
  * taps a push notification.
  */
 export function usePushNotifications() {
-  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const responseListener = useRef<Notifications.Subscription | null>(null);
   // Tracks whether the component is still mounted so the async notification
   // response handler does not navigate or update state after unmount.
@@ -109,25 +104,7 @@ export function usePushNotifications() {
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, string>;
-      if (data?.screen === 'CoachChat') {
-        const store = useSubscriptionStore.getState();
-        // Wrap in try-catch so an unmount mid-await never produces an unhandled
-        // promise rejection. Check mounted.current before any side-effects.
-        const handleAsync = async () => {
-          try {
-            const isPro = await store.ensureEntitlement();
-            if (!mounted.current) return;
-            if (!isPro) {
-              store.showPaywall();
-              return;
-            }
-            navigation.navigate('CoachChat');
-          } catch {
-            // Non-fatal: component may have unmounted or entitlement check failed.
-          }
-        };
-        void handleAsync();
-      }
+      void data;
     });
 
     return () => {
@@ -137,5 +114,5 @@ export function usePushNotifications() {
       // threw before assigning; optional chaining handles that safely.
       responseListener.current?.remove();
     };
-  }, [navigation]);
+  }, []);
 }

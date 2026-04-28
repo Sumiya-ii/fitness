@@ -16,7 +16,9 @@ const mealLogItemSchema = z.object({
 
 export const createMealLogSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
-  source: z.enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram']).default('text'),
+  source: z
+    .enum(['text', 'quick_add', 'quick_relog', 'voice', 'photo', 'telegram'])
+    .default('text'),
   loggedAt: loggedAtField,
   note: z.string().max(500).optional(),
   items: z.array(mealLogItemSchema).min(1),
@@ -35,34 +37,9 @@ export const quickAddSchema = z.object({
   sodiumMg: z.number().min(0).optional(),
   saturatedFatGrams: z.number().min(0).optional(),
   source: z
-    .enum(['text', 'quick_add', 'barcode', 'voice', 'photo', 'telegram'])
+    .enum(['text', 'quick_add', 'quick_relog', 'voice', 'photo', 'telegram'])
     .optional()
     .default('quick_add'),
-});
-
-// Structured voice-log save: one row per parsed item, no foodId required.
-// The draft acts as provenance — it must belong to the calling user.
-const voiceLogItemSchema = z.object({
-  name: z.string().trim().min(1).max(200),
-  quantity: z.number().positive().default(1),
-  unit: z.string().trim().min(1).max(20).default('serving'),
-  grams: z.number().min(0).default(0),
-  calories: z.number().min(0),
-  protein: z.number().min(0).default(0),
-  carbs: z.number().min(0).default(0),
-  fat: z.number().min(0).default(0),
-  fiber: z.number().min(0).optional(),
-  sugar: z.number().min(0).optional(),
-  sodium: z.number().min(0).optional(),
-  saturatedFat: z.number().min(0).optional(),
-});
-
-export const fromVoiceSchema = z.object({
-  draftId: z.string().uuid(),
-  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
-  loggedAt: loggedAtField,
-  note: z.string().max(500).optional(),
-  items: z.array(voiceLogItemSchema).min(1).max(20),
 });
 
 export const updateMealLogSchema = z.object({
@@ -80,6 +57,5 @@ export const mealLogQuerySchema = z.object({
 
 export type CreateMealLogDto = z.infer<typeof createMealLogSchema>;
 export type QuickAddDto = z.infer<typeof quickAddSchema>;
-export type FromVoiceDto = z.infer<typeof fromVoiceSchema>;
 export type UpdateMealLogDto = z.infer<typeof updateMealLogSchema>;
 export type MealLogQueryDto = z.infer<typeof mealLogQuerySchema>;

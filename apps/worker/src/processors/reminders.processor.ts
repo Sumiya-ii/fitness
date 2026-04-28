@@ -4,7 +4,9 @@ import { Telegraf } from 'telegraf';
 import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
-import { COACH_SYSTEM_PROMPT } from './coach-persona';
+
+const COACH_SYSTEM_PROMPT =
+  'You are Coach, a concise Mongolian nutrition coach. Write warm, practical reminders in the user locale.';
 
 interface ReminderJobData {
   userId: string;
