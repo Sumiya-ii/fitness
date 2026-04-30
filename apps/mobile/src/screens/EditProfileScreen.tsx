@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,7 @@ export function EditProfileScreen() {
   const [_loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     api
       .get<{ data: ProfileData }>('/profile')
       .then((res) => {
@@ -40,7 +40,7 @@ export function EditProfileScreen() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  });
+  }, []);
 
   const getInitials = (name: string | null | undefined): string => {
     if (!name) return 'U';
