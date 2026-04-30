@@ -105,6 +105,8 @@ export function PaywallContent({ onClose, onPurchaseSuccess, onSkip }: PaywallCo
           all: Object.keys(customerInfo.entitlements.all),
         });
       }
+      // Update in-memory state immediately so UI responds before server sync.
+      useSubscriptionStore.getState().handleCustomerInfoUpdate(customerInfo);
       // Immediately verify with RevenueCat REST API to sync the DB before the webhook arrives.
       // This ensures subsequent premium API calls won't get 403'd.
       try {
@@ -133,7 +135,9 @@ export function PaywallContent({ onClose, onPurchaseSuccess, onSkip }: PaywallCo
       const customerInfo = await Purchases.restorePurchases();
       const isPro = typeof customerInfo.entitlements.active['Coach Pro'] !== 'undefined';
       if (isPro) {
-        await fetchStatus();
+        // Update in-memory state immediately before async server sync.
+        useSubscriptionStore.getState().handleCustomerInfoUpdate(customerInfo);
+        void fetchStatus();
         Alert.alert(t('subscription.restoreSuccessTitle'), t('subscription.restoreSuccessDesc'));
         onClose();
       } else {
