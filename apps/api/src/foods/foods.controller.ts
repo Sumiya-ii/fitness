@@ -10,15 +10,18 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { FoodsService } from './foods.service';
 import { createFoodSchema, updateFoodSchema, foodQuerySchema } from './foods.dto';
+import { AdminGuard } from '../admin/admin.guard';
 
 @Controller('foods')
 export class FoodsController {
   constructor(private readonly foodsService: FoodsService) {}
 
   @Post()
+  @UseGuards(AdminGuard)
   async create(@Body() body: unknown) {
     const parsed = createFoodSchema.safeParse(body);
     if (!parsed.success) {
@@ -42,6 +45,7 @@ export class FoodsController {
   }
 
   @Put(':id')
+  @UseGuards(AdminGuard)
   async update(@Param('id') id: string, @Body() body: unknown) {
     const parsed = updateFoodSchema.safeParse(body);
     if (!parsed.success) {
@@ -52,6 +56,7 @@ export class FoodsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AdminGuard)
   async remove(@Param('id') id: string) {
     await this.foodsService.remove(id);
   }
