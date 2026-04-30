@@ -1,8 +1,12 @@
 import { Job } from 'bullmq';
 import { Pool } from 'pg';
+import { Telegraf } from 'telegraf';
 import * as Sentry from '@sentry/node';
+import type { Logger } from 'pino';
 import { logger } from '../logger';
 import { uploadToS3, getPresignedUrl, deleteFromS3 } from '../s3';
+import { sendExpoPush } from '../expo-push';
+import { logMessage } from '../message-log.service';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -159,9 +163,154 @@ async function collectUserData(pool: Pool, userId: string): Promise<Record<strin
   };
 }
 
+// ── Export delivery ───────────────────────────────────────────────────────────
+
+interface UserDeliveryInfo {
+  pushTokens: string[];
+  chatId: string | null;
+  locale: string;
+}
+
+async function getUserDeliveryInfo(pool: Pool, userId: string): Promise<UserDeliveryInfo> {
+  const [tokensResult, telegramResult, profileResult] = await Promise.all([
+    pool.query<{ token: string }>(
+      `SELECT token FROM device_tokens WHERE user_id = $1 AND active = true`,
+      [userId],
+    ),
+    pool.query<{ chat_id: string }>(
+      `SELECT chat_id FROM telegram_links WHERE user_id = $1 LIMIT 1`,
+      [userId],
+    ),
+    pool.query<{ locale: string }>(`SELECT locale FROM profiles WHERE user_id = $1 LIMIT 1`, [
+      userId,
+    ]),
+  ]);
+
+  return {
+    pushTokens: tokensResult.rows.map((r) => r.token),
+    chatId: telegramResult.rows[0]?.chat_id ?? null,
+    locale: profileResult.rows[0]?.locale ?? 'mn',
+  };
+}
+
+async function deliverExportUrl(
+  pool: Pool,
+  userId: string,
+  presignedUrl: string,
+  jobId: string | undefined,
+  jobLogger: Logger,
+): Promise<void> {
+  const { pushTokens, chatId, locale } = await getUserDeliveryInfo(pool, userId);
+
+  const isMn = locale !== 'en';
+
+  const pushTitle = isMn ? 'Өгөгдөл экспортлогдлоо ✅' : 'Data Export Ready ✅';
+  const pushBody = isMn
+    ? 'Таны өгөгдөл бэлэн боллоо. 7 хоногийн дотор татаж авна уу.'
+    : 'Your data export is ready. The link expires in 7 days.';
+  const telegramText = isMn
+    ? `✅ <b>Өгөгдөл экспортлогдлоо</b>\n\nТаны хувийн өгөгдлийг татаж авах холбоос:\n<a href="${presignedUrl}">Татаж авах</a>\n\n⚠️ Холбоос 7 хоногийн дараа хүчингүй болно.`
+    : `✅ <b>Your data export is ready</b>\n\nDownload your personal data:\n<a href="${presignedUrl}">Download</a>\n\n⚠️ This link expires in 7 days.`;
+
+  const deliveries: Promise<void>[] = [];
+
+  if (chatId) {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (botToken) {
+      deliveries.push(
+        (async () => {
+          const start = Date.now();
+          try {
+            const bot = new Telegraf(botToken);
+            await bot.telegram.sendMessage(chatId, telegramText, { parse_mode: 'HTML' });
+            jobLogger.info({ chatId }, 'Export URL delivered via Telegram');
+            await logMessage({
+              userId,
+              channel: 'telegram',
+              messageType: 'data_export',
+              content: telegramText,
+              status: 'sent',
+              deliveryMs: Date.now() - start,
+              jobId,
+            });
+          } catch (err) {
+            jobLogger.error(
+              { chatId, error: err instanceof Error ? err.message : String(err) },
+              'Telegram export delivery failed',
+            );
+            await logMessage({
+              userId,
+              channel: 'telegram',
+              messageType: 'data_export',
+              content: telegramText,
+              status: 'failed',
+              deliveryMs: Date.now() - start,
+              errorMessage: err instanceof Error ? err.message : String(err),
+              jobId,
+            });
+          }
+        })(),
+      );
+    } else {
+      jobLogger.warn('TELEGRAM_BOT_TOKEN not set, skipping Telegram export delivery');
+    }
+  }
+
+  if (pushTokens.length > 0) {
+    deliveries.push(
+      (async () => {
+        const start = Date.now();
+        try {
+          await sendExpoPush(pushTokens, pushTitle, pushBody, {
+            type: 'data_export',
+            url: presignedUrl,
+          });
+          jobLogger.info({ tokenCount: pushTokens.length }, 'Export URL delivered via push');
+          await logMessage({
+            userId,
+            channel: 'push',
+            messageType: 'data_export',
+            content: pushBody,
+            status: 'sent',
+            deliveryMs: Date.now() - start,
+            jobId,
+          });
+        } catch (err) {
+          jobLogger.error(
+            { error: err instanceof Error ? err.message : String(err) },
+            'Push export delivery failed',
+          );
+          await logMessage({
+            userId,
+            channel: 'push',
+            messageType: 'data_export',
+            content: pushBody,
+            status: 'failed',
+            deliveryMs: Date.now() - start,
+            errorMessage: err instanceof Error ? err.message : String(err),
+            jobId,
+          });
+        }
+      })(),
+    );
+  }
+
+  if (deliveries.length === 0) {
+    jobLogger.info('No delivery channels available for export notification');
+    return;
+  }
+
+  await Promise.allSettled(deliveries);
+}
+
 // ── Export processor ──────────────────────────────────────────────────────────
 
-async function processExport(pool: Pool, requestId: string, userId: string): Promise<void> {
+async function processExport(
+  pool: Pool,
+  requestId: string,
+  userId: string,
+  jobId: string | undefined,
+): Promise<void> {
   const jobLogger = logger.child({ processor: 'privacy_export', requestId, userId });
 
   // Mark as processing
@@ -204,7 +353,8 @@ async function processExport(pool: Pool, requestId: string, userId: string): Pro
     [requestId, presignedUrl],
   );
 
-  jobLogger.info('Data export completed');
+  jobLogger.info('Data export completed, delivering URL to user');
+  await deliverExportUrl(pool, userId, presignedUrl, jobId, jobLogger);
 }
 
 // ── Deletion processor ────────────────────────────────────────────────────────
@@ -329,7 +479,7 @@ export async function processPrivacyJob(job: Job<PrivacyJobData>): Promise<void>
 
   try {
     if (requestType === 'export') {
-      await processExport(pool, requestId, userId);
+      await processExport(pool, requestId, userId, job.id ? String(job.id) : undefined);
     } else if (requestType === 'deletion') {
       await processDeletion(pool, requestId, userId);
     } else {
