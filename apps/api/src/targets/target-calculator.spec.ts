@@ -1,4 +1,76 @@
-import { calculateTargets, CalcInput } from './target-calculator';
+import { calculateTargets, calculateBMR, CalcInput } from './target-calculator';
+
+/**
+ * Mifflin-St Jeor published reference values.
+ * Formula: men = 10w + 6.25h - 5a + 5 ; women = 10w + 6.25h - 5a - 161
+ * Sources: Mifflin MD et al., JADA 1990; Frankenfield et al., JADA 2005.
+ */
+describe('calculateBMR — Mifflin-St Jeor exact values', () => {
+  const cases: Array<{
+    label: string;
+    gender: string;
+    weightKg: number;
+    heightCm: number;
+    age: number;
+    expectedBMR: number;
+  }> = [
+    // Male: 10*70 + 6.25*175 - 5*30 + 5 = 700 + 1093.75 - 150 + 5 = 1648.75
+    {
+      label: 'male 70 kg / 175 cm / 30 y',
+      gender: 'male',
+      weightKg: 70,
+      heightCm: 175,
+      age: 30,
+      expectedBMR: 1648.75,
+    },
+    // Female: 10*60 + 6.25*165 - 5*30 - 161 = 600 + 1031.25 - 150 - 161 = 1320.25
+    {
+      label: 'female 60 kg / 165 cm / 30 y',
+      gender: 'female',
+      weightKg: 60,
+      heightCm: 165,
+      age: 30,
+      expectedBMR: 1320.25,
+    },
+    // Male heavy/tall: 10*100 + 6.25*190 - 5*25 + 5 = 1000 + 1187.5 - 125 + 5 = 2067.5
+    {
+      label: 'male 100 kg / 190 cm / 25 y',
+      gender: 'male',
+      weightKg: 100,
+      heightCm: 190,
+      age: 25,
+      expectedBMR: 2067.5,
+    },
+    // Female older: 10*55 + 6.25*158 - 5*50 - 161 = 550 + 987.5 - 250 - 161 = 1126.5
+    {
+      label: 'female 55 kg / 158 cm / 50 y',
+      gender: 'female',
+      weightKg: 55,
+      heightCm: 158,
+      age: 50,
+      expectedBMR: 1126.5,
+    },
+    // Other (average of male+female for same params):
+    // male: 10*70 + 6.25*170 - 5*35 + 5 = 700 + 1062.5 - 175 + 5 = 1592.5
+    // female: 10*70 + 6.25*170 - 5*35 - 161 = 700 + 1062.5 - 175 - 161 = 1426.5
+    // other: (1592.5 + 1426.5) / 2 = 1509.5
+    {
+      label: 'other 70 kg / 170 cm / 35 y (avg)',
+      gender: 'other',
+      weightKg: 70,
+      heightCm: 170,
+      age: 35,
+      expectedBMR: 1509.5,
+    },
+  ];
+
+  it.each(cases)(
+    '$label → BMR = $expectedBMR',
+    ({ gender, weightKg, heightCm, age, expectedBMR }) => {
+      expect(calculateBMR(gender, weightKg, heightCm, age)).toBe(expectedBMR);
+    },
+  );
+});
 
 describe('calculateTargets', () => {
   const baseInput: CalcInput = {

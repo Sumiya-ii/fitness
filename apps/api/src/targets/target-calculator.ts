@@ -29,8 +29,9 @@ const ACTIVITY_MULTIPLIERS: Record<string, number> = {
 
 /**
  * Mifflin-St Jeor BMR equation (widely accepted for calorie estimation).
+ * Exported for unit testing.
  */
-function calculateBMR(
+export function calculateBMR(
   gender: string,
   weightKg: number,
   heightCm: number,
