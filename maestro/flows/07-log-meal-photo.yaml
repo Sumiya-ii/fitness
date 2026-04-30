@@ -1,0 +1,52 @@
+---
+# Flow 07: Log a meal via photo (GPT-4 Vision)
+# TODO: This is a scaffold. Requires device camera access and a pre-seeded
+#       test photo in the camera roll.
+#
+# Opens the Log tab, taps the camera icon, selects a photo from the library,
+# waits for the AI analysis result, confirms the suggested items, and verifies
+# the meal appears in today's log.
+#
+# Prerequisites:
+#   - User authenticated and onboarded.
+#   - At least one photo in the device camera roll.
+#   - OPENAI_API_KEY set in API environment (or staging API configured).
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+- extendedWaitUntil:
+    notVisible: "Hang tight..."
+    timeout: 10000
+
+# Navigate to the Log tab
+- tapOn:
+    id: "tab-Log"
+
+# TODO: Tap the photo/camera log button
+# - tapOn: "Photo"  # or the camera icon testID
+
+# TODO: Grant photo library permission if prompted
+# - runFlow:
+#     when:
+#       visible: "Allow Access"
+#     commands:
+#       - tapOn: "Allow Access to All Photos"
+
+# TODO: Select a photo from library
+# - tapOn: "Choose from Library"
+# - tapOn:
+#     index: 0  # first photo in roll
+
+# TODO: Wait for AI analysis (may take up to 20 s)
+# - extendedWaitUntil:
+#     visible: "Add to Log"
+#     timeout: 25000
+
+# TODO: Confirm the suggested meal items and save
+# - tapOn: "Add to Log"
+
+# TODO: Assert meal appears in today's dashboard summary
+# - assertVisible: "kcal"

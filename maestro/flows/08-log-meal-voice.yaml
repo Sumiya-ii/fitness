@@ -1,0 +1,55 @@
+---
+# Flow 08: Log a meal via voice (STT → worker pipeline)
+# TODO: This is a scaffold. Voice flows are hard to automate with Maestro because
+#       they require microphone input. Use a pre-recorded audio file injection
+#       or mock the STT layer in a dev build.
+#
+# Taps the microphone icon in the Log tab, speaks / injects audio,
+# waits for the voice draft to be processed by the worker,
+# confirms the parsed items, and verifies the meal log appears.
+#
+# Prerequisites:
+#   - User authenticated and onboarded.
+#   - Microphone permission granted.
+#   - Worker running and connected to Redis/DB.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+- extendedWaitUntil:
+    notVisible: "Hang tight..."
+    timeout: 10000
+
+# Navigate to the Log tab
+- tapOn:
+    id: "tab-Log"
+
+# TODO: Tap the voice/microphone log button
+# - tapOn: "Voice"  # or microphone icon testID
+
+# TODO: Grant microphone permission if prompted
+# - runFlow:
+#     when:
+#       visible: "Allow"
+#     commands:
+#       - tapOn: "Allow"
+
+# TODO: Start recording (tap record button), wait, stop recording
+# - tapOn:
+#     id: "voice-record-btn"
+# - wait: 3000   # hold for 3 s of silence / injected audio
+# - tapOn:
+#     id: "voice-stop-btn"
+
+# TODO: Wait for worker to process the voice draft (up to 30 s)
+# - extendedWaitUntil:
+#     visible: "Review"
+#     timeout: 35000
+
+# TODO: Confirm the parsed meal items
+# - tapOn: "Add to Log"
+
+# TODO: Assert meal appears in dashboard
+# - assertVisible: "kcal"

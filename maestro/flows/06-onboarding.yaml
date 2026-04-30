@@ -1,0 +1,44 @@
+---
+# Flow 06: Onboarding golden path
+# TODO: This is a scaffold. Complete once the test device has a freshly-wiped account.
+#
+# Walks through the full 16-screen onboarding flow from the Welcome screen
+# to the completion screen, verifying each step advances and that targets
+# are written on finish.
+#
+# Prerequisites: user is unauthenticated (fresh install or signed-out state).
+# Run on a device with EXPO_PUBLIC_ENV=development so API calls hit staging.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+- extendedWaitUntil:
+    notVisible: "Hang tight..."
+    timeout: 10000
+
+# Must land on the Welcome screen for this flow to proceed
+- assertVisible: "Let's Go"
+
+# TODO: Sign in with a dedicated E2E test account before proceeding.
+# The onboarding only shows for users who have no profile yet.
+
+# Step 1 — tap through Welcome screen
+- tapOn: "Let's Go"
+
+# TODO: Verify each onboarding screen appears in order and is completable:
+#   - Gender selection
+#   - Birthdate
+#   - Height
+#   - Weight
+#   - Goals
+#   - Activity level
+#   - Diet preference
+#   - Targets summary
+# Each step: assertVisible <screen title>, fill input or tap option, tapOn "Next" / "Continue".
+
+# Final assertion — onboarding should land on the Home tab
+# TODO: uncomment when flow is filled in
+# - assertVisible: "Home"
+# - assertVisible: "Log"

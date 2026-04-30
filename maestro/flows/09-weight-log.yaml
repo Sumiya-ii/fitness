@@ -1,0 +1,40 @@
+---
+# Flow 09: Log weight and verify it appears on the Progress screen
+# TODO: This is a scaffold. Complete once testIDs are confirmed on device.
+#
+# Opens the Progress tab, taps the weight entry button, enters a weight value,
+# saves, and asserts the new entry appears in the weight chart or list.
+#
+# Prerequisites:
+#   - User authenticated and onboarded.
+
+appId: com.coach.mobile
+
+---
+- launchApp
+
+- extendedWaitUntil:
+    notVisible: "Hang tight..."
+    timeout: 10000
+
+# Navigate to the Progress tab
+- tapOn:
+    id: "tab-Progress"
+
+# TODO: Verify the Progress screen is visible
+# - assertVisible: "Weight"
+
+# TODO: Tap the add-weight button
+# - tapOn:
+#     id: "add-weight-btn"
+
+# TODO: Enter a weight value (kg)
+# - tapOn:
+#     id: "weight-input"
+# - typeText: "75"
+
+# TODO: Save the entry
+# - tapOn: "Save"
+
+# TODO: Assert the new entry appears in the weight log / chart
+# - assertVisible: "75"
