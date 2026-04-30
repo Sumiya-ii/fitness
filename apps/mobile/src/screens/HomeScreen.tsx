@@ -182,7 +182,7 @@ function MacroCard({
         </Text>
       )}
       <Text className="text-xs text-text-tertiary font-sans-medium mb-3" numberOfLines={1}>
-        {label} {showEaten ? t('dashboard.eaten') : 'left'}
+        {label} {showEaten ? t('dashboard.eaten') : t('dashboard.remaining').toLowerCase()}
       </Text>
       <ProgressArc progress={progress} size={52} strokeWidth={5} color={color}>
         <Text style={{ fontSize: 18 }}>{icon}</Text>
@@ -300,7 +300,7 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
           className="flex-row justify-between pt-2 mt-1"
           style={{ borderTopWidth: 1, borderTopColor: c.border }}
         >
-          <Text className="text-xs text-text-tertiary">Total</Text>
+          <Text className="text-xs text-text-tertiary">{t('logging.total')}</Text>
           <Text className="text-xs font-sans-semibold text-text">{totalCal} kcal</Text>
         </View>
       )}
