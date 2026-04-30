@@ -846,6 +846,7 @@ export const en = {
     saveFailed: 'Failed to save targets. Please try again.',
     loadFailed: 'Failed to load current target.',
     editTargetsButton: 'Edit Targets',
+    invalidWeight: 'Please enter a valid weight between 30 and 500 kg.',
   },
 } as const;
 

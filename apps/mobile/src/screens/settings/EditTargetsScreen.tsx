@@ -184,7 +184,7 @@ export function EditTargetsScreen() {
   const handleRecalculate = useCallback(async () => {
     const w = parseFloat(weightKgInput.replace(',', '.'));
     if (isNaN(w) || w < 30 || w > 500) {
-      Alert.alert(t('common.error'), t('editTargets.currentWeightPlaceholder'));
+      Alert.alert(t('common.error'), t('editTargets.invalidWeight'));
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
