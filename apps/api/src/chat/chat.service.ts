@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
 import { DashboardService } from '../dashboard/dashboard.service';
@@ -25,6 +25,7 @@ Keep responses concise and practical. You can suggest specific foods to eat, hel
 
 @Injectable()
 export class ChatService implements OnModuleDestroy {
+  private readonly logger = new Logger(ChatService.name);
   private readonly openai: OpenAI | null = null;
   private readonly redis: Redis;
 
@@ -123,7 +124,7 @@ export class ChatService implements OnModuleDestroy {
       { role: 'user', content: userMessage },
     ];
 
-    console.log('[Chat] Sending to OpenAI, history length:', history.length);
+    this.logger.debug(`Sending message to OpenAI, history length: ${history.length}`);
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o',
       messages,

@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { SubscriptionGuard } from '../subscriptions';
 import { PhotosService } from './photos.service';
@@ -22,6 +23,8 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
+  // Tighter limit for the expensive GPT-4 Vision call: 20 requests per minute per user
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('photo', {
