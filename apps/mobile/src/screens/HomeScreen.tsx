@@ -334,9 +334,10 @@ function StreakCalendarModal({
     label: string;
     days: { date: string; logged: boolean; dayNum: number }[];
   }[] = [];
+  const monthsShort = t('dashboard.monthsShort') as unknown as string[];
   for (const day of calendar) {
     const d = new Date(day.date + 'T00:00:00');
-    const label = `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`;
+    const label = `${monthsShort[d.getMonth()] ?? d.getMonth() + 1} ${d.getFullYear()}`;
     let group = monthGroups.find((g) => g.label === label);
     if (!group) {
       group = { label, days: [] };
@@ -910,7 +911,7 @@ export function HomeScreen() {
                           marginBottom: 6,
                         }}
                       >
-                        {WEEKDAY_LABELS[date.getDay()]}
+                        {(t('dashboard.weekdays') as unknown as string[])[date.getDay()]}
                       </Text>
                       <View
                         style={{
