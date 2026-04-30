@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { Prisma } from '@prisma/client';
 import type {
   ModerationQueryDto,
   RejectDto,
+  ApproveFoodSuggestionDto,
   MessageQueryDto,
   MessageStatsQueryDto,
 } from './admin.dto';
@@ -47,7 +48,7 @@ export class AdminService {
     };
   }
 
-  async approve(actorId: string, queueId: string) {
+  async approve(actorId: string, queueId: string, dto?: ApproveFoodSuggestionDto) {
     const item = await this.prisma.moderationQueue.findUnique({
       where: { id: queueId },
     });
@@ -59,6 +60,15 @@ export class AdminService {
     if (item.status !== 'pending') {
       throw new NotFoundException('Item is not pending');
     }
+
+    // food_suggestion requires nutrition values from admin
+    if (item.entityType === 'food_suggestion' && !dto) {
+      throw new UnprocessableEntityException(
+        'Approving a food suggestion requires nutrition values (normalizedName, servings, nutrients).',
+      );
+    }
+
+    let createdFoodId: string | undefined;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.moderationQueue.update({
@@ -81,6 +91,49 @@ export class AdminService {
         });
       }
 
+      if (item.entityType === 'food_suggestion' && dto) {
+        // Parse the original suggestion payload to get locale
+        let locale = 'mn';
+        try {
+          const payload = JSON.parse(item.reviewNote ?? '{}') as { locale?: string };
+          if (payload.locale) locale = payload.locale;
+        } catch {
+          // default to 'mn' if payload is malformed
+        }
+
+        const food = await tx.food.create({
+          data: {
+            normalizedName: dto.normalizedName,
+            locale,
+            sourceType: 'user',
+            status: 'approved',
+            verifiedBy: actorId,
+            verifiedAt: new Date(),
+            servings: {
+              create: dto.servings.map((s) => ({
+                label: s.label,
+                labelMn: s.labelMn,
+                gramsPerUnit: s.gramsPerUnit,
+                isDefault: s.isDefault ?? false,
+              })),
+            },
+            nutrients: {
+              create: {
+                caloriesPer100g: dto.nutrients.caloriesPer100g,
+                proteinPer100g: dto.nutrients.proteinPer100g,
+                carbsPer100g: dto.nutrients.carbsPer100g,
+                fatPer100g: dto.nutrients.fatPer100g,
+                fiberPer100g: dto.nutrients.fiberPer100g,
+                sugarPer100g: dto.nutrients.sugarPer100g,
+                sodiumPer100g: dto.nutrients.sodiumPer100g,
+                saturatedFatPer100g: dto.nutrients.saturatedFatPer100g,
+              },
+            },
+          },
+        });
+        createdFoodId = food.id;
+      }
+
       await tx.auditLog.create({
         data: {
           actorId,
@@ -88,12 +141,12 @@ export class AdminService {
           action: 'moderation.approve',
           entityType: item.entityType,
           entityId: item.entityId,
-          changes: { queueId, previousStatus: item.status },
+          changes: { queueId, previousStatus: item.status, createdFoodId },
         },
       });
     });
 
-    return { success: true };
+    return { success: true, ...(createdFoodId && { foodId: createdFoodId }) };
   }
 
   async reject(actorId: string, queueId: string, dto?: RejectDto) {

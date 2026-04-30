@@ -13,7 +13,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FoodsService } from './foods.service';
-import { createFoodSchema, updateFoodSchema, foodQuerySchema } from './foods.dto';
+import {
+  createFoodSchema,
+  updateFoodSchema,
+  foodQuerySchema,
+  suggestFoodSchema,
+} from './foods.dto';
 import { AdminGuard } from '../admin/admin.guard';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 
@@ -29,6 +34,15 @@ export class FoodsController {
       throw new BadRequestException(parsed.error.issues);
     }
     return { data: await this.foodsService.create(parsed.data) };
+  }
+
+  @Post('suggest')
+  async suggest(@CurrentUser() user: AuthenticatedUser, @Body() body: unknown) {
+    const parsed = suggestFoodSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues);
+    }
+    return { data: await this.foodsService.suggest(user.id, parsed.data) };
   }
 
   @Get()

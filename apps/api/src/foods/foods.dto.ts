@@ -53,6 +53,12 @@ export const foodQuerySchema = z.object({
   search: z.string().optional(),
 });
 
+export const suggestFoodSchema = z.object({
+  name: z.string().min(1).max(500),
+  locale: z.enum(['mn', 'en']),
+});
+
 export type CreateFoodDto = z.infer<typeof createFoodSchema>;
 export type UpdateFoodDto = z.infer<typeof updateFoodSchema>;
 export type FoodQueryDto = z.infer<typeof foodQuerySchema>;
+export type SuggestFoodDto = z.infer<typeof suggestFoodSchema>;

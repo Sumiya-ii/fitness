@@ -1,11 +1,23 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, HttpException } from '@nestjs/common';
 import { FoodsService } from './foods.service';
 import { PrismaService } from '../prisma';
+import { ConfigService } from '../config';
+
+// Mock ioredis so the constructor doesn't open a real connection
+const mockRedis = {
+  get: jest.fn(),
+  incr: jest.fn(),
+  expire: jest.fn(),
+  disconnect: jest.fn(),
+  on: jest.fn(),
+};
+jest.mock('ioredis', () => jest.fn().mockImplementation(() => mockRedis));
 
 describe('FoodsService', () => {
   let service: FoodsService;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let prisma: any;
+  let config: Partial<ConfigService>;
 
   const mockFoodRaw = {
     id: 'food-uuid',
@@ -42,6 +54,7 @@ describe('FoodsService', () => {
   };
 
   beforeEach(() => {
+    jest.clearAllMocks();
     prisma = {
       food: {
         create: jest.fn().mockResolvedValue(mockFoodRaw),
@@ -55,9 +68,19 @@ describe('FoodsService', () => {
       foodServing: { deleteMany: jest.fn(), createMany: jest.fn() },
       foodLocalization: { deleteMany: jest.fn(), createMany: jest.fn() },
       foodAlias: { deleteMany: jest.fn(), createMany: jest.fn() },
+      moderationQueue: {
+        create: jest.fn().mockResolvedValue({ id: 'queue-uuid' }),
+      },
       $queryRaw: jest.fn().mockResolvedValue([{ id: 'food-uuid' }]),
     };
-    service = new FoodsService(prisma as unknown as PrismaService);
+    config = { get: jest.fn().mockReturnValue('redis://localhost:6379') };
+
+    // Default: under the daily cap
+    mockRedis.get.mockResolvedValue(null);
+    mockRedis.incr.mockResolvedValue(1);
+    mockRedis.expire.mockResolvedValue(1);
+
+    service = new FoodsService(prisma as unknown as PrismaService, config as ConfigService);
   });
 
   describe('create', () => {
@@ -101,6 +124,43 @@ describe('FoodsService', () => {
       const createCall = prisma.food.create.mock.calls[0][0];
       expect(createCall.data.aliases).toBeDefined();
       expect(createCall.data.localizations).toBeDefined();
+    });
+  });
+
+  describe('suggest', () => {
+    it('should insert into moderation_queue and return suggestionId', async () => {
+      const result = await service.suggest('user-uuid', { name: 'Бууз', locale: 'mn' });
+      expect(result.suggestionId).toBe('queue-uuid');
+      expect(prisma.moderationQueue.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            entityType: 'food_suggestion',
+            submittedBy: 'user-uuid',
+            status: 'pending',
+          }),
+        }),
+      );
+    });
+
+    it('should set Redis TTL on first suggestion of the day', async () => {
+      mockRedis.incr.mockResolvedValue(1); // first write today
+      await service.suggest('user-uuid', { name: 'Бууз', locale: 'mn' });
+      expect(mockRedis.expire).toHaveBeenCalled();
+    });
+
+    it('should not set Redis TTL on subsequent suggestions', async () => {
+      mockRedis.get.mockResolvedValue('2'); // already has 2 today
+      mockRedis.incr.mockResolvedValue(3);
+      await service.suggest('user-uuid', { name: 'Хуушуур', locale: 'mn' });
+      expect(mockRedis.expire).not.toHaveBeenCalled();
+    });
+
+    it('should throw TooManyRequestsException when daily cap is reached', async () => {
+      mockRedis.get.mockResolvedValue('5'); // at cap
+      await expect(service.suggest('user-uuid', { name: 'Тавгтай', locale: 'mn' })).rejects.toThrow(
+        HttpException,
+      );
+      expect(prisma.moderationQueue.create).not.toHaveBeenCalled();
     });
   });
 

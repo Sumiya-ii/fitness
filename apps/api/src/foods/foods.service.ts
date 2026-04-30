@@ -1,11 +1,80 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  HttpException,
+  HttpStatus,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
+import Redis from 'ioredis';
 import { PrismaService } from '../prisma';
-import { CreateFoodDto, UpdateFoodDto, FoodQueryDto } from './foods.dto';
+import { ConfigService } from '../config';
+import { CreateFoodDto, UpdateFoodDto, FoodQueryDto, SuggestFoodDto } from './foods.dto';
+
+const SUGGEST_DAILY_CAP = 5;
+
+function suggestQuotaKey(userId: string): string {
+  const today = new Date().toISOString().split('T')[0]!;
+  return `food_suggest:${userId}:${today}`;
+}
+
+function secondsUntilMidnightUTC(): number {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setUTCHours(24, 0, 0, 0);
+  return Math.ceil((midnight.getTime() - now.getTime()) / 1000);
+}
 
 @Injectable()
-export class FoodsService {
-  constructor(private readonly prisma: PrismaService) {}
+export class FoodsService implements OnModuleDestroy {
+  private readonly redis: Redis;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
+    this.redis = new Redis(this.config.get('REDIS_URL'));
+  }
+
+  onModuleDestroy() {
+    this.redis.disconnect();
+  }
+
+  async suggest(userId: string, dto: SuggestFoodDto) {
+    const key = suggestQuotaKey(userId);
+    const raw = await this.redis.get(key);
+    const count = raw ? parseInt(raw, 10) : 0;
+
+    if (count >= SUGGEST_DAILY_CAP) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          message: `Өдрийн хоолны саналын хязгаарт хүрлээ (${SUGGEST_DAILY_CAP}). / Daily food suggestion limit reached (${SUGGEST_DAILY_CAP}).`,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const placeholderId = randomUUID();
+    const item = await this.prisma.moderationQueue.create({
+      data: {
+        entityType: 'food_suggestion',
+        entityId: placeholderId,
+        submittedBy: userId,
+        status: 'pending',
+        reviewNote: JSON.stringify({ name: dto.name, locale: dto.locale, userId }),
+      },
+    });
+
+    // Increment counter; set TTL on first write so it expires at midnight UTC
+    const newCount = await this.redis.incr(key);
+    if (newCount === 1) {
+      await this.redis.expire(key, secondsUntilMidnightUTC());
+    }
+
+    return { suggestionId: item.id };
+  }
 
   async create(dto: CreateFoodDto) {
     const food = await this.prisma.food.create({

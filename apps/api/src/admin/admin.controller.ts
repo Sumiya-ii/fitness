@@ -13,6 +13,7 @@ import { AdminService } from './admin.service';
 import {
   moderationQuerySchema,
   rejectSchema,
+  approveFoodSuggestionSchema,
   messageQuerySchema,
   messageStatsQuerySchema,
 } from './admin.dto';
@@ -33,8 +34,22 @@ export class AdminController {
   }
 
   @Post('moderation/:id/approve')
-  async approve(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    return this.adminService.approve(user.id, id);
+  async approve(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    // body is optional — only required for food_suggestion kind
+    const parsed =
+      body && Object.keys(body as object).length > 0
+        ? approveFoodSuggestionSchema.safeParse(body)
+        : { success: true as const, data: undefined };
+    if (!parsed.success) {
+      throw new BadRequestException(
+        (parsed as { success: false; error: { issues: unknown } }).error.issues,
+      );
+    }
+    return this.adminService.approve(user.id, id, parsed.data);
   }
 
   @Post('moderation/:id/reject')

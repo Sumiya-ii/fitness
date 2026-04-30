@@ -10,8 +10,33 @@ export const rejectSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
+export const approveFoodSuggestionSchema = z.object({
+  normalizedName: z.string().min(1).max(500),
+  servings: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(100),
+        labelMn: z.string().max(100).optional(),
+        gramsPerUnit: z.number().positive(),
+        isDefault: z.boolean().optional(),
+      }),
+    )
+    .min(1),
+  nutrients: z.object({
+    caloriesPer100g: z.number().min(0).max(1000),
+    proteinPer100g: z.number().min(0).max(100),
+    carbsPer100g: z.number().min(0).max(100),
+    fatPer100g: z.number().min(0).max(100),
+    fiberPer100g: z.number().min(0).max(100).optional(),
+    sugarPer100g: z.number().min(0).max(100).optional(),
+    sodiumPer100g: z.number().min(0).max(10000).optional(),
+    saturatedFatPer100g: z.number().min(0).max(100).optional(),
+  }),
+});
+
 export type ModerationQueryDto = z.infer<typeof moderationQuerySchema>;
 export type RejectDto = z.infer<typeof rejectSchema>;
+export type ApproveFoodSuggestionDto = z.infer<typeof approveFoodSuggestionSchema>;
 
 // ── Outbound message log ─────────────────────────────────────────
 
