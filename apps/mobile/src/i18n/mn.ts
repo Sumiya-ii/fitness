@@ -710,7 +710,7 @@ export const mn = {
     itemCount_one: '{{count}} хоол',
     itemCount_other: '{{count}} хоол',
     uploadTimeout: 'Илгээх хугацаа дууслаа. Холболтоо шалгаад дахин оролдоорой.',
-    stillProcessing: 'Шинжилж байна — бэлэн болмогц мэдэгдэнэ.',
+    stillProcessing: 'Урт хугацаа болж байна — буцаж дахин оролдож болно.',
     openSettings: 'Тохиргоо нээх',
   },
   quickAdd: {

@@ -728,7 +728,7 @@ export const en = {
     itemCount_one: '{{count}} item',
     itemCount_other: '{{count}} items',
     uploadTimeout: 'Upload timed out. Check your connection and try again.',
-    stillProcessing: "Still working on it — we'll notify you when it's ready.",
+    stillProcessing: 'Taking longer than usual — you can go back and try again.',
     openSettings: 'Open Settings',
   },
   quickAdd: {
