@@ -159,7 +159,20 @@ export async function signInWithApple(): Promise<FirebaseSession> {
     if (appleError?.code === 'ERR_REQUEST_CANCELED') {
       throw new Error('CANCELLED');
     }
+    // Apple credential was revoked in device Settings — signal caller to sign out
+    if (
+      appleError?.code === 'ERR_REQUEST_NOT_HANDLED' ||
+      appleError?.code === 'ERR_INVALID_RESPONSE'
+    ) {
+      throw new Error('APPLE_REVOKED');
+    }
     const firebaseError = error as FirebaseError;
+    if (
+      firebaseError?.code === 'auth/user-token-expired' ||
+      firebaseError?.code === 'auth/invalid-credential'
+    ) {
+      throw new Error('APPLE_REVOKED');
+    }
     console.error(
       '[AppleSignIn] error code:',
       firebaseError?.code,

@@ -14,6 +14,7 @@ import { Throttle } from '@nestjs/throttler';
 import { CurrentUser, AuthenticatedUser } from '../auth';
 import { SubscriptionGuard } from '../subscriptions';
 import { PhotosService } from './photos.service';
+import { PhotoDailyQuotaGuard } from './photo-daily-quota.guard';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -23,8 +24,10 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
-  // Tighter limit for the expensive GPT-4 Vision call: 20 requests per minute per user
+  // Tighter limit for the expensive GPT-4 Vision call: 20 requests per minute per user.
+  // PhotoDailyQuotaGuard enforces a per-user daily hard cap (50 free / 200 pro).
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @UseGuards(PhotoDailyQuotaGuard)
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('photo', {

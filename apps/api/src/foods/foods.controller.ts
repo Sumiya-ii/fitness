@@ -15,6 +15,7 @@ import {
 import { FoodsService } from './foods.service';
 import { createFoodSchema, updateFoodSchema, foodQuerySchema } from './foods.dto';
 import { AdminGuard } from '../admin/admin.guard';
+import { CurrentUser, AuthenticatedUser } from '../auth';
 
 @Controller('foods')
 export class FoodsController {
@@ -31,12 +32,12 @@ export class FoodsController {
   }
 
   @Get()
-  async findMany(@Query() query: unknown) {
+  async findMany(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown) {
     const parsed = foodQuerySchema.safeParse(query);
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
     }
-    return await this.foodsService.findMany(parsed.data);
+    return await this.foodsService.findMany(parsed.data, user.id);
   }
 
   @Get(':id')

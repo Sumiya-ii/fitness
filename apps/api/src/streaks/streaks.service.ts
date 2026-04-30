@@ -22,16 +22,24 @@ export interface StreakData {
   calendar: StreakCalendarDay[];
 }
 
+const DEFAULT_TZ = 'Asia/Ulaanbaatar';
+
 @Injectable()
 export class StreaksService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getStreaks(userId: string, tz?: string): Promise<StreakData> {
+    // Timezone resolution priority:
+    //  1. Caller-supplied ?tz query param (e.g. forwarded from mobile device)
+    //  2. User's profiles.timezone (stored at onboarding, default 'Asia/Ulaanbaatar')
+    //  3. Hard fallback: 'Asia/Ulaanbaatar'
+    const resolvedTz = await this.resolveTimezone(userId, tz);
+
     // Fetch every distinct calendar date the user has logged a meal, converted
     // to the user's local timezone before extracting the date. Cast to text so
     // the driver always returns a plain 'YYYY-MM-DD' string.
     const rows = await this.prisma.$queryRaw<{ log_date: string }[]>`
-      SELECT DISTINCT DATE(logged_at AT TIME ZONE 'UTC' AT TIME ZONE ${tz ?? 'UTC'})::text AS log_date
+      SELECT DISTINCT DATE(logged_at AT TIME ZONE 'UTC' AT TIME ZONE ${resolvedTz})::text AS log_date
       FROM "meal_logs"
       WHERE "user_id"::text = ${userId}
       ORDER BY log_date
@@ -39,7 +47,7 @@ export class StreaksService {
 
     const loggedSet = new Set(rows.map((r) => r.log_date));
 
-    const todayKey = toDateKeyInTZ(new Date(), tz);
+    const todayKey = toDateKeyInTZ(new Date(), resolvedTz);
     const todayLogged = loggedSet.has(todayKey);
 
     // ── Current streak ───────────────────────────────────────────────────────
@@ -102,6 +110,47 @@ export class StreaksService {
       }
     }
     return longest;
+  }
+
+  /**
+   * Resolve the timezone to use for date calculations.
+   *
+   * Priority:
+   *   1. `requestTz` — caller-supplied (e.g. `?tz=` query param or `Time-Zone` header)
+   *   2. `profiles.timezone` — stored on the user's profile (default 'Asia/Ulaanbaatar')
+   *   3. DEFAULT_TZ ('Asia/Ulaanbaatar')
+   *
+   * Uses `Intl.DateTimeFormat` for validation — no new dependencies required.
+   */
+  private async resolveTimezone(userId: string, requestTz?: string): Promise<string> {
+    if (requestTz && this.isValidTimezone(requestTz)) {
+      return requestTz;
+    }
+
+    const profile = await this.prisma.profile.findUnique({
+      where: { userId },
+      select: { timezone: true },
+    });
+
+    const profileTz = profile?.timezone;
+    if (profileTz && this.isValidTimezone(profileTz)) {
+      return profileTz;
+    }
+
+    return DEFAULT_TZ;
+  }
+
+  /**
+   * Validate an IANA timezone string using Intl.DateTimeFormat.
+   * Returns false for unknown/invalid zones without throwing.
+   */
+  private isValidTimezone(tz: string): boolean {
+    try {
+      Intl.DateTimeFormat(undefined, { timeZone: tz });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**

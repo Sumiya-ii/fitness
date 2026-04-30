@@ -171,6 +171,20 @@ export interface LogTemplatePayload {
   items: Array<{ foodId: string; servingId: string; quantity: number }>;
 }
 
+// ─── Analytics ────────────────────────────────────────────────────
+
+export interface AnalyticsEvent {
+  name: string;
+  [key: string]: unknown;
+}
+
+export const analyticsApi = {
+  trackEvent: (event: AnalyticsEvent) =>
+    api.post<{ data: unknown }>('/analytics/events', event).catch(() => {
+      // Best-effort — never throw on analytics failures
+    }),
+};
+
 export const mealsApi = {
   searchFoods: (query: string, page = 1, limit = 20) =>
     api.get<FoodsResponse>(

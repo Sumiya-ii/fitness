@@ -117,14 +117,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithApple: async () => {
-    const session = await signInWithApple();
-    await api.setToken(session.token);
-    ensureTokenRefresh(get, set);
-    set({
-      token: session.token,
-      isAuthenticated: true,
-      user: { id: session.user.id, email: session.user.email },
-    });
+    try {
+      const session = await signInWithApple();
+      await api.setToken(session.token);
+      ensureTokenRefresh(get, set);
+      set({
+        token: session.token,
+        isAuthenticated: true,
+        user: { id: session.user.id, email: session.user.email },
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message === 'APPLE_REVOKED') {
+        // Sign out cleanly and re-throw a typed error the UI can display
+        _tokenRefreshUnsub?.();
+        _tokenRefreshUnsub = null;
+        await Promise.allSettled([signOutFirebase(), api.clearToken()]);
+        set({ token: null, user: null, isAuthenticated: false });
+        useDashboardStore.setState({ data: null, error: null });
+        useWaterStore.setState({ consumed: 0, target: 2000, isLoading: false, error: null });
+        useWeightStore.setState({ history: [], trend: null, isLoading: false, error: null });
+      }
+      throw e;
+    }
   },
 
   signOut: async () => {

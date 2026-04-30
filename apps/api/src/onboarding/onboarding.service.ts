@@ -38,16 +38,18 @@ export class OnboardingService {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    // Deactivate any existing targets before creating the new one
-    if (isReOnboarding) {
-      await this.prisma.target.updateMany({
-        where: { userId, effectiveTo: null },
-        data: { effectiveTo: today },
-      });
-    }
+    // All writes are inside a single transaction so a DB/network hiccup cannot
+    // leave the user with deactivated targets but no new target (half-state).
+    const [updatedProfile, target] = await this.prisma.$transaction(async (tx) => {
+      // Deactivate any existing targets before creating the new one.
+      if (isReOnboarding) {
+        await tx.target.updateMany({
+          where: { userId, effectiveTo: null },
+          data: { effectiveTo: today },
+        });
+      }
 
-    const [updatedProfile, target] = await this.prisma.$transaction([
-      this.prisma.profile.update({
+      const profile = await tx.profile.update({
         where: { userId },
         data: {
           gender: dto.gender,
@@ -59,8 +61,9 @@ export class OnboardingService {
           dietPreference: dto.dietPreference,
           onboardingCompletedAt: new Date(),
         },
-      }),
-      this.prisma.target.create({
+      });
+
+      const newTarget = await tx.target.create({
         data: {
           userId,
           goalType: dto.goalType,
@@ -71,8 +74,10 @@ export class OnboardingService {
           weeklyRateKg: dto.weeklyRateKg,
           effectiveFrom: today,
         },
-      }),
-    ]);
+      });
+
+      return [profile, newTarget];
+    });
 
     // Schedule first memory generation 7 days after onboarding so the worker
     // has a full week of data to summarise. The stable jobId means the Sunday

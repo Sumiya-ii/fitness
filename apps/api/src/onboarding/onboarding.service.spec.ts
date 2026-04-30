@@ -4,17 +4,27 @@ import { OnboardingService } from './onboarding.service';
 import { PrismaService } from '../prisma';
 import { CoachMemoryService } from '../coach-memory/coach-memory.service';
 
+// Build a tx-like object mirroring the real Prisma interactive transaction client.
+function makeTx() {
+  return {
+    profile: { update: jest.fn() },
+    target: { updateMany: jest.fn(), create: jest.fn() },
+  };
+}
+
+const mockTx = makeTx();
+
 const mockPrisma = {
   profile: {
     findUnique: jest.fn(),
-    update: jest.fn(),
   },
   target: {
-    create: jest.fn(),
-    updateMany: jest.fn(),
     findFirst: jest.fn(),
   },
-  $transaction: jest.fn(),
+  // Executes the callback with the mock tx immediately.
+  $transaction: jest
+    .fn()
+    .mockImplementation(async (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)),
 };
 
 const mockCoachMemory: Pick<CoachMemoryService, 'enqueueForUser'> = {
@@ -33,6 +43,27 @@ const validDto = {
   dietPreference: 'standard' as const,
 };
 
+const mockProfile = {
+  id: 'p-1',
+  gender: 'male',
+  birthDate: new Date('1995-06-15'),
+  heightCm: 175,
+  weightKg: 85,
+  goalWeightKg: 70,
+  activityLevel: 'moderately_active',
+  dietPreference: 'standard',
+};
+
+const mockTarget = {
+  id: 't-1',
+  goalType: 'lose_fat',
+  calorieTarget: 2100,
+  proteinGrams: 170,
+  carbsGrams: 200,
+  fatGrams: 60,
+  weeklyRateKg: 0.5,
+};
+
 describe('OnboardingService', () => {
   let service: OnboardingService;
 
@@ -47,6 +78,16 @@ describe('OnboardingService', () => {
 
     service = module.get<OnboardingService>(OnboardingService);
     jest.clearAllMocks();
+
+    // Default: tx writes succeed
+    mockTx.profile.update.mockResolvedValue(mockProfile);
+    mockTx.target.create.mockResolvedValue(mockTarget);
+    mockTx.target.updateMany.mockResolvedValue({ count: 0 });
+
+    // Re-wire $transaction to use fresh mockTx after clearAllMocks
+    mockPrisma.$transaction.mockImplementation(
+      async (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx),
+    );
   });
 
   describe('completeOnboarding', () => {
@@ -57,83 +98,55 @@ describe('OnboardingService', () => {
       );
     });
 
-    it('should allow re-onboarding when already completed', async () => {
-      const existingDate = new Date('2025-01-01');
-      mockPrisma.profile.findUnique.mockResolvedValue({
-        id: 'p-1',
-        userId: 'user-1',
-        onboardingCompletedAt: existingDate,
-        locale: 'mn',
-      });
-      mockPrisma.target.updateMany.mockResolvedValue({ count: 1 });
-
-      const mockProfile = {
-        id: 'p-1',
-        gender: 'male',
-        birthDate: new Date('1995-06-15'),
-        heightCm: 175,
-        weightKg: 85,
-        goalWeightKg: 70,
-        activityLevel: 'moderately_active',
-        dietPreference: 'standard',
-      };
-      const mockTarget = {
-        id: 't-2',
-        goalType: 'lose_fat',
-        calorieTarget: 2100,
-        proteinGrams: 170,
-        carbsGrams: 200,
-        fatGrams: 60,
-        weeklyRateKg: 0.5,
-      };
-
-      mockPrisma.$transaction.mockResolvedValue([mockProfile, mockTarget]);
-
-      const result = await service.completeOnboarding('user-1', validDto);
-
-      // Should deactivate old targets before creating new one
-      expect(mockPrisma.target.updateMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1', effectiveTo: null },
-        data: { effectiveTo: expect.any(Date) },
-      });
-      expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
-      expect(result.target.goalType).toBe('lose_fat');
-    });
-
-    it('should create profile and target in a transaction', async () => {
+    it('should create profile and target inside a single transaction', async () => {
       mockPrisma.profile.findUnique.mockResolvedValue({
         id: 'p-1',
         userId: 'user-1',
         onboardingCompletedAt: null,
+        locale: 'mn',
       });
-
-      const mockProfile = {
-        id: 'p-1',
-        gender: 'male',
-        birthDate: new Date('1995-06-15'),
-        heightCm: 175,
-        weightKg: 85,
-        goalWeightKg: 70,
-        activityLevel: 'moderately_active',
-        dietPreference: 'standard',
-      };
-      const mockTarget = {
-        id: 't-1',
-        goalType: 'lose_fat',
-        calorieTarget: 2100,
-        proteinGrams: 170,
-        carbsGrams: 200,
-        fatGrams: 60,
-        weeklyRateKg: 0.5,
-      };
-
-      mockPrisma.$transaction.mockResolvedValue([mockProfile, mockTarget]);
 
       const result = await service.completeOnboarding('user-1', validDto);
 
       expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.profile.update).toHaveBeenCalled();
+      expect(mockTx.target.create).toHaveBeenCalled();
       expect(result.profile.gender).toBe('male');
       expect(result.target.goalType).toBe('lose_fat');
+    });
+
+    it('should deactivate old targets inside the transaction on re-onboarding', async () => {
+      mockPrisma.profile.findUnique.mockResolvedValue({
+        id: 'p-1',
+        userId: 'user-1',
+        onboardingCompletedAt: new Date('2025-01-01'),
+        locale: 'mn',
+      });
+
+      await service.completeOnboarding('user-1', validDto);
+
+      expect(mockTx.target.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', effectiveTo: null },
+        data: { effectiveTo: expect.any(Date) },
+      });
+    });
+
+    it('rolls back entirely when target.create throws (no half-state)', async () => {
+      mockPrisma.profile.findUnique.mockResolvedValue({
+        id: 'p-1',
+        userId: 'user-1',
+        onboardingCompletedAt: null,
+        locale: 'mn',
+      });
+      mockTx.target.create.mockRejectedValue(new Error('DB error'));
+
+      // The transaction callback throws, so $transaction propagates the error.
+      // In a real DB this means the profile update is rolled back too.
+      await expect(service.completeOnboarding('user-1', validDto)).rejects.toThrow('DB error');
+
+      // profile.update was called inside the tx, but tx threw → no committed state
+      expect(mockTx.profile.update).toHaveBeenCalled();
+      expect(mockTx.target.create).toHaveBeenCalled();
     });
 
     it('should schedule a delayed memory refresh after successful onboarding', async () => {
@@ -143,27 +156,6 @@ describe('OnboardingService', () => {
         onboardingCompletedAt: null,
         locale: 'mn',
       });
-      mockPrisma.$transaction.mockResolvedValue([
-        {
-          id: 'p-1',
-          gender: 'male',
-          birthDate: new Date(),
-          heightCm: 175,
-          weightKg: 85,
-          goalWeightKg: 70,
-          activityLevel: 'moderately_active',
-          dietPreference: 'standard',
-        },
-        {
-          id: 't-1',
-          goalType: 'lose_fat',
-          calorieTarget: 2100,
-          proteinGrams: 170,
-          carbsGrams: 200,
-          fatGrams: 60,
-          weeklyRateKg: 0.5,
-        },
-      ]);
 
       await service.completeOnboarding('user-1', validDto);
 

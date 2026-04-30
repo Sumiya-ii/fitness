@@ -4,7 +4,8 @@ import { PrismaService } from '../prisma';
 
 describe('FoodsService', () => {
   let service: FoodsService;
-  let prisma: Record<string, Record<string, jest.Mock>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let prisma: any;
 
   const mockFoodRaw = {
     id: 'food-uuid',
@@ -54,6 +55,7 @@ describe('FoodsService', () => {
       foodServing: { deleteMany: jest.fn(), createMany: jest.fn() },
       foodLocalization: { deleteMany: jest.fn(), createMany: jest.fn() },
       foodAlias: { deleteMany: jest.fn(), createMany: jest.fn() },
+      $queryRaw: jest.fn().mockResolvedValue([{ id: 'food-uuid' }]),
     };
     service = new FoodsService(prisma as unknown as PrismaService);
   });
@@ -129,10 +131,29 @@ describe('FoodsService', () => {
       expect(whereArg.locale).toBe('mn');
     });
 
-    it('should search by name', async () => {
+    it('should search by name (no userId — uses findMany path)', async () => {
       await service.findMany({ page: 1, limit: 20, search: 'будаа' });
       const whereArg = prisma.food.findMany.mock.calls[0][0].where;
       expect(whereArg.OR).toBeDefined();
+    });
+
+    it('should use $queryRaw ranked path when search + userId provided', async () => {
+      const result = await service.findMany({ page: 1, limit: 20, search: 'будаа' }, 'user-uuid');
+      expect(prisma.$queryRaw).toHaveBeenCalled();
+      // findMany is called to hydrate the ranked IDs
+      expect(prisma.food.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: { in: ['food-uuid'] } } }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('returns empty result when $queryRaw returns no rows', async () => {
+      prisma.$queryRaw.mockResolvedValue([]);
+      const result = await service.findMany({ page: 1, limit: 20, search: 'xyz' }, 'user-uuid');
+      expect(result.data).toHaveLength(0);
+      expect(result.meta.total).toBe(0);
+      // Should not bother calling findMany when no IDs to hydrate
+      expect(prisma.food.findMany).not.toHaveBeenCalled();
     });
   });
 

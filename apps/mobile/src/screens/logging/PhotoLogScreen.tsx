@@ -22,13 +22,15 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Sentry from '@sentry/react-native';
 import { BackButton, Button, Card, Badge } from '../../components/ui';
 import { api } from '../../api';
-import { mealsApi } from '../../api/meals';
+import { mealsApi, analyticsApi } from '../../api/meals';
 import { useLocale } from '../../i18n';
 import { useColors } from '../../theme';
 import type { LogStackScreenProps } from '../../navigation/types';
 
 type Props = LogStackScreenProps<'PhotoLog'>;
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+type FoodSource = 'verified_db' | 'ai_estimate' | 'label' | 'user_corrected';
 
 interface ParsedFoodItem {
   name: string;
@@ -42,6 +44,18 @@ interface ParsedFoodItem {
   saturatedFat: number;
   servingGrams: number;
   confidence: number;
+  // New fields from worker — tolerate undefined (older API / draft)
+  source?: FoodSource;
+  matchedFoodId?: string;
+  flagged?: boolean;
+  flagReason?: string;
+}
+
+interface ClarificationQuestion {
+  id: string;
+  text: string;
+  type: 'count' | 'choice';
+  choices?: string[];
 }
 
 interface PhotoDraft {
@@ -57,6 +71,10 @@ interface PhotoDraft {
   totalSugar?: number;
   totalSodium?: number;
   totalSaturatedFat?: number;
+  // New fields — tolerate undefined
+  confidenceLevel?: 'high' | 'medium' | 'low';
+  requiresClarification?: boolean;
+  clarificationQuestions?: ClarificationQuestion[];
 }
 
 type NutrientField = keyof Pick<
@@ -357,6 +375,139 @@ function EditableValue({
   );
 }
 
+const SOURCE_BADGE: Record<
+  FoodSource,
+  { label: keyof { [K in string]: unknown }; className: string; textClass: string }
+> = {
+  verified_db: {
+    label: 'photoLog.sourceVerified' as const,
+    className: 'bg-success/15',
+    textClass: 'text-success',
+  },
+  ai_estimate: {
+    label: 'photoLog.sourceAiEstimate' as const,
+    className: 'bg-surface-secondary',
+    textClass: 'text-text-secondary',
+  },
+  label: {
+    label: 'photoLog.sourceFromLabel' as const,
+    className: 'bg-info/15',
+    textClass: 'text-info',
+  },
+  user_corrected: {
+    label: 'photoLog.sourceEdited' as const,
+    className: 'bg-warning/15',
+    textClass: 'text-warning',
+  },
+};
+
+function ProvenanceBadge({
+  source,
+  t,
+}: {
+  source: FoodSource | undefined;
+  t: (k: string) => string;
+}) {
+  if (!source) return null;
+  const cfg = SOURCE_BADGE[source];
+  if (!cfg) return null;
+  return (
+    <View className={`self-start rounded-full px-2 py-0.5 mt-1 ${cfg.className}`}>
+      <Text className={`text-xs font-sans-medium ${cfg.textClass}`}>{t(cfg.label)}</Text>
+    </View>
+  );
+}
+
+function FlaggedChip({
+  flagReason,
+  t,
+  c,
+}: {
+  flagReason: string | undefined;
+  t: (k: string) => string;
+  c: ReturnType<typeof useColors>;
+}) {
+  return (
+    <Pressable
+      onPress={() =>
+        Alert.alert(t('photoLog.flaggedTitle'), flagReason ?? t('photoLog.flaggedNoReason'))
+      }
+      className="flex-row items-center gap-1 bg-warning/15 rounded-full px-2 py-0.5 mt-1"
+      accessibilityRole="button"
+      accessibilityLabel={t('photoLog.flaggedChip')}
+    >
+      <Ionicons name="warning-outline" size={11} color={c.warning} />
+      <Text className="text-xs font-sans-medium text-warning">{t('photoLog.flaggedChip')}</Text>
+    </Pressable>
+  );
+}
+
+function ClarificationBanner({
+  questions,
+  onAnswerCount,
+  onAnswerChoice,
+  t,
+  c,
+}: {
+  questions: ClarificationQuestion[];
+  onAnswerCount: (id: string, delta: number) => void;
+  onAnswerChoice: (id: string, choice: string) => void;
+  t: (k: string) => string;
+  c: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View className="mb-4 rounded-2xl bg-primary-500/10 border border-primary-500/30 p-4">
+      <View className="flex-row items-center gap-2 mb-3">
+        <Ionicons name="help-circle-outline" size={18} color={c.primary} />
+        <Text className="text-sm font-sans-semibold text-primary-500">
+          {t('photoLog.clarificationBanner')}
+        </Text>
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        {questions.map((q) => (
+          <View key={q.id}>
+            {q.type === 'count' ? (
+              <View className="flex-row items-center gap-1 bg-surface-card rounded-xl px-2 py-1.5 border border-surface-border">
+                <Pressable
+                  onPress={() => onAnswerCount(q.id, -1)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease"
+                  className="h-6 w-6 items-center justify-center"
+                >
+                  <Ionicons name="remove" size={14} color={c.textSecondary} />
+                </Pressable>
+                <Text className="text-xs font-sans-medium text-text px-1">{q.text}</Text>
+                <Pressable
+                  onPress={() => onAnswerCount(q.id, 1)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase"
+                  className="h-6 w-6 items-center justify-center"
+                >
+                  <Ionicons name="add" size={14} color={c.textSecondary} />
+                </Pressable>
+              </View>
+            ) : (
+              <View className="flex-row flex-wrap gap-1">
+                {(q.choices ?? []).map((choice) => (
+                  <Pressable
+                    key={choice}
+                    onPress={() => onAnswerChoice(q.id, choice)}
+                    accessibilityRole="button"
+                    accessibilityLabel={choice}
+                    className="bg-surface-card border border-surface-border rounded-full px-3 py-1"
+                  >
+                    <Text className="text-xs font-sans-medium text-text">{choice}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 // -- Main Screen --
 
 export function PhotoLogScreen() {
@@ -380,8 +531,14 @@ export function PhotoLogScreen() {
   const [error, setError] = useState<string | null>(null);
   const [mealType, setMealType] = useState<MealType>(autoDetectMealType);
   const [cameraLaunched, setCameraLaunched] = useState(false);
+  // Guardrail state
+  const [reviewedItems, setReviewedItems] = useState<Set<number>>(new Set());
+  const [lowConfidenceToastShown, setLowConfidenceToastShown] = useState(false);
+  const [savedMealLogId, setSavedMealLogId] = useState<string | null>(null);
+  const [accuracyFeedbackShown, setAccuracyFeedbackShown] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
+  const itemsListRef = useRef<import('react-native').ScrollView | null>(null);
 
   const [modal, setModal] = useState<{
     visible: boolean;
@@ -657,6 +814,10 @@ export function PhotoLogScreen() {
     setStillProcessing(false);
     setError(null);
     setFoodSaved(false);
+    setReviewedItems(new Set());
+    setLowConfidenceToastShown(false);
+    setSavedMealLogId(null);
+    setAccuracyFeedbackShown(false);
   };
 
   const handleDeleteItem = (index: number) => {
@@ -665,21 +826,35 @@ export function PhotoLogScreen() {
     setMultipliers((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSetMultiplier = (index: number, value: number) => {
-    setMultipliers((prev) => prev.map((m, i) => (i === index ? value : m)));
-  };
-
   const handleEditNutrient = (index: number, field: NutrientField, value: number) => {
     setBaseItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+      prev.map((item, i) =>
+        i === index ? { ...item, [field]: value, source: 'user_corrected' as FoodSource } : item,
+      ),
     );
   };
 
   const handleEditServingGrams = (index: number, value: number) => {
     setBaseItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, servingGrams: value } : item)),
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, servingGrams: value, source: 'user_corrected' as FoodSource }
+          : item,
+      ),
     );
   };
+
+  const handlePortionStep = useCallback(
+    (index: number, newMultiplier: number) => {
+      const item = baseItems[index];
+      if (!item) return;
+      setMultipliers((prev) => prev.map((m, i) => (i === index ? newMultiplier : m)));
+      setBaseItems((prev) =>
+        prev.map((it, i) => (i === index ? { ...it, source: 'user_corrected' as FoodSource } : it)),
+      );
+    },
+    [baseItems],
+  );
 
   const handleEditName = (index: number, name: string) => {
     setBaseItems((prev) => prev.map((item, i) => (i === index ? { ...item, name } : item)));
@@ -735,7 +910,7 @@ export function PhotoLogScreen() {
       const prefix = isLabel ? 'Label' : 'Photo';
       const note = `${prefix}: ${baseItems.map((i) => i.name).join(', ')}`;
 
-      await mealsApi.quickAdd({
+      const result = await mealsApi.quickAdd({
         calories: Math.round(totalCalories),
         proteinGrams: Math.round(totalProtein * 10) / 10,
         carbsGrams: Math.round(totalCarbs * 10) / 10,
@@ -749,6 +924,10 @@ export function PhotoLogScreen() {
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const logId = result?.data?.id ?? null;
+      setSavedMealLogId(logId);
+      setAccuracyFeedbackShown(false);
+      // Navigate away — accuracy toast shown in render after state settles
       navigation.goBack();
     } catch (e) {
       setError(e instanceof Error ? e.message : t('photoLog.saveFailed'));
@@ -756,6 +935,38 @@ export function PhotoLogScreen() {
       setSaving(false);
     }
   };
+
+  const handleAccuracyFeedback = useCallback(
+    (accuracy: 'low' | 'medium' | 'high') => {
+      if (!savedMealLogId) return;
+      setAccuracyFeedbackShown(true);
+      analyticsApi.trackEvent({
+        name: 'photo_meal_accuracy',
+        accuracy,
+        mealLogId: savedMealLogId,
+        items: baseItems.map((item) => ({
+          matchedFoodId: item.matchedFoodId,
+          calories: item.calories,
+          source: item.source,
+        })),
+      });
+    },
+    [savedMealLogId, baseItems],
+  );
+
+  const handleMarkItemReviewed = useCallback((index: number) => {
+    setReviewedItems((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+  }, []);
+
+  // Derived guardrail values
+  const isLowConfidence = draft?.confidenceLevel === 'low';
+  const allLowConfidenceItemsReviewed =
+    !isLowConfidence || baseItems.every((_, i) => reviewedItems.has(i));
+  const saveBlocked = isLowConfidence && !allLowConfidenceItemsReviewed;
 
   const hasResults = draft !== null && !analyzing;
   const hasItems = effectiveItems.length > 0;
@@ -792,6 +1003,7 @@ export function PhotoLogScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <ScrollView
+            ref={itemsListRef}
             className="flex-1"
             contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 32) }}
             keyboardShouldPersistTaps="handled"
@@ -935,6 +1147,32 @@ export function PhotoLogScreen() {
                       </View>
                     </Animated.View>
 
+                    {/* Clarification chips — shown when draft.requiresClarification */}
+                    {draft?.requiresClarification &&
+                      (draft.clarificationQuestions?.length ?? 0) > 0 && (
+                        <Animated.View entering={FadeInDown.duration(300).delay(80)}>
+                          <ClarificationBanner
+                            questions={draft.clarificationQuestions!}
+                            onAnswerCount={(id, delta) => {
+                              // count questions bump the multiplier of the first item whose name matches the question id
+                              const idx = baseItems.findIndex((_, i) => String(i) === id);
+                              const target = idx >= 0 ? idx : 0;
+                              const cur = multipliers[target] ?? 1;
+                              const next = Math.max(
+                                SERVING_STEP,
+                                Math.round((cur + delta * SERVING_STEP) * 4) / 4,
+                              );
+                              handlePortionStep(target, next);
+                            }}
+                            onAnswerChoice={(_id, _choice) => {
+                              // v1: choice answers are purely informational — no state mutation needed
+                            }}
+                            t={t}
+                            c={c}
+                          />
+                        </Animated.View>
+                      )}
+
                     {/* Header row */}
                     <Animated.View entering={FadeInDown.duration(300).delay(100)}>
                       <View className="flex-row items-center justify-between mb-3">
@@ -956,192 +1194,249 @@ export function PhotoLogScreen() {
                       </View>
                     </Animated.View>
 
-                    {/* Food item cards */}
+                    {/* Low-confidence guard toast (one-time) */}
+                    {isLowConfidence &&
+                      !lowConfidenceToastShown &&
+                      (() => {
+                        // Trigger the one-time side-effect via a layout-safe approach
+                        setTimeout(() => setLowConfidenceToastShown(true), 0);
+                        return (
+                          <View className="mb-3 rounded-2xl bg-warning/10 border border-warning/30 px-4 py-3 flex-row items-start gap-2">
+                            <Ionicons
+                              name="alert-circle-outline"
+                              size={16}
+                              color={c.warning}
+                              style={{ marginTop: 1 }}
+                            />
+                            <Text className="flex-1 text-sm font-sans-medium text-warning">
+                              {t('photoLog.lowConfidenceToast')}
+                            </Text>
+                          </View>
+                        );
+                      })()}
+
+                    {/* Portion-size confirmation + food item cards */}
                     {baseItems.map((item, index) => {
                       const effective = getEffectiveItem(item, index);
                       const currentMultiplier = multipliers[index] ?? 1;
+                      const isReviewed = reviewedItems.has(index);
+                      const needsReview = isLowConfidence && !isReviewed;
                       return (
                         <Animated.View
                           key={`${item.name}-${index}`}
                           entering={FadeInDown.duration(250).delay(Math.min(index * 40, 200) + 150)}
                         >
-                          <Card className="mb-3">
-                            {/* Item header row */}
-                            <View className="flex-row items-start justify-between mb-2">
-                              <Pressable
-                                className="flex-1 pr-2"
-                                onPress={() =>
-                                  showEditModal(t('photoLog.editName'), item.name, (text) => {
-                                    if (text.trim()) handleEditName(index, text.trim());
-                                    setModal((m) => ({ ...m, visible: false }));
-                                  })
-                                }
-                                accessibilityRole="button"
-                                accessibilityLabel={`Edit name: ${item.name}`}
-                              >
-                                <View className="flex-row items-center gap-1">
-                                  <Text className="font-sans-semibold text-text" numberOfLines={1}>
-                                    {item.name}
+                          <Pressable
+                            onPress={() => needsReview && handleMarkItemReviewed(index)}
+                            accessibilityRole={needsReview ? 'button' : undefined}
+                            accessibilityLabel={
+                              needsReview ? `${t('photoLog.tapToConfirm')} ${item.name}` : undefined
+                            }
+                          >
+                            <Card
+                              className={`mb-3 ${needsReview ? 'border-2 border-warning/50' : ''}`}
+                            >
+                              {/* Item header row */}
+                              <View className="flex-row items-start justify-between mb-2">
+                                <Pressable
+                                  className="flex-1 pr-2"
+                                  onPress={() =>
+                                    showEditModal(t('photoLog.editName'), item.name, (text) => {
+                                      if (text.trim()) handleEditName(index, text.trim());
+                                      setModal((m) => ({ ...m, visible: false }));
+                                    })
+                                  }
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Edit name: ${item.name}`}
+                                >
+                                  <View className="flex-row items-center gap-1">
+                                    <Text
+                                      className="font-sans-semibold text-text"
+                                      numberOfLines={1}
+                                    >
+                                      {item.name}
+                                    </Text>
+                                    <Ionicons name="pencil" size={11} color={c.textTertiary} />
+                                  </View>
+                                  <Text className="text-xs text-text-secondary mt-0.5">
+                                    {item.servingGrams > 0
+                                      ? isLabel
+                                        ? `${Math.round(item.servingGrams * currentMultiplier)}g ${t('photoLog.perServing')}`
+                                        : `~${Math.round(item.servingGrams * currentMultiplier)}g`
+                                      : isLabel
+                                        ? t('photoLog.perServing')
+                                        : t('photoLog.estimatedServing')}
                                   </Text>
+                                </Pressable>
+                                <View className="flex-row items-center gap-2">
+                                  {needsReview && (
+                                    <View className="h-2 w-2 rounded-full bg-warning" />
+                                  )}
+                                  {isReviewed && (
+                                    <Ionicons name="checkmark-circle" size={16} color={c.success} />
+                                  )}
+                                  {!isLabel && (
+                                    <Badge variant={item.confidence >= 0.8 ? 'success' : 'warning'}>
+                                      {Math.round(item.confidence * 100)}%
+                                    </Badge>
+                                  )}
+                                  <Pressable
+                                    onPress={() => handleDeleteItem(index)}
+                                    className="h-8 w-8 items-center justify-center rounded-full bg-surface-secondary active:opacity-60"
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Remove ${item.name}`}
+                                  >
+                                    <Ionicons name="close" size={14} color={c.textTertiary} />
+                                  </Pressable>
+                                </View>
+                              </View>
+
+                              {/* Calories + provenance badge + flagged chip */}
+                              <Pressable
+                                onPress={() => {
+                                  handleMarkItemReviewed(index);
+                                  showEditModal(
+                                    t('photoLog.editCalories'),
+                                    String(item.calories),
+                                    (text) => {
+                                      const v = parseFloat(text);
+                                      if (!isNaN(v) && v >= 0)
+                                        handleEditNutrient(index, 'calories', v);
+                                      setModal((m) => ({ ...m, visible: false }));
+                                    },
+                                    'decimal-pad',
+                                  );
+                                }}
+                                className="active:opacity-60"
+                                accessibilityRole="button"
+                                accessibilityLabel={`Edit calories: ${effective.calories}`}
+                              >
+                                <View className="flex-row items-baseline gap-1 mb-1">
+                                  <Text className="text-2xl font-sans-semibold text-text">
+                                    {effective.calories}
+                                  </Text>
+                                  <Text className="text-sm text-text-secondary">cal</Text>
                                   <Ionicons name="pencil" size={11} color={c.textTertiary} />
                                 </View>
-                                <Text className="text-xs text-text-secondary mt-0.5">
-                                  {item.servingGrams > 0
-                                    ? isLabel
-                                      ? `${Math.round(item.servingGrams * currentMultiplier)}g ${t('photoLog.perServing')}`
-                                      : `~${Math.round(item.servingGrams * currentMultiplier)}g`
-                                    : isLabel
-                                      ? t('photoLog.perServing')
-                                      : t('photoLog.estimatedServing')}
-                                </Text>
                               </Pressable>
-                              <View className="flex-row items-center gap-2">
-                                {!isLabel && (
-                                  <Badge variant={item.confidence >= 0.8 ? 'success' : 'warning'}>
-                                    {Math.round(item.confidence * 100)}%
-                                  </Badge>
+                              <View className="flex-row flex-wrap gap-2 mb-2">
+                                <ProvenanceBadge source={item.source} t={t} />
+                                {item.flagged && (
+                                  <FlaggedChip flagReason={item.flagReason} t={t} c={c} />
                                 )}
-                                <Pressable
-                                  onPress={() => handleDeleteItem(index)}
-                                  className="h-8 w-8 items-center justify-center rounded-full bg-surface-secondary active:opacity-60"
-                                  accessibilityRole="button"
-                                  accessibilityLabel={`Remove ${item.name}`}
-                                >
-                                  <Ionicons name="close" size={14} color={c.textTertiary} />
-                                </Pressable>
                               </View>
-                            </View>
 
-                            {/* Calories */}
-                            <Pressable
-                              onPress={() =>
-                                showEditModal(
-                                  t('photoLog.editCalories'),
-                                  String(item.calories),
-                                  (text) => {
-                                    const v = parseFloat(text);
-                                    if (!isNaN(v) && v >= 0)
-                                      handleEditNutrient(index, 'calories', v);
-                                    setModal((m) => ({ ...m, visible: false }));
-                                  },
-                                  'decimal-pad',
-                                )
-                              }
-                              className="active:opacity-60"
-                              accessibilityRole="button"
-                              accessibilityLabel={`Edit calories: ${effective.calories}`}
-                            >
-                              <View className="flex-row items-baseline gap-1 mb-1">
-                                <Text className="text-2xl font-sans-semibold text-text">
-                                  {effective.calories}
-                                </Text>
-                                <Text className="text-sm text-text-secondary">cal</Text>
-                                <Ionicons name="pencil" size={11} color={c.textTertiary} />
-                              </View>
-                            </Pressable>
-
-                            {/* Macros row */}
-                            <View className="flex-row gap-3 mb-3">
-                              <EditableValue
-                                value={effective.protein}
-                                unit="g"
-                                label={t('photoLog.protein')}
-                                c={c}
-                                onSave={(v) => {
-                                  const m = multipliers[index] ?? 1;
-                                  handleEditNutrient(
-                                    index,
-                                    'protein',
-                                    m !== 0 ? Math.round((v / m) * 10) / 10 : v,
-                                  );
-                                }}
-                              />
-                              <EditableValue
-                                value={effective.carbs}
-                                unit="g"
-                                label={t('photoLog.carbs')}
-                                c={c}
-                                onSave={(v) => {
-                                  const m = multipliers[index] ?? 1;
-                                  handleEditNutrient(
-                                    index,
-                                    'carbs',
-                                    m !== 0 ? Math.round((v / m) * 10) / 10 : v,
-                                  );
-                                }}
-                              />
-                              <EditableValue
-                                value={effective.fat}
-                                unit="g"
-                                label={t('photoLog.fat')}
-                                c={c}
-                                onSave={(v) => {
-                                  const m = multipliers[index] ?? 1;
-                                  handleEditNutrient(
-                                    index,
-                                    'fat',
-                                    m !== 0 ? Math.round((v / m) * 10) / 10 : v,
-                                  );
-                                }}
-                              />
-                              {item.fiber > 0 && (
+                              {/* Macros row */}
+                              <View className="flex-row gap-3 mb-3">
                                 <EditableValue
-                                  value={effective.fiber}
+                                  value={effective.protein}
                                   unit="g"
-                                  label={t('photoLog.fiber')}
+                                  label={t('photoLog.protein')}
                                   c={c}
                                   onSave={(v) => {
+                                    handleMarkItemReviewed(index);
                                     const m = multipliers[index] ?? 1;
                                     handleEditNutrient(
                                       index,
-                                      'fiber',
+                                      'protein',
                                       m !== 0 ? Math.round((v / m) * 10) / 10 : v,
                                     );
                                   }}
                                 />
-                              )}
-                            </View>
+                                <EditableValue
+                                  value={effective.carbs}
+                                  unit="g"
+                                  label={t('photoLog.carbs')}
+                                  c={c}
+                                  onSave={(v) => {
+                                    handleMarkItemReviewed(index);
+                                    const m = multipliers[index] ?? 1;
+                                    handleEditNutrient(
+                                      index,
+                                      'carbs',
+                                      m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                                    );
+                                  }}
+                                />
+                                <EditableValue
+                                  value={effective.fat}
+                                  unit="g"
+                                  label={t('photoLog.fat')}
+                                  c={c}
+                                  onSave={(v) => {
+                                    handleMarkItemReviewed(index);
+                                    const m = multipliers[index] ?? 1;
+                                    handleEditNutrient(
+                                      index,
+                                      'fat',
+                                      m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                                    );
+                                  }}
+                                />
+                                {item.fiber > 0 && (
+                                  <EditableValue
+                                    value={effective.fiber}
+                                    unit="g"
+                                    label={t('photoLog.fiber')}
+                                    c={c}
+                                    onSave={(v) => {
+                                      handleMarkItemReviewed(index);
+                                      const m = multipliers[index] ?? 1;
+                                      handleEditNutrient(
+                                        index,
+                                        'fiber',
+                                        m !== 0 ? Math.round((v / m) * 10) / 10 : v,
+                                      );
+                                    }}
+                                  />
+                                )}
+                              </View>
 
-                            {/* Serving stepper */}
-                            <View className="flex-row items-end justify-between">
-                              <ServingStepper
-                                value={currentMultiplier}
-                                onChange={(v) => handleSetMultiplier(index, v)}
-                                label={
-                                  isLabel
-                                    ? t('photoLog.numberOfServings')
-                                    : t('photoLog.servingSize')
-                                }
-                                c={c}
-                              />
-                              {item.servingGrams > 0 && (
-                                <Pressable
-                                  onPress={() =>
-                                    showEditModal(
-                                      t('photoLog.servingWeightG'),
-                                      String(item.servingGrams),
-                                      (text) => {
-                                        const v = parseFloat(text);
-                                        if (!isNaN(v) && v > 0) handleEditServingGrams(index, v);
-                                        setModal((m) => ({ ...m, visible: false }));
-                                      },
-                                      'decimal-pad',
-                                    )
+                              {/* Portion confirmation stepper (replaces bare ServingStepper) */}
+                              <View className="flex-row items-end justify-between">
+                                <ServingStepper
+                                  value={currentMultiplier}
+                                  onChange={(v) => {
+                                    handleMarkItemReviewed(index);
+                                    handlePortionStep(index, v);
+                                  }}
+                                  label={
+                                    isLabel
+                                      ? t('photoLog.numberOfServings')
+                                      : t('photoLog.servingSize')
                                   }
-                                  className="active:opacity-60"
-                                  accessibilityRole="button"
-                                  accessibilityLabel="Edit serving weight"
-                                >
-                                  <View className="flex-row items-center gap-1">
-                                    <Text className="text-xs text-text-secondary">
-                                      {Math.round(item.servingGrams * currentMultiplier)}g total
-                                    </Text>
-                                    <Ionicons name="pencil" size={9} color={c.textTertiary} />
-                                  </View>
-                                </Pressable>
-                              )}
-                            </View>
-                          </Card>
+                                  c={c}
+                                />
+                                {item.servingGrams > 0 && (
+                                  <Pressable
+                                    onPress={() =>
+                                      showEditModal(
+                                        t('photoLog.servingWeightG'),
+                                        String(item.servingGrams),
+                                        (text) => {
+                                          const v = parseFloat(text);
+                                          if (!isNaN(v) && v > 0) handleEditServingGrams(index, v);
+                                          handleMarkItemReviewed(index);
+                                          setModal((m) => ({ ...m, visible: false }));
+                                        },
+                                        'decimal-pad',
+                                      )
+                                    }
+                                    className="active:opacity-60"
+                                    accessibilityRole="button"
+                                    accessibilityLabel="Edit serving weight"
+                                  >
+                                    <View className="flex-row items-center gap-1">
+                                      <Text className="text-xs text-text-secondary">
+                                        {Math.round(item.servingGrams * currentMultiplier)}g total
+                                      </Text>
+                                      <Ionicons name="pencil" size={9} color={c.textTertiary} />
+                                    </View>
+                                  </Pressable>
+                                )}
+                              </View>
+                            </Card>
+                          </Pressable>
                         </Animated.View>
                       );
                     })}
@@ -1219,14 +1514,59 @@ export function PhotoLogScreen() {
                       </View>
                     )}
 
-                    <Button
-                      onPress={handleConfirmSave}
-                      loading={saving}
-                      disabled={saving}
-                      accessibilityLabel={t('logging.addToLog')}
-                    >
-                      {t('logging.addToLog')}
-                    </Button>
+                    {/* Save button — replaced with "Review before saving" when low confidence & blocked */}
+                    {saveBlocked ? (
+                      <Button
+                        variant="outline"
+                        onPress={() => {
+                          // Scroll to top of items list to prompt review
+                          itemsListRef.current?.scrollTo({ y: 0, animated: true });
+                        }}
+                        accessibilityLabel={t('photoLog.reviewBeforeSaving')}
+                      >
+                        {t('photoLog.reviewBeforeSaving')}
+                      </Button>
+                    ) : (
+                      <Button
+                        onPress={handleConfirmSave}
+                        loading={saving}
+                        disabled={saving}
+                        accessibilityLabel={t('logging.addToLog')}
+                      >
+                        {t('logging.addToLog')}
+                      </Button>
+                    )}
+
+                    {/* Accuracy feedback toast — shown after successful save */}
+                    {savedMealLogId && !accuracyFeedbackShown && (
+                      <Animated.View
+                        entering={FadeInDown.duration(300)}
+                        className="mt-3 rounded-2xl bg-surface-card border border-surface-border px-4 py-3"
+                      >
+                        <Text className="text-sm font-sans-medium text-text mb-2">
+                          {t('photoLog.accuracyQuestion')}
+                        </Text>
+                        <View className="flex-row gap-2">
+                          {(
+                            [
+                              { emoji: '👎', value: 'low' as const },
+                              { emoji: '👌', value: 'medium' as const },
+                              { emoji: '👍', value: 'high' as const },
+                            ] as const
+                          ).map(({ emoji, value }) => (
+                            <Pressable
+                              key={value}
+                              onPress={() => handleAccuracyFeedback(value)}
+                              className="flex-1 items-center py-2 rounded-xl bg-surface-secondary active:opacity-60"
+                              accessibilityRole="button"
+                              accessibilityLabel={t(`photoLog.accuracy_${value}`)}
+                            >
+                              <Text className="text-xl">{emoji}</Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                      </Animated.View>
+                    )}
                   </>
                 ) : (
                   /* No items found */

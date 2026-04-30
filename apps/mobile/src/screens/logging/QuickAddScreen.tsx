@@ -36,12 +36,20 @@ export function QuickAddScreen() {
   const [showMacros, setShowMacros] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [caloriesWarning, setCaloriesWarning] = useState<string | null>(null);
 
   const handleSave = async () => {
     const cal = parseInt(calories, 10);
-    if (isNaN(cal) || cal < 0) {
+    if (isNaN(cal) || cal <= 0) {
       setError(t('quickAdd.enterValidCalories'));
       return;
+    }
+    // Sanity check: per-serving > 5000 or total > 10000
+    const totalCal = cal;
+    if (cal > 5000 || totalCal > 10000) {
+      setCaloriesWarning(t('quickAdd.caloriesHighWarning'));
+    } else {
+      setCaloriesWarning(null);
     }
     setError(null);
     setSaving(true);
@@ -209,6 +217,14 @@ export function QuickAddScreen() {
               />
             </Animated.View>
 
+            {caloriesWarning ? (
+              <View className="mb-4 rounded-2xl bg-warning/10 border border-warning/30 px-4 py-3 flex-row items-center gap-2">
+                <Ionicons name="alert-circle-outline" size={16} color={c.warning} />
+                <Text className="flex-1 text-sm font-sans-medium text-warning">
+                  {caloriesWarning}
+                </Text>
+              </View>
+            ) : null}
             {error ? (
               <View className="mb-4 rounded-2xl bg-danger/10 px-4 py-3">
                 <Text className="text-center text-sm font-sans-medium text-danger">{error}</Text>

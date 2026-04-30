@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { CreateFoodDto, UpdateFoodDto, FoodQueryDto } from './foods.dto';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FoodsService {
@@ -53,7 +53,15 @@ export class FoodsService {
     return this.formatFood(food);
   }
 
-  async findMany(query: FoodQueryDto) {
+  async findMany(query: FoodQueryDto, userId?: string) {
+    // When a search term is present and we have an authenticated user, boost
+    // results by the number of times the user has logged each food in the last
+    // 90 days. Prisma's findMany cannot express a lateral subquery ORDER BY, so
+    // we use $queryRaw for the ranked search path and cap results at 20.
+    if (query.search && userId) {
+      return this.findManyRanked(query, userId);
+    }
+
     const where: Prisma.FoodWhereInput = {};
     if (query.locale) where.locale = query.locale;
     if (query.status) where.status = query.status;
@@ -84,6 +92,73 @@ export class FoodsService {
         limit: query.limit,
         totalPages: Math.ceil(total / query.limit),
       },
+    };
+  }
+
+  /**
+   * Full-text search with per-user usage frequency boost.
+   *
+   * Executes a single $queryRaw that LEFT JOINs `meal_log_items` for the
+   * requesting user over the last 90 days and orders by (usage_count DESC,
+   * normalized_name ASC). Results are always capped at 20 rows.
+   *
+   * Returns the same envelope shape as `findMany` but with a fixed limit of 20
+   * and no pagination (offset search with usage boost doesn't compose cleanly
+   * with cursor pagination).
+   */
+  private async findManyRanked(query: FoodQueryDto, userId: string) {
+    const search = `%${query.search!.toLowerCase()}%`;
+    const localeFilter = query.locale ?? null;
+    const statusFilter = query.status ?? null;
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
+    // Raw query: match foods by name/alias/localization, left-join usage counts,
+    // order by usage desc then name asc, hard-cap at 20.
+    const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT f.id
+      FROM foods f
+      LEFT JOIN (
+        SELECT food_id, COUNT(*)::int AS usage_count
+        FROM meal_log_items
+        WHERE user_id::text = ${userId}
+          AND food_id IS NOT NULL
+          AND created_at >= ${since}
+        GROUP BY food_id
+      ) usage ON usage.food_id = f.id
+      WHERE (
+        LOWER(f.normalized_name) LIKE ${search}
+        OR EXISTS (
+          SELECT 1 FROM food_aliases fa
+          WHERE fa.food_id = f.id AND LOWER(fa.alias) LIKE ${search}
+        )
+        OR EXISTS (
+          SELECT 1 FROM food_localizations fl
+          WHERE fl.food_id = f.id AND LOWER(fl.name) LIKE ${search}
+        )
+      )
+      ${localeFilter !== null ? Prisma.sql`AND f.locale = ${localeFilter}` : Prisma.empty}
+      ${statusFilter !== null ? Prisma.sql`AND f.status = ${statusFilter}` : Prisma.empty}
+      ORDER BY COALESCE(usage.usage_count, 0) DESC, f.normalized_name ASC
+      LIMIT 20
+    `;
+
+    if (rows.length === 0) {
+      return { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+    }
+
+    const ids = rows.map((r) => r.id);
+    const foods = await this.prisma.food.findMany({
+      where: { id: { in: ids } },
+      include: this.fullInclude(),
+    });
+
+    // Restore the SQL order
+    const foodMap = new Map(foods.map((f) => [f.id, f]));
+    const ordered = ids.map((id) => foodMap.get(id)!).filter(Boolean);
+
+    return {
+      data: ordered.map((f) => this.formatFood(f)),
+      meta: { total: ordered.length, page: 1, limit: 20, totalPages: 1 },
     };
   }
 
