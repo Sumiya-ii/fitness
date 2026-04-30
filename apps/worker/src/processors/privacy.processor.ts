@@ -2,7 +2,7 @@ import { Job } from 'bullmq';
 import { Pool } from 'pg';
 import { Telegraf } from 'telegraf';
 import * as Sentry from '@sentry/node';
-import type { Logger } from 'pino';
+import pino from 'pino';
 import { logger } from '../logger';
 import { uploadToS3, getPresignedUrl, deleteFromS3 } from '../s3';
 import { sendExpoPush } from '../expo-push';
@@ -198,7 +198,7 @@ async function deliverExportUrl(
   userId: string,
   presignedUrl: string,
   jobId: string | undefined,
-  jobLogger: Logger,
+  jobLogger: pino.Logger,
 ): Promise<void> {
   const { pushTokens, chatId, locale } = await getUserDeliveryInfo(pool, userId);
 

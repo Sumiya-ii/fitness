@@ -4,6 +4,7 @@ import { Telegraf } from 'telegraf';
 import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
+import { logger } from '../logger';
 
 const COACH_SYSTEM_PROMPT =
   'You are Coach, a concise Mongolian nutrition coach. Write warm, practical reminders in the user locale.';
@@ -152,12 +153,12 @@ async function generateReminderMessage(
 async function sendTelegramReminder(userId: string, chatId: string, text: string): Promise<void> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) {
-    console.warn('[Reminders] TELEGRAM_BOT_TOKEN not set, skipping Telegram delivery');
+    logger.warn('[Reminders] TELEGRAM_BOT_TOKEN not set, skipping Telegram delivery');
     return;
   }
   const bot = new Telegraf(botToken);
   await bot.telegram.sendMessage(chatId, text);
-  console.log(`[Reminders] Telegram reminder sent to user ${userId}`);
+  logger.info({ userId }, '[Reminders] Telegram reminder sent');
 }
 
 // ── Main processor ────────────────────────────────────────────────────────────
@@ -177,12 +178,12 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
     const aiMessage = await generateReminderMessage(openai, job.data, today);
     if (aiMessage) {
       message = aiMessage;
-      console.log(`[Reminders] AI-generated ${type} reminder for user ${userId}`);
+      logger.info({ userId, type }, '[Reminders] AI-generated reminder');
     } else {
-      console.warn(`[Reminders] AI generation returned empty for user ${userId}, using fallback`);
+      logger.warn({ userId }, '[Reminders] AI generation returned empty, using fallback');
     }
   } else {
-    console.warn('[Reminders] OPENAI_API_KEY not set, using static fallback');
+    logger.warn('[Reminders] OPENAI_API_KEY not set, using static fallback');
   }
 
   // Fall back to static variant if AI failed or key missing
@@ -194,7 +195,7 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
   const hasPush = channels.includes('push') && pushTokens.length > 0;
 
   if (!hasTelegram && !hasPush) {
-    console.log(`[Reminders] User ${userId}: no deliverable channels, skipping`);
+    logger.info({ userId }, '[Reminders] No deliverable channels, skipping');
     return;
   }
 
@@ -220,7 +221,10 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
             deliveryMs: Date.now() - start,
           });
         } catch (err) {
-          console.error(`[Reminders] Telegram delivery error for user ${userId}:`, err);
+          logger.error(
+            { userId, error: err instanceof Error ? err.message : String(err) },
+            '[Reminders] Telegram delivery error',
+          );
           Sentry.captureException(err, {
             tags: { processor: 'reminders', stage: 'telegram_delivery' },
             extra: { userId, type },
@@ -250,7 +254,10 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
             deliveryMs: Date.now() - start,
           });
         } catch (err) {
-          console.error(`[Reminders] Push delivery error for user ${userId}:`, err);
+          logger.error(
+            { userId, error: err instanceof Error ? err.message : String(err) },
+            '[Reminders] Push delivery error',
+          );
           Sentry.captureException(err, {
             tags: { processor: 'reminders', stage: 'push_delivery' },
             extra: { userId, type },
@@ -269,7 +276,8 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
 
   await Promise.allSettled(deliveries);
 
-  console.log(
-    `[Reminders] Sent ${type} reminder to user ${userId} (telegram=${hasTelegram}, push=${hasPush})`,
+  logger.info(
+    { userId, type, telegram: hasTelegram, push: hasPush },
+    '[Reminders] Reminder dispatched',
   );
 }

@@ -2,6 +2,7 @@ import { Job } from 'bullmq';
 import OpenAI from 'openai';
 import { Pool } from 'pg';
 import * as Sentry from '@sentry/node';
+import { logger } from '../logger';
 
 interface CoachMemoryJobData {
   userId: string;
@@ -212,13 +213,13 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
 
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
-    console.warn('[CoachMemory] OPENAI_API_KEY not set, skipping');
+    logger.warn('[CoachMemory] OPENAI_API_KEY not set, skipping');
     return;
   }
 
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
-    console.warn('[CoachMemory] DATABASE_URL not set, skipping');
+    logger.warn('[CoachMemory] DATABASE_URL not set, skipping');
     return;
   }
 
@@ -245,9 +246,12 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
       ),
     );
 
-    console.log(`[CoachMemory] Refreshed memory for user ${userId}`);
+    logger.info({ userId }, '[CoachMemory] Refreshed memory');
   } catch (err) {
-    console.error(`[CoachMemory] Error for user ${userId}:`, err);
+    logger.error(
+      { userId, error: err instanceof Error ? err.message : String(err) },
+      '[CoachMemory] Job failed',
+    );
     Sentry.captureException(err, {
       tags: { processor: 'coach_memory' },
       extra: { userId },

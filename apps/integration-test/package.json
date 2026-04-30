@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "test": "echo 'No unit tests — run test:integration for integration tests' && exit 0",
+    "typecheck": "echo 'No typecheck — integration tests only' && exit 0",
+    "lint": "echo 'No lint — integration tests only' && exit 0",
     "test:integration": "jest --runInBand"
   },
   "devDependencies": {
