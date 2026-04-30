@@ -6,6 +6,7 @@ import {
   Pressable,
   Image,
   Alert,
+  Linking,
   Animated as RNAnimated,
   TextInput,
   KeyboardAvoidingView,
@@ -18,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 import { BackButton, Button, Card, Badge } from '../../components/ui';
 import { api } from '../../api';
 import { mealsApi } from '../../api/meals';
@@ -66,6 +68,9 @@ const POLL_INTERVAL_FAST_MS = 2000;
 const POLL_INTERVAL_SLOW_MS = 4000;
 const POLL_FAST_THRESHOLD = 15;
 const MAX_POLL_ATTEMPTS = 60;
+// After this many attempts (~60s: 15×2s + 8×4s ≈ 62s) show the "still processing" notice
+const STILL_PROCESSING_THRESHOLD = 23;
+const UPLOAD_TIMEOUT_MS = 30_000;
 const SERVING_STEP = 0.25;
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 const MEAL_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -364,6 +369,7 @@ export function PhotoLogScreen() {
   const isLabel = mode === 'label';
 
   const [analyzing, setAnalyzing] = useState(false);
+  const [stillProcessing, setStillProcessing] = useState(false);
   const [draft, setDraft] = useState<PhotoDraft | null>(null);
   const [baseItems, setBaseItems] = useState<ParsedFoodItem[]>([]);
   const [multipliers, setMultipliers] = useState<number[]>([]);
@@ -375,6 +381,7 @@ export function PhotoLogScreen() {
   const [mealType, setMealType] = useState<MealType>(autoDetectMealType);
   const [cameraLaunched, setCameraLaunched] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const [modal, setModal] = useState<{
     visible: boolean;
@@ -396,6 +403,7 @@ export function PhotoLogScreen() {
   useEffect(() => {
     return () => {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      uploadAbortRef.current?.abort();
     };
   }, []);
 
@@ -439,9 +447,26 @@ export function PhotoLogScreen() {
 
   const pollDraft = useCallback(async (draftId: string, attempt = 0) => {
     if (attempt >= MAX_POLL_ATTEMPTS) {
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: 'poll_max_attempts_reached',
+        data: { draftId, attempt },
+        level: 'warning',
+      });
       setError(t('photoLog.analysisTimeout'));
+      setStillProcessing(false);
       setAnalyzing(false);
       return;
+    }
+
+    if (attempt === STILL_PROCESSING_THRESHOLD) {
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: 'processing_still_running',
+        data: { draftId, attempt },
+        level: 'info',
+      });
+      setStillProcessing(true);
     }
 
     try {
@@ -449,16 +474,30 @@ export function PhotoLogScreen() {
       const d = res.data;
 
       if (d.status === 'completed') {
+        Sentry.addBreadcrumb({
+          category: 'photoLog',
+          message: 'processing_complete',
+          data: { draftId, itemCount: d.items?.length ?? 0 },
+          level: 'info',
+        });
         setDraft(d);
         const items = d.items ?? [];
         setBaseItems(items);
         setMultipliers(items.map(() => 1));
+        setStillProcessing(false);
         setAnalyzing(false);
         return;
       }
 
       if (d.status === 'failed') {
+        Sentry.addBreadcrumb({
+          category: 'photoLog',
+          message: 'processing_failed',
+          data: { draftId },
+          level: 'error',
+        });
         setError(isLabel ? t('photoLog.labelAnalysisFailed') : t('photoLog.photoAnalysisFailed'));
+        setStillProcessing(false);
         setAnalyzing(false);
         return;
       }
@@ -466,7 +505,14 @@ export function PhotoLogScreen() {
       const delay = attempt < POLL_FAST_THRESHOLD ? POLL_INTERVAL_FAST_MS : POLL_INTERVAL_SLOW_MS;
       pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), delay);
     } catch {
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: 'poll_status_check_failed',
+        data: { draftId, attempt },
+        level: 'error',
+      });
       setError(t('photoLog.statusCheckFailed'));
+      setStillProcessing(false);
       setAnalyzing(false);
     }
     // eslint-disable-next-line
@@ -474,11 +520,26 @@ export function PhotoLogScreen() {
 
   const uploadAndAnalyze = async (uri: string) => {
     setAnalyzing(true);
+    setStillProcessing(false);
     setError(null);
     setDraft(null);
     setBaseItems([]);
     setMultipliers([]);
     setFoodSaved(false);
+
+    const abortController = new AbortController();
+    uploadAbortRef.current = abortController;
+
+    const uploadTimeout = setTimeout(() => {
+      abortController.abort();
+    }, UPLOAD_TIMEOUT_MS);
+
+    Sentry.addBreadcrumb({
+      category: 'photoLog',
+      message: 'upload_start',
+      data: { mode: isLabel ? 'label' : 'food' },
+      level: 'info',
+    });
 
     try {
       const formData = new FormData();
@@ -489,18 +550,62 @@ export function PhotoLogScreen() {
       } as unknown as Blob);
 
       const uploadPath = isLabel ? '/photos/upload?mode=label' : '/photos/upload';
-      const res = await api.upload<{ data: { draftId: string } }>(uploadPath, formData);
+      const res = await api.upload<{ data: { draftId: string } }>(
+        uploadPath,
+        formData,
+        abortController.signal,
+      );
+
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: 'upload_complete',
+        data: { draftId: res.data.draftId },
+        level: 'info',
+      });
+
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: 'processing_start',
+        data: { draftId: res.data.draftId },
+        level: 'info',
+      });
+
       pollDraft(res.data.draftId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('photoLog.uploadFailed'));
+      const isAbort =
+        e instanceof Error && (e.name === 'AbortError' || e.message.includes('aborted'));
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: isAbort ? 'upload_timeout' : 'upload_error',
+        data: { error: e instanceof Error ? e.message : String(e) },
+        level: 'error',
+      });
+      setError(
+        isAbort
+          ? t('photoLog.uploadTimeout')
+          : e instanceof Error
+            ? e.message
+            : t('photoLog.uploadFailed'),
+      );
       setAnalyzing(false);
+    } finally {
+      clearTimeout(uploadTimeout);
+      uploadAbortRef.current = null;
     }
   };
 
   const handleCapture = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('common.permissionNeeded'), t('photoLog.cameraRequired'));
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: 'camera_permission_denied',
+        level: 'warning',
+      });
+      Alert.alert(t('common.permissionNeeded'), t('photoLog.cameraRequired'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('photoLog.openSettings'), onPress: () => Linking.openSettings() },
+      ]);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -517,7 +622,15 @@ export function PhotoLogScreen() {
   const handlePickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('common.permissionNeeded'), t('photoLog.galleryRequired'));
+      Sentry.addBreadcrumb({
+        category: 'photoLog',
+        message: 'gallery_permission_denied',
+        level: 'warning',
+      });
+      Alert.alert(t('common.permissionNeeded'), t('photoLog.galleryRequired'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('photoLog.openSettings'), onPress: () => Linking.openSettings() },
+      ]);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -534,11 +647,14 @@ export function PhotoLogScreen() {
   const handleRetake = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    uploadAbortRef.current?.abort();
+    uploadAbortRef.current = null;
     setPhotoUri(null);
     setDraft(null);
     setBaseItems([]);
     setMultipliers([]);
     setAnalyzing(false);
+    setStillProcessing(false);
     setError(null);
     setFoodSaved(false);
   };
@@ -745,7 +861,28 @@ export function PhotoLogScreen() {
                     accessibilityLabel="Captured photo"
                   />
                 )}
-                <ScanningAnimation isLabel={isLabel} t={t} c={c} />
+                {stillProcessing ? (
+                  <View className="items-center py-12 px-8">
+                    <View className="h-20 w-20 rounded-full bg-surface-card border border-surface-border items-center justify-center mb-5">
+                      <Ionicons name="time-outline" size={36} color={c.textSecondary} />
+                    </View>
+                    <Text className="text-text font-sans-semibold text-lg mb-2">
+                      {t('photoLog.stillProcessing')}
+                    </Text>
+                    <Pressable
+                      onPress={handleRetake}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('photoLog.retake')}
+                      className="mt-4 px-6 py-2.5 rounded-xl bg-surface-card border border-surface-border"
+                    >
+                      <Text className="text-sm font-sans-medium text-text-secondary">
+                        {t('photoLog.retake')}
+                      </Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <ScanningAnimation isLabel={isLabel} t={t} c={c} />
+                )}
               </View>
             )}
 

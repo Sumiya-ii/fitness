@@ -727,6 +727,9 @@ export const en = {
     saveFoodFailed: 'Failed to save food. Please try again.',
     itemCount_one: '{{count}} item',
     itemCount_other: '{{count}} items',
+    uploadTimeout: 'Upload timed out. Check your connection and try again.',
+    stillProcessing: "Still working on it — we'll notify you when it's ready.",
+    openSettings: 'Open Settings',
   },
   quickAdd: {
     title: 'Quick Add',

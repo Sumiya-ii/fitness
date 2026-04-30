@@ -709,6 +709,9 @@ export const mn = {
     saveFoodFailed: 'Хоол хадгалж чадсангүй. Дахин оролдоорой.',
     itemCount_one: '{{count}} хоол',
     itemCount_other: '{{count}} хоол',
+    uploadTimeout: 'Илгээх хугацаа дууслаа. Холболтоо шалгаад дахин оролдоорой.',
+    stillProcessing: 'Шинжилж байна — бэлэн болмогц мэдэгдэнэ.',
+    openSettings: 'Тохиргоо нээх',
   },
   quickAdd: {
     title: 'Шууд нэмэх',
