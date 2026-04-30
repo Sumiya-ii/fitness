@@ -716,9 +716,11 @@ describe('9. Edge cases', () => {
 
     expect(applyUserCalibration).toHaveBeenCalledWith(
       'u1',
-      expect.objectContaining({ matchedFoodId: undefined }),
+      expect.objectContaining({ source: 'ai_estimate' }),
       expect.anything(),
     );
+    const calledWith = (applyUserCalibration as jest.Mock).mock.calls[0][1];
+    expect(calledWith.matchedFoodId).toBeUndefined();
   });
 
   it('sets confidenceLevel: low and requiresClarification: true for low-confidence items', async () => {
