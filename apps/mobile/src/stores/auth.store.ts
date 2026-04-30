@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { api } from '../api';
 import { setTokenRefreshCallback } from '../api/client';
+import { useDashboardStore } from './dashboard.store';
+import { useWaterStore } from './water.store';
+import { useWeightStore } from './weight.store';
 import {
   configureGoogleSignIn,
   resetPassword as firebaseResetPassword,
@@ -129,6 +132,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     _tokenRefreshUnsub = null;
     await Promise.allSettled([signOutFirebase(), api.clearToken()]);
     set({ token: null, user: null, isAuthenticated: false });
+    // Clear per-user cached state so the next user starts fresh
+    useDashboardStore.setState({ data: null, error: null });
+    useWaterStore.setState({ consumed: 0 });
+    useWeightStore.setState({ history: [], trend: null, isLoading: false, error: null });
   },
 
   resetPassword: async (email: string) => {
