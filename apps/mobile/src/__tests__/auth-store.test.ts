@@ -5,6 +5,10 @@
  * (Firebase session restore, fallback token, and error paths).
  */
 
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 jest.mock('../api', () => ({
   api: {
     setToken: jest.fn(),
