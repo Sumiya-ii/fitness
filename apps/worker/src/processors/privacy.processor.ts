@@ -313,6 +313,16 @@ async function processExport(
 ): Promise<void> {
   const jobLogger = logger.child({ processor: 'privacy_export', requestId, userId });
 
+  // Idempotency guard — skip if already completed (e.g. on a BullMQ retry after delivery failure)
+  const existing = await pool.query<{ status: string }>(
+    `SELECT status FROM privacy_requests WHERE id = $1 AND user_id = $2`,
+    [requestId, userId],
+  );
+  if (existing.rows[0]?.status === 'completed') {
+    jobLogger.info('Export already completed — skipping duplicate run');
+    return;
+  }
+
   // Mark as processing
   await pool.query(
     `UPDATE privacy_requests SET status = 'processing', updated_at = NOW() WHERE id = $1`,

@@ -68,13 +68,13 @@ function makeJob(data: Record<string, unknown>): Job {
   } as unknown as Job;
 }
 
-/** 18 data-collection queries + 1 UPDATE processing + 3 delivery-info queries + 1 UPDATE completed */
-const EXPORT_QUERY_COUNT = 18 + 1 + 3 + 1;
+/** 1 idempotency check + 18 data-collection queries + 1 UPDATE processing + 3 delivery-info queries + 1 UPDATE completed */
+const EXPORT_QUERY_COUNT = 1 + 18 + 1 + 3 + 1;
 
 /**
  * Set up the standard sequence of pool.query responses for a successful export.
- * collectUserData issues 18 parallel queries; processExport issues 2 UPDATEs;
- * getUserDeliveryInfo issues 3 queries.
+ * processExport issues 1 idempotency SELECT, 1 UPDATE processing, collectUserData issues 18
+ * parallel queries, 1 UPDATE completed, then getUserDeliveryInfo issues 3 queries.
  */
 function setupExportMocks(
   opts: {
@@ -85,28 +85,31 @@ function setupExportMocks(
 ) {
   const { pushTokens = ['expo-token-1'], chatId = 'tg-chat-123', locale = 'mn' } = opts;
 
-  // 1. UPDATE status = 'processing'
+  // 1. Idempotency check — return 'pending' so execution proceeds
+  mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'pending' }] });
+
+  // 2. UPDATE status = 'processing'
   mockPoolQuery.mockResolvedValueOnce({ rows: [] });
 
-  // 2–19. collectUserData (18 parallel queries — order matches Promise.all)
+  // 3–20. collectUserData (18 parallel queries — order matches Promise.all)
   for (let i = 0; i < 18; i++) {
     mockPoolQuery.mockResolvedValueOnce({ rows: [] });
   }
 
-  // 20. UPDATE status = 'completed' + result_url
+  // 21. UPDATE status = 'completed' + result_url
   mockPoolQuery.mockResolvedValueOnce({ rows: [] });
 
-  // 21. device_tokens query (getUserDeliveryInfo)
+  // 22. device_tokens query (getUserDeliveryInfo)
   mockPoolQuery.mockResolvedValueOnce({
     rows: pushTokens.map((t) => ({ token: t })),
   });
 
-  // 22. telegram_links query
+  // 23. telegram_links query
   mockPoolQuery.mockResolvedValueOnce({
     rows: chatId ? [{ chat_id: chatId }] : [],
   });
 
-  // 23. profiles locale query
+  // 24. profiles locale query
   mockPoolQuery.mockResolvedValueOnce({
     rows: locale ? [{ locale }] : [],
   });
@@ -167,13 +170,15 @@ describe('missing env vars', () => {
   it('completes without S3 URL when S3_BUCKET is not set', async () => {
     delete process.env.S3_BUCKET;
 
-    // 1. UPDATE processing
+    // 1. Idempotency check
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'pending' }] });
+    // 2. UPDATE processing
     mockPoolQuery.mockResolvedValueOnce({ rows: [] });
-    // 2–19. collectUserData
+    // 3–20. collectUserData
     for (let i = 0; i < 18; i++) {
       mockPoolQuery.mockResolvedValueOnce({ rows: [] });
     }
-    // 20. UPDATE completed (no result_url)
+    // 21. UPDATE completed (no result_url)
     mockPoolQuery.mockResolvedValueOnce({ rows: [] });
 
     await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'export' }));
@@ -225,8 +230,19 @@ describe('export happy path', () => {
 
     await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'export' }));
 
-    // Total calls: 1 UPDATE processing + 18 data queries + 1 UPDATE completed + 3 delivery-info
+    // Total calls: 1 idempotency check + 1 UPDATE processing + 18 data queries + 1 UPDATE completed + 3 delivery-info
     expect(mockPoolQuery).toHaveBeenCalledTimes(EXPORT_QUERY_COUNT);
+  });
+
+  it('skips re-processing when export is already completed (idempotency)', async () => {
+    // Idempotency check returns 'completed' — should bail out immediately
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'completed' }] });
+
+    await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'export' }));
+
+    expect(mockUploadToS3).not.toHaveBeenCalled();
+    // Only the idempotency SELECT should have been called
+    expect(mockPoolQuery).toHaveBeenCalledTimes(1);
   });
 });
 
