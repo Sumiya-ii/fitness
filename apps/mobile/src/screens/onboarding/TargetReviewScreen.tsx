@@ -48,7 +48,7 @@ export function TargetReviewScreen({ navigation }: Props) {
       !data.activityLevel ||
       !data.dietPreference
     ) {
-      Alert.alert('Incomplete', t('onboarding.targetIncompleteAlert'));
+      Alert.alert(t('onboarding.targetIncomplete'), t('onboarding.targetIncompleteAlert'));
       return;
     }
 
