@@ -35,6 +35,8 @@ export const envSchema = z.object({
   // Telegram Bot
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
+  // HMAC secret for Telegram link codes (required for POST /telegram/link-code)
+  LINK_CODE_SECRET: z.string().optional(),
 
   // S3-compatible object storage
   S3_BUCKET: z.string().optional(),

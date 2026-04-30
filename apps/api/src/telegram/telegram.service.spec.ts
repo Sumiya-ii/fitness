@@ -28,7 +28,13 @@ describe('TelegramService', () => {
     originalEnv = { ...process.env };
     process.env.LINK_CODE_SECRET = 'test-secret';
     jest.clearAllMocks();
-    config = { get: jest.fn().mockReturnValue('redis://localhost:6379') };
+    config = {
+      get: jest.fn().mockImplementation((key: string) => {
+        if (key === 'REDIS_URL') return 'redis://localhost:6379';
+        if (key === 'LINK_CODE_SECRET') return 'test-secret';
+        return undefined;
+      }),
+    };
     prisma = {
       telegramLink: {
         findFirst: jest.fn(),
