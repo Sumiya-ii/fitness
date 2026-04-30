@@ -303,6 +303,61 @@ async function deliverExportUrl(
   await Promise.allSettled(deliveries);
 }
 
+async function deliverExportDocument(
+  pool: Pool,
+  userId: string,
+  buffer: Buffer,
+  filename: string,
+  jobId: string | undefined,
+  jobLogger: pino.Logger,
+): Promise<void> {
+  const { chatId, locale } = await getUserDeliveryInfo(pool, userId);
+  if (!chatId) {
+    jobLogger.warn('No Telegram chatId — cannot deliver export document without S3');
+    return;
+  }
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    jobLogger.warn('TELEGRAM_BOT_TOKEN not set — cannot deliver export document');
+    return;
+  }
+  const isMn = locale !== 'en';
+  const caption = isMn ? '✅ Таны хувийн өгөгдөл' : '✅ Your personal data export';
+  const start = Date.now();
+  try {
+    const bot = new Telegraf(botToken);
+    await bot.telegram.sendDocument(chatId, { source: buffer, filename }, { caption });
+    jobLogger.info(
+      { chatId, filename, bytes: buffer.length },
+      'Export delivered as Telegram document',
+    );
+    await logMessage({
+      userId,
+      channel: 'telegram',
+      messageType: 'data_export',
+      content: `[document:${filename}]`,
+      status: 'sent',
+      deliveryMs: Date.now() - start,
+      jobId,
+    });
+  } catch (err) {
+    jobLogger.error(
+      { chatId, error: err instanceof Error ? err.message : String(err) },
+      'Telegram document export delivery failed',
+    );
+    await logMessage({
+      userId,
+      channel: 'telegram',
+      messageType: 'data_export',
+      content: `[document:${filename}]`,
+      status: 'failed',
+      deliveryMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : String(err),
+      jobId,
+    });
+  }
+}
+
 // ── Export processor ──────────────────────────────────────────────────────────
 
 async function processExport(
@@ -336,16 +391,17 @@ async function processExport(
   const buffer = Buffer.from(json, 'utf8');
 
   const s3Key = `exports/${userId}/${requestId}.json`;
+  const filename = `coach-data-${requestId}.json`;
 
   if (!process.env.S3_BUCKET) {
-    // No S3 configured — complete with a placeholder note
-    jobLogger.warn('S3_BUCKET not set, completing export without file URL');
+    jobLogger.info('S3 not configured — delivering export as Telegram document');
     await pool.query(
       `UPDATE privacy_requests
        SET status = 'completed', completed_at = NOW(), updated_at = NOW()
        WHERE id = $1`,
       [requestId],
     );
+    await deliverExportDocument(pool, userId, buffer, filename, jobId, jobLogger);
     return;
   }
 

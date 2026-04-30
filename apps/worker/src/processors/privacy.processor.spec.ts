@@ -167,7 +167,7 @@ describe('missing env vars', () => {
     expect(mockPoolQuery).not.toHaveBeenCalled();
   });
 
-  it('completes without S3 URL when S3_BUCKET is not set', async () => {
+  it('falls back to Telegram document delivery when S3_BUCKET is not set', async () => {
     delete process.env.S3_BUCKET;
 
     // 1. Idempotency check
@@ -180,12 +180,18 @@ describe('missing env vars', () => {
     }
     // 21. UPDATE completed (no result_url)
     mockPoolQuery.mockResolvedValueOnce({ rows: [] });
+    // 22-24. getUserDeliveryInfo: device_tokens, telegram_links, profiles
+    mockPoolQuery.mockResolvedValueOnce({ rows: [] });
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ chat_id: 'tg-chat-1' }] });
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ locale: 'mn' }] });
 
     await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'export' }));
 
     expect(mockUploadToS3).not.toHaveBeenCalled();
     expect(mockGetPresignedUrl).not.toHaveBeenCalled();
     expect(mockSendExpoPush).not.toHaveBeenCalled();
+    const TelegrafMock = Telegraf as unknown as jest.Mock;
+    expect(TelegrafMock).toHaveBeenCalled();
     expect(mockPoolEnd).toHaveBeenCalled();
   });
 
