@@ -704,6 +704,11 @@ export const mn = {
     carbs: 'Нүүрс ус',
     fat: 'Өөх тос',
     fiber: 'Эслэг',
+    uploadFailed: 'Илгээж чадсангүй. Холболтоо шалгаад дахин оролдоорой.',
+    saveFailed: 'Хадгалж чадсангүй. Холболтоо шалгаад дахин оролдоорой.',
+    saveFoodFailed: 'Хоол хадгалж чадсангүй. Дахин оролдоорой.',
+    itemCount_one: '{{count}} хоол',
+    itemCount_other: '{{count}} хоол',
   },
   quickAdd: {
     title: 'Шууд нэмэх',

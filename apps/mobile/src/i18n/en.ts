@@ -722,6 +722,11 @@ export const en = {
     carbs: 'Carbs',
     fat: 'Fat',
     fiber: 'Fiber',
+    uploadFailed: 'Upload failed. Check your connection and try again.',
+    saveFailed: 'Save failed. Check your connection and try again.',
+    saveFoodFailed: 'Failed to save food. Please try again.',
+    itemCount_one: '{{count}} item',
+    itemCount_other: '{{count}} items',
   },
   quickAdd: {
     title: 'Quick Add',

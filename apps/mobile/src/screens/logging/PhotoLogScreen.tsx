@@ -102,6 +102,7 @@ function InputModal({
   keyboardType?: 'default' | 'decimal-pad';
   c: ReturnType<typeof useColors>;
 }) {
+  const { t } = useLocale();
   const [inputValue, setInputValue] = useState(value);
   useEffect(() => {
     if (visible) setInputValue(value);
@@ -113,7 +114,7 @@ function InputModal({
         onPress={onCancel}
         className="flex-1 bg-black/40 items-center justify-center px-8"
         accessibilityRole="button"
-        accessibilityLabel="Close"
+        accessibilityLabel={t('common.cancel')}
       >
         <Pressable
           onPress={() => {}}
@@ -136,17 +137,19 @@ function InputModal({
               onPress={onCancel}
               className="px-4 py-2.5 rounded-xl"
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t('common.cancel')}
             >
-              <Text className="text-sm font-sans-medium text-text-secondary">Cancel</Text>
+              <Text className="text-sm font-sans-medium text-text-secondary">
+                {t('common.cancel')}
+              </Text>
             </Pressable>
             <Pressable
               onPress={() => onSubmit(inputValue)}
               className="bg-primary-500 px-5 py-2.5 rounded-xl"
               accessibilityRole="button"
-              accessibilityLabel="Save"
+              accessibilityLabel={t('common.save')}
             >
-              <Text className="text-sm font-sans-semibold text-on-primary">Save</Text>
+              <Text className="text-sm font-sans-semibold text-on-primary">{t('common.save')}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -489,7 +492,7 @@ export function PhotoLogScreen() {
       const res = await api.upload<{ data: { draftId: string } }>(uploadPath, formData);
       pollDraft(res.data.draftId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed');
+      setError(e instanceof Error ? e.message : t('photoLog.uploadFailed'));
       setAnalyzing(false);
     }
   };
@@ -601,7 +604,7 @@ export function PhotoLogScreen() {
       setFoodSaved(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save food');
+      setError(e instanceof Error ? e.message : t('photoLog.saveFoodFailed'));
     } finally {
       setSavingFood(false);
     }
@@ -632,7 +635,7 @@ export function PhotoLogScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Save failed');
+      setError(e instanceof Error ? e.message : t('photoLog.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -806,7 +809,10 @@ export function PhotoLogScreen() {
                           <Badge variant="info">{t('photoLog.fromLabel')}</Badge>
                         ) : (
                           <Text className="text-xs text-text-tertiary font-sans-medium">
-                            {effectiveItems.length} {effectiveItems.length !== 1 ? 'items' : 'item'}
+                            {t('photoLog.itemCount_other').replace(
+                              '{{count}}',
+                              String(effectiveItems.length),
+                            )}
                           </Text>
                         )}
                       </View>
