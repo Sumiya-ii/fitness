@@ -75,4 +75,29 @@ export class WeightLogsService {
       dataPoints: logs.length,
     };
   }
+
+  /**
+   * Returns rolling-window averages over the user's full weight log history.
+   * window=1  → raw daily entries (no smoothing)
+   * window=N  → each point is the average of that entry and the N-1 preceding entries
+   */
+  async getRollingTrend(userId: string, window: number) {
+    const logs = await this.prisma.weightLog.findMany({
+      where: { userId },
+      orderBy: { loggedAt: 'asc' },
+    });
+
+    if (logs.length === 0) return [];
+
+    return logs.map((entry, idx) => {
+      const start = Math.max(0, idx - window + 1);
+      const slice = logs.slice(start, idx + 1);
+      const avg = slice.reduce((sum, l) => sum + Number(l.weightKg), 0) / slice.length;
+      return {
+        date: entry.loggedAt.toISOString().split('T')[0],
+        weightKg: Number(entry.weightKg),
+        rollingAvg: Number(avg.toFixed(2)),
+      };
+    });
+  }
 }
