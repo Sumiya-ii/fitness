@@ -173,7 +173,7 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
 
   const openaiKey = process.env.OPENAI_API_KEY;
   if (openaiKey) {
-    const openai = new OpenAI({ apiKey: openaiKey });
+    const openai = new OpenAI({ apiKey: openaiKey, timeout: 60_000 });
     const today = new Date().toISOString().split('T')[0]!;
     const aiMessage = await generateReminderMessage(openai, job.data, today);
     if (aiMessage) {

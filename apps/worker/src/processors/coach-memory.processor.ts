@@ -224,7 +224,7 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
   }
 
   const pool = new Pool({ connectionString: dbUrl });
-  const openai = new OpenAI({ apiKey: openaiKey });
+  const openai = new OpenAI({ apiKey: openaiKey, timeout: 60_000 });
 
   try {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
