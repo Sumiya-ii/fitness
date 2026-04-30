@@ -49,7 +49,6 @@ const MEAL_TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   snack: 'cafe-outline',
 };
 
-const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const CALENDAR_WEEKS = 5; // ~1 month of swipable history
 
 function toDateKey(date: Date): string {
@@ -308,21 +307,6 @@ function MealSection({ type, meals, typeLabel }: MealSectionProps) {
   );
 }
 
-const MONTH_LABELS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
 interface StreakCalendarModalProps {
   visible: boolean;
   onClose: () => void;
@@ -543,7 +527,7 @@ function StreakCalendarModal({
                 style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c.success }}
               />
               <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: c.textSecondary }}>
-                Logged
+                {t('dashboard.streakLogged')}
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
@@ -551,7 +535,7 @@ function StreakCalendarModal({
                 style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c.cardAlt }}
               />
               <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: c.textSecondary }}>
-                Missed
+                {t('dashboard.streakMissed')}
               </Text>
             </View>
           </View>
@@ -566,8 +550,8 @@ export function HomeScreen() {
   const c = useColors();
   const navigation = useNavigation();
   const { width: screenWidth } = useWindowDimensions();
-  const todayKey = useMemo(() => toDateKey(new Date()), []);
-  const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
+  const [todayKey, setTodayKey] = useState(() => toDateKey(new Date()));
+  const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
   const [displayName, setDisplayName] = useState('');
   const [carouselPage, setCarouselPage] = useState(0);
   const [streakModalVisible, setStreakModalVisible] = useState(false);
@@ -595,8 +579,9 @@ export function HomeScreen() {
   const calendarRef = useRef<ScrollView>(null);
 
   // Generate weeks where today is always at the 6th position (index 5)
+  // todayKey as dependency ensures this recomputes after midnight rollover.
   const calendarWeeks = useMemo(() => {
-    const today = new Date();
+    const today = new Date(todayKey + 'T00:00:00');
     const weeks: { date: Date; key: string }[][] = [];
     for (let w = -(CALENDAR_WEEKS - 1); w <= 0; w++) {
       const days: { date: Date; key: string }[] = [];
@@ -607,7 +592,7 @@ export function HomeScreen() {
       weeks.push(days);
     }
     return weeks;
-  }, []);
+  }, [todayKey]);
 
   // Scroll calendar to current week on mount
   useEffect(() => {
@@ -664,6 +649,13 @@ export function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Midnight rollover: if the date changed while the app was open, reset to new day.
+      const nowKey = toDateKey(new Date());
+      if (nowKey !== todayKey) {
+        setTodayKey(nowKey);
+        setSelectedDateKey(nowKey);
+      }
+
       // `cancelled` guards against stale responses overwriting fresh local state when
       // the user rapidly switches away and back before in-flight requests complete.
       // Zustand store actions use internal set() so last-write-wins is acceptable there;
