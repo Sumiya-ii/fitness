@@ -3,6 +3,10 @@ import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Sentry from '@sentry/node';
 import { MONGOLIAN_FOOD_REFERENCE } from '@coach/shared';
+import { logger } from '../logger';
+
+const OPENAI_TIMEOUT_MS = 60_000;
+const GEMINI_TIMEOUT_MS = 60_000;
 
 interface PhotoJobData {
   userId: string;
@@ -165,22 +169,26 @@ async function parseWithGemini(
     systemInstruction: systemPrompt,
   });
 
-  const result = await model.generateContent({
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { text: userPrompt },
-          { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
-        ],
+  const timeoutSignal = AbortSignal.timeout(GEMINI_TIMEOUT_MS);
+  const result = await model.generateContent(
+    {
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: userPrompt },
+            { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.2,
+        maxOutputTokens: 2000,
       },
-    ],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      temperature: 0.2,
-      maxOutputTokens: 2000,
     },
-  });
+    { signal: timeoutSignal },
+  );
 
   const content = result.response.text();
   return normalizeItems(JSON.parse(content) as { mealName?: string; items?: ParsedFoodItem[] });
@@ -192,7 +200,7 @@ async function parseWithOpenAI(
   systemPrompt: string,
   userPrompt: string,
 ): Promise<PhotoParseResult> {
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({ apiKey, timeout: OPENAI_TIMEOUT_MS });
   const response = await client.chat.completions.create({
     model: 'gpt-4o',
     response_format: { type: 'json_object' },
@@ -231,7 +239,10 @@ export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoPars
     try {
       return await parseWithGemini(photoBuffer, geminiKey, systemPrompt, userPrompt);
     } catch (err) {
-      console.warn('[Photo] Gemini failed, falling back to GPT-4o:', err);
+      logger.warn(
+        { error: err instanceof Error ? err.message : String(err), mode },
+        '[Photo] Gemini failed, falling back to GPT-4o',
+      );
       Sentry.captureException(err, {
         tags: { processor: 'photo', stage: 'gemini_parse', fallback: 'openai' },
         extra: { mode },
@@ -246,7 +257,7 @@ export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoPars
     return await parseWithOpenAI(photoBuffer, openaiKey, systemPrompt, userPrompt);
   }
 
-  console.warn('[Photo] No vision API key configured');
+  logger.warn({ jobId: job.id }, '[Photo] No vision API key configured');
   return {
     mealName: 'Meal',
     items: [],
