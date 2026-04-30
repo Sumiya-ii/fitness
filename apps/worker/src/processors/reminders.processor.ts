@@ -1,10 +1,42 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
+import { Pool } from 'pg';
 import { Telegraf } from 'telegraf';
 import * as Sentry from '@sentry/node';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
 import { logger } from '../logger';
+
+const DEFAULT_TIMEZONE = 'Asia/Ulaanbaatar';
+/** Delivery window: 7 AM – 10 PM in the user's local timezone */
+const DELIVERY_WINDOW_START = 7;
+const DELIVERY_WINDOW_END = 22;
+
+/** Returns the user's local hour (0–23) for the given IANA timezone string. */
+function localHour(timezone: string): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      hour12: false,
+    }).formatToParts(new Date());
+    const hourPart = parts.find((p) => p.type === 'hour');
+    const h = parseInt(hourPart?.value ?? '0', 10);
+    // Intl hour12:false returns 0–23; '24' can appear for midnight in some locales
+    return h === 24 ? 0 : h;
+  } catch {
+    // Unknown timezone — fall back to UTC hour
+    return new Date().getUTCHours();
+  }
+}
+
+async function fetchUserTimezone(pool: Pool, userId: string): Promise<string> {
+  const result = await pool.query<{ timezone: string }>(
+    `SELECT COALESCE(timezone, $2) AS timezone FROM profiles WHERE user_id = $1 LIMIT 1`,
+    [userId, DEFAULT_TIMEZONE],
+  );
+  return result.rows[0]?.timezone ?? DEFAULT_TIMEZONE;
+}
 
 const COACH_SYSTEM_PROMPT =
   'You are Coach, a concise Mongolian nutrition coach. Write warm, practical reminders in the user locale.';
@@ -167,6 +199,27 @@ export async function processReminderJob(job: Job<ReminderJobData>): Promise<voi
   const { userId, type, channels, chatId, locale, pushTokens = [] } = job.data;
 
   const lang = locale ?? 'mn';
+
+  // ── Timezone delivery window check ────────────────────────────────────────
+  // Fetch the user's IANA timezone from profiles. Default: Asia/Ulaanbaatar.
+  // Skip delivery if the user's local hour is outside 7 AM – 10 PM.
+  const dbUrl = process.env.DATABASE_URL;
+  if (dbUrl) {
+    const pool = new Pool({ connectionString: dbUrl });
+    try {
+      const timezone = await fetchUserTimezone(pool, userId);
+      const hour = localHour(timezone);
+      if (hour < DELIVERY_WINDOW_START || hour >= DELIVERY_WINDOW_END) {
+        logger.info(
+          { userId, timezone, localHour: hour },
+          '[Reminders] Outside delivery window (7–22 local), skipping',
+        );
+        return;
+      }
+    } finally {
+      await pool.end();
+    }
+  }
 
   // ── Attempt AI generation ─────────────────────────────────────────────────
   let message: { title: string; body: string } | undefined;
