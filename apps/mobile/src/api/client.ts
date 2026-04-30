@@ -173,7 +173,7 @@ export const api = {
   async delete<T>(path: string, headers?: Record<string, string>): Promise<T> {
     return request<T>('DELETE', path, { headers });
   },
-  async upload<T>(path: string, formData: FormData): Promise<T> {
+  async upload<T>(path: string, formData: FormData, signal?: AbortSignal): Promise<T> {
     const url = path.startsWith('http')
       ? path
       : `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
@@ -186,6 +186,7 @@ export const api = {
         method: 'POST',
         headers,
         body: formData,
+        signal,
       });
     const res = await doFetch();
 
