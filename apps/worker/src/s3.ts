@@ -6,6 +6,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Readable } from 'stream';
+import { logger } from './logger';
 
 function createClient(): S3Client {
   return new S3Client({
@@ -47,9 +48,12 @@ export async function deleteFromS3(key: string): Promise<void> {
         Key: key,
       }),
     );
-  } catch {
+  } catch (err) {
     // Best-effort cleanup — log but don't fail the job
-    console.warn(`[S3] Failed to delete object: ${key}`);
+    logger.warn(
+      { key, error: err instanceof Error ? err.message : String(err) },
+      '[S3] Failed to delete object',
+    );
   }
 }
 

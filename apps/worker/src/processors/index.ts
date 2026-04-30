@@ -1,5 +1,6 @@
 import { Job } from 'bullmq';
 import { QueueName, QUEUE_NAMES } from '@coach/shared';
+import { logger } from '../logger';
 import { processPhotoJob } from './photo.processor';
 import { processReminderJob } from './reminders.processor';
 import { processCoachMemoryJob } from './coach-memory.processor';
@@ -20,6 +21,6 @@ export async function processJob(queueName: QueueName, job: Job): Promise<unknow
       return processPrivacyJob(job);
 
     default:
-      console.warn(`No processor for queue: ${queueName}`);
+      logger.warn({ queueName }, 'No processor registered for queue');
   }
 }
