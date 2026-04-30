@@ -80,7 +80,7 @@ function NutritionTab() {
               value={loggedDays}
               sub={`${t('progressTab.of')} ${history.length}`}
             />
-            <Metric label="Goal" value={target ?? '-'} sub="kcal" />
+            <Metric label={t('progressTab.goal')} value={target ?? '-'} sub="kcal" />
           </View>
         </View>
       </Animated.View>
