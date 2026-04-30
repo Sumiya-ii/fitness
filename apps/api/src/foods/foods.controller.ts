@@ -33,7 +33,7 @@ export class FoodsController {
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
     }
-    return this.foodsService.findMany(parsed.data);
+    return await this.foodsService.findMany(parsed.data);
   }
 
   @Get(':id')
