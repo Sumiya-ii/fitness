@@ -809,10 +809,11 @@ export function PhotoLogScreen() {
                           <Badge variant="info">{t('photoLog.fromLabel')}</Badge>
                         ) : (
                           <Text className="text-xs text-text-tertiary font-sans-medium">
-                            {t('photoLog.itemCount_other').replace(
-                              '{{count}}',
-                              String(effectiveItems.length),
-                            )}
+                            {t(
+                              effectiveItems.length === 1
+                                ? 'photoLog.itemCount_one'
+                                : 'photoLog.itemCount_other',
+                            ).replace('{{count}}', String(effectiveItems.length))}
                           </Text>
                         )}
                       </View>

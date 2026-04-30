@@ -134,7 +134,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ token: null, user: null, isAuthenticated: false });
     // Clear per-user cached state so the next user starts fresh
     useDashboardStore.setState({ data: null, error: null });
-    useWaterStore.setState({ consumed: 0 });
+    useWaterStore.setState({ consumed: 0, target: 2000, isLoading: false, error: null });
     useWeightStore.setState({ history: [], trend: null, isLoading: false, error: null });
   },
 
