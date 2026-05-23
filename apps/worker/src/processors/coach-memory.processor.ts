@@ -73,7 +73,7 @@ async function deriveFacts(pool: Pool, userId: string): Promise<DerivedFacts> {
       ),
       // goal_type + calorie_target — read directly from profile/targets, no inference
       pool.query<{ goal_type: string | null; calorie_target: string | null }>(
-        `SELECT p.goal_type, t.calorie_target::text
+        `SELECT t.goal_type, t.calorie_target::text
          FROM profiles p
          LEFT JOIN targets t ON t.user_id = p.user_id AND t.effective_to IS NULL
          WHERE p.user_id = $1
