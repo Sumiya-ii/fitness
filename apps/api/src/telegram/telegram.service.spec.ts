@@ -1,5 +1,5 @@
 import { createHmac } from 'crypto';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
@@ -58,6 +58,22 @@ describe('TelegramService', () => {
   });
 
   describe('generateLinkCode', () => {
+    it('should throw ServiceUnavailableException when LINK_CODE_SECRET is not configured', async () => {
+      config.get.mockImplementation((key: string) => {
+        if (key === 'REDIS_URL') return 'redis://localhost:6379';
+        if (key === 'LINK_CODE_SECRET') return undefined;
+        return undefined;
+      });
+      const unconfiguredService = new TelegramService(
+        prisma as unknown as PrismaService,
+        config as unknown as ConfigService,
+      );
+
+      await expect(unconfiguredService.generateLinkCode('user-uuid')).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+    });
+
     it('should generate 6-digit code and store its hash in Redis with 5-min TTL', async () => {
       const code = await service.generateLinkCode('user-uuid');
 

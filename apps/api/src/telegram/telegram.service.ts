@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
   OnModuleDestroy,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import Redis from 'ioredis';
@@ -29,7 +30,7 @@ export class TelegramService implements OnModuleDestroy {
 
   private hashLinkCode(code: string): string {
     const secret = this.config.get('LINK_CODE_SECRET');
-    if (!secret) throw new Error('LINK_CODE_SECRET environment variable is required');
+    if (!secret) throw new ServiceUnavailableException('Telegram linking is not configured');
     return createHmac('sha256', secret).update(code).digest('hex');
   }
 
