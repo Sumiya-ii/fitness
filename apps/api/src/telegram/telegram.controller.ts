@@ -65,13 +65,17 @@ export class TelegramController {
     @Body() body: unknown,
     @Headers('x-telegram-bot-api-secret-token') secretHeader?: string,
   ) {
-    // If TELEGRAM_WEBHOOK_SECRET is configured, require the header to match.
-    // When unset the check is skipped for backward compatibility.
+    // This is a @Public() route, so the secret header is the ONLY thing that
+    // authenticates Telegram. TELEGRAM_WEBHOOK_SECRET MUST be set in production
+    // (configure it as the secret_token when calling setWebhook). When it is
+    // unset we deny rather than skip auth, so a misconfiguration can never leave
+    // the webhook open to anonymous callers.
     const expectedSecret = this.config.get('TELEGRAM_WEBHOOK_SECRET');
-    if (expectedSecret) {
-      if (!secretHeader || secretHeader !== expectedSecret) {
-        throw new UnauthorizedException('Invalid webhook secret');
-      }
+    if (!expectedSecret) {
+      throw new UnauthorizedException('Webhook secret not configured');
+    }
+    if (!secretHeader || secretHeader !== expectedSecret) {
+      throw new UnauthorizedException('Invalid webhook secret');
     }
 
     if (!body || typeof body !== 'object') {

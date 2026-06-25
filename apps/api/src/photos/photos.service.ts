@@ -4,6 +4,13 @@ import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from '@coach/shared';
 import type { ParsedFoodItem } from './photo-parser.service';
 
+interface ClarificationQuestion {
+  id: string;
+  text: string;
+  type: 'count' | 'choice';
+  choices?: string[];
+}
+
 export interface PhotoDraftStatus {
   id: string;
   status: 'waiting' | 'active' | 'completed' | 'failed';
@@ -18,6 +25,9 @@ export interface PhotoDraftStatus {
   totalSugar?: number;
   totalSodium?: number;
   totalSaturatedFat?: number;
+  confidenceLevel?: 'high' | 'medium' | 'low';
+  requiresClarification?: boolean;
+  clarificationQuestions?: ClarificationQuestion[];
 }
 
 @Injectable()
@@ -71,6 +81,9 @@ export class PhotosService {
         totalSugar?: number;
         totalSodium?: number;
         totalSaturatedFat?: number;
+        confidenceLevel?: 'high' | 'medium' | 'low';
+        requiresClarification?: boolean;
+        clarificationQuestions?: ClarificationQuestion[];
       };
       result.mealName = parsed.mealName;
       result.items = parsed.items;
@@ -82,6 +95,9 @@ export class PhotosService {
       result.totalSugar = parsed.totalSugar;
       result.totalSodium = parsed.totalSodium;
       result.totalSaturatedFat = parsed.totalSaturatedFat;
+      result.confidenceLevel = parsed.confidenceLevel;
+      result.requiresClarification = parsed.requiresClarification;
+      result.clarificationQuestions = parsed.clarificationQuestions;
     }
 
     return result;

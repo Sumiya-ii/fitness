@@ -132,7 +132,7 @@ export function TelegramConnectScreen() {
               className="mt-2 text-center text-sm leading-5 font-sans-medium"
               style={{ color: c.textSecondary }}
             >
-              {t('telegram.heroSubtitle')}
+              {t('telegram.heroSubtitleV2')}
             </Text>
             <View className="mt-4">
               <Badge variant={linked ? 'success' : 'warning'}>
@@ -167,7 +167,7 @@ export function TelegramConnectScreen() {
                   className="text-sm leading-5 font-sans-medium mb-4"
                   style={{ color: c.textSecondary }}
                 >
-                  {t('telegram.connectedDesc')}
+                  {t('telegram.connectedDescV2')}
                 </Text>
                 <Button
                   variant="outline"

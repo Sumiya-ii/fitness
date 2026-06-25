@@ -43,7 +43,7 @@ jest.mock('@sentry/node', () => ({
 
 // ── Imports ───────────────────────────────────────────────────────────────────
 
-import { processPhotoJob } from './photo.processor';
+import { processPhotoJob, closePhotoPool } from './photo.processor';
 import OpenAI from 'openai';
 import type { Job } from 'bullmq';
 import { lookupVerifiedFoodsBatch } from '../foods-lookup';
@@ -830,5 +830,34 @@ describe('9. Edge cases', () => {
 
     expect(mockGenerateContent).not.toHaveBeenCalled();
     expect(result.items[0].source).toBe('ai_estimate');
+  });
+});
+
+// ── Pool lifecycle ────────────────────────────────────────────────────────────
+
+describe('closePhotoPool', () => {
+  it('ends the singleton pool and is safe to call when pool was never created', async () => {
+    // closePhotoPool is a no-op when the pool has never been initialized
+    await expect(closePhotoPool()).resolves.toBeUndefined();
+  });
+
+  it('calls pool.end() after a job has run', async () => {
+    const { Pool } = jest.requireMock('pg') as { Pool: jest.Mock };
+    const mockEnd = jest.fn().mockResolvedValue(undefined);
+    Pool.mockImplementationOnce(() => ({ query: mockPoolQuery, end: mockEnd }));
+
+    // Force pool creation by running a job (env vars already set in beforeEach)
+    const mockOpenAI = getOpenAIMock();
+    mockOpenAI.mockResolvedValue({
+      choices: [{ message: { content: '{"items":[]}' } }],
+    });
+    mockPoolQuery.mockResolvedValue({ rows: [] });
+
+    await processPhotoJob(
+      makeJob({ userId: 'u1', reference: 'ref', photoBuffer: 'base64data', mode: 'food' }),
+    );
+
+    await closePhotoPool();
+    expect(mockEnd).toHaveBeenCalled();
   });
 });

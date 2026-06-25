@@ -203,7 +203,7 @@ export function AppSettingsScreen() {
                   options={[
                     { label: t('onboarding.themeLight'), value: 'light' },
                     { label: t('onboarding.themeDark'), value: 'dark' },
-                    { label: t('onboarding.themeSystem').split(' ')[0], value: 'system' },
+                    { label: t('settings.themeSystemShort'), value: 'system' },
                   ]}
                   value={themeMode}
                   onChange={(v) => setThemeMode(v as ThemeMode)}

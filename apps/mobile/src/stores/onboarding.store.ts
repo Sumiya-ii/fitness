@@ -79,6 +79,12 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       dietPreference: data.dietPreference,
     });
 
+    // Mark completion atomically: persist to AsyncStorage and update Zustand in a single
+    // logical step before any other side-effects. This prevents a re-submit window if the
+    // app restarts between a successful API call and a later clearDraft().
+    await AsyncStorage.setItem(PROFILE_SETUP_COMPLETE_KEY, 'true');
+    set({ profileSetupComplete: true });
+
     // Fire-and-forget: record health data consent at onboarding completion
     api
       .post('/privacy/consent', {
@@ -90,8 +96,6 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         // Non-blocking — don't prevent onboarding from completing
       });
 
-    await AsyncStorage.setItem(PROFILE_SETUP_COMPLETE_KEY, 'true');
-    set({ profileSetupComplete: true });
     profile.clearDraft();
   },
 }));

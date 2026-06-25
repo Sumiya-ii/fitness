@@ -29,8 +29,8 @@ export function ConnectTelegramScreen({ navigation }: Props) {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await api.get<{ linked: boolean }>('/telegram/status');
-      if (res.linked) {
+      const res = await api.get<{ data: { linked: boolean } }>('/telegram/status');
+      if (res.data.linked) {
         setLinked(true);
         setPendingLink(false);
       }
@@ -53,8 +53,8 @@ export function ConnectTelegramScreen({ navigation }: Props) {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const res = await api.post<{ code: string }>('/telegram/link-code', {});
-      const deepLink = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${res.code}`;
+      const res = await api.post<{ data: { code: string } }>('/telegram/link-code', {});
+      const deepLink = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${res.data.code}`;
       setPendingLink(true);
       await Linking.openURL(deepLink);
     } catch (e) {

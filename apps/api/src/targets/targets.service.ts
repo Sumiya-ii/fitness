@@ -30,31 +30,28 @@ export class TargetsService {
       weeklyRateKg: dto.weeklyRateKg,
     });
 
-    // Deactivate previous target
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    await this.prisma.target.updateMany({
-      where: {
-        userId,
-        effectiveTo: null,
-      },
-      data: {
-        effectiveTo: today,
-      },
-    });
+    // Deactivate previous target and create new one atomically
+    const target = await this.prisma.$transaction(async (tx) => {
+      await tx.target.updateMany({
+        where: { userId, effectiveTo: null },
+        data: { effectiveTo: today },
+      });
 
-    const target = await this.prisma.target.create({
-      data: {
-        userId,
-        goalType: dto.goalType,
-        calorieTarget: result.calorieTarget,
-        proteinGrams: result.proteinGrams,
-        carbsGrams: result.carbsGrams,
-        fatGrams: result.fatGrams,
-        weeklyRateKg: dto.weeklyRateKg,
-        effectiveFrom: today,
-      },
+      return tx.target.create({
+        data: {
+          userId,
+          goalType: dto.goalType,
+          calorieTarget: result.calorieTarget,
+          proteinGrams: result.proteinGrams,
+          carbsGrams: result.carbsGrams,
+          fatGrams: result.fatGrams,
+          weeklyRateKg: dto.weeklyRateKg,
+          effectiveFrom: today,
+        },
+      });
     });
 
     return this.formatTarget(target);

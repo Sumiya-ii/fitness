@@ -48,19 +48,23 @@ describe('TelegramController – webhook signature validation', () => {
       mockConfig.get.mockReturnValue(undefined);
     });
 
-    it('accepts request without any header (backward compat)', async () => {
-      await expect(controller.webhook({ update_id: 1 }, undefined)).resolves.toBeUndefined();
-      expect(mockBotService.handleUpdate).toHaveBeenCalledTimes(1);
+    it('denies request without any header (deny-when-unconfigured)', async () => {
+      await expect(controller.webhook({ update_id: 1 }, undefined)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockBotService.handleUpdate).not.toHaveBeenCalled();
     });
 
-    it('accepts request even if a header is supplied', async () => {
-      await expect(controller.webhook({ update_id: 1 }, 'any-value')).resolves.toBeUndefined();
-      expect(mockBotService.handleUpdate).toHaveBeenCalledTimes(1);
+    it('denies request even if a header is supplied', async () => {
+      await expect(controller.webhook({ update_id: 1 }, 'any-value')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockBotService.handleUpdate).not.toHaveBeenCalled();
     });
   });
 
-  it('throws BadRequestException for non-object body', async () => {
-    mockConfig.get.mockReturnValue(undefined);
-    await expect(controller.webhook(null, undefined)).rejects.toThrow(BadRequestException);
+  it('throws BadRequestException for non-object body when secret is configured', async () => {
+    mockConfig.get.mockReturnValue('my-secret');
+    await expect(controller.webhook(null, 'my-secret')).rejects.toThrow(BadRequestException);
   });
 });

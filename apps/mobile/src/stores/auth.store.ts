@@ -41,7 +41,7 @@ async function clearAllUserState(): Promise<void> {
   // Persisted cache removals
   await Promise.allSettled([
     clearDashboardCache(),
-    AsyncStorage.multiRemove(['onboarding_complete', 'profile_setup_complete']),
+    AsyncStorage.multiRemove(['onboarding_complete', 'profile_setup_complete', 'daily_step_goal']),
   ]);
 }
 

@@ -15,6 +15,10 @@ export const mn = {
     success: 'Амжилттай!',
     ok: 'За',
     permissionNeeded: 'Зөвшөөрөл хэрэгтэй байна',
+    skip: 'Алгасах',
+    errorSavingProfile:
+      'Профайлыг хадгалах боломжгүй байна. Интернэт холболтоо шалгаад дахин оролдоно уу.',
+    errorUnknown: 'Гэнэтийн алдаа гарлаа.',
   },
   tabs: {
     home: 'Нүүр',
@@ -196,6 +200,7 @@ export const mn = {
     fitness: 'Фитнесс',
     average: 'Дундаж',
     weeklyAverage: '7 хоногийн дундаж',
+    weight: 'Жин',
   },
   onboarding: {
     trackNutrition: 'Идсэнээ\nбүртгэе',
@@ -355,6 +360,12 @@ export const mn = {
     notifStreakDesc: 'Coach чамайг урамшуулна',
     notifAllow: 'Мэдэгдэл асаах',
     notifSkip: 'Дараа болъё',
+    notifExportTitle: 'Өгөгдөл экспортлогдлоо',
+    notifExportDesc: 'Таны өгөгдөл татахад бэлэн болоход мэдэгдэл илгээнэ.',
+    notifAccountTitle: 'Бүртгэл ба аюулгүй байдал',
+    notifAccountDesc: 'Бүртгэлтэй холбоотой чухал мэдэгдлүүд.',
+    notifSyncTitle: 'Синк төлөв',
+    notifSyncDesc: 'Арын синк дуусах эсвэл анхаарал шаардлагатай үед мэдэгдэнэ.',
     // Connect Telegram onboarding step
     connectTelegramTitle: 'Дуугаараа хоол бүртгэ',
     connectTelegramSubtitle:
@@ -484,6 +495,7 @@ export const mn = {
     metric: 'Метрик',
     imperial: 'Империал',
     appearance: 'Харагдац',
+    themeSystemShort: 'Авто',
     timezone: 'Цагийн бүс',
     timezoneDesc: 'Сануулга болон хоолны бүртгэлд ашиглана',
     selectTimezone: 'Цагийн бүс сонгох',
@@ -585,10 +597,13 @@ export const mn = {
     title: 'Telegram зөвлөгч',
     heroTitle: 'Чиний AI зөвлөгч Telegram дээр',
     heroSubtitle: 'Telegram-аар хоолоо бүртгээд, сануулга аваарай',
+    heroSubtitleV2: 'Telegram-аар дуугаараа хоол бүртгэж, AI зөвлөгчтэйгээ ярилцаарай',
     connected: 'Холбогдсон',
     notConnected: 'Холбогдоогүй',
     connectedAccount: 'Холбогдсон бүртгэл',
     connectedDesc: 'Telegram-аар хоол бүртгэж, сануулга авах боломжтой.',
+    connectedDescV2:
+      'Дуут мессеж эсвэл текст илгээж хоол бүртгэх ба Telegram дээр AI зөвлөгчтэйгээ ярилцах боломжтой.',
     unlinkAccount: 'Холболт салгах',
     unlinkTitle: 'Telegram салгах',
     unlinkConfirm: 'Telegram-аа үнэхээр салгах уу?',
@@ -757,6 +772,7 @@ export const mn = {
     tapToConfirm: 'Баталгаажуулахын тулд дарна уу:',
     reviewBeforeSaving: 'Хадгалахаасаа өмнө шалгаарай',
     accuracyQuestion: 'Хадгалагдлаа! Калори хэр зөв байсан бэ?',
+    accuracySubtitle: 'AI-н нарийвчлалыг сайжруулахад тусал',
     accuracy_low: 'Тийм ч зөв биш',
     accuracy_medium: 'Ойрхон байсан',
     accuracy_high: 'Маш зөв байсан',

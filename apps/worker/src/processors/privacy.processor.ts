@@ -395,13 +395,15 @@ async function processExport(
 
   if (!process.env.S3_BUCKET) {
     jobLogger.info('S3 not configured — delivering export as Telegram document');
+    // Deliver first; mark completed only after delivery so a delivery failure
+    // keeps status='processing' and the job can retry without data loss.
+    await deliverExportDocument(pool, userId, buffer, filename, jobId, jobLogger);
     await pool.query(
       `UPDATE privacy_requests
        SET status = 'completed', completed_at = NOW(), updated_at = NOW()
        WHERE id = $1`,
       [requestId],
     );
-    await deliverExportDocument(pool, userId, buffer, filename, jobId, jobLogger);
     return;
   }
 

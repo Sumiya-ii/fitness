@@ -432,6 +432,13 @@ function getPool(): Pool {
   return _pool;
 }
 
+export async function closePhotoPool(): Promise<void> {
+  if (_pool) {
+    await _pool.end();
+    _pool = undefined;
+  }
+}
+
 export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoParseResult> {
   const { photoBuffer, userId } = job.data;
   let { mode } = job.data;

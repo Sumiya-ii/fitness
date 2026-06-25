@@ -185,12 +185,12 @@ describe('missing env vars', () => {
     for (let i = 0; i < 18; i++) {
       mockPoolQuery.mockResolvedValueOnce({ rows: [] });
     }
-    // 21. UPDATE completed (no result_url)
+    // 21-23. getUserDeliveryInfo (called inside deliverExportDocument, before UPDATE completed)
+    mockPoolQuery.mockResolvedValueOnce({ rows: [] }); // device_tokens (unused by deliverExportDocument)
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ chat_id: 'tg-chat-1' }] }); // telegram_links
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ locale: 'mn' }] }); // profiles
+    // 24. UPDATE completed (after delivery)
     mockPoolQuery.mockResolvedValueOnce({ rows: [] });
-    // 22-24. getUserDeliveryInfo: device_tokens, telegram_links, profiles
-    mockPoolQuery.mockResolvedValueOnce({ rows: [] });
-    mockPoolQuery.mockResolvedValueOnce({ rows: [{ chat_id: 'tg-chat-1' }] });
-    mockPoolQuery.mockResolvedValueOnce({ rows: [{ locale: 'mn' }] });
 
     await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'export' }));
 
@@ -200,6 +200,9 @@ describe('missing env vars', () => {
     const TelegrafMock = Telegraf as unknown as jest.Mock;
     expect(TelegrafMock).toHaveBeenCalled();
     expect(mockPoolEnd).toHaveBeenCalled();
+    // UPDATE completed must be the last pool.query call (after delivery)
+    const lastQueryCall = mockPoolQuery.mock.calls[mockPoolQuery.mock.calls.length - 1];
+    expect(lastQueryCall[0]).toMatch(/status = 'completed'/);
   });
 
   it('skips Telegram delivery when TELEGRAM_BOT_TOKEN is not set', async () => {

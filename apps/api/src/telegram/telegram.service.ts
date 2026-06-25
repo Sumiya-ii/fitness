@@ -3,6 +3,8 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  HttpException,
+  HttpStatus,
   OnModuleDestroy,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -12,6 +14,13 @@ import { ConfigService } from '../config';
 
 const LINK_CODE_PREFIX = 'telegram:link:';
 const LINK_CODE_TTL_SECONDS = 300; // 5 minutes
+
+// Brute-force protection for the @Public() /telegram/confirm endpoint.
+// A 6-digit code has only 1M possibilities, so without per-code limiting an
+// attacker could enumerate it within the 5-minute TTL. Cap attempts per code.
+const CONFIRM_ATTEMPT_PREFIX = 'telegram:confirm-attempts:';
+const CONFIRM_MAX_ATTEMPTS = 5;
+const CONFIRM_ATTEMPT_TTL_SECONDS = 300; // matches link code lifetime
 
 @Injectable()
 export class TelegramService implements OnModuleDestroy {
@@ -54,11 +63,31 @@ export class TelegramService implements OnModuleDestroy {
     code: string,
     username?: string,
   ): Promise<{ success: boolean; userId: string }> {
-    const key = `${LINK_CODE_PREFIX}${this.hashLinkCode(code)}`;
+    const codeHash = this.hashLinkCode(code);
+
+    // Brute-force guard: cap the number of guesses against any single code.
+    // INCR returns the post-increment value; set a TTL on the first hit so the
+    // window self-expires alongside the link code.
+    const attemptKey = `${CONFIRM_ATTEMPT_PREFIX}${codeHash}`;
+    const attempts = await this.redis.incr(attemptKey);
+    if (attempts === 1) {
+      await this.redis.expire(attemptKey, CONFIRM_ATTEMPT_TTL_SECONDS);
+    }
+    if (attempts > CONFIRM_MAX_ATTEMPTS) {
+      throw new HttpException(
+        'Too many attempts. Request a new code.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const key = `${LINK_CODE_PREFIX}${codeHash}`;
     const storedUserId = await this.redis.get(key);
     if (!storedUserId) {
       throw new BadRequestException('Invalid or expired link code');
     }
+
+    // Successful match — clear the attempt counter so a legit relink isn't blocked.
+    await this.redis.del(attemptKey);
 
     // Ensure one Telegram account links to one app user
     const existing = await this.prisma.telegramLink.findFirst({

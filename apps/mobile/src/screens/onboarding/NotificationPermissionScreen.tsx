@@ -16,24 +16,19 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'NotificationPermi
 
 const FEATURE_KEYS = [
   {
-    icon: 'sunny-outline' as const,
-    titleKey: 'onboarding.notifMorningTitle',
-    descKey: 'onboarding.notifMorningDesc',
+    icon: 'download-outline' as const,
+    titleKey: 'onboarding.notifExportTitle',
+    descKey: 'onboarding.notifExportDesc',
   },
   {
-    icon: 'water-outline' as const,
-    titleKey: 'onboarding.notifWaterTitle',
-    descKey: 'onboarding.notifWaterDesc',
+    icon: 'shield-checkmark-outline' as const,
+    titleKey: 'onboarding.notifAccountTitle',
+    descKey: 'onboarding.notifAccountDesc',
   },
   {
-    icon: 'bar-chart-outline' as const,
-    titleKey: 'onboarding.notifProgressTitle',
-    descKey: 'onboarding.notifProgressDesc',
-  },
-  {
-    icon: 'trophy-outline' as const,
-    titleKey: 'onboarding.notifStreakTitle',
-    descKey: 'onboarding.notifStreakDesc',
+    icon: 'refresh-outline' as const,
+    titleKey: 'onboarding.notifSyncTitle',
+    descKey: 'onboarding.notifSyncDesc',
   },
 ] as const;
 

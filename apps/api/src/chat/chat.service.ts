@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { PrismaService } from '../prisma';
+import { toDateKeyInTZ } from '@coach/shared';
 import OpenAI from 'openai';
 import Redis from 'ioredis';
 
@@ -76,10 +77,18 @@ export class ChatService implements OnModuleDestroy {
       };
     }
 
-    // Build nutrition context from today's dashboard
+    // Build nutrition context from today's dashboard. Resolve the user's
+    // timezone first so "today" is their local calendar day, not UTC —
+    // otherwise Mongolian users (UTC+8) see 0 meals after 08:00 local.
     let nutritionContext = 'User nutrition data is not available right now.';
     try {
-      const dashboard = await this.dashboardService.getDailyDashboard(userId);
+      const profile = await this.prisma.profile.findUnique({
+        where: { userId },
+        select: { timezone: true },
+      });
+      const tz = profile?.timezone ?? undefined;
+      const dateStr = toDateKeyInTZ(new Date(), tz);
+      const dashboard = await this.dashboardService.getDailyDashboard(userId, dateStr, tz);
       if (dashboard.targets) {
         const { consumed, targets, remaining, mealCount } = dashboard;
         nutritionContext = [

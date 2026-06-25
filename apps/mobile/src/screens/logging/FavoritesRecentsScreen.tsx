@@ -107,22 +107,30 @@ export function FavoritesRecentsScreen() {
     async (item: FavoriteItem | RecentItem) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       try {
-        // Derive calories: FavoriteItem stores per-100g values × servingCount; RecentItem stores last-logged calories directly.
-        const calories =
-          'caloriesPer100g' in item
-            ? Math.round((item.caloriesPer100g * item.servingCount) / 100)
-            : item.lastCalories;
-        const protein =
-          'proteinPer100g' in item
-            ? Math.round((item.proteinPer100g * item.servingCount) / 100)
-            : item.lastProtein;
-
-        await mealsApi.quickAdd({
-          calories,
-          proteinGrams: protein,
-          note: item.name,
-          source: 'quick_relog',
-        });
+        if ('caloriesPer100g' in item) {
+          // FavoriteItem: fetch the food to get real serving data and nutrients,
+          // then log quantity=1 of the default (or first) serving.
+          // This avoids using servingCount (which is the count of serving options,
+          // not a quantity) and handles optimistic items that have 0 calories.
+          const foodRes = await mealsApi.getFood(item.foodId);
+          const food = foodRes.data;
+          const serving =
+            food.servings.find((s: { isDefault: boolean }) => s.isDefault) ?? food.servings[0];
+          if (!serving) throw new Error('no serving');
+          await mealsApi.createMealLog({
+            source: 'quick_relog',
+            note: item.name,
+            items: [{ foodId: food.id, servingId: serving.id, quantity: 1 }],
+          });
+        } else {
+          // RecentItem: lastCalories/lastProtein are the actual logged values.
+          await mealsApi.quickAdd({
+            calories: item.lastCalories,
+            proteinGrams: item.lastProtein,
+            note: item.name,
+            source: 'quick_relog',
+          });
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         navigation.goBack();
       } catch {

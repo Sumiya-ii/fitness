@@ -7,6 +7,7 @@ jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => ({
     set: jest.fn().mockResolvedValue('OK'),
     get: jest.fn().mockResolvedValue(null),
+    getdel: jest.fn().mockResolvedValue(null),
     del: jest.fn().mockResolvedValue(1),
     disconnect: jest.fn(),
   }));
@@ -285,6 +286,7 @@ describe('TelegramFoodParserService', () => {
         totalCarbs: 18,
         totalFat: 12,
         originalText: '3 буузт идлээ',
+        draftId: 'draft-1',
       };
 
       await service.saveDraft(123456, draft);
@@ -343,6 +345,41 @@ describe('TelegramFoodParserService', () => {
       await service.deleteDraft(123456);
 
       expect(redisMock.del).toHaveBeenCalledWith('tg:draft:123456');
+    });
+
+    it('takeDraft atomically read-and-deletes via GETDEL and returns the draft', async () => {
+      const draft = {
+        isFoodLog: true,
+        items: [],
+        mealType: null,
+        totalCalories: 270,
+        totalProtein: 21,
+        totalCarbs: 18,
+        totalFat: 12,
+        originalText: '3 буузт идлээ',
+        draftId: 'abc',
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const redisMock = (service as any).redis;
+      redisMock.getdel.mockResolvedValueOnce(JSON.stringify(draft));
+
+      const result = await service.takeDraft(123456);
+
+      expect(redisMock.getdel).toHaveBeenCalledWith('tg:draft:123456');
+      expect(result).toEqual(draft);
+    });
+
+    it('takeDraft returns null when the draft was already consumed', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (service as any).redis.getdel.mockResolvedValueOnce(null);
+
+      const result = await service.takeDraft(123456);
+
+      expect(result).toBeNull();
+    });
+
+    it('newDraftId returns a unique id each call', () => {
+      expect(service.newDraftId()).not.toBe(service.newDraftId());
     });
   });
 

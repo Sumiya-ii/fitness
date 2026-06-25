@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
@@ -28,6 +29,9 @@ export interface TelegramFoodParseResult {
 
 export interface TelegramDraft extends TelegramFoodParseResult {
   originalText: string;
+  /** Stable id for this draft — embedded in the confirm callback_data so a
+   *  confirm can be matched to exactly one draft (guards double-logging). */
+  draftId: string;
 }
 
 const DRAFT_TTL_SECONDS = 600; // 10 minutes
@@ -194,7 +198,27 @@ export class TelegramFoodParserService implements OnModuleDestroy {
     }
   }
 
+  /**
+   * Atomically read-and-delete the draft. GETDEL ensures a draft is consumed
+   * exactly once, so two near-simultaneous confirm taps can't both log it.
+   * Returns the draft (or null if already consumed / never existed).
+   */
+  async takeDraft(telegramUserId: number): Promise<TelegramDraft | null> {
+    const raw = await this.redis.getdel(`${DRAFT_KEY_PREFIX}${telegramUserId}`);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as TelegramDraft;
+    } catch {
+      return null;
+    }
+  }
+
   async deleteDraft(telegramUserId: number): Promise<void> {
     await this.redis.del(`${DRAFT_KEY_PREFIX}${telegramUserId}`);
+  }
+
+  /** Generate a stable draft id for embedding in confirm callback_data. */
+  newDraftId(): string {
+    return randomUUID();
   }
 }

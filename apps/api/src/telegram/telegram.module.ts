@@ -9,9 +9,10 @@ import { IdempotencyCleanupService } from './idempotency-cleanup.service';
 import { TelegramFoodParserService } from './telegram-food-parser.service';
 import { ChatModule } from '../chat';
 import { MealLogsModule } from '../meal-logs/meal-logs.module';
+import { SubscriptionsModule } from '../subscriptions';
 
 @Module({
-  imports: [ObservabilityModule, ConfigModule, ChatModule, MealLogsModule],
+  imports: [ObservabilityModule, ConfigModule, ChatModule, MealLogsModule, SubscriptionsModule],
   controllers: [TelegramController],
   providers: [
     TelegramService,

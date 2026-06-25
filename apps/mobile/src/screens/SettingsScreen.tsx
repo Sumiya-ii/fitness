@@ -219,13 +219,13 @@ export function SettingsScreen() {
     try {
       const [profileRes, telegramRes, privacyRes] = await Promise.all([
         api.get<{ data: ProfileData }>('/profile'),
-        api.get<TelegramStatus>('/telegram/status'),
+        api.get<{ data: TelegramStatus }>('/telegram/status'),
         api.get<{ data: PrivacyRequest[]; meta: { total: number; page: number; limit: number } }>(
           '/privacy/requests?limit=20',
         ),
       ]);
       setProfile(profileRes.data);
-      setTelegramStatus(telegramRes);
+      setTelegramStatus(telegramRes.data);
 
       // Find the most recent request of each type
       const requests = privacyRes.data ?? [];

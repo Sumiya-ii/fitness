@@ -1,5 +1,10 @@
 import { createHmac } from 'crypto';
-import { BadRequestException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import { PrismaService } from '../prisma';
 import { ConfigService } from '../config';
@@ -12,6 +17,8 @@ const mockRedis = {
   setex: jest.fn().mockResolvedValue('OK'),
   get: jest.fn(),
   del: jest.fn().mockResolvedValue(1),
+  incr: jest.fn().mockResolvedValue(1),
+  expire: jest.fn().mockResolvedValue(1),
 };
 
 jest.mock('ioredis', () => {
@@ -139,6 +146,52 @@ describe('TelegramService', () => {
       await expect(service.confirmLink('tg-123', 'chat-123', '123456')).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('increments the per-code attempt counter and sets a TTL on first attempt', async () => {
+      mockRedis.incr.mockResolvedValue(1);
+      mockRedis.get.mockResolvedValue(null);
+
+      await expect(service.confirmLink('tg-123', 'chat-123', '123456')).rejects.toThrow(
+        BadRequestException,
+      );
+
+      const attemptKey = `telegram:confirm-attempts:${hashLinkCode('123456')}`;
+      expect(mockRedis.incr).toHaveBeenCalledWith(attemptKey);
+      expect(mockRedis.expire).toHaveBeenCalledWith(attemptKey, 300);
+    });
+
+    it('does not reset the TTL on subsequent attempts', async () => {
+      mockRedis.incr.mockResolvedValue(3);
+      mockRedis.get.mockResolvedValue(null);
+
+      await expect(service.confirmLink('tg-123', 'chat-123', '123456')).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(mockRedis.expire).not.toHaveBeenCalled();
+    });
+
+    it('rejects with 429 once attempts exceed the cap, without checking the code', async () => {
+      mockRedis.incr.mockResolvedValue(6); // CONFIRM_MAX_ATTEMPTS = 5
+
+      await expect(service.confirmLink('tg-123', 'chat-123', '000000')).rejects.toThrow(
+        HttpException,
+      );
+      // Must short-circuit before reading the stored code
+      expect(mockRedis.get).not.toHaveBeenCalled();
+    });
+
+    it('clears the attempt counter after a successful link', async () => {
+      mockRedis.incr.mockResolvedValue(1);
+      mockRedis.get.mockResolvedValue('user-uuid');
+      prisma.telegramLink.findFirst.mockResolvedValue(null);
+      prisma.telegramLink.upsert.mockResolvedValue({ userId: 'user-uuid', linkedAt: new Date() });
+
+      await service.confirmLink('tg-123', 'chat-123', '123456', 'username');
+
+      const attemptKey = `telegram:confirm-attempts:${hashLinkCode('123456')}`;
+      expect(mockRedis.del).toHaveBeenCalledWith(attemptKey);
     });
   });
 

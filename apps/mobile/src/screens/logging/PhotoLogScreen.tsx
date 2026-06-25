@@ -534,10 +534,15 @@ export function PhotoLogScreen() {
   // Guardrail state
   const [reviewedItems, setReviewedItems] = useState<Set<number>>(new Set());
   const [lowConfidenceToastShown, setLowConfidenceToastShown] = useState(false);
-  const [savedMealLogId, setSavedMealLogId] = useState<string | null>(null);
-  const [accuracyFeedbackShown, setAccuracyFeedbackShown] = useState(false);
+  // Accuracy feedback modal state (#19)
+  const [accuracyModal, setAccuracyModal] = useState<{
+    visible: boolean;
+    mealLogId: string | null;
+  }>({ visible: false, mealLogId: null });
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
+  // Active draft id ref — guards stale poll responses after retake (#20)
+  const activeDraftIdRef = useRef<string | null>(null);
   const itemsListRef = useRef<import('react-native').ScrollView | null>(null);
 
   const [modal, setModal] = useState<{
@@ -629,6 +634,8 @@ export function PhotoLogScreen() {
 
       try {
         const res = await api.get<{ data: PhotoDraft }>(`/photos/drafts/${draftId}`);
+        // Guard: if retake happened while the request was in-flight, discard (#20)
+        if (activeDraftIdRef.current !== draftId) return;
         const d = res.data;
 
         if (d.status === 'completed') {
@@ -723,6 +730,7 @@ export function PhotoLogScreen() {
         level: 'info',
       });
 
+      activeDraftIdRef.current = res.data.draftId;
       Sentry.addBreadcrumb({
         category: 'photoLog',
         message: 'processing_start',
@@ -806,7 +814,10 @@ export function PhotoLogScreen() {
 
   const handleRetake = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Cancel any pending poll timer and mark draft invalidated so in-flight
+    // api.get responses are ignored when they resolve (#20)
     if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    activeDraftIdRef.current = null;
     uploadAbortRef.current?.abort();
     uploadAbortRef.current = null;
     setPhotoUri(null);
@@ -819,8 +830,7 @@ export function PhotoLogScreen() {
     setFoodSaved(false);
     setReviewedItems(new Set());
     setLowConfidenceToastShown(false);
-    setSavedMealLogId(null);
-    setAccuracyFeedbackShown(false);
+    setAccuracyModal({ visible: false, mealLogId: null });
   };
 
   const handleDeleteItem = (index: number) => {
@@ -918,6 +928,8 @@ export function PhotoLogScreen() {
         proteinGrams: Math.round(totalProtein * 10) / 10,
         carbsGrams: Math.round(totalCarbs * 10) / 10,
         fatGrams: Math.round(totalFat * 10) / 10,
+        // #21: include fiber so AI-analyzed fiber is not dropped
+        fiberGrams: totalFiber > 0 ? Math.round(totalFiber * 10) / 10 : undefined,
         sugarGrams: Math.round(totalSugar * 10) / 10,
         sodiumMg: Math.round(totalSodium * 10) / 10,
         saturatedFatGrams: Math.round(totalSaturatedFat * 10) / 10,
@@ -928,10 +940,9 @@ export function PhotoLogScreen() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const logId = result?.data?.id ?? null;
-      setSavedMealLogId(logId);
-      setAccuracyFeedbackShown(false);
-      // Navigate away — accuracy toast shown in render after state settles
-      navigation.goBack();
+      // #19: show accuracy prompt before navigating; goBack() is deferred to
+      // handleAccuracyFeedback / handleAccuracySkip so the prompt is actually seen
+      setAccuracyModal({ visible: true, mealLogId: logId });
     } catch (e) {
       setError(e instanceof Error ? e.message : t('photoLog.saveFailed'));
     } finally {
@@ -939,23 +950,32 @@ export function PhotoLogScreen() {
     }
   };
 
+  // #19: fire analytics then navigate; called from accuracy modal
   const handleAccuracyFeedback = useCallback(
     (accuracy: 'low' | 'medium' | 'high') => {
-      if (!savedMealLogId) return;
-      setAccuracyFeedbackShown(true);
-      analyticsApi.trackEvent({
-        event: 'photo_meal_accuracy',
-        accuracy,
-        mealLogId: savedMealLogId,
-        items: baseItems.map((item) => ({
-          matchedFoodId: item.matchedFoodId,
-          calories: item.calories,
-          source: item.source,
-        })),
-      });
+      const mealLogId = accuracyModal.mealLogId;
+      setAccuracyModal({ visible: false, mealLogId: null });
+      if (mealLogId) {
+        analyticsApi.trackEvent({
+          event: 'photo_meal_accuracy',
+          accuracy,
+          mealLogId,
+          items: baseItems.map((item) => ({
+            matchedFoodId: item.matchedFoodId,
+            calories: item.calories,
+            source: item.source,
+          })),
+        });
+      }
+      navigation.goBack();
     },
-    [savedMealLogId, baseItems],
+    [accuracyModal.mealLogId, baseItems, navigation],
   );
+
+  const handleAccuracySkip = useCallback(() => {
+    setAccuracyModal({ visible: false, mealLogId: null });
+    navigation.goBack();
+  }, [navigation]);
 
   const handleMarkItemReviewed = useCallback((index: number) => {
     setReviewedItems((prev) => {
@@ -1540,36 +1560,7 @@ export function PhotoLogScreen() {
                       </Button>
                     )}
 
-                    {/* Accuracy feedback toast — shown after successful save */}
-                    {savedMealLogId && !accuracyFeedbackShown && (
-                      <Animated.View
-                        entering={FadeInDown.duration(300)}
-                        className="mt-3 rounded-2xl bg-surface-card border border-surface-border px-4 py-3"
-                      >
-                        <Text className="text-sm font-sans-medium text-text mb-2">
-                          {t('photoLog.accuracyQuestion')}
-                        </Text>
-                        <View className="flex-row gap-2">
-                          {(
-                            [
-                              { emoji: '👎', value: 'low' as const },
-                              { emoji: '👌', value: 'medium' as const },
-                              { emoji: '👍', value: 'high' as const },
-                            ] as const
-                          ).map(({ emoji, value }) => (
-                            <Pressable
-                              key={value}
-                              onPress={() => handleAccuracyFeedback(value)}
-                              className="flex-1 items-center py-2 rounded-xl bg-surface-secondary active:opacity-60"
-                              accessibilityRole="button"
-                              accessibilityLabel={t(`photoLog.accuracy_${value}`)}
-                            >
-                              <Text className="text-xl">{emoji}</Text>
-                            </Pressable>
-                          ))}
-                        </View>
-                      </Animated.View>
-                    )}
+                    {/* Accuracy feedback modal rendered outside scroll via root Modal below */}
                   </>
                 ) : (
                   /* No items found */
@@ -1607,6 +1598,62 @@ export function PhotoLogScreen() {
           onCancel={() => setModal((m) => ({ ...m, visible: false }))}
           c={c}
         />
+
+        {/* #19 Accuracy feedback modal — shown after save, before goBack() */}
+        <Modal
+          visible={accuracyModal.visible}
+          transparent
+          animationType="fade"
+          onRequestClose={handleAccuracySkip}
+        >
+          <Pressable
+            onPress={handleAccuracySkip}
+            className="flex-1 bg-black/40 items-center justify-center px-8"
+            accessibilityRole="button"
+            accessibilityLabel={t('common.skip')}
+          >
+            <Pressable
+              onPress={() => {}}
+              className="w-full rounded-3xl p-5 bg-surface-card border border-surface-border"
+            >
+              <Text className="text-base font-sans-semibold text-text mb-1">
+                {t('photoLog.accuracyQuestion')}
+              </Text>
+              <Text className="text-sm text-text-secondary mb-4">
+                {t('photoLog.accuracySubtitle')}
+              </Text>
+              <View className="flex-row gap-2 mb-3">
+                {(
+                  [
+                    { emoji: '👎', value: 'low' as const },
+                    { emoji: '👌', value: 'medium' as const },
+                    { emoji: '👍', value: 'high' as const },
+                  ] as const
+                ).map(({ emoji, value }) => (
+                  <Pressable
+                    key={value}
+                    onPress={() => handleAccuracyFeedback(value)}
+                    className="flex-1 items-center py-3 rounded-xl bg-surface-secondary active:opacity-60"
+                    accessibilityRole="button"
+                    accessibilityLabel={t(`photoLog.accuracy_${value}`)}
+                  >
+                    <Text className="text-2xl">{emoji}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Pressable
+                onPress={handleAccuracySkip}
+                className="items-center py-2"
+                accessibilityRole="button"
+                accessibilityLabel={t('common.skip')}
+              >
+                <Text className="text-sm text-text-secondary font-sans-medium">
+                  {t('common.skip')}
+                </Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </SafeAreaView>
     </View>
   );

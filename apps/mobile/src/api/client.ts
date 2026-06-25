@@ -118,8 +118,20 @@ async function request<T>(
     init.body = JSON.stringify(options.body);
   }
 
-  const doFetch = () => fetch(url, init);
-  let res = await doFetch();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25_000);
+  const doFetch = () => fetch(url, { ...init, signal: controller.signal });
+  let res: Response;
+  try {
+    res = await doFetch();
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your connection and try again.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   // On 401, force-refresh the Firebase token and retry once.
   if (res.status === 401 && _onRefreshToken) {

@@ -529,7 +529,13 @@ export function HomeScreen() {
   const [weekCalorieTarget, setWeekCalorieTarget] = useState<number | null>(null);
   const [telegramLinked, setTelegramLinked] = useState<boolean | null>(null);
   const { data: streakData, fetch: fetchStreaks } = useStreakStore();
-  const { data, isLoading, fetchDashboard, loadCachedDashboard } = useDashboardStore();
+  const {
+    data,
+    isLoading,
+    error: dashboardError,
+    fetchDashboard,
+    loadCachedDashboard,
+  } = useDashboardStore();
   const {
     consumed: waterConsumed,
     target: waterTarget,
@@ -574,8 +580,10 @@ export function HomeScreen() {
 
   const loadTelegramStatus = useCallback(async () => {
     try {
-      const res = await api.get<{ linked: boolean }>('/telegram/status');
-      setTelegramLinked(res.linked);
+      const res = await api.get<{ data: { linked: boolean; telegramUsername?: string } }>(
+        '/telegram/status',
+      );
+      setTelegramLinked(res.data.linked);
     } catch {
       // keep null — don't show CTA if we can't determine status
     }
@@ -685,6 +693,29 @@ export function HomeScreen() {
 
   if (isLoading && !data) {
     return <HomeSkeleton />;
+  }
+
+  if (dashboardError && !data) {
+    return (
+      <View className="flex-1 items-center justify-center px-8" style={{ backgroundColor: c.bg }}>
+        <Ionicons name="cloud-offline-outline" size={48} color={c.textTertiary} />
+        <Text className="text-base font-sans-semibold text-text mt-4 mb-2 text-center">
+          {t('common.error')}
+        </Text>
+        <Text className="text-sm text-text-tertiary font-sans-medium text-center mb-6">
+          {dashboardError}
+        </Text>
+        <Pressable
+          onPress={() => fetchDashboard(selectedDateKey)}
+          className="rounded-xl px-6 py-3"
+          style={{ backgroundColor: c.primary }}
+        >
+          <Text className="text-sm font-sans-semibold" style={{ color: c.onPrimary }}>
+            {t('common.retry')}
+          </Text>
+        </Pressable>
+      </View>
+    );
   }
 
   const targets = data?.targets ?? null;
@@ -851,7 +882,10 @@ export function HomeScreen() {
                   return (
                     <Pressable
                       key={key}
-                      onPress={() => setSelectedDateKey(key)}
+                      onPress={() => {
+                        if (!isFuture) setSelectedDateKey(key);
+                      }}
+                      disabled={isFuture}
                       style={{ flex: 1, alignItems: 'center', paddingVertical: 2 }}
                     >
                       <Text

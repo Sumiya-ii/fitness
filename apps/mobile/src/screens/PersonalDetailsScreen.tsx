@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -15,14 +15,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { MainStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BackButton, Button, SkeletonLoader } from '../components/ui';
 import { api } from '../api';
 import { useLocale } from '../i18n';
 import { useColors } from '../theme';
-
-const STEP_GOAL_KEY = 'daily_step_goal';
 
 interface ProfileData {
   displayName: string | null;
@@ -99,7 +96,7 @@ function DetailRow({
   );
 }
 
-type EditField = 'weight' | 'goalWeight' | 'height' | 'birthDate' | 'gender' | 'stepGoal' | null;
+type EditField = 'weight' | 'goalWeight' | 'height' | 'birthDate' | 'gender' | null;
 
 /* -- Main screen -- */
 
@@ -110,18 +107,11 @@ export function PersonalDetailsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [stepGoal, setStepGoal] = useState<number>(10000);
   const [loading, setLoading] = useState(true);
   const [editField, setEditField] = useState<EditField>(null);
   const [saving, setSaving] = useState(false);
 
   const [editValue, setEditValue] = useState('');
-
-  useEffect(() => {
-    AsyncStorage.getItem(STEP_GOAL_KEY).then((v) => {
-      if (v) setStepGoal(parseInt(v, 10) || 10000);
-    });
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -136,7 +126,7 @@ export function PersonalDetailsScreen() {
   );
 
   const startEdit = (field: EditField) => {
-    if (!profile && field !== 'stepGoal') return;
+    if (!profile) return;
     setEditField(field);
 
     switch (field) {
@@ -159,9 +149,6 @@ export function PersonalDetailsScreen() {
           saveProfileField({ gender: newGender });
           setEditField(null);
         }
-        break;
-      case 'stepGoal':
-        setEditValue(String(stepGoal));
         break;
     }
   };
@@ -205,16 +192,6 @@ export function PersonalDetailsScreen() {
         saveProfileField({ birthDate: cleaned });
         break;
       }
-      case 'stepGoal': {
-        const steps = parseInt(editValue, 10);
-        if (isNaN(steps) || steps <= 0) return;
-        setStepGoal(steps);
-        await AsyncStorage.setItem(STEP_GOAL_KEY, String(steps));
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setEditField(null);
-        setSaving(false);
-        break;
-      }
     }
   };
 
@@ -232,8 +209,6 @@ export function PersonalDetailsScreen() {
         return t('personalDetails.height');
       case 'birthDate':
         return t('personalDetails.dateOfBirth');
-      case 'stepGoal':
-        return t('personalDetails.dailyStepGoal');
       default:
         return '';
     }
@@ -241,8 +216,6 @@ export function PersonalDetailsScreen() {
 
   const getUnitLabel = (): string => {
     switch (editField) {
-      case 'stepGoal':
-        return t('personalDetails.steps');
       case 'height':
         return 'cm';
       default:
@@ -273,7 +246,6 @@ export function PersonalDetailsScreen() {
     editField === 'weight' ||
     editField === 'goalWeight' ||
     editField === 'height' ||
-    editField === 'stepGoal' ||
     editField === 'birthDate';
 
   return (
@@ -350,11 +322,6 @@ export function PersonalDetailsScreen() {
                   label={t('personalDetails.gender')}
                   value={formatGender(profile?.gender ?? null, t)}
                   onEdit={() => startEdit('gender')}
-                />
-                <DetailRow
-                  label={t('personalDetails.dailyStepGoal')}
-                  value={`${stepGoal.toLocaleString()} ${t('personalDetails.steps')}`}
-                  onEdit={() => startEdit('stepGoal')}
                   isLast
                 />
               </View>
@@ -403,11 +370,7 @@ export function PersonalDetailsScreen() {
                       value={editValue}
                       onChangeText={setEditValue}
                       keyboardType={
-                        editField === 'stepGoal'
-                          ? 'number-pad'
-                          : editField === 'birthDate'
-                            ? 'numbers-and-punctuation'
-                            : 'decimal-pad'
+                        editField === 'birthDate' ? 'numbers-and-punctuation' : 'decimal-pad'
                       }
                       autoFocus
                       placeholder={editField === 'birthDate' ? 'YYYY.MM.DD' : undefined}

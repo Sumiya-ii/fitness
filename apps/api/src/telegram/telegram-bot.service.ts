@@ -6,6 +6,7 @@ import { IdempotencyService } from './idempotency.service';
 import { ChatService } from '../chat/chat.service';
 import { TelegramFoodParserService } from './telegram-food-parser.service';
 import { MealLogsService } from '../meal-logs/meal-logs.service';
+import { SubscriptionsService } from '../subscriptions';
 import { Telegraf, Context } from 'telegraf';
 import type { Message } from 'telegraf/types';
 
@@ -13,6 +14,21 @@ const IDEMPOTENCY_TTL_MINUTES = 24 * 60;
 
 // Mongolia is UTC+8
 const MONGOLIA_UTC_OFFSET_HOURS = 8;
+
+// MealLog.items.snapshotFoodName is VarChar(500); quickAdd copies the note into
+// it, so the note string must stay within this bound or the insert crashes.
+const MAX_NOTE_LENGTH = 500;
+
+// Bilingual upgrade prompt shown to non-Pro users for AI coach chat / voice.
+const PRO_REQUIRED_MESSAGE =
+  '⭐ AI дасгалжуулагчтай чатлах, дуугаар бүртгэхэд Coach Pro шаардлагатай.\n' +
+  'Coach аппаа нээж Pro захиалга идэвхжүүлнэ үү.\n\n' +
+  '⭐ Coach Pro is required to chat with the AI coach and log by voice.\n' +
+  'Open the Coach app to upgrade.';
+
+function truncateNote(note: string): string {
+  return note.length > MAX_NOTE_LENGTH ? note.slice(0, MAX_NOTE_LENGTH) : note;
+}
 
 function inferMealTypeFromTime(): 'breakfast' | 'lunch' | 'dinner' | 'snack' | null {
   const now = new Date();
@@ -36,7 +52,13 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     private readonly chatService: ChatService,
     private readonly foodParserService: TelegramFoodParserService,
     private readonly mealLogsService: MealLogsService,
+    private readonly subscriptionsService: SubscriptionsService,
   ) {}
+
+  /** True when the app user has an active Pro entitlement. */
+  private async isPro(userId: string): Promise<boolean> {
+    return (await this.subscriptionsService.checkEntitlement(userId)) === 'pro';
+  }
 
   onModuleInit() {
     const token = this.config.get('TELEGRAM_BOT_TOKEN');
@@ -63,8 +85,10 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     this.bot.on('text', (ctx) => this.handleTextMessage(ctx));
     this.bot.on('voice', (ctx) => this.handleVoiceMessage(ctx));
 
-    // Inline keyboard callbacks for meal log confirmation
-    this.bot.action('log_confirm', (ctx) => this.handleLogConfirm(ctx));
+    // Inline keyboard callbacks for meal log confirmation. The draft id is
+    // embedded in callback_data (log_confirm:<id>) so a confirm maps to exactly
+    // one draft. Legacy 'log_confirm' (no id) is still accepted for safety.
+    this.bot.action(/^log_confirm(?::(.+))?$/, (ctx) => this.handleLogConfirm(ctx, ctx.match[1]));
     this.bot.action('log_cancel', (ctx) => this.handleLogCancel(ctx));
 
     this.bot.catch((err) => {
@@ -158,8 +182,14 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       const parsed = await this.foodParserService.parse(text);
 
       if (parsed.isFoodLog && parsed.items.length > 0) {
-        // Store draft for confirmation
-        await this.foodParserService.saveDraft(telegramUserId, { ...parsed, originalText: text });
+        // Food logging via text stays free for linked users. Store draft for
+        // confirmation, tagged with a draft id echoed in the confirm callback.
+        const draftId = this.foodParserService.newDraftId();
+        await this.foodParserService.saveDraft(telegramUserId, {
+          ...parsed,
+          originalText: text,
+          draftId,
+        });
 
         // Build confirmation message
         const itemLines = parsed.items
@@ -173,7 +203,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
           reply_markup: {
             inline_keyboard: [
               [
-                { text: '✅ Тийм, бүртгэх', callback_data: 'log_confirm' },
+                { text: '✅ Тийм, бүртгэх', callback_data: `log_confirm:${draftId}` },
                 { text: '❌ Болих', callback_data: 'log_cancel' },
               ],
             ],
@@ -186,7 +216,18 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
           IDEMPOTENCY_TTL_MINUTES,
         );
       } else {
-        // Not a food log — route to AI coaching as before
+        // AI coaching reply — gated behind Pro (mirrors PhotosController's
+        // SubscriptionGuard). Non-Pro users get a bilingual upgrade prompt.
+        if (!(await this.isPro(userId))) {
+          await this.idempotencyService.store(
+            idempotencyKey,
+            { status: 200, body: PRO_REQUIRED_MESSAGE },
+            IDEMPOTENCY_TTL_MINUTES,
+          );
+          await ctx.reply(PRO_REQUIRED_MESSAGE);
+          return;
+        }
+
         const result = await this.chatService.sendMessage(userId, text);
 
         await this.idempotencyService.store(
@@ -230,6 +271,18 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    // Voice logging (transcription + parsing/coaching) is a Pro feature. Gate
+    // before spending any Whisper credits; non-Pro users get an upgrade prompt.
+    if (!(await this.isPro(userId))) {
+      await this.idempotencyService.store(
+        idempotencyKey,
+        { status: 200, body: PRO_REQUIRED_MESSAGE },
+        IDEMPOTENCY_TTL_MINUTES,
+      );
+      await ctx.reply(PRO_REQUIRED_MESSAGE);
+      return;
+    }
+
     // Immediate feedback — user knows processing started
     const processingMsg = await ctx.reply('🎙️ Сонсож байна...');
 
@@ -268,9 +321,11 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
       const parsed = await this.foodParserService.parse(transcription);
 
       if (parsed.isFoodLog && parsed.items.length > 0) {
+        const draftId = this.foodParserService.newDraftId();
         await this.foodParserService.saveDraft(telegramUserId, {
           ...parsed,
           originalText: transcription,
+          draftId,
         });
 
         const itemLines = parsed.items
@@ -290,7 +345,7 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
             reply_markup: {
               inline_keyboard: [
                 [
-                  { text: '✅ Тийм, бүртгэх', callback_data: 'log_confirm' },
+                  { text: '✅ Тийм, бүртгэх', callback_data: `log_confirm:${draftId}` },
                   { text: '❌ Болих', callback_data: 'log_cancel' },
                 ],
               ],
@@ -336,17 +391,29 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async handleLogConfirm(ctx: Context) {
+  private async handleLogConfirm(ctx: Context, callbackDraftId?: string) {
     const telegramUserId = ctx.from?.id;
     if (!telegramUserId) {
       await ctx.answerCbQuery();
       return;
     }
 
-    const draft = await this.foodParserService.getDraft(telegramUserId);
+    // Atomic get-and-delete: the draft is consumed exactly once, so double-
+    // tapping the confirm button can't log the meal twice. A second tap finds
+    // no draft and is treated as a no-op.
+    const draft = await this.foodParserService.takeDraft(telegramUserId);
     if (!draft) {
       await ctx.answerCbQuery();
       await ctx.editMessageText('⏱️ Хугацаа дуусчээ. Хоолоо дахин бичнэ үү.');
+      return;
+    }
+
+    // Validate the button maps to the draft we just consumed. A mismatch means
+    // an old (superseded) button was tapped — put the current draft back so the
+    // live confirmation still works, and ignore the stale tap.
+    if (callbackDraftId && draft.draftId && callbackDraftId !== draft.draftId) {
+      await this.foodParserService.saveDraft(telegramUserId, draft);
+      await ctx.answerCbQuery();
       return;
     }
 
@@ -358,9 +425,9 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const mealType = draft.mealType ?? inferMealTypeFromTime();
-      const note = draft.items
-        .map((i) => `${i.quantity > 1 ? `${i.quantity}x ` : ''}${i.name}`)
-        .join(', ');
+      const note = truncateNote(
+        draft.items.map((i) => `${i.quantity > 1 ? `${i.quantity}x ` : ''}${i.name}`).join(', '),
+      );
 
       await this.mealLogsService.quickAdd(userId, {
         calories: draft.totalCalories,
@@ -371,8 +438,6 @@ export class TelegramBotService implements OnModuleInit, OnModuleDestroy {
         mealType: mealType ?? undefined,
         note,
       });
-
-      await this.foodParserService.deleteDraft(telegramUserId);
 
       await ctx.answerCbQuery('Бүртгэгдлээ!');
       await ctx.editMessageText(

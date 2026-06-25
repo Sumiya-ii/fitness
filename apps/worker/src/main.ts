@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node';
 import { APP_NAME, QUEUE_NAMES, DEFAULT_JOB_OPTIONS, validateEnv } from '@coach/shared';
 import { createWorkerForQueue } from './worker-factory';
 import { logger } from './logger';
+import { closePhotoPool } from './processors/photo.processor';
 
 async function bootstrap() {
   const config = validateEnv();
@@ -34,6 +35,7 @@ async function bootstrap() {
     logger.info('Shutting down workers...');
     await Sentry.flush(2000);
     await Promise.all(workers.map((w) => w.close()));
+    await closePhotoPool();
     logger.info('All workers stopped');
     process.exit(0);
   };

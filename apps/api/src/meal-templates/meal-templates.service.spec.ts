@@ -220,6 +220,43 @@ describe('MealTemplatesService', () => {
     });
   });
 
+  describe('update', () => {
+    it('updates name/mealType without touching items when dto.items is absent', async () => {
+      await service.update('user-uuid', 'template-uuid', { name: 'New Name' });
+
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(prisma.mealTemplate.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ name: 'New Name' }) }),
+      );
+      expect(prisma.mealTemplateItem.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('wraps deleteMany + update in a transaction when items are provided', async () => {
+      const txFn = jest.fn().mockImplementation(async (cb) => {
+        const tx = {
+          mealTemplateItem: { deleteMany: jest.fn().mockResolvedValue({}) },
+          mealTemplate: { update: jest.fn().mockResolvedValue(mockTemplate) },
+        };
+        return cb(tx);
+      });
+      prisma.$transaction = txFn;
+
+      const result = await service.update('user-uuid', 'template-uuid', {
+        items: [{ foodId: 'food-uuid', servingId: 'serving-uuid', quantity: 2 }],
+      });
+
+      expect(txFn).toHaveBeenCalled();
+      expect(result.name).toBe('My Lunch');
+    });
+
+    it('throws NotFoundException for missing template', async () => {
+      prisma.mealTemplate.findFirst.mockResolvedValue(null);
+      await expect(service.update('user-uuid', 'missing', { name: 'X' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('logTemplate', () => {
     it('creates a meal log from template and increments usage', async () => {
       const result = await service.logTemplate('user-uuid', 'template-uuid', {

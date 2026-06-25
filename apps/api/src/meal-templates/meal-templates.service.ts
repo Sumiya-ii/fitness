@@ -138,9 +138,30 @@ export class MealTemplatesService {
     const existing = await this.prisma.mealTemplate.findFirst({ where: { id, userId } });
     if (!existing) throw new NotFoundException('Meal template not found');
 
-    // If items are provided, replace all items
+    // If items are provided, delete existing items and recreate atomically
     if (dto.items) {
-      await this.prisma.mealTemplateItem.deleteMany({ where: { templateId: id } });
+      const template = await this.prisma.$transaction(async (tx) => {
+        await tx.mealTemplateItem.deleteMany({ where: { templateId: id } });
+        return tx.mealTemplate.update({
+          where: { id },
+          data: {
+            ...(dto.name !== undefined && { name: dto.name }),
+            ...(dto.mealType !== undefined && { mealType: dto.mealType }),
+            items: {
+              create: dto.items!.map((item, index) => ({
+                foodId: item.foodId,
+                servingId: item.servingId,
+                quantity: item.quantity,
+                sortOrder: item.sortOrder ?? index,
+              })),
+            },
+          },
+          include: {
+            items: { include: { food: true, serving: true }, orderBy: { sortOrder: 'asc' } },
+          },
+        });
+      });
+      return this.formatTemplate(template);
     }
 
     const template = await this.prisma.mealTemplate.update({
@@ -148,16 +169,6 @@ export class MealTemplatesService {
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.mealType !== undefined && { mealType: dto.mealType }),
-        ...(dto.items && {
-          items: {
-            create: dto.items.map((item, index) => ({
-              foodId: item.foodId,
-              servingId: item.servingId,
-              quantity: item.quantity,
-              sortOrder: item.sortOrder ?? index,
-            })),
-          },
-        }),
       },
       include: { items: { include: { food: true, serving: true }, orderBy: { sortOrder: 'asc' } } },
     });
