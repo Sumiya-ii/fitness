@@ -5,7 +5,7 @@ import { Pool } from 'pg';
 import * as Sentry from '@sentry/node';
 import { MONGOLIAN_FOOD_REFERENCE } from '@coach/shared';
 import { logger } from '../logger';
-import { lookupVerifiedFood } from '../foods-lookup';
+import { lookupVerifiedFoodsBatch } from '../foods-lookup';
 import { applyUserCalibration } from '../calibration';
 
 const OPENAI_TIMEOUT_MS = 60_000;
@@ -264,27 +264,33 @@ function buildEmptyResult(): PhotoParseResult {
   };
 }
 
+const DETECT_MODE_TIMEOUT_MS = 30_000;
+
 /** Auto-detect food vs label mode using Gemini Flash (cheap). Returns null if unavailable or fails. */
 async function detectMode(imageBase64: string, apiKey: string): Promise<'food' | 'label' | null> {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: MODE_DETECT_PROMPT },
-            { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
-          ],
+    const timeoutSignal = AbortSignal.timeout(DETECT_MODE_TIMEOUT_MS);
+    const result = await model.generateContent(
+      {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: MODE_DETECT_PROMPT },
+              { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0,
+          maxOutputTokens: 20,
         },
-      ],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0,
-        maxOutputTokens: 20,
       },
-    });
+      { signal: timeoutSignal },
+    );
     const parsed = JSON.parse(result.response.text()) as { mode?: string };
     const m = parsed.mode;
     if (m === 'food' || m === 'label') return m;
@@ -365,18 +371,24 @@ async function parseWithOpenAI(
   return normalizeItems(JSON.parse(content) as RawAIResponse, isLabel);
 }
 
-/** Apply DB verification and calibration to all items. */
+/** Apply DB verification and calibration to all items. Single DB query for all items. */
 async function enrichItems(
   items: ParsedFoodItem[],
   userId: string,
   pool: Pool,
 ): Promise<ParsedFoodItem[]> {
+  // Collect names for non-label items to resolve in one query
+  const lookupNames = items.filter((item) => item.source !== 'label').map((item) => item.name);
+
+  const matchMap =
+    lookupNames.length > 0 ? await lookupVerifiedFoodsBatch(lookupNames, pool) : new Map();
+
   return Promise.all(
     items.map(async (item) => {
       // Skip DB lookup for label-sourced items (already exact)
       if (item.source === 'label') return item;
 
-      const match = await lookupVerifiedFood(item.name, pool);
+      const match = matchMap.get(item.name) ?? null;
       let enriched = item;
 
       if (match) {

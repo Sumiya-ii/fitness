@@ -8,6 +8,9 @@ export interface DayHistory {
   carbs: number;
   fat: number;
   fiber: number | null;
+  sugar: number | null;
+  sodium: number | null;
+  saturatedFat: number | null;
   waterMl: number;
 }
 

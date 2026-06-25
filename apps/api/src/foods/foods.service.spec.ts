@@ -7,6 +7,7 @@ import { ConfigService } from '../config';
 const mockRedis = {
   get: jest.fn(),
   incr: jest.fn(),
+  decr: jest.fn(),
   expire: jest.fn(),
   disconnect: jest.fn(),
   on: jest.fn(),
@@ -72,12 +73,24 @@ describe('FoodsService', () => {
         create: jest.fn().mockResolvedValue({ id: 'queue-uuid' }),
       },
       $queryRaw: jest.fn().mockResolvedValue([{ id: 'food-uuid' }]),
+      // Interactive transaction: execute the callback with a tx proxy that
+      // mirrors the same mock methods so assertions inside the callback work.
+      $transaction: jest.fn().mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
+        const tx = {
+          food: prisma.food,
+          foodNutrient: prisma.foodNutrient,
+          foodServing: prisma.foodServing,
+          foodLocalization: prisma.foodLocalization,
+          foodAlias: prisma.foodAlias,
+        };
+        return cb(tx);
+      }),
     };
     config = { get: jest.fn().mockReturnValue('redis://localhost:6379') };
 
-    // Default: under the daily cap
-    mockRedis.get.mockResolvedValue(null);
+    // Default: first suggestion of the day (incr returns 1, under cap)
     mockRedis.incr.mockResolvedValue(1);
+    mockRedis.decr.mockResolvedValue(0);
     mockRedis.expire.mockResolvedValue(1);
 
     service = new FoodsService(prisma as unknown as PrismaService, config as ConfigService);
@@ -142,25 +155,42 @@ describe('FoodsService', () => {
       );
     });
 
-    it('should set Redis TTL on first suggestion of the day', async () => {
-      mockRedis.incr.mockResolvedValue(1); // first write today
+    it('should not include userId in reviewNote', async () => {
+      await service.suggest('user-uuid', { name: 'Бууз', locale: 'mn' });
+      const createCall = prisma.moderationQueue.create.mock.calls[0][0];
+      const note = JSON.parse(createCall.data.reviewNote as string);
+      expect(note).not.toHaveProperty('userId');
+      expect(note).toHaveProperty('name', 'Бууз');
+      expect(note).toHaveProperty('locale', 'mn');
+    });
+
+    it('should set Redis TTL on first suggestion of the day (incr returns 1)', async () => {
+      mockRedis.incr.mockResolvedValue(1);
       await service.suggest('user-uuid', { name: 'Бууз', locale: 'mn' });
       expect(mockRedis.expire).toHaveBeenCalled();
     });
 
-    it('should not set Redis TTL on subsequent suggestions', async () => {
-      mockRedis.get.mockResolvedValue('2'); // already has 2 today
+    it('should not set Redis TTL on subsequent suggestions (incr returns >1)', async () => {
       mockRedis.incr.mockResolvedValue(3);
       await service.suggest('user-uuid', { name: 'Хуушуур', locale: 'mn' });
       expect(mockRedis.expire).not.toHaveBeenCalled();
     });
 
-    it('should throw TooManyRequestsException when daily cap is reached', async () => {
-      mockRedis.get.mockResolvedValue('5'); // at cap
+    it('should throw TooManyRequestsException and decrement counter when cap is exceeded', async () => {
+      mockRedis.incr.mockResolvedValue(6); // exceeds cap of 5
       await expect(service.suggest('user-uuid', { name: 'Тавгтай', locale: 'mn' })).rejects.toThrow(
         HttpException,
       );
+      // Must roll back the optimistic increment
+      expect(mockRedis.decr).toHaveBeenCalled();
       expect(prisma.moderationQueue.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow exactly SUGGEST_DAILY_CAP suggestions (incr === cap)', async () => {
+      mockRedis.incr.mockResolvedValue(5); // exactly at cap — should succeed
+      const result = await service.suggest('user-uuid', { name: 'Бууз', locale: 'mn' });
+      expect(result.suggestionId).toBe('queue-uuid');
+      expect(mockRedis.decr).not.toHaveBeenCalled();
     });
   });
 
@@ -214,6 +244,50 @@ describe('FoodsService', () => {
       expect(result.meta.total).toBe(0);
       // Should not bother calling findMany when no IDs to hydrate
       expect(prisma.food.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    const updateDto = {
+      normalizedName: 'Шинэ нэр',
+      servings: [{ label: '1 cup', gramsPerUnit: 200, isDefault: true }],
+      nutrients: {
+        caloriesPer100g: 150,
+        proteinPer100g: 3,
+        carbsPer100g: 30,
+        fatPer100g: 1,
+      },
+    };
+
+    it('should execute all mutations inside a single transaction', async () => {
+      await service.update('food-uuid', updateDto);
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update food, servings, and nutrients via transaction', async () => {
+      await service.update('food-uuid', updateDto);
+      expect(prisma.food.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'food-uuid' } }),
+      );
+      expect(prisma.foodServing.deleteMany).toHaveBeenCalledWith({
+        where: { foodId: 'food-uuid' },
+      });
+      expect(prisma.foodServing.createMany).toHaveBeenCalled();
+      expect(prisma.foodNutrient.updateMany).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if food does not exist', async () => {
+      prisma.food.findUnique.mockResolvedValue(null);
+      await expect(service.update('missing', updateDto)).rejects.toThrow(NotFoundException);
+      // Transaction must not be entered for a missing food
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should skip serving/localization/alias mutations when fields are absent in dto', async () => {
+      await service.update('food-uuid', { normalizedName: 'Only name change' });
+      expect(prisma.foodServing.deleteMany).not.toHaveBeenCalled();
+      expect(prisma.foodLocalization.deleteMany).not.toHaveBeenCalled();
+      expect(prisma.foodAlias.deleteMany).not.toHaveBeenCalled();
     });
   });
 

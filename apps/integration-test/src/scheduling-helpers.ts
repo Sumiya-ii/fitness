@@ -4,7 +4,7 @@
  * Mirrors pure functions from:
  *   - reminders.service.ts (quiet hours)
  *   - meal-timing.service.ts (computeInsights)
- *   - reminders.processor.ts / meal-nudge.processor.ts (message variants)
+ *   - meal-nudge.processor.ts (message variants)
  */
 import { DateTime } from 'luxon';
 

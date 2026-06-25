@@ -59,7 +59,7 @@ A user can pay for Coach when **all** of the following are true:
 - [ ] **Streaks + daily check-in** (P0-3) — _retention floor_
 - [ ] **Crash-free rate ≥ 99.5%** (P0-6) — _trust floor_
 - [ ] **Onboarding: skip/back/progress + edit-later** (P0-5) — _activation floor_
-- [ ] **Device step tracking: phone motion steps shown in dashboard** — _current v1 scope_
+- [ ] ~~Device step tracking: phone motion steps shown in dashboard~~ — **cut to v1.1 (2026-06-25)**: pedometer UI + `steps.store` removed to keep the MVP focused and avoid native motion-permission QA risk; re-add when bandwidth exists
 - [ ] **Apple Health: read steps + weight, write nutrition** — _post-v1 unless Sumiya re-promotes it_
 
 ### Explicitly NOT in v1 (deferred to v1.1+ unless data says otherwise)

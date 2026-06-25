@@ -34,7 +34,16 @@ export const useWaterStore = create<WaterState>((set, get) => ({
     // Optimistic update — do NOT revert on failure; pull-to-refresh corrects state
     set((s) => ({ consumed: s.consumed + amountMl }));
     try {
-      const loggedAt = date ? new Date(date + 'T12:00:00.000Z').toISOString() : undefined;
+      // Build loggedAt anchored to local noon for the given date so it lands on
+      // the correct calendar day regardless of the device's UTC offset.
+      // e.g. for "2026-06-25" in UTC+8: local noon = 2026-06-25T04:00:00.000Z ✓
+      // (the previous 'T12:00:00.000Z' was UTC noon, wrong for large offsets).
+      let loggedAt: string | undefined;
+      if (date) {
+        const [year, month, day] = date.split('-').map(Number);
+        const localNoon = new Date(year, month - 1, day, 12, 0, 0, 0);
+        loggedAt = localNoon.toISOString();
+      }
       await waterApi.add(amountMl, loggedAt);
     } catch (_e) {
       // Silently ignore — optimistic state stays; server will correct on next fetch

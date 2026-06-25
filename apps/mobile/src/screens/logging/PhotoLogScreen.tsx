@@ -602,78 +602,81 @@ export function PhotoLogScreen() {
   const totalSodium = effectiveItems.reduce((s, i) => s + i.sodium, 0);
   const totalSaturatedFat = effectiveItems.reduce((s, i) => s + i.saturatedFat, 0);
 
-  const pollDraft = useCallback(async (draftId: string, attempt = 0) => {
-    if (attempt >= MAX_POLL_ATTEMPTS) {
-      Sentry.addBreadcrumb({
-        category: 'photoLog',
-        message: 'poll_max_attempts_reached',
-        data: { draftId, attempt },
-        level: 'warning',
-      });
-      setError(t('photoLog.analysisTimeout'));
-      setStillProcessing(false);
-      setAnalyzing(false);
-      return;
-    }
-
-    if (attempt === STILL_PROCESSING_THRESHOLD) {
-      Sentry.addBreadcrumb({
-        category: 'photoLog',
-        message: 'processing_still_running',
-        data: { draftId, attempt },
-        level: 'info',
-      });
-      setStillProcessing(true);
-    }
-
-    try {
-      const res = await api.get<{ data: PhotoDraft }>(`/photos/drafts/${draftId}`);
-      const d = res.data;
-
-      if (d.status === 'completed') {
+  const pollDraft = useCallback(
+    async (draftId: string, attempt = 0) => {
+      if (attempt >= MAX_POLL_ATTEMPTS) {
         Sentry.addBreadcrumb({
           category: 'photoLog',
-          message: 'processing_complete',
-          data: { draftId, itemCount: d.items?.length ?? 0 },
+          message: 'poll_max_attempts_reached',
+          data: { draftId, attempt },
+          level: 'warning',
+        });
+        setError(t('photoLog.analysisTimeout'));
+        setStillProcessing(false);
+        setAnalyzing(false);
+        return;
+      }
+
+      if (attempt === STILL_PROCESSING_THRESHOLD) {
+        Sentry.addBreadcrumb({
+          category: 'photoLog',
+          message: 'processing_still_running',
+          data: { draftId, attempt },
           level: 'info',
         });
-        setDraft(d);
-        const items = d.items ?? [];
-        setBaseItems(items);
-        setMultipliers(items.map(() => 1));
-        setStillProcessing(false);
-        setAnalyzing(false);
-        return;
+        setStillProcessing(true);
       }
 
-      if (d.status === 'failed') {
+      try {
+        const res = await api.get<{ data: PhotoDraft }>(`/photos/drafts/${draftId}`);
+        const d = res.data;
+
+        if (d.status === 'completed') {
+          Sentry.addBreadcrumb({
+            category: 'photoLog',
+            message: 'processing_complete',
+            data: { draftId, itemCount: d.items?.length ?? 0 },
+            level: 'info',
+          });
+          setDraft(d);
+          const items = d.items ?? [];
+          setBaseItems(items);
+          setMultipliers(items.map(() => 1));
+          setStillProcessing(false);
+          setAnalyzing(false);
+          return;
+        }
+
+        if (d.status === 'failed') {
+          Sentry.addBreadcrumb({
+            category: 'photoLog',
+            message: 'processing_failed',
+            data: { draftId },
+            level: 'error',
+          });
+          setError(isLabel ? t('photoLog.labelAnalysisFailed') : t('photoLog.photoAnalysisFailed'));
+          setStillProcessing(false);
+          setAnalyzing(false);
+          return;
+        }
+
+        const delay = attempt < POLL_FAST_THRESHOLD ? POLL_INTERVAL_FAST_MS : POLL_INTERVAL_SLOW_MS;
+        pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), delay);
+      } catch {
         Sentry.addBreadcrumb({
           category: 'photoLog',
-          message: 'processing_failed',
-          data: { draftId },
+          message: 'poll_status_check_failed',
+          data: { draftId, attempt },
           level: 'error',
         });
-        setError(isLabel ? t('photoLog.labelAnalysisFailed') : t('photoLog.photoAnalysisFailed'));
+        setError(t('photoLog.statusCheckFailed'));
         setStillProcessing(false);
         setAnalyzing(false);
-        return;
       }
-
-      const delay = attempt < POLL_FAST_THRESHOLD ? POLL_INTERVAL_FAST_MS : POLL_INTERVAL_SLOW_MS;
-      pollTimerRef.current = setTimeout(() => pollDraft(draftId, attempt + 1), delay);
-    } catch {
-      Sentry.addBreadcrumb({
-        category: 'photoLog',
-        message: 'poll_status_check_failed',
-        data: { draftId, attempt },
-        level: 'error',
-      });
-      setError(t('photoLog.statusCheckFailed'));
-      setStillProcessing(false);
-      setAnalyzing(false);
-    }
-    // eslint-disable-next-line
-  }, []);
+      // eslint-disable-next-line
+    },
+    [t, isLabel],
+  );
 
   const uploadAndAnalyze = async (uri: string) => {
     setAnalyzing(true);
@@ -941,7 +944,7 @@ export function PhotoLogScreen() {
       if (!savedMealLogId) return;
       setAccuracyFeedbackShown(true);
       analyticsApi.trackEvent({
-        name: 'photo_meal_accuracy',
+        event: 'photo_meal_accuracy',
         accuracy,
         mealLogId: savedMealLogId,
         items: baseItems.map((item) => ({

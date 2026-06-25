@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { CoachMemoryService } from './coach-memory.service';
 import { CoachMemoryController } from './coach-memory.controller';
 // CoachMemoryCron disabled for v1 MVP — re-enable post-App Store launch.
@@ -7,7 +6,7 @@ import { CoachMemoryController } from './coach-memory.controller';
 import { ObservabilityModule } from '../observability';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), ObservabilityModule],
+  imports: [ObservabilityModule],
   controllers: [CoachMemoryController],
   providers: [CoachMemoryService /* , CoachMemoryCron */],
   exports: [CoachMemoryService],

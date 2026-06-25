@@ -37,6 +37,7 @@ export function QuickAddScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [caloriesWarning, setCaloriesWarning] = useState<string | null>(null);
+  const [highCalConfirmed, setHighCalConfirmed] = useState(false);
 
   const handleSave = async () => {
     const cal = parseInt(calories, 10);
@@ -44,13 +45,14 @@ export function QuickAddScreen() {
       setError(t('quickAdd.enterValidCalories'));
       return;
     }
-    // Sanity check: per-serving > 5000 or total > 10000
-    const totalCal = cal;
-    if (cal > 5000 || totalCal > 10000) {
+    // Sanity check: > 5000 kcal requires explicit confirmation before saving.
+    if (cal > 5000 && !highCalConfirmed) {
       setCaloriesWarning(t('quickAdd.caloriesHighWarning'));
-    } else {
-      setCaloriesWarning(null);
+      setHighCalConfirmed(true); // next tap will pass through
+      return;
     }
+    setCaloriesWarning(null);
+    setHighCalConfirmed(false);
     setError(null);
     setSaving(true);
     try {
@@ -144,7 +146,11 @@ export function QuickAddScreen() {
               </Text>
               <Input
                 value={calories}
-                onChangeText={setCalories}
+                onChangeText={(v) => {
+                  setCalories(v);
+                  setHighCalConfirmed(false);
+                  setCaloriesWarning(null);
+                }}
                 placeholder="0"
                 keyboardType="number-pad"
                 accessibilityLabel={t('quickAdd.calories')}
@@ -221,7 +227,7 @@ export function QuickAddScreen() {
               <View className="mb-4 rounded-2xl bg-warning/10 border border-warning/30 px-4 py-3 flex-row items-center gap-2">
                 <Ionicons name="alert-circle-outline" size={16} color={c.warning} />
                 <Text className="flex-1 text-sm font-sans-medium text-warning">
-                  {caloriesWarning}
+                  {highCalConfirmed ? t('quickAdd.confirmHighCalories') : caloriesWarning}
                 </Text>
               </View>
             ) : null}

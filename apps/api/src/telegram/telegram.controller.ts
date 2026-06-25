@@ -27,7 +27,7 @@ export class TelegramController {
   @Post('link-code')
   async generateLinkCode(@CurrentUser() user: AuthenticatedUser) {
     const code = await this.telegramService.generateLinkCode(user.id);
-    return { code };
+    return { data: { code } };
   }
 
   @Post('confirm')
@@ -48,7 +48,7 @@ export class TelegramController {
 
   @Get('status')
   async getStatus(@CurrentUser() user: AuthenticatedUser) {
-    return this.telegramService.getLink(user.id);
+    return { data: await this.telegramService.getLink(user.id) };
   }
 
   @Post('unlink')

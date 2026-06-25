@@ -43,10 +43,19 @@ export class FoodsService implements OnModuleDestroy {
 
   async suggest(userId: string, dto: SuggestFoodDto) {
     const key = suggestQuotaKey(userId);
-    const raw = await this.redis.get(key);
-    const count = raw ? parseInt(raw, 10) : 0;
 
-    if (count >= SUGGEST_DAILY_CAP) {
+    // Atomically increment first; if we overshoot the cap, decrement and reject.
+    // This avoids the check-then-act race where concurrent requests both read
+    // count=4 and both proceed past the cap check.
+    const newCount = await this.redis.incr(key);
+    if (newCount === 1) {
+      // First write today — set TTL so the counter resets at midnight UTC.
+      await this.redis.expire(key, secondsUntilMidnightUTC());
+    }
+
+    if (newCount > SUGGEST_DAILY_CAP) {
+      // Roll back the optimistic increment before throwing.
+      await this.redis.decr(key);
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -63,15 +72,11 @@ export class FoodsService implements OnModuleDestroy {
         entityId: placeholderId,
         submittedBy: userId,
         status: 'pending',
-        reviewNote: JSON.stringify({ name: dto.name, locale: dto.locale, userId }),
+        // userId intentionally excluded from reviewNote — it is already stored
+        // on the row via submittedBy and should not be duplicated in the JSON.
+        reviewNote: JSON.stringify({ name: dto.name, locale: dto.locale }),
       },
     });
-
-    // Increment counter; set TTL on first write so it expires at midnight UTC
-    const newCount = await this.redis.incr(key);
-    if (newCount === 1) {
-      await this.redis.expire(key, secondsUntilMidnightUTC());
-    }
 
     return { suggestionId: item.id };
   }
@@ -232,68 +237,74 @@ export class FoodsService implements OnModuleDestroy {
   }
 
   async update(id: string, dto: UpdateFoodDto) {
+    // Verify the food exists before entering the transaction.
     await this.findById(id);
 
-    await this.prisma.food.update({
-      where: { id },
-      data: {
-        ...(dto.normalizedName !== undefined && {
-          normalizedName: dto.normalizedName,
-        }),
-        ...(dto.locale !== undefined && { locale: dto.locale }),
-      },
-    });
-
-    if (dto.nutrients) {
-      await this.prisma.foodNutrient.updateMany({
-        where: { foodId: id },
+    // Wrap all mutations in an interactive transaction so a mid-update failure
+    // (e.g. after servings are deleted but before createMany) cannot leave the
+    // food in a partial/no-servings state that causes NaN calories when logged.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.food.update({
+        where: { id },
         data: {
-          caloriesPer100g: dto.nutrients.caloriesPer100g,
-          proteinPer100g: dto.nutrients.proteinPer100g,
-          carbsPer100g: dto.nutrients.carbsPer100g,
-          fatPer100g: dto.nutrients.fatPer100g,
-          fiberPer100g: dto.nutrients.fiberPer100g,
-          sugarPer100g: dto.nutrients.sugarPer100g,
-          sodiumPer100g: dto.nutrients.sodiumPer100g,
-          saturatedFatPer100g: dto.nutrients.saturatedFatPer100g,
+          ...(dto.normalizedName !== undefined && {
+            normalizedName: dto.normalizedName,
+          }),
+          ...(dto.locale !== undefined && { locale: dto.locale }),
         },
       });
-    }
 
-    if (dto.servings) {
-      await this.prisma.foodServing.deleteMany({ where: { foodId: id } });
-      await this.prisma.foodServing.createMany({
-        data: dto.servings.map((s) => ({
-          foodId: id,
-          label: s.label,
-          labelMn: s.labelMn,
-          gramsPerUnit: s.gramsPerUnit,
-          isDefault: s.isDefault ?? false,
-        })),
-      });
-    }
+      if (dto.nutrients) {
+        await tx.foodNutrient.updateMany({
+          where: { foodId: id },
+          data: {
+            caloriesPer100g: dto.nutrients.caloriesPer100g,
+            proteinPer100g: dto.nutrients.proteinPer100g,
+            carbsPer100g: dto.nutrients.carbsPer100g,
+            fatPer100g: dto.nutrients.fatPer100g,
+            fiberPer100g: dto.nutrients.fiberPer100g,
+            sugarPer100g: dto.nutrients.sugarPer100g,
+            sodiumPer100g: dto.nutrients.sodiumPer100g,
+            saturatedFatPer100g: dto.nutrients.saturatedFatPer100g,
+          },
+        });
+      }
 
-    if (dto.localizations) {
-      await this.prisma.foodLocalization.deleteMany({ where: { foodId: id } });
-      await this.prisma.foodLocalization.createMany({
-        data: dto.localizations.map((l) => ({
-          foodId: id,
-          locale: l.locale,
-          name: l.name,
-        })),
-      });
-    }
+      if (dto.servings) {
+        await tx.foodServing.deleteMany({ where: { foodId: id } });
+        await tx.foodServing.createMany({
+          data: dto.servings.map((s) => ({
+            foodId: id,
+            label: s.label,
+            labelMn: s.labelMn,
+            gramsPerUnit: s.gramsPerUnit,
+            isDefault: s.isDefault ?? false,
+          })),
+        });
+      }
 
-    if (dto.aliases) {
-      await this.prisma.foodAlias.deleteMany({ where: { foodId: id } });
-      await this.prisma.foodAlias.createMany({
-        data: dto.aliases.map((a) => ({
-          foodId: id,
-          alias: a.alias,
-          locale: a.locale,
-        })),
-      });
-    }
+      if (dto.localizations) {
+        await tx.foodLocalization.deleteMany({ where: { foodId: id } });
+        await tx.foodLocalization.createMany({
+          data: dto.localizations.map((l) => ({
+            foodId: id,
+            locale: l.locale,
+            name: l.name,
+          })),
+        });
+      }
+
+      if (dto.aliases) {
+        await tx.foodAlias.deleteMany({ where: { foodId: id } });
+        await tx.foodAlias.createMany({
+          data: dto.aliases.map((a) => ({
+            foodId: id,
+            alias: a.alias,
+            locale: a.locale,
+          })),
+        });
+      }
+    });
 
     return this.findById(id);
   }

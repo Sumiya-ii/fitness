@@ -5,6 +5,5 @@ export * from './types';
 export * from './config';
 export * from './queues';
 export * from './nutrition';
-export * from './voice-followup';
 export * from './foods';
 export * from './calibration';

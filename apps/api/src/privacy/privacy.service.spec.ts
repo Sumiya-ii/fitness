@@ -2,6 +2,7 @@ import { createHmac } from 'crypto';
 import { Queue } from 'bullmq';
 import { PrivacyService } from './privacy.service';
 import { PrismaService } from '../prisma';
+import { ConfigService } from '../config';
 
 function hashIp(ip: string): string {
   return createHmac('sha256', process.env.IP_HASH_SECRET!).update(ip).digest('hex');
@@ -55,7 +56,10 @@ describe('PrivacyService', () => {
       },
     };
     const mockQueue = { add: jest.fn().mockResolvedValue({ id: 'job-id' }) } as unknown as Queue;
-    service = new PrivacyService(mockQueue, prisma as unknown as PrismaService);
+    const mockConfig = {
+      get: jest.fn((k: string) => (k === 'IP_HASH_SECRET' ? 'test-secret' : undefined)),
+    } as unknown as ConfigService;
+    service = new PrivacyService(mockQueue, prisma as unknown as PrismaService, mockConfig);
   });
 
   afterEach(() => {

@@ -52,7 +52,6 @@ export type MainStackParamList = {
   EditProfile: undefined;
   PersonalDetails: undefined;
   AppSettings: undefined;
-  Reminders: undefined;
   RingColorsExplained: undefined;
   EditTargets: undefined;
 };

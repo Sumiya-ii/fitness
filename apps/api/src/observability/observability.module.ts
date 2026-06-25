@@ -24,7 +24,7 @@ import { IncomingMessage } from 'http';
             genReqId: (req: IncomingMessage) => (req as any).requestId,
             customProps: (req: IncomingMessage) => ({
               requestId: (req as any).requestId,
-              userId: (req as any).user?.uid,
+              userId: (req as any).user?.id,
             }),
             redact: ['req.headers.authorization', 'req.headers.cookie'],
             serializers: {

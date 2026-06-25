@@ -19,11 +19,10 @@ export class QueueHealthService {
 
   constructor(
     @Inject(getQueueToken(QUEUE_NAMES.PHOTO_PARSING)) photoQueue: Queue,
-    @Inject(getQueueToken(QUEUE_NAMES.REMINDERS)) reminderQueue: Queue,
     @Inject(getQueueToken(QUEUE_NAMES.COACH_MEMORY)) coachMemoryQueue: Queue,
     @Inject(getQueueToken(QUEUE_NAMES.PRIVACY)) privacyQueue: Queue,
   ) {
-    this.queues = [photoQueue, reminderQueue, coachMemoryQueue, privacyQueue];
+    this.queues = [photoQueue, coachMemoryQueue, privacyQueue];
   }
 
   async getHealth(): Promise<QueueHealthStatus[]> {

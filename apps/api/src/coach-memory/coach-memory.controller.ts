@@ -1,45 +1,19 @@
-import {
-  Controller,
-  Get,
-  Delete,
-  Param,
-  HttpCode,
-  HttpStatus,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma';
+import { Controller, Get, Delete, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { CurrentUser, AuthenticatedUser } from '../auth';
+import { CoachMemoryService } from './coach-memory.service';
 
 @Controller('coach-memories')
 export class CoachMemoryController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly coachMemoryService: CoachMemoryService) {}
 
   @Get()
   async list(@CurrentUser() user: AuthenticatedUser) {
-    const memories = await this.prisma.coachMemory.findMany({
-      where: { userId: user.id },
-      orderBy: { updatedAt: 'desc' },
-    });
-    return {
-      data: memories.map((m) => ({
-        id: m.id,
-        category: m.category,
-        summary: m.summary,
-        createdAt: m.createdAt.toISOString(),
-        updatedAt: m.updatedAt.toISOString(),
-      })),
-    };
+    return { data: await this.coachMemoryService.listMemories(user.id) };
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
-    const memory = await this.prisma.coachMemory.findFirst({
-      where: { id, userId: user.id },
-    });
-    if (!memory) {
-      throw new NotFoundException('Memory not found');
-    }
-    await this.prisma.coachMemory.delete({ where: { id } });
+    await this.coachMemoryService.removeMemory(user.id, id);
   }
 }

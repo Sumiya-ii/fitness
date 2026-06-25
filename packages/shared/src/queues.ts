@@ -1,6 +1,5 @@
 export const QUEUE_NAMES = {
   PHOTO_PARSING: 'photo-parsing',
-  REMINDERS: 'reminders',
   COACH_MEMORY: 'coach-memory',
   PRIVACY: 'privacy',
 } as const;

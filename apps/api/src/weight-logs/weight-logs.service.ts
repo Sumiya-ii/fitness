@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { dayBoundaries } from '@coach/shared';
 import { PrismaService } from '../prisma';
 import { CreateWeightLogDto } from './weight-logs.dto';
 
@@ -7,8 +8,10 @@ export class WeightLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async log(userId: string, dto: CreateWeightLogDto) {
-    const date = dto.loggedAt ? new Date(dto.loggedAt) : new Date();
-    date.setHours(0, 0, 0, 0);
+    // Bucket the entry by UTC calendar day so the day key matches every other
+    // service and never rolls over to the wrong day from local-machine offsets.
+    const dateKey = dto.loggedAt ?? new Date().toISOString().split('T')[0]!;
+    const { dayStart: date } = dayBoundaries(dateKey);
 
     const entry = await this.prisma.weightLog.upsert({
       where: {
@@ -46,14 +49,27 @@ export class WeightLogsService {
     }));
   }
 
-  async getTrend(userId: string) {
+  /**
+   * Returns the weight-trend summary (current weight + rolling weekly average,
+   * plus week-over-week delta) together with the smoothed `points` series the
+   * chart renders. A single shape so the mobile store and chart read one source.
+   */
+  async getTrend(userId: string, window = 7) {
     const logs = await this.prisma.weightLog.findMany({
       where: { userId },
       orderBy: { loggedAt: 'desc' },
-      take: 14,
     });
 
-    if (logs.length === 0) return null;
+    if (logs.length === 0) {
+      return {
+        current: null,
+        weeklyAverage: null,
+        previousWeekAverage: null,
+        weeklyDelta: null,
+        dataPoints: 0,
+        points: [],
+      };
+    }
 
     const current = Number(logs[0].weightKg);
 
@@ -73,7 +89,28 @@ export class WeightLogsService {
       previousWeekAverage: prevWeekAvg ? Number(prevWeekAvg.toFixed(1)) : null,
       weeklyDelta: prevWeekAvg ? Number((weekAvg - prevWeekAvg).toFixed(1)) : null,
       dataPoints: logs.length,
+      points: this.rollingPoints(logs.slice().reverse(), window),
     };
+  }
+
+  /**
+   * Build a chronologically-ascending rolling-average series.
+   * Each point is the average of that entry and the `window - 1` preceding entries.
+   */
+  private rollingPoints(
+    ascLogs: { loggedAt: Date; weightKg: unknown }[],
+    window: number,
+  ): { date: string; weightKg: number; rollingAvg: number }[] {
+    return ascLogs.map((entry, idx) => {
+      const start = Math.max(0, idx - window + 1);
+      const slice = ascLogs.slice(start, idx + 1);
+      const avg = slice.reduce((sum, l) => sum + Number(l.weightKg), 0) / slice.length;
+      return {
+        date: entry.loggedAt.toISOString().split('T')[0]!,
+        weightKg: Number(entry.weightKg),
+        rollingAvg: Number(avg.toFixed(2)),
+      };
+    });
   }
 
   /**
@@ -89,15 +126,6 @@ export class WeightLogsService {
 
     if (logs.length === 0) return [];
 
-    return logs.map((entry, idx) => {
-      const start = Math.max(0, idx - window + 1);
-      const slice = logs.slice(start, idx + 1);
-      const avg = slice.reduce((sum, l) => sum + Number(l.weightKg), 0) / slice.length;
-      return {
-        date: entry.loggedAt.toISOString().split('T')[0],
-        weightKg: Number(entry.weightKg),
-        rollingAvg: Number(avg.toFixed(2)),
-      };
-    });
+    return this.rollingPoints(logs, window);
   }
 }

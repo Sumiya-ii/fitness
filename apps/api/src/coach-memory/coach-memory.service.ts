@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma';
@@ -15,6 +15,30 @@ export class CoachMemoryService {
     private readonly prisma: PrismaService,
     @InjectQueue(QUEUE_NAMES.COACH_MEMORY) private readonly queue: Queue,
   ) {}
+
+  async listMemories(userId: string) {
+    const memories = await this.prisma.coachMemory.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+    });
+    return memories.map((m) => ({
+      id: m.id,
+      category: m.category,
+      summary: m.summary,
+      createdAt: m.createdAt.toISOString(),
+      updatedAt: m.updatedAt.toISOString(),
+    }));
+  }
+
+  async removeMemory(userId: string, id: string): Promise<void> {
+    const memory = await this.prisma.coachMemory.findFirst({
+      where: { id, userId },
+    });
+    if (!memory) {
+      throw new NotFoundException('Memory not found');
+    }
+    await this.prisma.coachMemory.delete({ where: { id } });
+  }
 
   /**
    * Returns a ≤500-token memory block string for injection into GPT system prompts.
@@ -39,23 +63,36 @@ export class CoachMemoryService {
 
   /**
    * Enqueues one memory-refresh job per user. Called weekly by the cron.
+   * Streams users in batches to avoid loading all onboarded users into memory at once.
    */
   async scheduleRefresh(): Promise<number> {
-    const users = await this.prisma.user.findMany({
-      where: {
-        profile: {
-          is: {
-            onboardingCompletedAt: { not: null },
+    const BATCH_SIZE = 200;
+    let cursor: string | undefined;
+    let enqueued = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const users = await this.prisma.user.findMany({
+        where: {
+          profile: {
+            is: {
+              onboardingCompletedAt: { not: null },
+            },
           },
         },
-      },
-      select: { id: true, profile: { select: { locale: true } } },
-    });
+        select: { id: true, profile: { select: { locale: true } } },
+        orderBy: { id: 'asc' },
+        take: BATCH_SIZE,
+        ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      });
 
-    let enqueued = 0;
-    for (const user of users) {
-      await this.enqueueForUser(user.id, user.profile?.locale ?? 'mn');
-      enqueued++;
+      for (const user of users) {
+        await this.enqueueForUser(user.id, user.profile?.locale ?? 'mn');
+        enqueued++;
+      }
+
+      hasMore = users.length === BATCH_SIZE;
+      if (hasMore) cursor = users[users.length - 1]!.id;
     }
 
     return enqueued;

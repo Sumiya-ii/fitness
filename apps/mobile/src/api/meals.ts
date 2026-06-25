@@ -174,13 +174,13 @@ export interface LogTemplatePayload {
 // ─── Analytics ────────────────────────────────────────────────────
 
 export interface AnalyticsEvent {
-  name: string;
+  event: string;
   [key: string]: unknown;
 }
 
 export const analyticsApi = {
   trackEvent: (event: AnalyticsEvent) =>
-    api.post<{ data: unknown }>('/analytics/events', event).catch(() => {
+    api.post<{ ok: true }>('/analytics/events', event).catch(() => {
       // Best-effort — never throw on analytics failures
     }),
 };

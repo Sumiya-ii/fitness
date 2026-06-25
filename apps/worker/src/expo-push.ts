@@ -3,6 +3,7 @@ import { deactivateExpiredTokens } from './db';
 import { logger } from './logger';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const EXPO_PUSH_TIMEOUT_MS = 15_000;
 
 interface ExpoPushMessage {
   to: string;
@@ -39,11 +40,25 @@ export async function sendExpoPush(
     data,
   }));
 
-  const response = await fetch(EXPO_PUSH_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(messages),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), EXPO_PUSH_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(EXPO_PUSH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(messages),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`Expo Push API timed out after ${EXPO_PUSH_TIMEOUT_MS}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`Expo Push API error: ${response.status}`);

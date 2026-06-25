@@ -54,7 +54,7 @@ function formatGender(gender: string | null, t: (k: string) => string): string {
   if (!gender) return '--';
   if (gender === 'male') return t('personalDetails.male');
   if (gender === 'female') return t('personalDetails.female');
-  return gender;
+  return t('personalDetails.genderOther');
 }
 
 /* -- Detail row -- */

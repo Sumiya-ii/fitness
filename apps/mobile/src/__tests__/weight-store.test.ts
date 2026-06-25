@@ -70,6 +70,7 @@ const MOCK_TREND: WeightTrend = {
   previousWeekAverage: 84.0,
   weeklyDelta: -1.0,
   dataPoints: 7,
+  points: [],
 };
 
 function resetStore() {

@@ -6,7 +6,6 @@ import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { PersonalDetailsScreen } from '../screens/PersonalDetailsScreen';
 import { AppSettingsScreen } from '../screens/AppSettingsScreen';
-import { RemindersScreen } from '../screens/RemindersScreen';
 import { RingColorsExplainedScreen } from '../screens/RingColorsExplainedScreen';
 import { EditTargetsScreen } from '../screens/settings/EditTargetsScreen';
 
@@ -28,7 +27,6 @@ export function MainStack() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
       <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
-      <Stack.Screen name="Reminders" component={RemindersScreen} />
       <Stack.Screen name="RingColorsExplained" component={RingColorsExplainedScreen} />
       <Stack.Screen
         name="EditTargets"

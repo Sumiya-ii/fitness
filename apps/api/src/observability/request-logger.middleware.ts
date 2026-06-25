@@ -13,7 +13,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
       const duration = Date.now() - start;
       const { statusCode } = res;
       const requestId = req.requestId ?? '-';
-      const userId = (req as any).user?.uid ?? '-';
+      const userId = (req as any).user?.id ?? '-';
 
       const message = `${method} ${originalUrl} ${statusCode} ${duration}ms [${requestId}] user=${userId}`;
 

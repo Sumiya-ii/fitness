@@ -95,11 +95,7 @@ const SAFE_LINE_PATTERNS: RegExp[] = [
  * DO NOT add new entries without a corresponding GitHub issue / Linear ticket.
  * Remove entries as each violation is fixed.
  */
-const KNOWN_VIOLATIONS: Array<[string, string]> = [
-  // RemindersScreen — Switch thumbColor uses literal white; this is the RN
-  // default thumb appearance. Should use c.onPrimary.
-  ['RemindersScreen.tsx', '#ffffff'],
-];
+const KNOWN_VIOLATIONS: Array<[string, string]> = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

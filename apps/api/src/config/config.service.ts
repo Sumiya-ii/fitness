@@ -41,11 +41,11 @@ export class ConfigService {
     return this.config.ADMIN_USER_IDS;
   }
 
-  get bullBoardUser(): string {
+  get bullBoardUser(): string | undefined {
     return this.config.BULL_BOARD_USER;
   }
 
-  get bullBoardPassword(): string {
+  get bullBoardPassword(): string | undefined {
     return this.config.BULL_BOARD_PASSWORD;
   }
 

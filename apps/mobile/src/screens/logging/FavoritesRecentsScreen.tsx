@@ -1,5 +1,13 @@
 import { useState, useCallback } from 'react';
-import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -95,10 +103,34 @@ export function FavoritesRecentsScreen() {
     }
   };
 
-  const handleQuickLog = (_item: FavoriteItem | RecentItem) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('TextSearch');
-  };
+  const handleQuickLog = useCallback(
+    async (item: FavoriteItem | RecentItem) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      try {
+        // Derive calories: FavoriteItem stores per-100g values × servingCount; RecentItem stores last-logged calories directly.
+        const calories =
+          'caloriesPer100g' in item
+            ? Math.round((item.caloriesPer100g * item.servingCount) / 100)
+            : item.lastCalories;
+        const protein =
+          'proteinPer100g' in item
+            ? Math.round((item.proteinPer100g * item.servingCount) / 100)
+            : item.lastProtein;
+
+        await mealsApi.quickAdd({
+          calories,
+          proteinGrams: protein,
+          note: item.name,
+          source: 'quick_relog',
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        navigation.goBack();
+      } catch {
+        Alert.alert(t('common.error'), t('logging.logFailed'));
+      }
+    },
+    [navigation, t],
+  );
 
   const renderFavorite = ({ item, index }: { item: FavoriteItem; index: number }) => (
     <Animated.View entering={FadeInDown.duration(300).delay(Math.min(index * 40, 200))}>

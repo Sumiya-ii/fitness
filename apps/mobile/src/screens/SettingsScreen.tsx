@@ -171,7 +171,6 @@ function PrivacyRequestBadge({
           return t('settings.deleteStatusFailed');
       }
     }
-    return request.status;
   })();
 
   return (
@@ -408,12 +407,6 @@ export function SettingsScreen() {
                 icon="settings-outline"
                 label={t('settings.preferences')}
                 onPress={() => navigate('AppSettings')}
-              />
-              <Divider />
-              <Row
-                icon="notifications-outline"
-                label={t('settings.reminders')}
-                onPress={() => navigate('Reminders')}
               />
               <Divider />
               <Row

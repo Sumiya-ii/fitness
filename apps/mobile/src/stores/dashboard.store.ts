@@ -10,6 +10,10 @@ async function cacheDashboard(data: DashboardData): Promise<void> {
   await AsyncStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data));
 }
 
+export async function clearDashboardCache(): Promise<void> {
+  await AsyncStorage.removeItem(DASHBOARD_CACHE_KEY);
+}
+
 export interface DashboardMealItem {
   id: string;
   snapshotFoodName: string;

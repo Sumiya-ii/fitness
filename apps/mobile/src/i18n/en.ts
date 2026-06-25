@@ -146,6 +146,7 @@ export const en = {
     favorites: 'Favorites',
     kcalTapToLog: 'kcal · tap to log again',
     couldNotLog: "That didn't save. Give it another shot?",
+    logFailed: 'Failed to log food. Please try again.',
   },
   search: {
     title: 'Search Foods',
@@ -194,6 +195,7 @@ export const en = {
     athletic: 'Athletic',
     fitness: 'Fitness',
     average: 'Average',
+    weeklyAverage: 'Weekly average',
   },
   onboarding: {
     trackNutrition: 'Track What\nYou Eat',
@@ -790,6 +792,7 @@ export const en = {
     enterValidCalories: 'Enter valid calories',
     caloriesHighWarning: 'That seems high — are you sure?',
     caloriesTooLow: 'Calories must be greater than 0',
+    confirmHighCalories: 'Tap Save again to confirm this high-calorie entry',
   },
   favRecents: {
     title: 'Favorites & Recents',

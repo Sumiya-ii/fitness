@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { toLocalDateKey } from '@coach/shared';
 import { Button, BottomSheet, Input, SkeletonLoader } from '../components/ui';
 import { useWeightStore, type WeightLogEntry } from '../stores/weight.store';
 import { useNutritionHistoryStore, type HistoryPeriod } from '../stores/nutrition-history.store';
@@ -36,9 +38,11 @@ function NutritionTab() {
   const [period, setPeriod] = useState<HistoryPeriod>(7);
   const { data, isLoading, fetchHistory } = useNutritionHistoryStore();
 
-  useEffect(() => {
-    fetchHistory(period);
-  }, [period, fetchHistory]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchHistory(period);
+    }, [period, fetchHistory]),
+  );
 
   const historyData = data[period];
   const history = historyData?.history ?? [];
@@ -195,7 +199,7 @@ function WeightTab({ viewportWidth }: { viewportWidth: number }) {
   const [period, setPeriod] = useState<WeightPeriod>('week');
   const [sheetVisible, setSheetVisible] = useState(false);
   const [weightInput, setWeightInput] = useState('');
-  const [dateInput, setDateInput] = useState(() => new Date().toISOString().split('T')[0]!);
+  const [dateInput, setDateInput] = useState(() => toLocalDateKey(new Date()));
   const [saving, setSaving] = useState(false);
   const { history, trend, isLoading, fetchHistory, fetchTrend, logWeight } = useWeightStore();
 
@@ -204,9 +208,7 @@ function WeightTab({ viewportWidth }: { viewportWidth: number }) {
     fetchTrend();
   }, [period, fetchHistory, fetchTrend]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useFocusEffect(load);
 
   const handleLogWeight = async () => {
     const parsed = parseFloat(weightInput.replace(',', '.'));
@@ -216,7 +218,7 @@ function WeightTab({ viewportWidth }: { viewportWidth: number }) {
       await logWeight(inputToKg(parsed), dateInput);
       setSheetVisible(false);
       setWeightInput('');
-      setDateInput(new Date().toISOString().split('T')[0]!);
+      setDateInput(toLocalDateKey(new Date()));
     } finally {
       setSaving(false);
     }
@@ -224,7 +226,8 @@ function WeightTab({ viewportWidth }: { viewportWidth: number }) {
 
   if (isLoading && history.length === 0) return <ProgressSkeleton />;
 
-  const currentWeight = trend?.current ?? history[0]?.weightKg ?? null;
+  const currentWeight = trend?.current ?? history[history.length - 1]?.weightKg ?? null;
+  const weeklyAverage = trend?.weeklyAverage ?? null;
   const chartData = history.slice(-PERIOD_DAYS[period]);
 
   return (
@@ -244,6 +247,11 @@ function WeightTab({ viewportWidth }: { viewportWidth: number }) {
               </Text>
               <Text className="text-xl font-sans-medium text-text-secondary ml-1">kg</Text>
             </View>
+            {weeklyAverage !== null && (
+              <Text className="text-xs text-text-tertiary font-sans-medium mt-2">
+                {t('progress.weeklyAverage')}: {displayWeight(weeklyAverage)} kg
+              </Text>
+            )}
           </View>
         </LinearGradient>
       </Animated.View>

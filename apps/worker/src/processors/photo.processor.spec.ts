@@ -27,7 +27,7 @@ jest.mock('pg', () => ({
 }));
 
 jest.mock('../foods-lookup', () => ({
-  lookupVerifiedFood: jest.fn(),
+  lookupVerifiedFoodsBatch: jest.fn(),
   normalizeName: jest.requireActual('../foods-lookup').normalizeName,
   tokenOverlap: jest.requireActual('../foods-lookup').tokenOverlap,
 }));
@@ -46,7 +46,7 @@ jest.mock('@sentry/node', () => ({
 import { processPhotoJob } from './photo.processor';
 import OpenAI from 'openai';
 import type { Job } from 'bullmq';
-import { lookupVerifiedFood } from '../foods-lookup';
+import { lookupVerifiedFoodsBatch } from '../foods-lookup';
 import { applyUserCalibration } from '../calibration';
 import * as Sentry from '@sentry/node';
 
@@ -177,8 +177,8 @@ beforeEach(() => {
   process.env.VISION_PROVIDER = 'gemini';
   process.env.DATABASE_URL = 'postgresql://test';
 
-  // Default: lookupVerifiedFood returns null (no match)
-  (lookupVerifiedFood as jest.Mock).mockResolvedValue(null);
+  // Default: lookupVerifiedFoodsBatch returns an empty map (no matches)
+  (lookupVerifiedFoodsBatch as jest.Mock).mockResolvedValue(new Map());
   // Default: calibration is a pass-through
   (applyUserCalibration as jest.Mock).mockImplementation((_u, item) => Promise.resolve(item));
 
@@ -219,7 +219,7 @@ describe('1. Missing env vars', () => {
 
     await processPhotoJob(makeJob({ userId: 'u1', reference: 'ref', photoBuffer: 'base64data' }));
 
-    expect(lookupVerifiedFood).not.toHaveBeenCalled();
+    expect(lookupVerifiedFoodsBatch).not.toHaveBeenCalled();
     expect(applyUserCalibration).not.toHaveBeenCalled();
   });
 });
@@ -471,7 +471,7 @@ describe('5. Label mode', () => {
     expect(result.items[0].confidence).toBe(0.97);
     expect(result.items[0].source).toBe('label');
     // Label items must NOT go through DB lookup
-    expect(lookupVerifiedFood).not.toHaveBeenCalled();
+    expect(lookupVerifiedFoodsBatch).not.toHaveBeenCalled();
   });
 });
 
@@ -562,7 +562,7 @@ describe('7. External service errors', () => {
   it('continues gracefully when DB enrichment throws', async () => {
     geminiRespond({ mode: 'food' });
     geminiRespond(VALID_FOOD_RESPONSE);
-    (lookupVerifiedFood as jest.Mock).mockRejectedValue(new Error('DB timeout'));
+    (lookupVerifiedFoodsBatch as jest.Mock).mockRejectedValue(new Error('DB timeout'));
 
     const result = await processPhotoJob(
       makeJob({ userId: 'u1', reference: 'ref', photoBuffer: 'base64data' }),
@@ -646,7 +646,7 @@ describe('9. Edge cases', () => {
       nameEn: 'Buuz',
       perHundredG: { kcal: 220, p: 11, c: 18, f: 8, fi: 1, su: 0.5, so: 280, sf: 3 },
     };
-    (lookupVerifiedFood as jest.Mock).mockResolvedValue(verifiedFood);
+    (lookupVerifiedFoodsBatch as jest.Mock).mockResolvedValue(new Map([['Бууз', verifiedFood]]));
 
     const result = await processPhotoJob(
       makeJob({ userId: 'u1', reference: 'ref', photoBuffer: 'base64data' }),
@@ -666,7 +666,7 @@ describe('9. Edge cases', () => {
   it('keeps source: ai_estimate when no DB match found', async () => {
     geminiRespond({ mode: 'food' });
     geminiRespond(VALID_FOOD_RESPONSE);
-    (lookupVerifiedFood as jest.Mock).mockResolvedValue(null);
+    (lookupVerifiedFoodsBatch as jest.Mock).mockResolvedValue(new Map([['Бууз', null]]));
 
     const result = await processPhotoJob(
       makeJob({ userId: 'u1', reference: 'ref', photoBuffer: 'base64data' }),
@@ -687,7 +687,7 @@ describe('9. Edge cases', () => {
       nameEn: 'Buuz',
       perHundredG: { kcal: 220, p: 11, c: 18, f: 8, fi: 1, su: 0.5, so: 280, sf: 3 },
     };
-    (lookupVerifiedFood as jest.Mock).mockResolvedValue(verifiedFood);
+    (lookupVerifiedFoodsBatch as jest.Mock).mockResolvedValue(new Map([['Бууз', verifiedFood]]));
 
     // Calibration multiplies all values by 0.8
     (applyUserCalibration as jest.Mock).mockImplementation((_u, item) =>
@@ -710,7 +710,7 @@ describe('9. Edge cases', () => {
   it('does not apply calibration when there is no matchedFoodId', async () => {
     geminiRespond({ mode: 'food' });
     geminiRespond(VALID_FOOD_RESPONSE);
-    (lookupVerifiedFood as jest.Mock).mockResolvedValue(null);
+    (lookupVerifiedFoodsBatch as jest.Mock).mockResolvedValue(new Map([['Бууз', null]]));
 
     await processPhotoJob(makeJob({ userId: 'u1', reference: 'ref', photoBuffer: 'base64data' }));
 
@@ -800,7 +800,7 @@ describe('9. Edge cases', () => {
     // After correction to label mode, items get source: label
     expect(result.items[0].source).toBe('label');
     // And DB lookup is skipped for label items
-    expect(lookupVerifiedFood).not.toHaveBeenCalled();
+    expect(lookupVerifiedFoodsBatch).not.toHaveBeenCalled();
   });
 
   it('uses user-passed mode when detection mode agrees', async () => {

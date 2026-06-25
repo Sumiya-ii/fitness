@@ -115,11 +115,18 @@ function setupExportMocks(
   });
 }
 
-/** Deletion happy-path: status check → processing update → voice keys → transaction deletes → completed update → user delete → commit */
+/**
+ * Deletion happy-path: status check → processing update → voice keys → transaction
+ * deletes → completed update → user delete → commit.
+ *
+ * A 'completed' status (or a missing row) short-circuits at the idempotency guard,
+ * so only the status check runs. 'pending' and 'processing' both run the full
+ * deletion (processing = crash-resume), so they set up the full query sequence.
+ */
 function setupDeletionMocks(status = 'pending') {
   // 1. status check
   mockPoolQuery.mockResolvedValueOnce({ rows: [{ status }] });
-  if (status !== 'pending') return;
+  if (status === 'completed') return;
   // 2. UPDATE processing
   mockPoolQuery.mockResolvedValueOnce({ rows: [] });
   // 3. voice keys
@@ -385,9 +392,11 @@ describe('locale handling', () => {
 
 describe('external service errors', () => {
   it('throws when S3 upload fails', async () => {
-    // 1. UPDATE processing
+    // 1. Idempotency check — return 'pending' so execution proceeds to the S3 upload
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'pending' }] });
+    // 2. UPDATE processing
     mockPoolQuery.mockResolvedValueOnce({ rows: [] });
-    // 2–19. collectUserData
+    // 3–20. collectUserData
     for (let i = 0; i < 18; i++) {
       mockPoolQuery.mockResolvedValueOnce({ rows: [] });
     }
@@ -425,9 +434,11 @@ describe('external service errors', () => {
   });
 
   it('marks request as failed in DB when job throws', async () => {
-    // 1. UPDATE processing
+    // 1. Idempotency check — return 'pending' so execution proceeds to the S3 upload
+    mockPoolQuery.mockResolvedValueOnce({ rows: [{ status: 'pending' }] });
+    // 2. UPDATE processing
     mockPoolQuery.mockResolvedValueOnce({ rows: [] });
-    // 2–19. collectUserData
+    // 3–20. collectUserData
     for (let i = 0; i < 18; i++) {
       mockPoolQuery.mockResolvedValueOnce({ rows: [] });
     }
@@ -508,13 +519,40 @@ describe('edge case data', () => {
     expect(mockPoolEnd).toHaveBeenCalled();
   });
 
-  it('skips deletion when request status is not pending', async () => {
-    setupDeletionMocks('processing');
+  it('skips deletion (idempotent) when request is already completed', async () => {
+    setupDeletionMocks('completed');
 
     await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'deletion' }));
 
     // Only the status check query ran, no deletes
     expect(mockPoolQuery).toHaveBeenCalledTimes(1);
+    expect(mockDeleteFromS3).not.toHaveBeenCalled();
+    expect(mockPoolEnd).toHaveBeenCalled();
+  });
+
+  it('skips deletion when the request row is already gone (user fully deleted)', async () => {
+    // Idempotency check returns no row — user/request already cascaded away
+    mockPoolQuery.mockResolvedValueOnce({ rows: [] });
+
+    await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'deletion' }));
+
+    expect(mockPoolQuery).toHaveBeenCalledTimes(1);
+    expect(mockDeleteFromS3).not.toHaveBeenCalled();
+    expect(mockPoolEnd).toHaveBeenCalled();
+  });
+
+  it('resumes deletion when a prior attempt crashed mid-run (status processing)', async () => {
+    // status 'processing' means a previous run crashed — must RESUME, not block,
+    // otherwise user data is never deleted (regulatory violation).
+    setupDeletionMocks('processing');
+
+    await processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'deletion' }));
+
+    // Full deletion ran: transaction deletes + S3 cleanup
+    expect(mockDeleteFromS3).toHaveBeenCalledWith('voice/u1/file.webm');
+    expect(mockDeleteFromS3).toHaveBeenCalledWith('exports/u1/req-1.json');
+    const commitCall = mockPoolQuery.mock.calls.find((c) => c[0] === 'COMMIT');
+    expect(commitCall).toBeDefined();
     expect(mockPoolEnd).toHaveBeenCalled();
   });
 

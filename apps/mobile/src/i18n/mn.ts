@@ -146,6 +146,7 @@ export const mn = {
     favorites: 'Дуртай',
     kcalTapToLog: 'ккал · дарж дахин бүртгэ',
     couldNotLog: 'Хадгалж чадсангүй. Дахин оролдох уу?',
+    logFailed: 'Хоол бүртгэхэд алдаа гарлаа. Дахин оролдоно уу.',
   },
   search: {
     title: 'Хоол хайх',
@@ -194,6 +195,7 @@ export const mn = {
     athletic: 'Тамирчин',
     fitness: 'Фитнесс',
     average: 'Дундаж',
+    weeklyAverage: '7 хоногийн дундаж',
   },
   onboarding: {
     trackNutrition: 'Идсэнээ\nбүртгэе',
@@ -772,6 +774,8 @@ export const mn = {
     enterValidCalories: 'Зөв калори оруул',
     caloriesHighWarning: 'Их юм шиг санагдаж байна — итгэлтэй байна уу?',
     caloriesTooLow: 'Калори 0-ээс их байх ёстой',
+    confirmHighCalories:
+      'Өндөр калорийн оруулгыг баталгаажуулахын тулд Хадгалах товчийг дахин дарна уу',
   },
   favRecents: {
     title: 'Дуртай & Сүүлийнх',

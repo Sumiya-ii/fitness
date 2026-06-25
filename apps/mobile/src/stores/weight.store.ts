@@ -9,12 +9,19 @@ export interface WeightLogEntry {
   loggedAt: string;
 }
 
+export interface WeightTrendPoint {
+  date: string;
+  weightKg: number;
+  rollingAvg: number;
+}
+
 export interface WeightTrend {
-  current: number;
-  weeklyAverage: number;
+  current: number | null;
+  weeklyAverage: number | null;
   previousWeekAverage: number | null;
   weeklyDelta: number | null;
   dataPoints: number;
+  points: WeightTrendPoint[];
 }
 
 interface WeightState {

@@ -28,10 +28,12 @@ export function TelegramConnectScreen() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await api.get<{ linked: boolean; telegramUsername?: string }>('/telegram/status');
-      setLinked(res.linked);
-      setUsername(res.telegramUsername ?? null);
-      if (res.linked) {
+      const res = await api.get<{
+        data: { linked: boolean; telegramUsername?: string; linkedAt?: string };
+      }>('/telegram/status');
+      setLinked(res.data.linked);
+      setUsername(res.data.telegramUsername ?? null);
+      if (res.data.linked) {
         setPendingLink(false);
       }
     } catch {
@@ -59,8 +61,8 @@ export function TelegramConnectScreen() {
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const res = await api.post<{ code: string }>('/telegram/link-code', {});
-      const deepLink = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${res.code}`;
+      const res = await api.post<{ data: { code: string } }>('/telegram/link-code', {});
+      const deepLink = `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${res.data.code}`;
       setPendingLink(true);
       await Linking.openURL(deepLink);
     } catch (e) {

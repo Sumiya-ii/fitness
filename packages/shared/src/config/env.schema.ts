@@ -16,8 +16,10 @@ export const envSchema = z.object({
   FIREBASE_PRIVATE_KEY: z.string().optional(),
 
   // Bull Board dashboard credentials (basic auth)
-  BULL_BOARD_USER: z.string().min(1).default('admin'),
-  BULL_BOARD_PASSWORD: z.string().min(1).default('admin'),
+  // Optional, but with NO insecure default — when unset, the admin dashboard is
+  // denied access entirely (never falls back to admin/admin).
+  BULL_BOARD_USER: z.string().optional(),
+  BULL_BOARD_PASSWORD: z.string().optional(),
 
   // Admin access
   ADMIN_USER_IDS: z
@@ -65,6 +67,9 @@ export const envSchema = z.object({
   // RevenueCat
   REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
   REVENUECAT_API_KEY: z.string().optional(),
+
+  // HMAC secret for hashing IP addresses in privacy consent records.
+  IP_HASH_SECRET: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

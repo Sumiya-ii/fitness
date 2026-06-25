@@ -25,6 +25,13 @@ describe('WeightLogsService', () => {
       expect(result.weightKg).toBe(80);
       expect(prisma.weightLog.upsert).toHaveBeenCalled();
     });
+
+    it('buckets the entry by UTC midnight of the given date (no local-offset shift)', async () => {
+      await service.log('user-uuid', { weightKg: 80, loggedAt: '2026-03-04' });
+      const arg = prisma.weightLog.upsert.mock.calls[0][0];
+      const loggedAt: Date = arg.where.userId_loggedAt.loggedAt;
+      expect(loggedAt.toISOString()).toBe('2026-03-04T00:00:00.000Z');
+    });
   });
 
   describe('getHistory', () => {
@@ -41,9 +48,12 @@ describe('WeightLogsService', () => {
   });
 
   describe('getTrend', () => {
-    it('should return null for no data', async () => {
+    it('should return an empty summary for no data', async () => {
       const result = await service.getTrend('user-uuid');
-      expect(result).toBeNull();
+      expect(result.current).toBeNull();
+      expect(result.weeklyAverage).toBeNull();
+      expect(result.dataPoints).toBe(0);
+      expect(result.points).toEqual([]);
     });
 
     it('should calculate trend from weight logs', async () => {
@@ -55,10 +65,27 @@ describe('WeightLogsService', () => {
       prisma.weightLog.findMany.mockResolvedValue(logs);
 
       const result = await service.getTrend('user-uuid');
-      expect(result).not.toBeNull();
-      expect(result!.current).toBe(80);
-      expect(result!.weeklyDelta).toBeDefined();
-      expect(result!.dataPoints).toBe(10);
+      expect(result.current).toBe(80);
+      expect(result.weeklyAverage).toBeDefined();
+      expect(result.weeklyDelta).toBeDefined();
+      expect(result.dataPoints).toBe(10);
+    });
+
+    it('includes a chronologically-ascending rolling points series', async () => {
+      // findMany is called with order desc; mock returns newest-first.
+      prisma.weightLog.findMany.mockResolvedValue([
+        { id: 'wl-3', weightKg: 78, loggedAt: new Date('2026-03-03') },
+        { id: 'wl-2', weightKg: 79, loggedAt: new Date('2026-03-02') },
+        { id: 'wl-1', weightKg: 80, loggedAt: new Date('2026-03-01') },
+      ]);
+
+      const result = await service.getTrend('user-uuid', 7);
+      expect(result.points.map((p) => p.date)).toEqual(['2026-03-01', '2026-03-02', '2026-03-03']);
+      // Rolling average is cumulative over up to `window` preceding entries.
+      expect(result.points[0].rollingAvg).toBe(80);
+      expect(result.points[1].rollingAvg).toBe(79.5);
+      expect(result.points[2].rollingAvg).toBe(79);
+      expect(result.points[2].weightKg).toBe(78);
     });
   });
 

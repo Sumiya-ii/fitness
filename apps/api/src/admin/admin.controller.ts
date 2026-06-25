@@ -30,7 +30,7 @@ export class AdminController {
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
     }
-    return this.adminService.listModerationQueue(parsed.data);
+    return { data: await this.adminService.listModerationQueue(parsed.data) };
   }
 
   @Post('moderation/:id/approve')
@@ -73,7 +73,7 @@ export class AdminController {
     if (!parsed.success) {
       throw new BadRequestException(parsed.error.issues);
     }
-    return this.adminService.listMessages(parsed.data);
+    return { data: await this.adminService.listMessages(parsed.data) };
   }
 
   @Get('messages/stats')

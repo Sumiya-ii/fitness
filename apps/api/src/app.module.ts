@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from './config';
 import { PrismaModule } from './prisma';
 import { QueueModule } from './queue';
@@ -23,7 +24,6 @@ import { ObservabilityModule } from './observability';
 import { StorageModule } from './storage';
 import { PhotosModule } from './photos';
 import { TelegramModule } from './telegram';
-import { RemindersModule } from './reminders';
 import { ChatModule } from './chat';
 import { CoachMemoryModule } from './coach-memory/coach-memory.module';
 import { OnboardingModule } from './onboarding';
@@ -33,6 +33,7 @@ import { IdempotencyInterceptor } from './observability/idempotency.interceptor'
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -68,7 +69,6 @@ import { IdempotencyInterceptor } from './observability/idempotency.interceptor'
     StorageModule,
     PhotosModule,
     TelegramModule,
-    RemindersModule,
     ChatModule,
     CoachMemoryModule,
     StreaksModule,

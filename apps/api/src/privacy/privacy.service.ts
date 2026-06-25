@@ -4,6 +4,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QUEUE_NAMES } from '@coach/shared';
 import { PrismaService } from '../prisma';
+import { ConfigService } from '../config';
 import type { CreateConsentDto, PaginationDto } from './privacy.dto';
 
 @Injectable()
@@ -11,11 +12,17 @@ export class PrivacyService {
   constructor(
     @InjectQueue(QUEUE_NAMES.PRIVACY) private readonly privacyQueue: Queue,
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
   ) {}
 
-  private hashIp(ip: string): string {
-    const secret = process.env.IP_HASH_SECRET;
-    if (!secret) throw new Error('IP_HASH_SECRET environment variable is required');
+  /**
+   * Hash an IP for audit storage. Returns null when IP_HASH_SECRET is not
+   * configured (optional env var) — consent recording must never fail just
+   * because the secret is absent; we simply skip storing the hashed IP.
+   */
+  private hashIp(ip: string): string | null {
+    const secret = this.config.get('IP_HASH_SECRET');
+    if (!secret) return null;
     return createHmac('sha256', secret).update(ip).digest('hex');
   }
 

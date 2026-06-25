@@ -23,7 +23,6 @@ import * as Haptics from 'expo-haptics';
 import { SkeletonLoader } from '../components/ui';
 import { useDashboardStore, type DashboardMeal } from '../stores/dashboard.store';
 import { useWaterStore } from '../stores/water.store';
-import { useStepsStore, STEPS_GOAL, KCAL_PER_STEP } from '../stores/steps.store';
 import { useStreakStore } from '../stores/streak.store';
 import { api } from '../api';
 import { useLocale } from '../i18n';
@@ -203,22 +202,17 @@ function NutrientMiniCard({ label, value, unit, color, icon, sublabel }: Nutrien
   const c = useColors();
   return (
     <View className="flex-1 rounded-3xl p-4" style={{ backgroundColor: c.card }}>
-      <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: c.text, lineHeight: 24 }}>
-        {value}
-      </Text>
-      <Text style={{ fontSize: 11, fontFamily: 'Inter-Medium', color: c.textTertiary }}>
-        {unit}
-      </Text>
+      <Text className="text-xl font-sans-bold text-text leading-6">{value}</Text>
+      <Text className="text-[11px] font-sans-medium text-text-tertiary">{unit}</Text>
       <View className="flex-row items-center gap-1.5 mt-3">
         <Text style={{ fontSize: 16 }}>{icon}</Text>
         <View>
-          <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color }} numberOfLines={1}>
+          {/* color is dynamic (success/danger/warning/primaryMuted) — inline style required */}
+          <Text className="text-[11px] font-sans-semibold" style={{ color }} numberOfLines={1}>
             {label}
           </Text>
           {sublabel ? (
-            <Text style={{ fontSize: 9, fontFamily: 'Inter-Medium', color: c.textTertiary }}>
-              {sublabel}
-            </Text>
+            <Text className="text-[9px] font-sans-medium text-text-tertiary">{sublabel}</Text>
           ) : null}
         </View>
       </View>
@@ -356,7 +350,7 @@ function StreakCalendarModal({
       <View className="flex-1" style={{ backgroundColor: c.bg }}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-5 pb-4">
-          <Text style={{ fontSize: 20, fontFamily: 'Inter-Bold', color: c.text }}>
+          <Text className="text-xl font-sans-bold text-text">
             {t('dashboard.streakCalendarTitle')}
           </Text>
           <Pressable
@@ -378,19 +372,12 @@ function StreakCalendarModal({
               className="flex-1 rounded-3xl p-4 items-center"
               style={{ backgroundColor: c.card }}
             >
-              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: c.warning }}>
+              {/* color is dynamic (warning token) — inline style required */}
+              <Text className="text-4xl font-sans-bold" style={{ color: c.warning }}>
                 {currentStreak}
               </Text>
               <Text style={{ fontSize: 16 }}>🔥</Text>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontFamily: 'Inter-Medium',
-                  color: c.textTertiary,
-                  marginTop: 2,
-                  textAlign: 'center',
-                }}
-              >
+              <Text className="text-[11px] font-sans-medium text-text-tertiary mt-0.5 text-center">
                 {t('dashboard.streak')}
               </Text>
             </View>
@@ -398,19 +385,9 @@ function StreakCalendarModal({
               className="flex-1 rounded-3xl p-4 items-center"
               style={{ backgroundColor: c.card }}
             >
-              <Text style={{ fontSize: 36, fontFamily: 'Inter-Bold', color: c.text }}>
-                {longestStreak}
-              </Text>
+              <Text className="text-4xl font-sans-bold text-text">{longestStreak}</Text>
               <Text style={{ fontSize: 16 }}>🏆</Text>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontFamily: 'Inter-Medium',
-                  color: c.textTertiary,
-                  marginTop: 2,
-                  textAlign: 'center',
-                }}
-              >
+              <Text className="text-[11px] font-sans-medium text-text-tertiary mt-0.5 text-center">
                 {t('dashboard.streakLongest')}
               </Text>
             </View>
@@ -420,12 +397,10 @@ function StreakCalendarModal({
           <View className="mx-5 rounded-3xl p-4 mb-5" style={{ backgroundColor: c.card }}>
             <View className="mb-4">
               <View className="flex-row items-center justify-between mb-2">
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: c.text }}>
+                <Text className="text-[13px] font-sans-semibold text-text">
                   {t('dashboard.streakWeek')}
                 </Text>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: c.text }}>
-                  {weekConsistency}%
-                </Text>
+                <Text className="text-[13px] font-sans-bold text-text">{weekConsistency}%</Text>
               </View>
               <View
                 className="h-2.5 rounded-full overflow-hidden"
@@ -448,12 +423,10 @@ function StreakCalendarModal({
             </View>
             <View>
               <View className="flex-row items-center justify-between mb-2">
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-SemiBold', color: c.text }}>
+                <Text className="text-[13px] font-sans-semibold text-text">
                   {t('dashboard.streakMonth')}
                 </Text>
-                <Text style={{ fontSize: 13, fontFamily: 'Inter-Bold', color: c.text }}>
-                  {monthConsistency}%
-                </Text>
+                <Text className="text-[13px] font-sans-bold text-text">{monthConsistency}%</Text>
               </View>
               <View
                 className="h-2.5 rounded-full overflow-hidden"
@@ -479,15 +452,10 @@ function StreakCalendarModal({
           {/* Calendar groups by month */}
           {monthGroups.map((group) => (
             <View key={group.label} className="mx-5 mb-4">
+              {/* letterSpacing 0.6 has no direct Tailwind equivalent — keep style for that only */}
               <Text
-                style={{
-                  fontSize: 12,
-                  fontFamily: 'Inter-SemiBold',
-                  color: c.textTertiary,
-                  letterSpacing: 0.6,
-                  textTransform: 'uppercase',
-                  marginBottom: 8,
-                }}
+                className="text-xs font-sans-semibold text-text-tertiary uppercase mb-2"
+                style={{ letterSpacing: 0.6 }}
               >
                 {group.label}
               </Text>
@@ -527,7 +495,7 @@ function StreakCalendarModal({
               <View
                 style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c.success }}
               />
-              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: c.textSecondary }}>
+              <Text className="text-xs font-sans-medium" style={{ color: c.textSecondary }}>
                 {t('dashboard.streakLogged')}
               </Text>
             </View>
@@ -535,7 +503,7 @@ function StreakCalendarModal({
               <View
                 style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: c.cardAlt }}
               />
-              <Text style={{ fontSize: 12, fontFamily: 'Inter-Medium', color: c.textSecondary }}>
+              <Text className="text-xs font-sans-medium" style={{ color: c.textSecondary }}>
                 {t('dashboard.streakMissed')}
               </Text>
             </View>
@@ -569,13 +537,6 @@ export function HomeScreen() {
     removeCup,
     fetchDaily: fetchWater,
   } = useWaterStore();
-  const {
-    steps,
-    permissionStatus: stepsPermission,
-    checkPermission: checkStepsPermission,
-    requestPermission: requestStepsPermission,
-    fetchTodaySteps,
-  } = useStepsStore();
   const insets = useSafeAreaInsets();
   const calendarRef = useRef<ScrollView>(null);
 
@@ -699,17 +660,12 @@ export function HomeScreen() {
     }, [fetchDashboard, fetchWater, fetchStreaks, selectedDateKey, todayKey]),
   );
 
-  useEffect(() => {
-    checkStepsPermission();
-  }, [checkStepsPermission]);
-
   const onRefresh = useCallback(() => {
     loadProfile();
     fetchDashboard(selectedDateKey);
     loadWeekHistory();
     if (selectedDateKey === todayKey) {
       fetchWater();
-      fetchTodaySteps();
       fetchStreaks();
     }
   }, [
@@ -717,7 +673,6 @@ export function HomeScreen() {
     fetchDashboard,
     loadWeekHistory,
     fetchWater,
-    fetchTodaySteps,
     fetchStreaks,
     selectedDateKey,
     todayKey,
@@ -774,7 +729,6 @@ export function HomeScreen() {
   const waterProgress =
     effectiveWaterTarget > 0 ? Math.min(effectiveWaterConsumed / effectiveWaterTarget, 1) : 0;
   const waterCupsConsumed = effectiveWaterConsumed / CUP_ML;
-  const _waterCupsTarget = Math.round(effectiveWaterTarget / CUP_ML);
   const waterMlLabel =
     effectiveWaterConsumed >= 1000
       ? `${(effectiveWaterConsumed / 1000).toFixed(1)} L`
@@ -822,9 +776,6 @@ export function HomeScreen() {
         : healthScore >= 50
           ? c.warning
           : c.danger;
-
-  const stepsProg = Math.min(steps / STEPS_GOAL, 1);
-  const stepCaloriesBurned = Math.round(steps * KCAL_PER_STEP);
 
   return (
     <View className="flex-1" style={{ backgroundColor: c.bg }}>
@@ -1158,22 +1109,25 @@ export function HomeScreen() {
                     <Pressable
                       testID="water-remove-btn"
                       onPress={() => removeCup(CUP_ML)}
-                      disabled={effectiveWaterConsumed <= 0}
+                      disabled={!isTodaySelected || effectiveWaterConsumed <= 0}
                       className="flex-1 h-8 rounded-xl items-center justify-center"
                       style={{ backgroundColor: c.cardAlt }}
                     >
                       <Ionicons
                         name="remove"
                         size={18}
-                        color={effectiveWaterConsumed <= 0 ? c.muted : c.text}
+                        color={!isTodaySelected || effectiveWaterConsumed <= 0 ? c.muted : c.text}
                       />
                     </Pressable>
                     <Pressable
                       testID="water-add-btn"
-                      onPress={() => addWater(CUP_ML)}
+                      onPress={() =>
+                        addWater(CUP_ML, isTodaySelected ? undefined : selectedDateKey)
+                      }
+                      disabled={!isTodaySelected}
                       className="flex-1 h-8 rounded-xl bg-primary-500 items-center justify-center"
                     >
-                      <Ionicons name="add" size={18} color={c.text} />
+                      <Ionicons name="add" size={18} color={!isTodaySelected ? c.muted : c.text} />
                     </Pressable>
                   </View>
                 </View>
@@ -1217,149 +1171,12 @@ export function HomeScreen() {
               </View>
             </View>
 
-            {/* ── Page 2: Steps ── */}
-            <View style={{ width: screenWidth, paddingHorizontal: 16 }}>
-              <View className="flex-row gap-3">
-                {/* Left: Steps card or Connect prompt */}
-                {stepsPermission === 'granted' ? (
-                  <View className="flex-[2] rounded-3xl p-4" style={{ backgroundColor: c.card }}>
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-1 mr-2">
-                        <Text
-                          style={{
-                            fontSize: 44,
-                            fontFamily: 'Inter-Bold',
-                            color: c.text,
-                            lineHeight: 48,
-                          }}
-                        >
-                          {steps.toLocaleString()}
-                        </Text>
-                        <Text className="text-sm text-text-tertiary font-sans-medium mt-1">
-                          {t('dashboard.steps')}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontFamily: 'Inter-Medium',
-                            color: c.textTertiary,
-                            marginTop: 6,
-                          }}
-                        >
-                          / {STEPS_GOAL.toLocaleString()} {t('dashboard.stepsGoal')}
-                        </Text>
-                      </View>
-                      <ProgressArc
-                        progress={stepsProg}
-                        size={80}
-                        strokeWidth={7}
-                        color={c.text}
-                        trackColor={c.trackBg}
-                      >
-                        <Text style={{ fontSize: 22 }}>🚶</Text>
-                      </ProgressArc>
-                    </View>
-                  </View>
-                ) : (
-                  <View
-                    className="flex-[2] rounded-3xl p-4 items-center justify-center"
-                    style={{ backgroundColor: c.card }}
-                  >
-                    <View
-                      className="w-12 h-12 rounded-2xl items-center justify-center mb-2"
-                      style={{ backgroundColor: c.cardAlt }}
-                    >
-                      <Text style={{ fontSize: 24 }}>❤️</Text>
-                    </View>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontFamily: 'Inter-Bold',
-                        color: c.text,
-                        textAlign: 'center',
-                        marginBottom: 2,
-                      }}
-                    >
-                      {t('dashboard.connectHealth')}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontFamily: 'Inter-Medium',
-                        color: c.textTertiary,
-                        textAlign: 'center',
-                        marginBottom: 12,
-                      }}
-                    >
-                      {t('dashboard.trackSteps')}
-                    </Text>
-                    <Pressable
-                      onPress={requestStepsPermission}
-                      className="bg-primary-500 px-5 py-2 rounded-full"
-                    >
-                      <Text className="text-on-primary font-sans-semibold text-[13px]">
-                        {t('dashboard.connect')}
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
-
-                {/* Right: Calories burned */}
-                <View
-                  className="flex-1 rounded-3xl p-4 justify-between"
-                  style={{ backgroundColor: c.card }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontFamily: 'Inter-SemiBold',
-                      color: c.textTertiary,
-                      letterSpacing: 0.8,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {t('dashboard.caloriesBurned')}
-                  </Text>
-                  <View>
-                    <Text
-                      style={{
-                        fontSize: 20,
-                        fontFamily: 'Inter-Bold',
-                        color: c.text,
-                        lineHeight: 24,
-                      }}
-                    >
-                      {stepCaloriesBurned}
-                    </Text>
-                    <Text
-                      style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                    >
-                      cal
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center gap-1.5">
-                    <Text style={{ fontSize: 16 }}>🚶</Text>
-                    <View>
-                      <Text style={{ fontSize: 11, fontFamily: 'Inter-SemiBold', color: c.text }}>
-                        {t('dashboard.steps')}
-                      </Text>
-                      <Text
-                        style={{ fontSize: 10, fontFamily: 'Inter-Medium', color: c.textTertiary }}
-                      >
-                        {stepCaloriesBurned} cal
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* Page 3 removed — streak info lives in header badge */}
+            {/* Steps page removed — streak info lives in header badge */}
           </ScrollView>
 
           {/* Carousel Dots */}
           <View className="flex-row items-center justify-center gap-1.5 mt-3 mb-1">
-            {[0, 1, 2].map((i) => (
+            {[0, 1].map((i) => (
               <View
                 key={i}
                 style={{

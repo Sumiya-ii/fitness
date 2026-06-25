@@ -5,9 +5,6 @@
  */
 
 jest.mock('./photo.processor', () => ({ processPhotoJob: jest.fn().mockResolvedValue({}) }));
-jest.mock('./reminders.processor', () => ({
-  processReminderJob: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock('./coach-memory.processor', () => ({
   processCoachMemoryJob: jest.fn().mockResolvedValue(undefined),
 }));
@@ -18,7 +15,6 @@ jest.mock('./privacy.processor', () => ({
 import { processJob } from './index';
 import { QUEUE_NAMES } from '@coach/shared';
 import { processPhotoJob } from './photo.processor';
-import { processReminderJob } from './reminders.processor';
 import { processCoachMemoryJob } from './coach-memory.processor';
 import { processPrivacyJob } from './privacy.processor';
 import type { Job } from 'bullmq';
@@ -34,12 +30,6 @@ describe('processJob dispatcher', () => {
     const job = makeJob('parse-photo');
     await processJob(QUEUE_NAMES.PHOTO_PARSING, job);
     expect(processPhotoJob).toHaveBeenCalledWith(job);
-  });
-
-  it('routes REMINDERS to processReminderJob', async () => {
-    const job = makeJob('send-reminder');
-    await processJob(QUEUE_NAMES.REMINDERS, job);
-    expect(processReminderJob).toHaveBeenCalledWith(job);
   });
 
   it('routes COACH_MEMORY to processCoachMemoryJob', async () => {
@@ -62,7 +52,6 @@ describe('processJob dispatcher', () => {
     ).resolves.not.toThrow();
     // None of the real processors should have been called
     expect(processPhotoJob).not.toHaveBeenCalled();
-    expect(processReminderJob).not.toHaveBeenCalled();
     expect(processCoachMemoryJob).not.toHaveBeenCalled();
     expect(processPrivacyJob).not.toHaveBeenCalled();
   });

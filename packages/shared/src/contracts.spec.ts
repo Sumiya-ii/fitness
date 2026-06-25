@@ -147,7 +147,7 @@ describe('shared constants', () => {
 
 describe('queue constants', () => {
   it('should export all expected queue names', () => {
-    const expected = ['photo-parsing', 'reminders', 'coach-memory', 'privacy'];
+    const expected = ['photo-parsing', 'coach-memory', 'privacy'];
     for (const name of expected) {
       expect(Object.values(QUEUE_NAMES)).toContain(name);
     }
@@ -994,13 +994,14 @@ describe('envSchema contract', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should apply defaults for NODE_ENV, PORT, BULL_BOARD credentials', () => {
+  it('should apply defaults for NODE_ENV and PORT; BULL_BOARD credentials have no default', () => {
     const result = envSchema.safeParse(minimalValidEnv);
     if (!result.success) throw new Error('parse failed');
     expect(result.data.NODE_ENV).toBe('development');
     expect(result.data.PORT).toBe(3000);
-    expect(result.data.BULL_BOARD_USER).toBe('admin');
-    expect(result.data.BULL_BOARD_PASSWORD).toBe('admin');
+    // No insecure admin/admin fallback — unset creds deny the admin dashboard (see main.ts basicAuth guard).
+    expect(result.data.BULL_BOARD_USER).toBeUndefined();
+    expect(result.data.BULL_BOARD_PASSWORD).toBeUndefined();
   });
 
   it('should reject missing DATABASE_URL', () => {

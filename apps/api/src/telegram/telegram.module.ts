@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from '../config';
 import { ObservabilityModule } from '../observability';
 import { TelegramController } from './telegram.controller';
@@ -12,13 +11,7 @@ import { ChatModule } from '../chat';
 import { MealLogsModule } from '../meal-logs/meal-logs.module';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    ObservabilityModule,
-    ConfigModule,
-    ChatModule,
-    MealLogsModule,
-  ],
+  imports: [ObservabilityModule, ConfigModule, ChatModule, MealLogsModule],
   controllers: [TelegramController],
   providers: [
     TelegramService,

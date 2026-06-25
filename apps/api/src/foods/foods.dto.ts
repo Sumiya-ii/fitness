@@ -50,7 +50,7 @@ export const foodQuerySchema = z.object({
   status: z.enum(['approved', 'pending', 'rejected']).optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
-  search: z.string().optional(),
+  search: z.string().max(100).optional(),
 });
 
 export const suggestFoodSchema = z.object({

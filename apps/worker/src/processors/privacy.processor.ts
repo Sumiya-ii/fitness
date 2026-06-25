@@ -428,18 +428,30 @@ async function processExport(
 async function processDeletion(pool: Pool, requestId: string, userId: string): Promise<void> {
   const jobLogger = logger.child({ processor: 'privacy_deletion', requestId, userId });
 
-  // Verify request is still pending (user cannot cancel after this point)
-  const check = await pool.query(
+  // Idempotency / crash-safety guard.
+  // - 'completed': already deleted — skip (idempotent on a BullMQ retry).
+  // - 'processing': a previous attempt crashed mid-deletion. Deletion is
+  //   re-runnable (every DELETE is keyed on user_id, so re-running is a no-op
+  //   on already-removed rows), so we RESUME rather than block — never leaving
+  //   user data half-deleted (a regulatory violation).
+  // - 'pending': first run.
+  // A missing row means the user was already fully deleted (the CASCADE wiped
+  // the request); treat as complete and skip.
+  const check = await pool.query<{ status: string }>(
     `SELECT status FROM privacy_requests WHERE id = $1 AND user_id = $2`,
     [requestId, userId],
   );
 
-  if (!check.rows[0] || check.rows[0].status !== 'pending') {
-    jobLogger.warn(
-      { status: check.rows[0]?.status },
-      'Deletion request is no longer pending — skipping',
+  const currentStatus = check.rows[0]?.status;
+  if (!check.rows[0] || currentStatus === 'completed') {
+    jobLogger.info(
+      { status: currentStatus },
+      'Deletion already completed — skipping duplicate run',
     );
     return;
+  }
+  if (currentStatus === 'processing') {
+    jobLogger.warn('Deletion was interrupted mid-run — resuming to ensure data is fully deleted');
   }
 
   // Mark as processing before touching any data

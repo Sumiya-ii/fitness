@@ -1,9 +1,15 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../api';
 import { setTokenRefreshCallback } from '../api/client';
-import { useDashboardStore } from './dashboard.store';
+import { useDashboardStore, clearDashboardCache } from './dashboard.store';
 import { useWaterStore } from './water.store';
 import { useWeightStore } from './weight.store';
+import { useSubscriptionStore } from './subscription.store';
+import { useStreakStore } from './streak.store';
+import { useNutritionHistoryStore } from './nutrition-history.store';
+import { useProfileStore } from './profile.store';
+import { useOnboardingStore } from './onboarding.store';
 import {
   configureGoogleSignIn,
   resetPassword as firebaseResetPassword,
@@ -19,6 +25,25 @@ import {
 import { getFirebaseAuth } from '../lib/firebase';
 
 configureGoogleSignIn();
+
+/** Clear all per-user in-memory state and persisted caches. */
+async function clearAllUserState(): Promise<void> {
+  // In-memory resets
+  useDashboardStore.setState({ data: null, error: null });
+  useWaterStore.setState({ consumed: 0, target: 2000, isLoading: false, error: null });
+  useWeightStore.setState({ history: [], trend: null, isLoading: false, error: null });
+  useSubscriptionStore.getState().reset();
+  useStreakStore.setState({ data: null, isLoading: false, error: null });
+  useNutritionHistoryStore.setState({ data: {}, isLoading: false, error: null });
+  useProfileStore.getState().reset(); // also clears MMKV onboarding draft
+  useOnboardingStore.setState({ onboardingComplete: null, profileSetupComplete: null });
+
+  // Persisted cache removals
+  await Promise.allSettled([
+    clearDashboardCache(),
+    AsyncStorage.multiRemove(['onboarding_complete', 'profile_setup_complete']),
+  ]);
+}
 
 // Register the 401 token-refresh callback on the API client so that any request
 // that returns 401 (stale kid / expired token) will force-refresh and retry once.
@@ -133,9 +158,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         _tokenRefreshUnsub = null;
         await Promise.allSettled([signOutFirebase(), api.clearToken()]);
         set({ token: null, user: null, isAuthenticated: false });
-        useDashboardStore.setState({ data: null, error: null });
-        useWaterStore.setState({ consumed: 0, target: 2000, isLoading: false, error: null });
-        useWeightStore.setState({ history: [], trend: null, isLoading: false, error: null });
+        await clearAllUserState();
       }
       throw e;
     }
@@ -146,10 +169,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     _tokenRefreshUnsub = null;
     await Promise.allSettled([signOutFirebase(), api.clearToken()]);
     set({ token: null, user: null, isAuthenticated: false });
-    // Clear per-user cached state so the next user starts fresh
-    useDashboardStore.setState({ data: null, error: null });
-    useWaterStore.setState({ consumed: 0, target: 2000, isLoading: false, error: null });
-    useWeightStore.setState({ history: [], trend: null, isLoading: false, error: null });
+    await clearAllUserState();
   },
 
   resetPassword: async (email: string) => {

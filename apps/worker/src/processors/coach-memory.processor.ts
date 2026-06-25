@@ -272,7 +272,12 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
     return;
   }
 
-  const pool = new Pool({ connectionString: dbUrl });
+  const pool = new Pool({
+    connectionString: dbUrl,
+    statement_timeout: 10_000,
+    query_timeout: 10_000,
+    connectionTimeoutMillis: 5_000,
+  });
   const openai = new OpenAI({ apiKey: openaiKey, timeout: 60_000 });
   const isMn = locale !== 'en';
 

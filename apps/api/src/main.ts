@@ -39,6 +39,12 @@ async function bootstrap() {
   });
 
   const basicAuth = (req: Request, res: Response, next: NextFunction) => {
+    // Deny access entirely when credentials are unset — never fall back to a
+    // default (e.g. admin/admin) which would leave the dashboard open.
+    if (!config.bullBoardUser || !config.bullBoardPassword) {
+      res.status(401).send('Admin dashboard not configured');
+      return;
+    }
     const header = req.headers.authorization;
     if (!header?.startsWith('Basic ')) {
       res.setHeader('WWW-Authenticate', 'Basic realm="Coach Admin"');
