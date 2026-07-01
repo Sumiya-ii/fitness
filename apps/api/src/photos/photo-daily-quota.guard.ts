@@ -4,12 +4,12 @@ import {
   Injectable,
   HttpException,
   HttpStatus,
-  OnModuleDestroy,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { Request } from 'express';
-import Redis from 'ioredis';
-import { ConfigService } from '../config';
+import type Redis from 'ioredis';
+import { REDIS } from '../redis';
 import { SubscriptionsService } from '../subscriptions';
 import type { AuthenticatedUser } from '../auth';
 
@@ -31,23 +31,13 @@ function secondsUntilMidnightUTC(): number {
 }
 
 @Injectable()
-export class PhotoDailyQuotaGuard implements CanActivate, OnModuleDestroy {
+export class PhotoDailyQuotaGuard implements CanActivate {
   private readonly logger = new Logger(PhotoDailyQuotaGuard.name);
-  private readonly redis: Redis;
 
   constructor(
-    private readonly config: ConfigService,
     private readonly subscriptions: SubscriptionsService,
-  ) {
-    this.redis = new Redis(this.config.get('REDIS_URL'));
-    this.redis.on('error', (err) => {
-      this.logger.warn(`Redis connection error (photo quota): ${err.message}`);
-    });
-  }
-
-  onModuleDestroy() {
-    this.redis.disconnect();
-  }
+    @Inject(REDIS) private readonly redis: Redis,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context

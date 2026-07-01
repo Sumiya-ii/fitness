@@ -1,17 +1,13 @@
 import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { PhotoDailyQuotaGuard } from './photo-daily-quota.guard';
-import { ConfigService } from '../config';
 import { SubscriptionsService } from '../subscriptions';
 
 const mockRedis = {
   get: jest.fn(),
   incr: jest.fn(),
   expire: jest.fn(),
-  disconnect: jest.fn(),
   on: jest.fn(),
 };
-
-jest.mock('ioredis', () => jest.fn().mockImplementation(() => mockRedis));
 
 function makeContext(userId: string, requestId = 'req-1'): ExecutionContext {
   return {
@@ -24,15 +20,13 @@ function makeContext(userId: string, requestId = 'req-1'): ExecutionContext {
 describe('PhotoDailyQuotaGuard', () => {
   let guard: PhotoDailyQuotaGuard;
   let subscriptions: { checkEntitlement: jest.Mock };
-  let config: { get: jest.Mock };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    config = { get: jest.fn().mockReturnValue('redis://localhost:6379') };
     subscriptions = { checkEntitlement: jest.fn().mockResolvedValue('free') };
     guard = new PhotoDailyQuotaGuard(
-      config as unknown as ConfigService,
       subscriptions as unknown as SubscriptionsService,
+      mockRedis as never,
     );
   });
 

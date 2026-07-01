@@ -295,7 +295,7 @@ export class AdminService {
           COUNT(*)::bigint AS total,
           COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed
         FROM outbound_messages
-        WHERE sent_at >= NOW() - (${days} || ' days')::INTERVAL
+        WHERE sent_at >= NOW() - INTERVAL '1 day' * ${days}
         GROUP BY DATE(sent_at)
         ORDER BY date DESC
       `,
@@ -305,7 +305,7 @@ export class AdminService {
           COUNT(*)::bigint AS total,
           COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed
         FROM outbound_messages
-        WHERE sent_at >= NOW() - (${days} || ' days')::INTERVAL
+        WHERE sent_at >= NOW() - INTERVAL '1 day' * ${days}
         GROUP BY message_type
         ORDER BY total DESC
       `,
@@ -315,7 +315,7 @@ export class AdminService {
           COUNT(*)::bigint AS total,
           COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed
         FROM outbound_messages
-        WHERE sent_at >= NOW() - (${days} || ' days')::INTERVAL
+        WHERE sent_at >= NOW() - INTERVAL '1 day' * ${days}
         GROUP BY channel
       `,
       this.prisma.$queryRaw<TokenRow[]>`
@@ -327,7 +327,7 @@ export class AdminService {
           COUNT(*)::bigint AS count
         FROM outbound_messages
         WHERE ai_model IS NOT NULL
-          AND sent_at >= NOW() - (${days} || ' days')::INTERVAL
+          AND sent_at >= NOW() - INTERVAL '1 day' * ${days}
         GROUP BY ai_model
       `,
     ]);

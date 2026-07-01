@@ -1,24 +1,19 @@
 import { NotFoundException, HttpException } from '@nestjs/common';
 import { FoodsService } from './foods.service';
 import { PrismaService } from '../prisma';
-import { ConfigService } from '../config';
+import { REDIS } from '../redis';
 
-// Mock ioredis so the constructor doesn't open a real connection
 const mockRedis = {
   get: jest.fn(),
   incr: jest.fn(),
   decr: jest.fn(),
   expire: jest.fn(),
-  disconnect: jest.fn(),
-  on: jest.fn(),
 };
-jest.mock('ioredis', () => jest.fn().mockImplementation(() => mockRedis));
 
 describe('FoodsService', () => {
   let service: FoodsService;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let prisma: any;
-  let config: Partial<ConfigService>;
 
   const mockFoodRaw = {
     id: 'food-uuid',
@@ -86,14 +81,13 @@ describe('FoodsService', () => {
         return cb(tx);
       }),
     };
-    config = { get: jest.fn().mockReturnValue('redis://localhost:6379') };
 
     // Default: first suggestion of the day (incr returns 1, under cap)
     mockRedis.incr.mockResolvedValue(1);
     mockRedis.decr.mockResolvedValue(0);
     mockRedis.expire.mockResolvedValue(1);
 
-    service = new FoodsService(prisma as unknown as PrismaService, config as ConfigService);
+    service = new FoodsService(prisma as unknown as PrismaService, mockRedis as never);
   });
 
   describe('create', () => {
@@ -303,3 +297,8 @@ describe('FoodsService', () => {
     });
   });
 });
+
+// Suppress the unused import warning — REDIS token is used in the constructor
+// call above as `mockRedis as never` to satisfy the type checker without
+// importing the full NestJS testing module.
+void REDIS;

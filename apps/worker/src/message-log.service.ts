@@ -1,6 +1,6 @@
-import { Pool } from 'pg';
 import * as Sentry from '@sentry/node';
 import { logger } from './logger';
+import { getPool } from './db';
 
 export interface LogParams {
   userId: string;
@@ -20,15 +20,6 @@ export interface LogParams {
   jobId?: string | number;
   // Extra context
   metadata?: Record<string, unknown>;
-}
-
-let _pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!_pool) {
-    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  }
-  return _pool;
 }
 
 /**

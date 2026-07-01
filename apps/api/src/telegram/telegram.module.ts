@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '../config';
 import { ObservabilityModule } from '../observability';
 import { TelegramController } from './telegram.controller';
 import { TelegramService } from './telegram.service';
@@ -12,7 +11,7 @@ import { MealLogsModule } from '../meal-logs/meal-logs.module';
 import { SubscriptionsModule } from '../subscriptions';
 
 @Module({
-  imports: [ObservabilityModule, ConfigModule, ChatModule, MealLogsModule, SubscriptionsModule],
+  imports: [ObservabilityModule, ChatModule, MealLogsModule, SubscriptionsModule],
   controllers: [TelegramController],
   providers: [
     TelegramService,

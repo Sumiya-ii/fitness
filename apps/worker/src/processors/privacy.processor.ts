@@ -1,9 +1,10 @@
 import { Job } from 'bullmq';
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import { Telegraf } from 'telegraf';
 import * as Sentry from '@sentry/node';
 import pino from 'pino';
 import { logger } from '../logger';
+import { getPool } from '../db';
 import { uploadToS3, getPresignedUrl, deleteFromS3 } from '../s3';
 import { sendExpoPush } from '../expo-push';
 import { logMessage } from '../message-log.service';
@@ -549,13 +550,12 @@ export async function processPrivacyJob(job: Job<PrivacyJobData>): Promise<void>
     return;
   }
 
-  const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl) {
+  if (!process.env.DATABASE_URL) {
     logger.warn('[Privacy] DATABASE_URL not set — skipping');
     return;
   }
 
-  const pool = new Pool({ connectionString: dbUrl });
+  const pool = getPool();
 
   try {
     if (requestType === 'export') {
@@ -604,7 +604,5 @@ export async function processPrivacyJob(job: Job<PrivacyJobData>): Promise<void>
     }
 
     throw err;
-  } finally {
-    await pool.end();
   }
 }

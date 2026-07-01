@@ -2,11 +2,24 @@ import { Pool } from 'pg';
 
 let _pool: Pool | undefined;
 
-function getPool(): Pool {
+export function getPool(): Pool {
   if (!_pool) {
-    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    _pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 7,
+      statement_timeout: 30_000,
+      idle_in_transaction_session_timeout: 30_000,
+      connectionTimeoutMillis: 5_000,
+    });
   }
   return _pool;
+}
+
+export async function closePool(): Promise<void> {
+  if (_pool) {
+    await _pool.end();
+    _pool = undefined;
+  }
 }
 
 interface VoiceDraftUpdateCompleted {

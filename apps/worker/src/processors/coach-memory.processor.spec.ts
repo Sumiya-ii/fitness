@@ -4,11 +4,10 @@
  */
 
 const mockPoolQuery = jest.fn();
-const mockPoolEnd = jest.fn();
 jest.mock('pg', () => ({
   Pool: jest.fn().mockImplementation(() => ({
     query: mockPoolQuery,
-    end: mockPoolEnd,
+    end: jest.fn(),
   })),
 }));
 
@@ -138,7 +137,6 @@ describe('empty data (new user)', () => {
     // No GPT call and no upsert queries — graceful skip
     expect(mockCreate).not.toHaveBeenCalled();
     expect(mockPoolQuery).toHaveBeenCalledTimes(5);
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 });
 
@@ -161,8 +159,6 @@ describe('happy path', () => {
     expect(categories).toEqual(
       expect.arrayContaining(['foods', 'patterns', 'goals', 'preferences']),
     );
-
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('passes derived evidence numbers to GPT, not freeform text', async () => {
@@ -351,11 +347,10 @@ describe('AI fallback', () => {
 // ── 7. External service errors ────────────────────────────────────────────────
 
 describe('external service errors', () => {
-  it('throws and cleans up pool when DB query fails', async () => {
+  it('throws when DB query fails', async () => {
     mockPoolQuery.mockRejectedValue(new Error('DB connection failed'));
 
     await expect(processCoachMemoryJob(makeJob())).rejects.toThrow('DB connection failed');
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 });
 

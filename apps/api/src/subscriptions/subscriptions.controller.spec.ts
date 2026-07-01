@@ -101,6 +101,12 @@ describe('SubscriptionsController', () => {
       );
     });
 
+    it('rejects with 401 when token is a different length (timing-safe path)', async () => {
+      await expect(controller.webhook('Bearer short', validWebhookBody)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
     it('accepts raw token without Bearer prefix when it matches the secret', async () => {
       const result = await controller.webhook(VALID_SECRET, validWebhookBody);
       expect(result).toEqual({ success: true });

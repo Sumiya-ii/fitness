@@ -16,11 +16,10 @@
 // ── Mock setup (must precede imports) ─────────────────────────────────────────
 
 const mockPoolQuery = jest.fn();
-const mockPoolEnd = jest.fn();
 jest.mock('pg', () => ({
   Pool: jest.fn().mockImplementation(() => ({
     query: mockPoolQuery,
-    end: mockPoolEnd,
+    end: jest.fn(),
   })),
 }));
 
@@ -199,7 +198,7 @@ describe('missing env vars', () => {
     expect(mockSendExpoPush).not.toHaveBeenCalled();
     const TelegrafMock = Telegraf as unknown as jest.Mock;
     expect(TelegrafMock).toHaveBeenCalled();
-    expect(mockPoolEnd).toHaveBeenCalled();
+
     // UPDATE completed must be the last pool.query call (after delivery)
     const lastQueryCall = mockPoolQuery.mock.calls[mockPoolQuery.mock.calls.length - 1];
     expect(lastQueryCall[0]).toMatch(/status = 'completed'/);
@@ -237,8 +236,6 @@ describe('export happy path', () => {
     );
     expect(completedCall).toBeDefined();
     expect(completedCall![1]).toContain('https://s3.example.com/export.json?sig=abc');
-
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('queries all 18 data tables', async () => {
@@ -411,8 +408,6 @@ describe('external service errors', () => {
     await expect(
       processPrivacyJob(makeJob({ requestId: 'req-1', userId: 'u1', requestType: 'export' })),
     ).rejects.toThrow('S3 network error');
-
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('does not throw when Telegram delivery fails — logs failure instead', async () => {
@@ -519,7 +514,6 @@ describe('edge case data', () => {
     // Only the Pool is created and ended; no queries
     await processPrivacyJob(makeJob({ requestId: 'r', userId: 'u1', requestType: 'unknown' }));
     expect(mockUploadToS3).not.toHaveBeenCalled();
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('skips deletion (idempotent) when request is already completed', async () => {
@@ -530,7 +524,6 @@ describe('edge case data', () => {
     // Only the status check query ran, no deletes
     expect(mockPoolQuery).toHaveBeenCalledTimes(1);
     expect(mockDeleteFromS3).not.toHaveBeenCalled();
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('skips deletion when the request row is already gone (user fully deleted)', async () => {
@@ -541,7 +534,6 @@ describe('edge case data', () => {
 
     expect(mockPoolQuery).toHaveBeenCalledTimes(1);
     expect(mockDeleteFromS3).not.toHaveBeenCalled();
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('resumes deletion when a prior attempt crashed mid-run (status processing)', async () => {
@@ -556,7 +548,6 @@ describe('edge case data', () => {
     expect(mockDeleteFromS3).toHaveBeenCalledWith('exports/u1/req-1.json');
     const commitCall = mockPoolQuery.mock.calls.find((c) => c[0] === 'COMMIT');
     expect(commitCall).toBeDefined();
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('deletion: executes transaction and cleans up S3 voice files', async () => {
@@ -566,7 +557,6 @@ describe('edge case data', () => {
 
     expect(mockDeleteFromS3).toHaveBeenCalledWith('voice/u1/file.webm');
     expect(mockDeleteFromS3).toHaveBeenCalledWith('exports/u1/req-1.json');
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('deletion: rolls back and rethrows on DB error in transaction', async () => {
@@ -591,7 +581,6 @@ describe('edge case data', () => {
 
     const rollbackCall = mockPoolQuery.mock.calls.find((c) => c[0] === 'ROLLBACK');
     expect(rollbackCall).toBeDefined();
-    expect(mockPoolEnd).toHaveBeenCalled();
   });
 
   it('export with multiple push tokens delivers to all', async () => {

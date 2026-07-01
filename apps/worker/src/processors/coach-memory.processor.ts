@@ -1,8 +1,9 @@
 import { Job } from 'bullmq';
 import OpenAI from 'openai';
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
 import * as Sentry from '@sentry/node';
 import { logger } from '../logger';
+import { getPool } from '../db';
 
 interface CoachMemoryJobData {
   userId: string;
@@ -266,18 +267,12 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
     return;
   }
 
-  const dbUrl = process.env.DATABASE_URL;
-  if (!dbUrl) {
+  if (!process.env.DATABASE_URL) {
     logger.warn('[CoachMemory] DATABASE_URL not set, skipping');
     return;
   }
 
-  const pool = new Pool({
-    connectionString: dbUrl,
-    statement_timeout: 10_000,
-    query_timeout: 10_000,
-    connectionTimeoutMillis: 5_000,
-  });
+  const pool = getPool();
   const openai = new OpenAI({ apiKey: openaiKey, timeout: 60_000 });
   const isMn = locale !== 'en';
 
@@ -336,7 +331,5 @@ export async function processCoachMemoryJob(job: Job<CoachMemoryJobData>): Promi
       extra: { userId },
     });
     throw err;
-  } finally {
-    await pool.end();
   }
 }

@@ -1,26 +1,19 @@
 import { IdempotencyService } from './idempotency.service';
 import { PrismaService } from '../prisma';
-import { ConfigService } from '../config';
 
-// Mock ioredis before importing the service
 const mockRedisGet = jest.fn();
 const mockRedisSet = jest.fn();
-const mockRedisDisconnect = jest.fn();
 const mockRedisOn = jest.fn();
 
-jest.mock('ioredis', () =>
-  jest.fn().mockImplementation(() => ({
-    get: mockRedisGet,
-    set: mockRedisSet,
-    disconnect: mockRedisDisconnect,
-    on: mockRedisOn,
-  })),
-);
+const mockRedis = {
+  get: mockRedisGet,
+  set: mockRedisSet,
+  on: mockRedisOn,
+};
 
 describe('IdempotencyService', () => {
   let service: IdempotencyService;
   let prisma: Record<string, Record<string, jest.Mock>>;
-  let config: { get: jest.Mock };
 
   const futureDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
@@ -34,12 +27,7 @@ describe('IdempotencyService', () => {
       },
     };
 
-    config = { get: jest.fn().mockReturnValue('redis://localhost:6379') };
-
-    service = new IdempotencyService(
-      prisma as unknown as PrismaService,
-      config as unknown as ConfigService,
-    );
+    service = new IdempotencyService(prisma as unknown as PrismaService, mockRedis as never);
   });
 
   afterEach(() => {
@@ -218,13 +206,6 @@ describe('IdempotencyService', () => {
         'DB connection failed',
       );
       expect(mockRedisSet).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('onModuleDestroy', () => {
-    it('should disconnect Redis on module destroy', () => {
-      service.onModuleDestroy();
-      expect(mockRedisDisconnect).toHaveBeenCalledTimes(1);
     });
   });
 });

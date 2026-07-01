@@ -1,15 +1,9 @@
-import {
-  Injectable,
-  NotFoundException,
-  HttpException,
-  HttpStatus,
-  OnModuleDestroy,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
 import { PrismaService } from '../prisma';
-import { ConfigService } from '../config';
+import { REDIS } from '../redis';
 import { CreateFoodDto, UpdateFoodDto, FoodQueryDto, SuggestFoodDto } from './foods.dto';
 
 const SUGGEST_DAILY_CAP = 5;
@@ -27,19 +21,11 @@ function secondsUntilMidnightUTC(): number {
 }
 
 @Injectable()
-export class FoodsService implements OnModuleDestroy {
-  private readonly redis: Redis;
-
+export class FoodsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
-  ) {
-    this.redis = new Redis(this.config.get('REDIS_URL'));
-  }
-
-  onModuleDestroy() {
-    this.redis.disconnect();
-  }
+    @Inject(REDIS) private readonly redis: Redis,
+  ) {}
 
   async suggest(userId: string, dto: SuggestFoodDto) {
     const key = suggestQuotaKey(userId);

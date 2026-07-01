@@ -1,0 +1,22 @@
+# Railway config-as-code for the Coach API service.
+# This replaces dashboard-only configuration (portability + no bus-factor).
+#
+# IMPORTANT: Railway dashboard "Custom Start Command"/"Build Command" overrides
+# take precedence over this file. To make this file authoritative, CLEAR those
+# overrides in the Railway dashboard (Service → Settings → Deploy) so the prod
+# service stops running `prisma db push --accept-data-loss` and uses the safe
+# migrate-deploy flow below instead. See README "Deployment & Migrations".
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm ci && npm run build --workspace=packages/shared && npm run db:generate --workspace=apps/api && npm run build --workspace=apps/api"
+
+[deploy]
+# Runs once before the new deployment starts serving — applies committed
+# migrations forward-only. NON-destructive (never drops data), unlike `db push`.
+preDeployCommand = "npm run db:migrate:deploy --workspace=apps/api"
+startCommand = "npm run start:prod --workspace=apps/api"
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+numReplicas = 1

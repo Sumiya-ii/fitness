@@ -56,6 +56,17 @@ describe('WeightLogsService', () => {
       expect(result.points).toEqual([]);
     });
 
+    it('queries with a 365-day date bound and take limit', async () => {
+      await service.getTrend('user-uuid');
+      const call = prisma.weightLog.findMany.mock.calls[0][0];
+      expect(call.take).toBe(365);
+      expect(call.where.loggedAt.gte).toBeInstanceOf(Date);
+      const boundDaysAgo =
+        (Date.now() - (call.where.loggedAt.gte as Date).getTime()) / (1000 * 60 * 60 * 24);
+      expect(boundDaysAgo).toBeGreaterThan(364);
+      expect(boundDaysAgo).toBeLessThan(367);
+    });
+
     it('should calculate trend from weight logs', async () => {
       const logs = Array.from({ length: 10 }, (_, i) => ({
         id: `wl-${i}`,
@@ -93,6 +104,13 @@ describe('WeightLogsService', () => {
     it('should return empty array when no data', async () => {
       const result = await service.getRollingTrend('user-uuid', 7);
       expect(result).toEqual([]);
+    });
+
+    it('queries with a 365-day date bound and take limit', async () => {
+      await service.getRollingTrend('user-uuid', 7);
+      const call = prisma.weightLog.findMany.mock.calls[0][0];
+      expect(call.take).toBe(365);
+      expect(call.where.loggedAt.gte).toBeInstanceOf(Date);
     });
 
     it('window=1 returns each raw entry as its own rollingAvg', async () => {

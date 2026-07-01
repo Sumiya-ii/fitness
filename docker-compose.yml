@@ -32,6 +32,7 @@ services:
   api:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: api
     ports:
       - "3000:3000"
@@ -49,6 +50,7 @@ services:
   worker:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: worker
     env_file: .env
     environment:

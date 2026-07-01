@@ -5,12 +5,13 @@ import {
   NotFoundException,
   HttpException,
   HttpStatus,
-  OnModuleDestroy,
+  Inject,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import type Redis from 'ioredis';
 import { PrismaService } from '../prisma';
-import Redis from 'ioredis';
 import { ConfigService } from '../config';
+import { REDIS } from '../redis';
 
 const LINK_CODE_PREFIX = 'telegram:link:';
 const LINK_CODE_TTL_SECONDS = 300; // 5 minutes
@@ -23,19 +24,12 @@ const CONFIRM_MAX_ATTEMPTS = 5;
 const CONFIRM_ATTEMPT_TTL_SECONDS = 300; // matches link code lifetime
 
 @Injectable()
-export class TelegramService implements OnModuleDestroy {
-  private readonly redis: Redis;
-
+export class TelegramService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-  ) {
-    this.redis = new Redis(this.config.get('REDIS_URL'));
-  }
-
-  onModuleDestroy() {
-    this.redis.disconnect();
-  }
+    @Inject(REDIS) private readonly redis: Redis,
+  ) {}
 
   private hashLinkCode(code: string): string {
     const secret = this.config.get('LINK_CODE_SECRET');

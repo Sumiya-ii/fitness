@@ -1,7 +1,7 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import Redis from 'ioredis';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import type Redis from 'ioredis';
 import { PrismaService } from '../prisma';
-import { ConfigService } from '../config';
+import { REDIS } from '../redis';
 
 const TELEGRAM_SYSTEM = 'telegram';
 
@@ -11,23 +11,16 @@ export interface IdempotencyResult {
 }
 
 @Injectable()
-export class IdempotencyService implements OnModuleDestroy {
+export class IdempotencyService {
   private readonly logger = new Logger(IdempotencyService.name);
-  private readonly redis: Redis;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
+    @Inject(REDIS) private readonly redis: Redis,
   ) {
-    this.redis = new Redis(this.config.get('REDIS_URL'));
-    // Suppress ioredis unhandled connection errors — we handle them per-call
-    this.redis.on('error', (err) => {
+    this.redis.on('error', (err: Error) => {
       this.logger.warn(`Redis connection error (idempotency): ${err.message}`);
     });
-  }
-
-  onModuleDestroy() {
-    this.redis.disconnect();
   }
 
   private redisKey(key: string): string {

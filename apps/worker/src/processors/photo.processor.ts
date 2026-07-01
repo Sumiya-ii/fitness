@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import * as Sentry from '@sentry/node';
 import { MONGOLIAN_FOOD_REFERENCE } from '@coach/shared';
 import { logger } from '../logger';
+import { getPool } from '../db';
 import { lookupVerifiedFoodsBatch } from '../foods-lookup';
 import { applyUserCalibration } from '../calibration';
 
@@ -422,21 +423,6 @@ async function enrichItems(
       return enriched;
     }),
   );
-}
-
-let _pool: Pool | undefined;
-function getPool(): Pool {
-  if (!_pool) {
-    _pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  }
-  return _pool;
-}
-
-export async function closePhotoPool(): Promise<void> {
-  if (_pool) {
-    await _pool.end();
-    _pool = undefined;
-  }
 }
 
 export async function processPhotoJob(job: Job<PhotoJobData>): Promise<PhotoParseResult> {

@@ -7,7 +7,8 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { timingSafeEqual } from 'crypto';
 import { CurrentUser, AuthenticatedUser, Public } from '../auth';
 import { ConfigService } from '../config';
 import { SubscriptionsService } from './subscriptions.service';
@@ -32,8 +33,10 @@ export class SubscriptionsController {
    * Calls RevenueCat REST API to check if the user has 'pro' entitlement,
    * and activates the subscription in our DB immediately if so.
    * This closes the race window between IAP purchase and webhook arrival.
+   * Tight rate limit — each call hits the RevenueCat REST API.
    */
   @Post('verify')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async verify(@CurrentUser() user: AuthenticatedUser) {
     return {
       data: await this.subscriptionsService.verifyAndActivate(user.id),
@@ -85,6 +88,7 @@ export class SubscriptionsController {
 
   /**
    * Validates the shared webhook secret from the Authorization header.
+   * Uses timing-safe comparison to prevent timing oracle attacks.
    * Throws UnauthorizedException if the secret is not configured or the token does not match.
    */
   private verifyWebhookSecret(authorization: string | undefined): void {
@@ -93,7 +97,13 @@ export class SubscriptionsController {
       throw new UnauthorizedException('Webhook secret not configured');
     }
     const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : authorization;
-    if (token !== secret) {
+    if (!token) {
+      throw new UnauthorizedException('Invalid webhook secret');
+    }
+    // Guard equal-length requirement for timingSafeEqual.
+    const secretBuf = Buffer.from(secret, 'utf8');
+    const tokenBuf = Buffer.from(token, 'utf8');
+    if (secretBuf.length !== tokenBuf.length || !timingSafeEqual(secretBuf, tokenBuf)) {
       throw new UnauthorizedException('Invalid webhook secret');
     }
   }

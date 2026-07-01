@@ -55,9 +55,12 @@ export class WeightLogsService {
    * chart renders. A single shape so the mobile store and chart read one source.
    */
   async getTrend(userId: string, window = 7) {
+    const since = new Date();
+    since.setFullYear(since.getFullYear() - 1);
     const logs = await this.prisma.weightLog.findMany({
-      where: { userId },
+      where: { userId, loggedAt: { gte: since } },
       orderBy: { loggedAt: 'desc' },
+      take: 365,
     });
 
     if (logs.length === 0) {
@@ -119,9 +122,12 @@ export class WeightLogsService {
    * window=N  → each point is the average of that entry and the N-1 preceding entries
    */
   async getRollingTrend(userId: string, window: number) {
+    const since = new Date();
+    since.setFullYear(since.getFullYear() - 1);
     const logs = await this.prisma.weightLog.findMany({
-      where: { userId },
+      where: { userId, loggedAt: { gte: since } },
       orderBy: { loggedAt: 'asc' },
+      take: 365,
     });
 
     if (logs.length === 0) return [];

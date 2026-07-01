@@ -14,6 +14,8 @@ describe('AdminService', () => {
     food: { update: jest.Mock; create: jest.Mock };
     auditLog: { create: jest.Mock };
     $transaction: jest.Mock;
+    $queryRaw: jest.Mock;
+    outboundMessage: { findMany: jest.Mock };
   };
 
   const mockQueueItem = {
@@ -45,6 +47,10 @@ describe('AdminService', () => {
         create: jest.fn().mockResolvedValue({ id: 'audit-uuid' }),
       },
       $transaction: jest.fn((fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma)),
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      outboundMessage: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
     };
     service = new AdminService(prisma as unknown as PrismaService);
   });
@@ -166,6 +172,42 @@ describe('AdminService', () => {
     it('should throw when item not found', async () => {
       prisma.moderationQueue.findUnique.mockResolvedValue(null);
       await expect(service.reject('admin-uuid', 'missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getMessageStats', () => {
+    it('returns summary with zero totals when no messages', async () => {
+      const result = await service.getMessageStats({ days: 7 });
+      expect(result.window).toBe('last_7_days');
+      expect(result.summary.totalSent).toBe(0);
+      expect(result.summary.totalFailed).toBe(0);
+      expect(result.summary.successRate).toBe(100);
+      expect(result.dailyVolume).toEqual([]);
+      expect(result.byType).toEqual([]);
+      expect(result.byChannel).toEqual([]);
+      expect(result.aiCosts).toEqual([]);
+    });
+
+    it('executes 4 raw queries (one per breakdown)', async () => {
+      await service.getMessageStats({ days: 30 });
+      expect(prisma.$queryRaw).toHaveBeenCalledTimes(4);
+    });
+
+    it('maps bigint counts to numbers', async () => {
+      prisma.$queryRaw
+        .mockResolvedValueOnce([
+          { date: new Date('2026-06-01'), total: BigInt(10), failed: BigInt(2) },
+        ])
+        .mockResolvedValueOnce([{ message_type: 'nudge', total: BigInt(10), failed: BigInt(2) }])
+        .mockResolvedValueOnce([{ channel: 'telegram', total: BigInt(10), failed: BigInt(2) }])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.getMessageStats({ days: 7 });
+      expect(result.summary.totalSent).toBe(10);
+      expect(result.summary.totalFailed).toBe(2);
+      expect(result.summary.successRate).toBe(80);
+      expect(result.dailyVolume[0].total).toBe(10);
+      expect(result.byType[0].failureRate).toBe(20);
     });
   });
 });

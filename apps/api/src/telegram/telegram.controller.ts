@@ -9,7 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { CurrentUser, AuthenticatedUser, Public } from '../auth';
 import { ConfigService } from '../config';
 import { TelegramService } from './telegram.service';
@@ -33,6 +33,7 @@ export class TelegramController {
   @Post('confirm')
   @Public()
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async confirmLink(@Body() body: unknown) {
     const parsed = confirmLinkSchema.safeParse(body);
     if (!parsed.success) {

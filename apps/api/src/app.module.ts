@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from './config';
 import { PrismaModule } from './prisma';
+import { RedisModule } from './redis';
 import { QueueModule } from './queue';
 import { AuthModule, UserThrottlerGuard } from './auth';
 import { ProfileModule } from './profile';
@@ -48,6 +49,7 @@ import { IdempotencyInterceptor } from './observability/idempotency.interceptor'
     ]),
     ConfigModule,
     PrismaModule,
+    RedisModule,
     QueueModule,
     AuthModule,
     ProfileModule,

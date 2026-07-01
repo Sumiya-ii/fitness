@@ -21,10 +21,6 @@ const mockRedis = {
   expire: jest.fn().mockResolvedValue(1),
 };
 
-jest.mock('ioredis', () => {
-  return jest.fn().mockImplementation(() => mockRedis);
-});
-
 describe('TelegramService', () => {
   let service: TelegramService;
   let prisma: Record<string, Record<string, jest.Mock>>;
@@ -37,7 +33,6 @@ describe('TelegramService', () => {
     jest.clearAllMocks();
     config = {
       get: jest.fn().mockImplementation((key: string) => {
-        if (key === 'REDIS_URL') return 'redis://localhost:6379';
         if (key === 'LINK_CODE_SECRET') return 'test-secret';
         return undefined;
       }),
@@ -57,6 +52,7 @@ describe('TelegramService', () => {
     service = new TelegramService(
       prisma as unknown as PrismaService,
       config as unknown as ConfigService,
+      mockRedis as never,
     );
   });
 
@@ -67,13 +63,13 @@ describe('TelegramService', () => {
   describe('generateLinkCode', () => {
     it('should throw ServiceUnavailableException when LINK_CODE_SECRET is not configured', async () => {
       config.get.mockImplementation((key: string) => {
-        if (key === 'REDIS_URL') return 'redis://localhost:6379';
         if (key === 'LINK_CODE_SECRET') return undefined;
         return undefined;
       });
       const unconfiguredService = new TelegramService(
         prisma as unknown as PrismaService,
         config as unknown as ConfigService,
+        mockRedis as never,
       );
 
       await expect(unconfiguredService.generateLinkCode('user-uuid')).rejects.toThrow(

@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto';
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 import { ConfigService } from '../config';
+import { REDIS } from '../redis';
 import OpenAI from 'openai';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
 import { TELEGRAM_FOOD_PARSER_PROMPT } from '@coach/shared';
 
 export interface ParsedFoodItem {
@@ -38,21 +39,18 @@ const DRAFT_TTL_SECONDS = 600; // 10 minutes
 const DRAFT_KEY_PREFIX = 'tg:draft:';
 
 @Injectable()
-export class TelegramFoodParserService implements OnModuleDestroy {
+export class TelegramFoodParserService {
   private readonly logger = new Logger(TelegramFoodParserService.name);
   private readonly openai: OpenAI | null = null;
-  private readonly redis: Redis;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    @Inject(REDIS) private readonly redis: Redis,
+  ) {
     const apiKey = this.config.get('OPENAI_API_KEY');
     if (apiKey) {
       this.openai = new OpenAI({ apiKey });
     }
-    this.redis = new Redis(this.config.get('REDIS_URL'));
-  }
-
-  onModuleDestroy() {
-    this.redis.disconnect();
   }
 
   async parse(text: string): Promise<TelegramFoodParseResult> {

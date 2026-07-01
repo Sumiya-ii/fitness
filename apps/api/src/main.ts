@@ -19,7 +19,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
   app.setGlobalPrefix(API_PREFIX);
-  app.enableCors();
+  // Mobile-only API — no browser origin needed in production.
+  // Expo dev client connects via tunnel (arbitrary origin) and production
+  // app sends requests without an Origin header (native HTTP).
+  // Restrict to localhost variants for local web tooling only.
+  app.enableCors({
+    origin: ['http://localhost:3000', 'http://localhost:8081', 'http://127.0.0.1:8081'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   app.enableShutdownHooks();
 
   const config = app.get(ConfigService);
@@ -82,13 +90,15 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, document);
   }
 
-  // ── Graceful shutdown: flush Sentry before exit ──────────────────────────
+  // ── Graceful shutdown ────────────────────────────────────────────────────
+  // Order matters: stop accepting new connections and drain in-flight requests
+  // first (app.close()), then flush buffered Sentry events before exiting.
   const sentry = app.get((await import('./observability/sentry.provider')).SentryProvider);
 
   const shutdown = async (signal: string) => {
     console.log(`Received ${signal}, shutting down gracefully...`);
-    await sentry.close(2000);
     await app.close();
+    await sentry.close(2000);
     process.exit(0);
   };
 

@@ -1,17 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TelegramFoodParserService } from './telegram-food-parser.service';
 import { ConfigService } from '../config';
-
-// Mock ioredis
-jest.mock('ioredis', () => {
-  return jest.fn().mockImplementation(() => ({
-    set: jest.fn().mockResolvedValue('OK'),
-    get: jest.fn().mockResolvedValue(null),
-    getdel: jest.fn().mockResolvedValue(null),
-    del: jest.fn().mockResolvedValue(1),
-    disconnect: jest.fn(),
-  }));
-});
+import { REDIS } from '../redis';
 
 // Mock openai
 jest.mock('openai', () => {
@@ -24,10 +14,16 @@ jest.mock('openai', () => {
   }));
 });
 
+const mockRedis = {
+  set: jest.fn().mockResolvedValue('OK'),
+  get: jest.fn().mockResolvedValue(null),
+  getdel: jest.fn().mockResolvedValue(null),
+  del: jest.fn().mockResolvedValue(1),
+};
+
 const mockConfigService = {
   get: jest.fn((key: string) => {
     if (key === 'OPENAI_API_KEY') return 'test-key';
-    if (key === 'REDIS_URL') return 'redis://localhost:6379';
     return undefined;
   }),
 };
@@ -37,10 +33,13 @@ describe('TelegramFoodParserService', () => {
   let openaiCreateMock: jest.Mock;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TelegramFoodParserService,
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: REDIS, useValue: mockRedis },
       ],
     }).compile();
 
@@ -275,8 +274,6 @@ describe('TelegramFoodParserService', () => {
 
   describe('draft management', () => {
     it('saveDraft stores draft in Redis with TTL', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const redisMock = (service as any).redis;
       const draft = {
         isFoodLog: true as const,
         items: [],
@@ -291,7 +288,7 @@ describe('TelegramFoodParserService', () => {
 
       await service.saveDraft(123456, draft);
 
-      expect(redisMock.set).toHaveBeenCalledWith(
+      expect(mockRedis.set).toHaveBeenCalledWith(
         'tg:draft:123456',
         JSON.stringify(draft),
         'EX',
@@ -300,8 +297,7 @@ describe('TelegramFoodParserService', () => {
     });
 
     it('getDraft returns null when draft does not exist', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (service as any).redis.get.mockResolvedValueOnce(null);
+      mockRedis.get.mockResolvedValueOnce(null);
 
       const result = await service.getDraft(123456);
 
@@ -330,8 +326,7 @@ describe('TelegramFoodParserService', () => {
         totalFat: 12,
         originalText: '3 буузт идлээ',
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (service as any).redis.get.mockResolvedValueOnce(JSON.stringify(draft));
+      mockRedis.get.mockResolvedValueOnce(JSON.stringify(draft));
 
       const result = await service.getDraft(123456);
 
@@ -339,12 +334,9 @@ describe('TelegramFoodParserService', () => {
     });
 
     it('deleteDraft removes key from Redis', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const redisMock = (service as any).redis;
-
       await service.deleteDraft(123456);
 
-      expect(redisMock.del).toHaveBeenCalledWith('tg:draft:123456');
+      expect(mockRedis.del).toHaveBeenCalledWith('tg:draft:123456');
     });
 
     it('takeDraft atomically read-and-deletes via GETDEL and returns the draft', async () => {
@@ -359,19 +351,16 @@ describe('TelegramFoodParserService', () => {
         originalText: '3 буузт идлээ',
         draftId: 'abc',
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const redisMock = (service as any).redis;
-      redisMock.getdel.mockResolvedValueOnce(JSON.stringify(draft));
+      mockRedis.getdel.mockResolvedValueOnce(JSON.stringify(draft));
 
       const result = await service.takeDraft(123456);
 
-      expect(redisMock.getdel).toHaveBeenCalledWith('tg:draft:123456');
+      expect(mockRedis.getdel).toHaveBeenCalledWith('tg:draft:123456');
       expect(result).toEqual(draft);
     });
 
     it('takeDraft returns null when the draft was already consumed', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (service as any).redis.getdel.mockResolvedValueOnce(null);
+      mockRedis.getdel.mockResolvedValueOnce(null);
 
       const result = await service.takeDraft(123456);
 
@@ -426,11 +415,11 @@ describe('TelegramFoodParserService', () => {
             useValue: {
               get: jest.fn((key: string) => {
                 if (key === 'OPENAI_API_KEY') return undefined;
-                if (key === 'REDIS_URL') return 'redis://localhost:6379';
                 return undefined;
               }),
             },
           },
+          { provide: REDIS, useValue: mockRedis },
         ],
       }).compile();
 
